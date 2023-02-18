@@ -24,7 +24,6 @@ const AMOUNT = ethers.utils.parseUnits("1", 18); // 1 token, NOTICE: DAI allows 
 async function main() {
   const provider = new ethers.providers.JsonRpcProvider(RPC_PROVIDER_URL);
   const myWallet = new ethers.Wallet(OWNER_PRIVATE_KEY, provider);
-  const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, PERMIT2_ABI, myWallet);
 
   const permitTransferFromData: PermitTransferFrom = {
     permitted: {
@@ -42,14 +41,6 @@ async function main() {
 
   const { domain, types, values } = SignatureTransfer.getPermitData(permitTransferFromData, PERMIT2_ADDRESS, CHAIN_ID);
   const signature = await myWallet._signTypedData(domain, types, values);
-  console.log(values);
-  console.log(signature);
-
-  // bounty hunter sends a tx to withdraw a payout (or he could do it manually via etherscan UI)
-  /*
-  const bountyHunterPrivateKey = "9d5c47372b05da22e903247b8c1d3e4ab4c3d27983476bcb7a02f2b531bc3bbe";
-  const bountyHunterWallet = new ethers.Wallet(bountyHunterPrivateKey, provider);
-  const permit2ContractTest = new ethers.Contract(PERMIT2_ADDRESS, PERMIT2_ABI, bountyHunterWallet);
   const txData = {
     permit: {
       permitted: {
@@ -66,6 +57,15 @@ async function main() {
     owner: "0xa701216C86b1fFC1F0E4D592DA4186eD519eaDf9",
     signature: signature,
   };
+
+  // this tx data should be posted in github issue comments for a bounty hunter to redeem a payout via Uniswap's Permit2.permitTransferFrom()
+  console.log(txData);
+
+  // bounty hunter sends a tx to withdraw a payout (or he could do it manually via etherscan UI)
+  /*
+  const bountyHunterPrivateKey = "9d5c47372b05da22e903247b8c1d3e4ab4c3d27983476bcb7a02f2b531bc3bbe";
+  const bountyHunterWallet = new ethers.Wallet(bountyHunterPrivateKey, provider);
+  const permit2ContractTest = new ethers.Contract(PERMIT2_ADDRESS, PERMIT2_ABI, bountyHunterWallet);
   const receipt = await permit2ContractTest.permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature);
   console.log(receipt);
   */
