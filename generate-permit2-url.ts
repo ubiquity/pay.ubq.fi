@@ -13,17 +13,17 @@ const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // same on
 
 async function main() {
     const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
-    const myWallet = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY || '', provider);
+    const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY || '', provider);
 
     const permitTransferFromData: PermitTransferFrom = {
         permitted: {
             // token we are permitting to be transferred
-            token: process.env.TOKEN_ADDRESS || '',
+            token: process.env.PAYMENT_TOKEN_ADDRESS || '',
             // amount we are permitting to be transferred
             amount: ethers.utils.parseUnits(process.env.AMOUNT_IN_ETH || '', 18),
         },
         // who can transfer the tokens
-        spender: process.env.SPENDER_ADDRESS || '',
+        spender: process.env.BENEFICIARY_ADDRESS || '',
         nonce: BigNumber.from(`0x${randomBytes(32).toString('hex')}`),
         // signature deadline
         deadline: MaxUint256,
