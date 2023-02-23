@@ -44,6 +44,8 @@ button {
 	padding: 16px;
 	background-color: #80808040;
 	margin: 0 2px;
+	text-transform: uppercase;
+	letter-spacing: 2px;
 }
 
 button:hover {
@@ -88,4 +90,48 @@ background {
 	pointer-events: none;
 	z-index: -1;
 	/* background-color: #000; */
+}
+
+#logo a {
+	display: block;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	flex-direction: row;
+}
+
+#logo {
+	letter-spacing: 2px;
+	padding: 40px 20px;
+	-ms-flex-pack: justify;
+	-ms-flex-align: center;
+	line-height: 1.25;
+}
+
+#logo > #logo-icon {
+	display: inline-block;
+	vertical-align: middle;
+	padding: 4px;
+	text-rendering: geometricPrecision;
+}
+#logo-icon > svg {
+	height: 36px;
+	display: block;
+	margin: 0;
+	width: 36px;
+	padding: 0;
+	margin-right: 10px;
+}
+
+#logo > div#logo-text {
+	font-size: 20px;
+	letter-spacing: 5px;
+	text-transform: uppercase;
+	/* text-decoration: none; */
+	display: inline-block;
+	vertical-align: middle;
+	text-rendering: geometricPrecision;
+}
+
+background a {
+	text-decoration: none;
 }
