@@ -104,6 +104,8 @@ table #additional-details-border ~ tr,
 table[data-details-visible="false"] #additional-details-border ~ tr {
   opacity: 0;
   transition: 0.125s ease-in-out;
+  /* overflow: hidden; */
+  /* display: none; */
 }
 table[data-details-visible="true"] #additional-details-border ~ tr {
   opacity: 1;
