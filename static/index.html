@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="ubiquibank.css" rel="stylesheet" />
     <link href="claim-table.css" rel="stylesheet" />
+    <link href="media-queries.css" rel="stylesheet" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
   </head>
   <body>
     <background>
+      <div id="grid"></div>
       <header>
         <a href="http://ubq.fi/"
           ><div id="logo">
@@ -21,7 +23,7 @@
                 ></path>
               </svg>
             </div>
-            <div id="logo-text">Ubiquity DAO | Bounty Claims</div>
+            <div id="logo-text"><span>Ubiquity DAO</span><span>Bounty Claims</span></div>
           </div></a
         >
       </header>
@@ -48,8 +50,8 @@
             </th>
             <td>
               <div id="controls">
-                <button id="btnConnectWallet">Connect Wallet</button>
-                <button id="btnWithdraw" disabled>Claim Bounty</button>
+                <!-- <button id="btnConnectWallet">Connect Wallet</button> -->
+                <button id="claimButton">Claim</button>
                 <!-- <aside></aside> -->
               </div>
             </td>
@@ -75,7 +77,6 @@
             <th>Signature</th>
             <td id="signature"></td>
           </tr>
-
         </tbody>
       </table>
     </main>
