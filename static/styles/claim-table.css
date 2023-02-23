@@ -1,5 +1,6 @@
 table {
   border-collapse: collapse;
+  width: 512px;
 }
 table tr {
   background-color: #80808000;
