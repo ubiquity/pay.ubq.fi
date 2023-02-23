@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="ubiquibank.css" rel="stylesheet" />
+    <link href="claim-table.css" rel="stylesheet" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="apple-touch-icon.png" />
   </head>
@@ -31,15 +32,15 @@
           <!-- <tr><th></th><td><hr /></td></tr> -->
           <tr>
             <th>Amount</th>
-            <td id="transferDetails.requestedAmount"></td>
+            <td id="transferDetails.requestedAmount">Loading...</td>
           </tr>
           <tr>
             <th>Token</th>
-            <td id="permit.permitted.token"></td>
+            <td id="permit.permitted.token">Loading...</td>
           </tr>
           <tr>
             <th>To</th>
-            <td id="transferDetails.to"></td>
+            <td id="transferDetails.to">Loading...</td>
           </tr>
           <!--
           <tr>
@@ -48,11 +49,13 @@
           </tr>
 		   -->
           <tr id="additional-details-border">
-            <th></th>
+            <th>
+              <button id="additionalDetails">More Info</button>
+            </th>
             <td>
               <div id="controls">
-                <button id="btnConnectWallet">Connect Wallet</button><button id="additionalDetails">Additional Details</button
-                ><button id="btnWithdraw" disabled>Claim Bounty</button>
+                <button id="btnConnectWallet">Connect Wallet</button>
+                <button id="btnWithdraw" disabled>Claim Bounty</button>
                 <!-- <aside>Claim Bounty</aside> -->
               </div>
             </td>

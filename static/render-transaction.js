@@ -15,6 +15,8 @@
     document.getElementById("owner").innerHTML = txData.owner;
     document.getElementById("signature").innerHTML = txData.signature;
 
+    document.getElementsByTagName(`table`)[0].setAttribute(`data-details-visible`, `false`);
+
     // ethereum provider
     let provider = null;
 
