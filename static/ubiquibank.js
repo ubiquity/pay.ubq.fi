@@ -1,4 +1,4 @@
-(function () {
+(async function () {
 
 
     let detailsVisible = false;
@@ -11,7 +11,12 @@
         table.setAttribute(`data-details-visible`, detailsVisible.toString())
     });
 
-
+    // display commit hash
+    const commit = await fetch("commit.txt");
+    const commitHash = await commit.text();
+    const buildElement = document.querySelector(`#build a`);
+    buildElement.innerHTML = `${commitHash}`
+    buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`
 })();
 
 

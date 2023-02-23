@@ -34,3 +34,17 @@ footer code {
     line-height: 1;
     /* width: 87.5vw; */
 }
+
+div#build {
+    padding: 16px;
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-rendering: geometricPrecision;
+    /* font-weight: 100; */
+    color: #808080;
+    width: 48px;
+    margin-left: auto;
+}
+div#build>a{opacity: 0.5;}
+div#build>a:hover{opacity: 1;}
