@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>UbiquiBank</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link href="ubiquibank.css" rel="stylesheet" />
+		<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="apple-touch-icon.png">
+	</head>
+	<body>
+		<background></background>
+		<main>
+			<table>
+				<tbody>
+					<tr>
+						<th></th>
+						<td><h1>Transaction Information</h1></td>
+					</tr>
+					<tr>
+						<th>permit.permitted.token</th>
+						<td id="permit.permitted.token"></td>
+					</tr>
+					<tr>
+						<th>permit.permitted.amount</th>
+						<td id="permit.permitted.amount"></td>
+					</tr>
+					<tr>
+						<th>permit.nonce</th>
+						<td id="permit.nonce"></td>
+					</tr>
+					<tr>
+						<th>permit.deadline</th>
+						<td id="permit.deadline"></td>
+					</tr>
+					<tr>
+						<th>to</th>
+						<td id="transferDetails.to"></td>
+					</tr>
+					<tr>
+						<th>requestedAmount</th>
+						<td id="transferDetails.requestedAmount"></td>
+					</tr>
+					<tr>
+						<th>owner</th>
+						<td id="owner"></td>
+					</tr>
+					<tr>
+						<th>signature</th>
+						<td id="signature"></td>
+					</tr>
+					<tr>
+						<th></th>
+						<td>
+							<div id="controls"><button id="btnConnectWallet">Connect Wallet</button><button id="btnWithdraw" disabled>Withdraw</button></div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</main>
+
+		<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+		<script src="ubiquibank.js" type="application/javascript"></script>
+	</body>
+</html>
