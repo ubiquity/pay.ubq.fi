@@ -1,6 +1,6 @@
 table { border-collapse: collapse; }
 table tr {background-color: #80808000; transition: 0.125s ease-in-out opacity;}
-table[data-details-visible] tr { background-color: #80808010 ; }
+table[data-details-visible] tr {background-color: #80808010;}
 
 /* table[data-details-visible] is when the table is ready, and displaying data */
 
@@ -24,5 +24,8 @@ table #controls > * { flex: 2; }
 table #additional-details-border ~ tr, table[data-details-visible="false"] #additional-details-border ~ tr { opacity: 0; transition: 0.125s ease-in-out; }
 table[data-details-visible="true"] #additional-details-border ~ tr { opacity: 1; transition: 0.125s ease-in-out; }
 table tr:first-of-type > * { padding-top: 24px; }
-table tr#additional-details-border > * { padding-bottom: 24px; }
+table tr#additional-details-border > * {padding: 0;margin: 0;}
 table tr:last-of-type > * { padding-bottom: 24px; }
+
+table[data-details-visible] tr#additional-details-border > *{ padding-top: 12px }
+table[data-details-visible] tr#additional-details-border + tr > * { padding-top: 24px }
