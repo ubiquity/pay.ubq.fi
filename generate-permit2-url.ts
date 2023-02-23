@@ -50,7 +50,7 @@ async function main() {
 
     const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString('base64');
     console.log('Share this URL with a bounty hunter:');
-    console.log(`${process.env.FRONTEND_URL}?hex=${base64encodedTxData}`);
+    console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
 }
 
 main().catch((error) => {

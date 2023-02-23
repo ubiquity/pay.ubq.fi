@@ -2,9 +2,20 @@
 
     // decode base64 to get tx data
     const urlParams = new URLSearchParams(window.location.search);
-    const base64encodedTxData = urlParams.get("hex");
-    const txData = JSON.parse(atob(base64encodedTxData));
+    const base64encodedTxData = urlParams.get("claim");
 
+    if (!base64encodedTxData) {
+        alert(`No claim data passed in URL.\n\nhttps://pay.ubq.fi?claim=...`);
+        return;
+    }
+    let txData;
+
+    try {
+        txData = JSON.parse(atob(base64encodedTxData));
+    } catch (error) {
+        alert(`Invalid claim data passed in URL.`);
+        return;
+    }
     // insert tx data into table
     document.getElementById("permit.permitted.token").innerHTML = txData.permit.permitted.token;
     document.getElementById("permit.permitted.amount").innerHTML = txData.permit.permitted.amount / 1e18;
