@@ -61,4 +61,4 @@ table[data-details-visible="false"] #transferDetails\.to .full,
 table[data-details-visible="true"] #transferDetails\.to .short{ display: none; }
 table[data-details-visible="true"] #transferDetails\.to .full,
 table[data-details-visible="false"] #transferDetails\.to .short{ display: initial; }
-#For > th,#For > td{padding-bottom: 24px;}
+#To > th,#To > td{padding-bottom: 24px;}

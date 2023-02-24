@@ -29,8 +29,8 @@ function insertTableData(table) {
   const requestedAmountElement = document.getElementById("transferDetails.requestedAmount");
 
   // FOR
-  const toFull = document.querySelector("#For .full");
-  const toShort = document.querySelector("#For .short");
+  const toFull = document.querySelector("#To .full");
+  const toShort = document.querySelector("#To .short");
   toFull.textContent = txData.transferDetails.to;
   toShort.textContent = shortenAddress(txData.transferDetails.to);
 
