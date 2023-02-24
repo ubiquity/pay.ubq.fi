@@ -1,6 +1,6 @@
 table {
   border-collapse: collapse;
-  width: 512px;
+  max-width: 512px;
 }
 table tr {
   background-color: #80808000;
@@ -21,7 +21,7 @@ table button {
   outline: none; /* padding: 0; */
   margin: 0;
   padding: 16px;
-  background-color: #80808040;
+  /* background-color: #80808040; */
   text-transform: uppercase; /* letter-spacing: 2px; */
   white-space: nowrap;
   opacity: 0;
@@ -30,14 +30,15 @@ table button {
   border-radius: 4px; /* margin: 0 2px; */
 }
 table[data-details-visible] button {
-  opacity: 1;
+  opacity: 0.5;
 }
 table[data-details-visible] button:disabled {
   opacity: 0.25;
   pointer-events: none;
 }
 table[data-details-visible] button:hover {
-  background-color: #80808080;
+  /* background-color: #80808080; */
+  opacity: 1;
 }
 table[data-details-visible] button#additionalDetails {
   width: 100%;
@@ -103,6 +104,8 @@ table #additional-details-border ~ tr,
 table[data-details-visible="false"] #additional-details-border ~ tr {
   opacity: 0;
   transition: 0.125s ease-in-out;
+  /* overflow: hidden; */
+  /* display: none; */
 }
 table[data-details-visible="true"] #additional-details-border ~ tr {
   opacity: 1;

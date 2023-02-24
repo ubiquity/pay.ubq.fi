@@ -15,6 +15,19 @@
   const buildElement = document.querySelector(`#build a`);
   buildElement.innerHTML = `${commitHash}`;
   buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
+
+  // draw grid
+  window.draw({
+    cell_resolution: 24,
+    point_resolution: 1,
+    shade: 128,
+    step: 0.015625,
+    refresh: 1000 / 15,
+    target: document.getElementById('grid'),
+    // id: 'canvas'
+  });
+
+
 })();
 
 window.onerror = function (message, source, lineno, colno, error) {
