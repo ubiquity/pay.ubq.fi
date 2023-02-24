@@ -50,10 +50,12 @@ function insertTableData(table) {
 
 
   document.getElementById("permit.permitted.amount").textContent = txData.permit.permitted.amount / 1e18;
+
+  document.getElementById("owner").innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.owner}">${txData.owner}</a>`;
+
   document.getElementById("permit.nonce").textContent = txData.permit.nonce;
   document.getElementById("permit.deadline").textContent = txData.permit.deadline;
   requestedAmountElement.textContent = txData.transferDetails.requestedAmount / 1e18;
-  document.getElementById("owner").textContent = txData.owner;
   document.getElementById("signature").textContent = txData.signature;
 
   table.setAttribute(`data-details-rendered`, "true");
@@ -62,11 +64,8 @@ function insertTableData(table) {
 
 async function renderTokenSymbol(table, requestedAmountElement) {
   const contract = await window.getContract(txData.permit.permitted.token);
-  // const name = await contract.name();
   const symbol = await contract.symbol();
-  // console.trace(symbol);
   table.setAttribute(`data-contract-loaded`, "true");
-  // https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${txData.transferDetails.requestedAmount / 1e18} ${symbol}</a>`;
 }
 
