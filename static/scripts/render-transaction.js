@@ -33,8 +33,6 @@ function insertTableData(table) {
   toFull.textContent = txData.transferDetails.to;
   toShort.textContent = shortenAddress(txData.transferDetails.to);
 
-  // document.getElementById("permit.permitted.token").textContent = shortenAddress(txData.permit.permitted.token);
-
   const tokenFull = document.querySelector("#Token .full");
   const tokenShort = document.querySelector("#Token .short");
   tokenFull.textContent = txData.permit.permitted.token;

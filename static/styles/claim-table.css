@@ -7,7 +7,7 @@ table hr { background-color: #80808040; height: 1px; border: none; }
 table svg { height: 16px; width: 16px; display: block; margin: 0; padding: 0; }
 table td {word-break: break-word;/* color: #808080; *//* text-transform: initial; *//* letter-spacing: 1px; *//* font-size: 16px; *//* text-align: justify; */}
 table th {text-align: right;color: #80808080;/* font-weight: 400; *//* text-transform: uppercase; *//* letter-spacing: 2px; *//* font-size: 16px; *//* vertical-align: middle; *//* margin-left: 29px; */}
-table th, table td {padding: 8px;text-rendering: geometricPrecision;/* vertical-align: middle; *//* max-width: 320px; */}
+table th, table td {padding: 8px;text-rendering: geometricPrecision;/* vertical-align: middle; */max-width: 320px;}
 table tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
 table tr:first-of-type > * {padding-top: 24px;}
 table tr:last-child td div > div { width: 50%; display: inline-block; vertical-align: middle; }
