@@ -28,18 +28,16 @@
   });
 })();
 
-window.onerror = function (message, source, lineno, colno, error) {
-  const errorMessage = `Error: ${message} at ${source}:${lineno}:${colno}`;
-  console.error(errorMessage);
-  document.querySelector(`footer>code`).textContent = message;
+window.onerror = function (error) {
+  const output = document.querySelector(`footer>code`);
+  delete error.stack;
+  output.innerText = JSON.stringify(error, null, 2);
 };
 
 async function connectWallet(txData) {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-  // prompt user for account connections
   await provider.send("eth_requestAccounts", []);
   const signer = provider.getSigner();
-  // if user is authorized then show the withdraw button
   if (signer) {
     return { signer, txData };
   }
