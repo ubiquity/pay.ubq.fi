@@ -34,26 +34,27 @@
     <main>
       <table>
         <tbody>
-          <tr<tr id="Amount">
+          <tr id="Amount">
             <th>Amount</th>
             <td id="transferDetails.requestedAmount">Loading...</td>
           </tr>
           <tr id="Token">
             <th>Token</th>
-            <td id="permit.permitted.token">Loading...</td>
+            <td id="permit.permitted.token"><span class="full"></span><span class="short">Loading...</span></td>
           </tr>
           <tr id="For">
             <th>For</th>
-            <td id="transferDetails.to">Loading...</td>
+            <td id="transferDetails.to"><span class="full"></span><span class="short">Loading...</span></td>
           </tr>
 
           <tr id="additional-details-border">
             <th>
-              <button id="additionalDetails">Details</button>
+
             </th>
             <td>
               <div id="controls">
                 <!-- <button id="btnConnectWallet">Connect Wallet</button> -->
+                <button id="additionalDetails">Details</button>
                 <button id="claimButton">Claim</button>
                 <!-- <aside></aside> -->
               </div>
@@ -94,7 +95,7 @@
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
 
     <script src="scripts/get-contract-abi.js" type="application/javascript"></script>
-    <script src="scripts/read-contract.js" type="application/javascript"></script>
+    <script src="scripts/get-contract.js" type="application/javascript"></script>
     <script src="scripts/render-transaction.js" type="application/javascript"></script>
 
     <script src="scripts/ubiquibank.js" type="application/javascript"></script>
