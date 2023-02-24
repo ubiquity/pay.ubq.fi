@@ -28,15 +28,25 @@
 function insertTableData(table) {
   const requestedAmountElement = document.getElementById("transferDetails.requestedAmount");
 
+  // FOR
   const toFull = document.querySelector("#For .full");
   const toShort = document.querySelector("#For .short");
   toFull.textContent = txData.transferDetails.to;
   toShort.textContent = shortenAddress(txData.transferDetails.to);
 
+  const toBoth = document.getElementById(`transferDetails.to`);
+  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
+
+  // FOR
+
   const tokenFull = document.querySelector("#Token .full");
   const tokenShort = document.querySelector("#Token .short");
   tokenFull.textContent = txData.permit.permitted.token;
   tokenShort.textContent = shortenAddress(txData.permit.permitted.token);
+
+  const tokenBoth = document.getElementById(`permit.permitted.token`);
+  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
+
 
 
   document.getElementById("permit.permitted.amount").textContent = txData.permit.permitted.amount / 1e18;
