@@ -21,7 +21,7 @@ table>tbody{
 }
 /*  */
 
-table[data-details-rendered] { border: 1px solid #80808020;border-right: 0;border-left: 0; }
+table[data-details-rendered] {border: 1px solid #80808020;border-right: 0;border-left: 0;/* border-bottom: 0; */}
 table[data-details-rendered] button { opacity: 0.5; }
 table[data-details-rendered] button:disabled { opacity: 0.25; pointer-events: none; }
 table[data-details-rendered] button:hover {background-color: #80808020;opacity: 1;}
@@ -35,8 +35,10 @@ table[data-details-rendered] tr#additional-details-border > * {/* padding-top: 1
 /*  */
 
 table #additional-details-border ~ tr,
-table[data-details-visible="false"] #additional-details-border ~ tr { opacity: 0;}
-table[data-details-visible="true"] #additional-details-border ~ tr { opacity: 1;}
+table[data-details-visible="false"] #additional-details-border ~ tr { opacity: 0; pointer-events: none}
+table[data-details-visible="false"] {border-bottom: 1px solid #80808000}
+table[data-details-visible="true"] #additional-details-border ~ tr { opacity: 1; pointer-events: unset}
+table[data-details-visible="true"] {border-bottom: 1px solid #80808020;}
 
 /*  */
 table[data-contract-loaded] #Token{

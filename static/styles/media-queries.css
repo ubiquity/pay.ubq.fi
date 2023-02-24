@@ -9,7 +9,7 @@ header span:first-child::after {
     content: "";
   }
 }
-
+/*
 @media screen and (min-height: 512px) {
   table[data-details-visible="false"] #additional-details-border ~ tr {
     display: none;
@@ -17,4 +17,4 @@ header span:first-child::after {
   table[data-details-visible="true"] #additional-details-border ~ tr {
     display: table-row;
   }
-}
+} */
