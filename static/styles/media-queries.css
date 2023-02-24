@@ -1,0 +1,20 @@
+header span:first-child::after {
+  content: " | ";
+}
+@media screen and (max-width: 768px) {
+  header span:first-child {
+    display: none;
+  }
+  header span:first-child::after {
+    content: "";
+  }
+}
+
+@media screen and (min-height: 512px) {
+  table[data-details-visible="false"] #additional-details-border ~ tr {
+    display: none;
+  }
+  table[data-details-visible="true"] #additional-details-border ~ tr {
+    display: table-row;
+  }
+}
