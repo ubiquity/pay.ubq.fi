@@ -7,7 +7,7 @@
     alert(`No claim data passed in URL.\n\nhttps://pay.ubq.fi?claim=...`);
     return;
   }
-  let txData;
+  window.txData;
 
   try {
     txData = JSON.parse(atob(base64encodedTxData));
@@ -16,14 +16,60 @@
     return;
   }
   // insert tx data into table
-  document.getElementById("permit.permitted.token").innerHTML = txData.permit.permitted.token;
-  document.getElementById("permit.permitted.amount").innerHTML = txData.permit.permitted.amount / 1e18;
-  document.getElementById("permit.nonce").innerHTML = txData.permit.nonce;
-  document.getElementById("permit.deadline").innerHTML = txData.permit.deadline;
-  document.getElementById("transferDetails.to").innerHTML = txData.transferDetails.to;
-  document.getElementById("transferDetails.requestedAmount").innerHTML = txData.transferDetails.requestedAmount / 1e18;
-  document.getElementById("owner").innerHTML = txData.owner;
-  document.getElementById("signature").innerHTML = txData.signature;
+  const table = document.getElementsByTagName(`table`)[0];
 
-  document.getElementById("claimButton").addEventListener("click", () => connectWallet(txData).then(withdraw).catch(console.error));
+  const requestedAmountElement = insertTableData(table);
+
+  await renderTokenSymbol(table, requestedAmountElement);
 })();
+
+
+
+function insertTableData(table) {
+  const requestedAmountElement = document.getElementById("transferDetails.requestedAmount");
+
+  // FOR
+  const toFull = document.querySelector("#For .full");
+  const toShort = document.querySelector("#For .short");
+  toFull.textContent = txData.transferDetails.to;
+  toShort.textContent = shortenAddress(txData.transferDetails.to);
+
+  const toBoth = document.getElementById(`transferDetails.to`);
+  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
+
+  // FOR
+
+  const tokenFull = document.querySelector("#Token .full");
+  const tokenShort = document.querySelector("#Token .short");
+  tokenFull.textContent = txData.permit.permitted.token;
+  tokenShort.textContent = shortenAddress(txData.permit.permitted.token);
+
+  const tokenBoth = document.getElementById(`permit.permitted.token`);
+  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
+
+
+
+  document.getElementById("permit.permitted.amount").textContent = txData.permit.permitted.amount / 1e18;
+  document.getElementById("permit.nonce").textContent = txData.permit.nonce;
+  document.getElementById("permit.deadline").textContent = txData.permit.deadline;
+  requestedAmountElement.textContent = txData.transferDetails.requestedAmount / 1e18;
+  document.getElementById("owner").textContent = txData.owner;
+  document.getElementById("signature").textContent = txData.signature;
+
+  table.setAttribute(`data-details-rendered`, "true");
+  return requestedAmountElement;
+}
+
+async function renderTokenSymbol(table, requestedAmountElement) {
+  const contract = await window.getContract(txData.permit.permitted.token);
+  // const name = await contract.name();
+  const symbol = await contract.symbol();
+  // console.trace(symbol);
+  table.setAttribute(`data-contract-loaded`, "true");
+  // https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${txData.transferDetails.requestedAmount / 1e18} ${symbol}</a>`;
+}
+
+function shortenAddress(address) {
+  return `${address.slice(0, 10)}...${address.slice(-8)}`;
+}

@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="styles/ubiquibank.css" rel="stylesheet" />
+    <link href="styles/background.css" rel="stylesheet" />
     <link href="styles/claim-table.css" rel="stylesheet" />
     <link href="styles/media-queries.css" rel="stylesheet" />
     <link href="styles/proxima.css" rel="stylesheet" />
@@ -13,6 +14,7 @@
   </head>
   <body>
     <background>
+      <div id="pre-grid"></div>
       <div id="grid"></div>
       <header>
         <a href="http://ubq.fi/"
@@ -32,49 +34,50 @@
     <main>
       <table>
         <tbody>
-          <tr>
+          <tr id="Amount">
             <th>Amount</th>
             <td id="transferDetails.requestedAmount">Loading...</td>
           </tr>
-          <tr>
+          <tr id="Token">
             <th>Token</th>
-            <td id="permit.permitted.token">Loading...</td>
+            <td id="permit.permitted.token"><span class="full"></span><span class="short">Loading...</span></td>
           </tr>
-          <tr>
+          <tr id="For">
             <th>For</th>
-            <td id="transferDetails.to">Loading...</td>
+            <td id="transferDetails.to"><span class="full"></span><span class="short">Loading...</span></td>
           </tr>
 
           <tr id="additional-details-border">
             <th>
-              <button id="additionalDetails">Details</button>
+
             </th>
             <td>
               <div id="controls">
                 <!-- <button id="btnConnectWallet">Connect Wallet</button> -->
+                <button id="additionalDetails">Details</button>
                 <button id="claimButton">Claim</button>
                 <!-- <aside></aside> -->
               </div>
             </td>
           </tr>
 
-          <tr>
-            <th>Remaining</th>
+          <tr id="Allowance">
+            <th>Allowance</th>
             <td id="permit.permitted.amount"></td>
           </tr>
-          <tr>
+          <tr id="From">
             <th>From</th>
             <td id="owner"></td>
           </tr>
-          <tr>
+          <tr id="Nonce">
             <th>Nonce</th>
             <td id="permit.nonce"></td>
           </tr>
-          <tr>
+          <tr id="Deadline">
             <th>Deadline</th>
             <td id="permit.deadline"></td>
           </tr>
-          <tr>
+          <tr id="Signature">
             <th>Signature</th>
             <td id="signature"></td>
           </tr>
@@ -88,9 +91,15 @@
       </div>
     </footer>
     <script></script>
+
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+
+    <script src="scripts/get-contract-abi.js" type="application/javascript"></script>
+    <script src="scripts/get-contract.js" type="application/javascript"></script>
     <script src="scripts/render-transaction.js" type="application/javascript"></script>
-    <script src="scripts/draw.js"></script>
+
     <script src="scripts/ubiquibank.js" type="application/javascript"></script>
+
+    <script async src="scripts/draw.js"></script>
   </body>
 </html>

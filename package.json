@@ -3,7 +3,7 @@
     "start": "run-s utils:hash start:sign start:ui",
     "start:ui": "static static",
     "start:sign": "tsx ./generate-permit/generate-permit2-url.ts",
-    "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
+    "utils:hash": "git rev-parse HEAD > static/commit.txt",
     "build": "run-s utils:hash",
     "format": "prettier --write ."
   },
