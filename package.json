@@ -4,6 +4,7 @@
     "start:ui": "static static",
     "start:sign": "tsx generate-permit2-url.ts",
     "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
+    "build": "run-s utils:hash",
     "format": "prettier --write ."
   },
   "dependencies": {
