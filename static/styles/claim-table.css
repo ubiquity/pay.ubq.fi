@@ -1,17 +1,16 @@
 table {border-collapse: collapse;/* max-width: 512px; *//* min-width: 360px; */width: 100%;/* background-color: #06061a; */}
 table a:hover,
 table a:hover > span{color:#fff;}
-table #controls {display: flex;flex-direction: row;justify-content: center;align-items: center;flex: 1;max-width: 320px;/* margin-right: 0; *//* margin-left: auto; *//* margin: auto; */}
-table #controls > button {flex: 1;/* column-count: auto; *//* text-align: left; */}
+table #controls {/* display: flex; *//* flex-direction: row; *//* justify-content: center; *//* align-items: center; *//* flex: 1; */max-width: 320px;/* margin-right: 0; *//* margin-left: auto; *//* margin: auto; */display: none;}
+table #controls > button {flex: 1;/* column-count: auto; *//* text-align: left; */padding: 0 24px;}
 table aside { text-transform: uppercase; font-weight: 100; letter-spacing: 2px; font-size: 16px; color: #808080; display: inline; vertical-align: middle; text-align: center; padding: 16px; }
 table button {user-select: none;appearance: none;border: none;background: none;cursor: pointer;outline: none;/* margin: 0; *//* padding: 16px; */height: 48px;}
-table button div {text-transform: uppercase;white-space: nowrap;/* font-size: 12px; *//* letter-spacing: 1px; */text-rendering: geometricPrecision;/* filter: drop-shadow(0 0 1px #fff); */color: #fff;font-weight: 900;}
+table button div {text-transform: uppercase;white-space: nowrap;/* font-size: 12px; *//* letter-spacing: 1px; */text-rendering: geometricPrecision;/* filter: drop-shadow(0 0 1px #fff); */color: #fff;/* font-weight: 900; */}
 table hr { background-color: #80808040; height: 1px; border: none; }
 table svg path {fill: #fff;}
 table td {word-break: break-word;/* color: #808080; *//* text-transform: initial; *//* letter-spacing: 1px; *//* font-size: 16px; *//* text-align: justify; */}
 table th {text-align: right;color: #80808080;/* font-weight: 400; *//* text-transform: uppercase; *//* letter-spacing: 2px; *//* font-size: 16px; *//* vertical-align: middle; *//* margin-left: 29px; */}
 table th, table td {padding: 8px;text-rendering: geometricPrecision;/* vertical-align: middle; */max-width: 320px;}
-table tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
 table tr:first-of-type > * {padding-top: 24px;}
 table tr:last-child td div > div { width: 50%; display: inline-block; vertical-align: middle; }
 table tr:last-of-type > * { padding-bottom: 24px; }
@@ -20,16 +19,17 @@ table tr#additional-details-border > * { padding: 0; margin: 0; }
 /*  */
 
 table[data-details-rendered] {border: 1px solid #80808020;border-right: 0;border-left: 0;/* border-bottom: 0; */}
+table[data-details-rendered] #controls {display: flex;}
 table[data-details-rendered] button { opacity: 0.5; }
 table[data-details-rendered] button:disabled { opacity: 0.25; pointer-events: none; }
 table[data-details-rendered] button:hover {background-color: #80808020;opacity: 1;}
 table[data-details-rendered] button > div {display: none;/* padding: 16px; */}
 table[data-details-rendered] button > svg {display: unset;}
-table[data-details-rendered] button:hover > div {display: unset;}
+table[data-details-rendered] button:hover > div {display: unset;/* text-align: left; *//* display: block; */}
 table[data-details-rendered] button:hover > svg {display: none;}
 table[data-details-rendered] button#additionalDetails { width: 100%; opacity: 0.25; }
 table[data-details-rendered] button#additionalDetails:hover { opacity: 1; }
-table[data-details-rendered] tr {/* background-color: #80808008; *//* border-top: 1px solid #80808020; *//* background-color: #06061a; */}
+table[data-details-rendered] tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
 table[data-details-rendered] tr#additional-details-border {border: 1px solid #80808020;border-left: 0;border-right: 0;}
 table[data-details-rendered] tr#additional-details-border + tr > * { padding-top: 24px; }
 table[data-details-rendered] tr#additional-details-border > * {/* padding-top: 12px; */}
