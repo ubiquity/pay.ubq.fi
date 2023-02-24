@@ -23,11 +23,9 @@
     shade: 128,
     step: 0.015625,
     refresh: 1000 / 15,
-    target: document.getElementById('grid'),
+    target: document.getElementById("grid"),
     // id: 'canvas'
   });
-
-
 })();
 
 window.onerror = function (message, source, lineno, colno, error) {
