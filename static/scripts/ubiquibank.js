@@ -9,6 +9,8 @@
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
+  document.getElementById("claimButton").addEventListener("click", () => window.connectWallet(window.txData).then(withdraw).catch(console.error));
+
   // display commit hash
   const commit = await fetch("commit.txt");
   const commitHash = await commit.text();

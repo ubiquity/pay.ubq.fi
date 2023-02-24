@@ -7,7 +7,7 @@
     alert(`No claim data passed in URL.\n\nhttps://pay.ubq.fi?claim=...`);
     return;
   }
-  let txData;
+  window.txData;
 
   try {
     txData = JSON.parse(atob(base64encodedTxData));
@@ -16,14 +16,29 @@
     return;
   }
   // insert tx data into table
-  document.getElementById("permit.permitted.token").innerHTML = txData.permit.permitted.token;
-  document.getElementById("permit.permitted.amount").innerHTML = txData.permit.permitted.amount / 1e18;
-  document.getElementById("permit.nonce").innerHTML = txData.permit.nonce;
-  document.getElementById("permit.deadline").innerHTML = txData.permit.deadline;
-  document.getElementById("transferDetails.to").innerHTML = txData.transferDetails.to;
-  document.getElementById("transferDetails.requestedAmount").innerHTML = txData.transferDetails.requestedAmount / 1e18;
-  document.getElementById("owner").innerHTML = txData.owner;
-  document.getElementById("signature").innerHTML = txData.signature;
+  const table = document.getElementsByTagName(`table`)[0];
 
-  document.getElementById("claimButton").addEventListener("click", () => connectWallet(txData).then(withdraw).catch(console.error));
+  const requestedAmountElement = document.getElementById("transferDetails.requestedAmount");
+
+  document.getElementById("permit.permitted.token").textContent = txData.permit.permitted.token;
+  document.getElementById("permit.permitted.amount").textContent = txData.permit.permitted.amount / 1e18;
+  document.getElementById("permit.nonce").textContent = txData.permit.nonce;
+  document.getElementById("permit.deadline").textContent = txData.permit.deadline;
+  document.getElementById("transferDetails.to").textContent = txData.transferDetails.to;
+  requestedAmountElement.textContent = txData.transferDetails.requestedAmount / 1e18;
+  document.getElementById("owner").textContent = txData.owner;
+  document.getElementById("signature").textContent = txData.signature;
+
+  table.setAttribute(`data-details-rendered`, "true");
+
+
+
+  // read token symbol
+  const contract = await window.getContract(txData.permit.permitted.token)
+  // const name = await contract.name();
+  const symbol = await contract.symbol();
+  // console.trace(symbol);
+  table.setAttribute(`data-contract-loaded`, "true");
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.permit.permitted.token}">${txData.transferDetails.requestedAmount / 1e18} ${symbol}</a>`;
+  // document.getElementById("Token").style.display = "none";
 })();

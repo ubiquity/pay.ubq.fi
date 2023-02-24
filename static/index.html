@@ -34,15 +34,15 @@
     <main>
       <table>
         <tbody>
-          <tr>
+          <tr<tr id="Amount">
             <th>Amount</th>
             <td id="transferDetails.requestedAmount">Loading...</td>
           </tr>
-          <tr>
+          <tr id="Token">
             <th>Token</th>
             <td id="permit.permitted.token">Loading...</td>
           </tr>
-          <tr>
+          <tr id="For">
             <th>For</th>
             <td id="transferDetails.to">Loading...</td>
           </tr>
@@ -60,23 +60,23 @@
             </td>
           </tr>
 
-          <tr>
-            <th>Remaining</th>
+          <tr id="Allowance">
+            <th>Allowance</th>
             <td id="permit.permitted.amount"></td>
           </tr>
-          <tr>
+          <tr id="From">
             <th>From</th>
             <td id="owner"></td>
           </tr>
-          <tr>
+          <tr id="Nonce">
             <th>Nonce</th>
             <td id="permit.nonce"></td>
           </tr>
-          <tr>
+          <tr id="Deadline">
             <th>Deadline</th>
             <td id="permit.deadline"></td>
           </tr>
-          <tr>
+          <tr id="Signature">
             <th>Signature</th>
             <td id="signature"></td>
           </tr>
@@ -90,9 +90,15 @@
       </div>
     </footer>
     <script></script>
+
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+
+    <script src="scripts/get-contract-abi.js" type="application/javascript"></script>
+    <script src="scripts/read-contract.js" type="application/javascript"></script>
     <script src="scripts/render-transaction.js" type="application/javascript"></script>
-    <script src="scripts/draw.js"></script>
+
     <script src="scripts/ubiquibank.js" type="application/javascript"></script>
+
+    <script async src="scripts/draw.js"></script>
   </body>
 </html>

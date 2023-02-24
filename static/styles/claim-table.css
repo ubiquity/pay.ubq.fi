@@ -1,130 +1,36 @@
-table {
-  border-collapse: collapse;
-  max-width: 512px;
-}
-table tr {
-  background-color: #80808000;
-  transition: 0.125s ease-in-out opacity;
-}
-table[data-details-visible] tr {
-  background-color: #80808010;
-}
+table { border-collapse: collapse; max-width: 512px; }
+table #controls { display: flex; flex-direction: row; justify-content: center; align-items: center; flex: 1; }
+table #controls > * { flex: 2; }
+table aside { text-transform: uppercase; font-weight: 100; letter-spacing: 2px; font-size: 16px; color: #808080; display: inline; vertical-align: middle; text-align: center; padding: 16px; }
+table button { user-select: none; appearance: none; border: none; background: none; cursor: pointer; outline: none; margin: 0; padding: 16px; text-transform: uppercase; white-space: nowrap; opacity: 0; font-size: 12px; letter-spacing: 1px; }
+table hr { background-color: #80808040; height: 1px; border: none; }
+table svg { height: 16px; width: 16px; display: block; margin: 0; padding: 0; }
+table td { word-break: break-word; color: #808080; }
+table th { text-align: right; color: #80808080; }
+table th, table td { padding: 8px; text-rendering: geometricPrecision; }
+table tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
+table tr:first-of-type > * { padding-top: 24px; }
+table tr:last-child td div > div { width: 50%; display: inline-block; vertical-align: middle; }
+table tr:last-of-type > * { padding-bottom: 24px; }
+table tr#additional-details-border > * { padding: 0; margin: 0; }
 
-/* table[data-details-visible] is when the table is ready, and displaying data */
+/*  */
 
-table button {
-  user-select: none;
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  outline: none; /* padding: 0; */
-  margin: 0;
-  padding: 16px;
-  /* background-color: #80808040; */
-  text-transform: uppercase; /* letter-spacing: 2px; */
-  white-space: nowrap;
-  opacity: 0;
-  font-size: 12px;
-  letter-spacing: 1px;
-  border-radius: 4px; /* margin: 0 2px; */
-}
-table[data-details-visible] button {
-  opacity: 0.5;
-}
-table[data-details-visible] button:disabled {
-  opacity: 0.25;
-  pointer-events: none;
-}
-table[data-details-visible] button:hover {
-  /* background-color: #80808080; */
-  opacity: 1;
-}
-table[data-details-visible] button#additionalDetails {
-  width: 100%;
-  opacity: 0.25;
-}
-table[data-details-visible] button#additionalDetails:hover {
-  opacity: 1;
-}
+table[data-details-rendered] button { opacity: 0.5; }
+table[data-details-rendered] button:disabled { opacity: 0.25; pointer-events: none; }
+table[data-details-rendered] button:hover { background-color: #80808020; opacity: 1; }
+table[data-details-rendered] button#additionalDetails { width: 100%; opacity: 0.25; }
+table[data-details-rendered] button#additionalDetails:hover { opacity: 1; }
+table[data-details-rendered] tr { background-color: #80808010; }
+table[data-details-rendered] tr#additional-details-border + tr > * { padding-top: 24px; }
+table[data-details-rendered] tr#additional-details-border > * { padding-top: 12px; }
 
-table th,
-table td {
-  padding: 8px;
-  text-rendering: geometricPrecision;
-}
-table th {
-  text-align: right;
-  color: #80808080;
-}
-table td {
-  word-break: break-word;
-  color: #808080;
-}
+/*  */
 
-table svg {
-  height: 16px;
-  width: 16px;
-  display: block;
-  margin: 0;
-  padding: 0;
-}
-table aside {
-  text-transform: uppercase;
-  font-weight: 100;
-  letter-spacing: 2px;
-  font-size: 16px;
-  color: #808080;
-  display: inline;
-  vertical-align: middle;
-  text-align: center;
-  padding: 16px;
-}
-table hr {
-  background-color: #80808040;
-  height: 1px;
-  border: none;
-}
-table tr:last-child td div > div {
-  width: 50%;
-  display: inline-block;
-  vertical-align: middle;
-}
-table #controls {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-}
-table #controls > * {
-  flex: 2;
-}
-table #additional-details-border ~ tr,
-table[data-details-visible="false"] #additional-details-border ~ tr {
-  opacity: 0;
-  transition: 0.125s ease-in-out;
-  /* overflow: hidden; */
-  /* display: none; */
-}
-table[data-details-visible="true"] #additional-details-border ~ tr {
-  opacity: 1;
-  transition: 0.125s ease-in-out;
-}
-table tr:first-of-type > * {
-  padding-top: 24px;
-}
-table tr#additional-details-border > * {
-  padding: 0;
-  margin: 0;
-}
-table tr:last-of-type > * {
-  padding-bottom: 24px;
-}
+table #additional-details-border ~ tr, table[data-details-visible="false"] #additional-details-border ~ tr { opacity: 0; transition: 0.125s ease-in-out; }
+table[data-details-visible="true"] #additional-details-border ~ tr { opacity: 1; transition: 0.125s ease-in-out; }
 
-table[data-details-visible] tr#additional-details-border > * {
-  padding-top: 12px;
-}
-table[data-details-visible] tr#additional-details-border + tr > * {
-  padding-top: 24px;
+/*  */
+table[data-contract-loaded] #Token{
+    display: none;
 }
