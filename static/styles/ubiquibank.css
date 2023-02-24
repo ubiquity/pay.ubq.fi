@@ -1,5 +1,5 @@
 * {color: #808080;font-family: "Ubiquity Nova", FT Base, -apple-system, system-ui, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica, Arial, sans-serif;line-height: 1;padding: 0;margin: 0;/* box-sizing: unset; *//* text-align: center; */font-size: 12px;font-weight: 400;text-transform: uppercase;letter-spacing: 2px;}
-body {min-height: 100vh;/* background-color: #06061a; */background-color: #000820;background-color: #000;}
+body {min-height: 100vh;}
 body, main { max-width: 100vw; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 main {width: 100%;padding: 24px 0;position: relative;}
 a { text-decoration: none; }
