@@ -79,10 +79,13 @@ async function renderEnsName(element, address) {
   const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
   try {
     const resolved = await ensResolve.json();
-    console.log({resolved})
+    let ensName;
     if (resolved.reverseRecord) {
-      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${resolved.reverseRecord}</a>`;
+      ensName = resolved.reverseRecord;
+    } else if (resolved.domains.length) {
+      ensName = resolved.domains.shift()
     }
+    element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ensName}</a>`;
   } catch (error) { }
 }
 
