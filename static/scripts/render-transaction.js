@@ -101,7 +101,7 @@ async function renderEnsName(element, address, tokenView) {
 }
 
 async function renderTokenSymbol(table, requestedAmountElement) {
-  const contract = await window.getContract(txData.permit.permitted.token);
+  const contract = await window.getERC20Contract(txData.permit.permitted.token);
   const symbol = await contract.symbol();
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${txData.transferDetails.requestedAmount / 1e18} ${symbol}</a>`;
