@@ -90,10 +90,10 @@ async function renderEnsName(element, address, tokenView) {
     }
     if (ensName) {
       if (tokenView) {
-        href = `https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}`
+        href = `https://etherscan.io/token/${txData.permit.permitted.token}?a=${address}`
       }
       else {
-        href = `https://etherscan.io/address/${txData.owner}"`
+        href = `https://etherscan.io/address/${address}"`
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
