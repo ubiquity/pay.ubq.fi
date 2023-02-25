@@ -83,7 +83,8 @@ async function renderEnsName(element, address) {
     if (resolved.reverseRecord) {
       ensName = resolved.reverseRecord;
     } else if (resolved.domains.length) {
-      ensName = resolved.domains.shift()
+      const domain = resolved.domains.shift()
+      if (domain) ensName = domain
     }
     element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ensName}</a>`;
   } catch (error) { }
