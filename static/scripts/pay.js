@@ -21,7 +21,6 @@
   }
   // check system light mode
   const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  // const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
 
   const drawConfig = {
     cell_resolution: 24,
@@ -30,7 +29,6 @@
     step: 0.01,
     refresh: 1000 / 60,
     target: document.getElementById("grid"),
-    // id: 'canvas'
   }
 
   systemPrefersDark && window.draw(drawConfig);
