@@ -20,13 +20,13 @@
 
   const requestedAmountElement = await insertTableData(table);
 
-  await renderTokenSymbol(table, requestedAmountElement);
+   renderTokenSymbol(table, requestedAmountElement).catch(console.error);
 
   const toElement = document.getElementById(`transferDetails.to`);
   const fromElement = document.getElementById("owner")
 
-  await renderEnsName(toElement, txData.transferDetails.to);
-  await renderEnsName(fromElement, txData.owner, true);
+   renderEnsName(toElement, txData.transferDetails.to).catch(console.error);
+  await renderEnsName(fromElement, txData.owner, true).catch(console.error);
 })();
 
 // const ensRegistryWithFallbackAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
