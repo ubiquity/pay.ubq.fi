@@ -23,6 +23,7 @@ background #pre-grid {
   background-repeat: repeat;
 }
 background #grid {
+  /* opacity:1 */
 }
 background #grid > canvas {
 }
