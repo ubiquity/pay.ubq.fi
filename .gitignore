@@ -4,3 +4,4 @@ node_modules
 out
 .yarn
 .DS_Store
+commit.txt
