@@ -18,26 +18,37 @@
   // insert tx data into table
   const table = document.getElementsByTagName(`table`)[0];
 
-  const requestedAmountElement = insertTableData(table);
+  const requestedAmountElement = await insertTableData(table);
 
   await renderTokenSymbol(table, requestedAmountElement);
+
+  const toElement = document.getElementById(`transferDetails.to`);
+  const fromElement = document.getElementById("owner")
+
+  await renderEnsName(toElement, txData.transferDetails.to);
+  await renderEnsName(fromElement, txData.owner);
 })();
 
+// const ensRegistryWithFallbackAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
 
-
-function insertTableData(table) {
+async function insertTableData(table) {
   const requestedAmountElement = document.getElementById("transferDetails.requestedAmount");
 
-  // FOR
+  // TO
   const toFull = document.querySelector("#To .full");
   const toShort = document.querySelector("#To .short");
   toFull.textContent = txData.transferDetails.to;
   toShort.textContent = shortenAddress(txData.transferDetails.to);
 
+  // fetch ens name
+  // const ensName = await fetch(`https://api.ens.domains/v1/name/${txData.transferDetails.to}`)
+  // await
+
+
   const toBoth = document.getElementById(`transferDetails.to`);
   toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
 
-  // FOR
+  // TOKEN
 
   const tokenFull = document.querySelector("#Token .full");
   const tokenShort = document.querySelector("#Token .short");
@@ -60,6 +71,27 @@ function insertTableData(table) {
 
   table.setAttribute(`data-details-rendered`, "true");
   return requestedAmountElement;
+}
+
+async function renderEnsName(element, address) {
+  // const provider = new ethers.providers.Web3Provider(window.ethereum);
+  // const ens = await provider.lookupAddress(address);
+  const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
+  try {
+    const resolved = await ensResolve.json();
+    let ensName;
+    if (resolved.reverseRecord) {
+      ensName = resolved.reverseRecord;
+    } else if (resolved.domains.length) {
+      const domain = resolved.domains.shift()
+      if (domain) {
+        ensName = domain
+      }
+    }
+    if (ensName) {
+      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ensName}</a>`;
+    }
+  } catch (error) { }
 }
 
 async function renderTokenSymbol(table, requestedAmountElement) {
