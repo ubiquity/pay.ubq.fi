@@ -76,7 +76,7 @@ async function insertTableData(table) {
 async function renderEnsName(element, address) {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const ens = await provider.lookupAddress(address);
-  element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ens}</a>`;
+  if (ens) element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ens}</a>`;
 }
 
 async function renderTokenSymbol(table, requestedAmountElement) {
