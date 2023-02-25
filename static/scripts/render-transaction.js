@@ -26,7 +26,7 @@
   const fromElement = document.getElementById("owner")
 
   await renderEnsName(toElement, txData.transferDetails.to);
-  await renderEnsName(fromElement, txData.owner);
+  await renderEnsName(fromElement, txData.owner, true);
 })();
 
 // const ensRegistryWithFallbackAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
@@ -73,7 +73,7 @@ async function insertTableData(table) {
   return requestedAmountElement;
 }
 
-async function renderEnsName(element, address) {
+async function renderEnsName(element, address, tokenView) {
   // const provider = new ethers.providers.Web3Provider(window.ethereum);
   // const ens = await provider.lookupAddress(address);
   const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
@@ -89,7 +89,13 @@ async function renderEnsName(element, address) {
       }
     }
     if (ensName) {
-      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ensName}</a>`;
+      if (tokenView) {
+        href = `https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}`
+      }
+      else {
+        href = `https://etherscan.io/address/${txData.owner}"`
+      }
+      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
   } catch (error) { }
 }
