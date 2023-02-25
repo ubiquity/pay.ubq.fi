@@ -13,21 +13,28 @@
 
   // display commit hash
   const commit = await fetch("commit.txt");
-  const commitHash = await commit.text();
-  const buildElement = document.querySelector(`#build a`);
-  buildElement.innerHTML = `${commitHash}`;
-  buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
+  if (commit.ok) {
+    const commitHash = await commit.text();
+    const buildElement = document.querySelector(`#build a`);
+    buildElement.innerHTML = `${commitHash}`;
+    buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
+  }
+  // check system light mode
+  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  // const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
 
-  // draw grid
-  window.draw({
+  const drawConfig = {
     cell_resolution: 24,
     point_resolution: 1,
-    shade: 128,
-    step: 0.015625,
-    refresh: 1000 / 15,
+    shade: 255,
+    step: 0.01,
+    refresh: 1000 / 60,
     target: document.getElementById("grid"),
     // id: 'canvas'
-  });
+  }
+
+  systemPrefersDark && window.draw(drawConfig);
+
 })();
 
 window.onerror = function (error) {

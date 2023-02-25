@@ -1,6 +1,6 @@
 table {border-collapse: collapse;/* max-width: 512px; *//* min-width: 360px; */width: 100%;/* background-color: #06061a; */}
 table a:hover,
-table a:hover > span{color:#fff;}
+table a:hover > div{color:#fff;}
 table #controls {/* display: flex; *//* flex-direction: row; *//* justify-content: center; *//* align-items: center; *//* flex: 1; */max-width: 320px;/* margin-right: 0; *//* margin-left: auto; *//* margin: auto; */display: none;}
 table #controls > button {flex: 1;/* column-count: auto; *//* text-align: left; */padding: 0 24px;}
 table aside { text-transform: uppercase; font-weight: 100; letter-spacing: 2px; font-size: 16px; color: #808080; display: inline; vertical-align: middle; text-align: center; padding: 16px; }
