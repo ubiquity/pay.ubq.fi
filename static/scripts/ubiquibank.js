@@ -23,7 +23,7 @@
   // const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
 
   const drawConfig = {
-    cell_resolution: 48,
+    cell_resolution: 24,
     point_resolution: 1,
     shade: 255,
     step: 0.01,
