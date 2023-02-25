@@ -27,4 +27,5 @@
   table a:hover > div {
     color: #000;
   }
+  div#build > a { color: #000; }
 }

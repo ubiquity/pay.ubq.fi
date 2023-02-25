@@ -13,11 +13,12 @@
 
   // display commit hash
   const commit = await fetch("commit.txt");
-  const commitHash = await commit.text();
-  const buildElement = document.querySelector(`#build a`);
-  buildElement.innerHTML = `${commitHash}`;
-  buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
-
+  if (commit.ok) {
+    const commitHash = await commit.text();
+    const buildElement = document.querySelector(`#build a`);
+    buildElement.innerHTML = `${commitHash}`;
+    buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
+  }
   // check system light mode
   const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   // const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
