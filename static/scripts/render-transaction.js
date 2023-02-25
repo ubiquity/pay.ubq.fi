@@ -74,9 +74,16 @@ async function insertTableData(table) {
 }
 
 async function renderEnsName(element, address) {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const ens = await provider.lookupAddress(address);
-  if (ens) element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${ens}</a>`;
+  // const provider = new ethers.providers.Web3Provider(window.ethereum);
+  // const ens = await provider.lookupAddress(address);
+  const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
+  try {
+    const resolved = await ensResolve.json();
+    console.log({resolved})
+    if (resolved.reverseRecord) {
+      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${txData.owner}">${resolved.reverseRecord}</a>`;
+    }
+  } catch (error) { }
 }
 
 async function renderTokenSymbol(table, requestedAmountElement) {
