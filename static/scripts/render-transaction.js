@@ -7,7 +7,7 @@
   const base64encodedTxData = urlParams.get("claim");
 
   if (!base64encodedTxData) {
-    setClaimMessage("Warning", `No claim data passed in URL: https://pay.ubq.fi?claim=...`)
+    setClaimMessage("Notice", `No claim data found.`)
     table.setAttribute(`data-claim`, "none");
     return;
   }
@@ -16,7 +16,7 @@
   try {
     txData = JSON.parse(atob(base64encodedTxData));
   } catch (error) {
-    setClaimMessage("Error", `Invalid claim data passed in URL!`)
+    setClaimMessage("Error", `Invalid claim data passed in URL.`)
     table.setAttribute(`data-claim`, "error");
     return;
   }
