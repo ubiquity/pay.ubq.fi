@@ -1,10 +1,14 @@
 (async function () {
+  const table = document.getElementsByTagName(`table`)[0];
+
+
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
 
   if (!base64encodedTxData) {
-    alert(`No claim data passed in URL.\n\nhttps://pay.ubq.fi?claim=...`);
+    setClaimMessage("Notice", `No claim data found.`)
+    table.setAttribute(`data-claim`, "none");
     return;
   }
   window.txData;
@@ -12,22 +16,30 @@
   try {
     txData = JSON.parse(atob(base64encodedTxData));
   } catch (error) {
-    alert(`Invalid claim data passed in URL.`);
+    setClaimMessage("Error", `Invalid claim data passed in URL.`)
+    table.setAttribute(`data-claim`, "error");
     return;
   }
   // insert tx data into table
-  const table = document.getElementsByTagName(`table`)[0];
+
 
   const requestedAmountElement = await insertTableData(table);
-
-   renderTokenSymbol(table, requestedAmountElement).catch(console.error);
+  table.setAttribute(`data-claim`, "ok");
+  renderTokenSymbol(table, requestedAmountElement).catch(console.error);
 
   const toElement = document.getElementById(`transferDetails.to`);
   const fromElement = document.getElementById("owner")
 
-   renderEnsName(toElement, txData.transferDetails.to).catch(console.error);
+  renderEnsName(toElement, txData.transferDetails.to).catch(console.error);
   await renderEnsName(fromElement, txData.owner, true).catch(console.error);
 })();
+
+function setClaimMessage(type, message) {
+  const claimMessageTypeElement = document.querySelector(`table > thead th`);
+  const claimMessageBodyElement = document.querySelector(`table > thead td`);
+  claimMessageTypeElement.textContent = type;
+  claimMessageBodyElement.textContent = message;
+}
 
 // const ensRegistryWithFallbackAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
 
@@ -69,7 +81,7 @@ async function insertTableData(table) {
   requestedAmountElement.textContent = txData.transferDetails.requestedAmount / 1e18;
   document.getElementById("signature").textContent = txData.signature;
 
-  table.setAttribute(`data-details-rendered`, "true");
+  table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
