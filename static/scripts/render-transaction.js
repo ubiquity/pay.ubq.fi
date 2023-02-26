@@ -69,7 +69,7 @@ async function insertTableData(table) {
   requestedAmountElement.textContent = txData.transferDetails.requestedAmount / 1e18;
   document.getElementById("signature").textContent = txData.signature;
 
-  table.setAttribute(`data-details-rendered`, "true");
+  table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;
 }
 

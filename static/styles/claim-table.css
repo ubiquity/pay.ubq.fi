@@ -18,21 +18,21 @@ table tr#additional-details-border > * { padding: 0; margin: 0; }
 
 /*  */
 
-table[data-details-rendered] {border: 1px solid #80808020;border-right: 0;border-left: 0;/* border-bottom: 0; */}
-table[data-details-rendered] #controls {display: flex;}
-table[data-details-rendered] button { opacity: 0.5; }
-table[data-details-rendered] button:disabled { opacity: 0.25; pointer-events: none; }
-table[data-details-rendered] button:hover {background-color: #80808020;opacity: 1;}
-table[data-details-rendered] button > div {display: none;/* padding: 16px; */}
-table[data-details-rendered] button > svg {display: unset;}
-table[data-details-rendered] button:hover > div {display: unset;/* text-align: left; *//* display: block; */}
-table[data-details-rendered] button:hover > svg {display: none;}
-table[data-details-rendered] button#additionalDetails { width: 100%; opacity: 0.25; }
-table[data-details-rendered] button#additionalDetails:hover { opacity: 1; }
-table[data-details-rendered] tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
-table[data-details-rendered] tr#additional-details-border {border: 1px solid #80808020;border-left: 0;border-right: 0;}
-table[data-details-rendered] tr#additional-details-border + tr > * { padding-top: 24px; }
-table[data-details-rendered] tr#additional-details-border > * {/* padding-top: 12px; */}
+table[data-claim-rendered] {border: 1px solid #80808020;border-right: 0;border-left: 0;/* border-bottom: 0; */}
+table[data-claim-rendered] #controls {display: flex;}
+table[data-claim-rendered] button { opacity: 0.5; }
+table[data-claim-rendered] button:disabled { opacity: 0.25; pointer-events: none; }
+table[data-claim-rendered] button:hover {background-color: #80808020;opacity: 1;}
+table[data-claim-rendered] button > div {display: none;/* padding: 16px; */}
+table[data-claim-rendered] button > svg {display: unset;}
+table[data-claim-rendered] button:hover > div {display: unset;/* text-align: left; *//* display: block; */}
+table[data-claim-rendered] button:hover > svg {display: none;}
+table[data-claim-rendered] button#additionalDetails { width: 100%; opacity: 0.25; }
+table[data-claim-rendered] button#additionalDetails:hover { opacity: 1; }
+table[data-claim-rendered] tr { background-color: #80808000; transition: 0.125s ease-in-out opacity; }
+table[data-claim-rendered] tr#additional-details-border {border: 1px solid #80808020;border-left: 0;border-right: 0;}
+table[data-claim-rendered] tr#additional-details-border + tr > * { padding-top: 24px; }
+table[data-claim-rendered] tr#additional-details-border > * {/* padding-top: 12px; */}
 
 /*  */
 
