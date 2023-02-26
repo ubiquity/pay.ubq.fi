@@ -62,3 +62,17 @@ table[data-details-visible="true"] #transferDetails\.to .short{ display: none; }
 table[data-details-visible="true"] #transferDetails\.to .full,
 table[data-details-visible="false"] #transferDetails\.to .short{ display: initial; }
 #To > th,#To > td{padding-bottom: 24px;}
+
+/*  */
+/*  */
+/*  */
+/*  */
+/* table { text-align: center;} */
+table thead { display: table-row-group }
+table tbody { display: none }
+table[data-claim="none"] thead{display:table-row-group}
+table[data-claim="error"] thead{display:table-row-group}
+table[data-claim="ok"] thead{display:none}
+table[data-claim="none"] tbody{display:none}
+table[data-claim="error"] tbody{display:none}
+table[data-claim="ok"] tbody{display:table-row-group}
