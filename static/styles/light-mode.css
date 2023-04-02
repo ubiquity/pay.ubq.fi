@@ -4,30 +4,37 @@
     background-color: #fff;
     color: #000;
   }
-  table a:hover > div {
+
+  table a:hover>div {
     color: #000;
   }
-  #transferDetails\.requestedAmount > a {
+
+  #transferDetails\.requestedAmount>a {
     color: #000;
   }
+
   table svg path {
     fill: #000;
   }
 
-  #logo-icon > svg {
+  #logo-icon>svg {
     fill: #000;
   }
-  #logo > div#logo-text > span {
+
+  #logo>div#logo-text>span {
     color: #000;
   }
+
   table button div {
     color: #000;
   }
+
   table a:hover,
-  table a:hover > div {
+  table a:hover>div {
     color: #000;
   }
-  div#build > a {
+
+  div#build>a {
     color: #000;
   }
 }
