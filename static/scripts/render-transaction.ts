@@ -1,4 +1,4 @@
-import { getERC20Contract } from "./getContract";
+import { getERC20Contract } from "./get-contract";
 
 export type TxType = {
   permit: {

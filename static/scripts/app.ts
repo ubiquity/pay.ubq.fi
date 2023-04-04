@@ -1,6 +1,6 @@
 import { drawInit } from "./draw";
 import { pay } from "./pay";
-import { renderTransaction } from "./renderTransaction";
+import { renderTransaction } from "./render-transaction";
 
 const init = async () => {
   await drawInit();

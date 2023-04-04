@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { permit2Abi } from "./abis";
-import { TxType, txData } from "./renderTransaction";
+import { TxType, txData } from "./render-transaction";
 
 window.onerror = function (error: any) {
   const output = document.querySelector(`footer>code`) as Element;
