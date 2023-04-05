@@ -3,8 +3,9 @@
     "start": "run-s utils:hash start:sign start:ui",
     "start:ui": "static static",
     "start:sign": "tsx ./generate-permit/generate-permit2-url.ts",
+    "utils:build": "tsx build.ts",
     "utils:hash": "git rev-parse HEAD > static/commit.txt",
-    "build": "yarn utils:hash && tsx build.ts",
+    "build": "run-s utils:hash utils:build",
     "format": "prettier --write ."
   },
   "dependencies": {
