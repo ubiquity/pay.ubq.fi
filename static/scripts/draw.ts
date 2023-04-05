@@ -1,4 +1,7 @@
-(function draw() {
+//@ts-nocheck
+//@todo make it ts compatible
+
+export const drawInit = (): void => {
   var Cell = function Cell(settings) {
     var keys = Object.keys(settings),
       x = keys.length;
@@ -106,7 +109,7 @@
   var local_settings = null;
   var resize_handler_set = false;
 
-  window.draw = function draw(settings) {
+  (window as any).draw = function draw(settings) {
     var temp_resize_switch = true;
     var offset;
 
@@ -184,4 +187,4 @@
     temp_resize_switch && prep(context, settings);
     //  <== out
   };
-})();
+};
