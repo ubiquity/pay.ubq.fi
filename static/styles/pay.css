@@ -128,3 +128,11 @@ div#build>a {
 div#build>a:hover {
     opacity: 1;
 }
+
+#value-red {
+    color: #ff1919;
+}
+
+#value-green {
+    color: #17d117;
+}

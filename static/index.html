@@ -1,57 +1,104 @@
 <!DOCTYPE html>
-<html
-	><head
-		><title>DevPool Claims | Ubiquity DAO</title
-		><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="out/styles/app.css" rel="stylesheet" /><link
-			rel="apple-touch-icon"
-			sizes="180x180"
-			href="apple-touch-icon.png" /><link rel="icon" type="image/png" sizes="32x32" href="media/favicon.png" /></head
-	><body
-		><background
-			><div id="pre-grid"></div><div id="grid"></div
-			><header
-				><a href="http://ubq.fi/"
-					><div id="logo"
-						><div id="logo-icon"
-							><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 151" fill="currentColor">
-								<path
-									d="M132 41.1c0-2.3-1.3-4.5-3.3-5.7L69.4 1.2c-1-.6-2.1-.9-3.3-.9-1.1 0-2.3.3-3.3.9L3.6 35.4c-2 1.2-3.3 3.3-3.3 5.7v68.5c0 2.3 1.3 4.5 3.3 5.7l59.3 34.2c2 1.2 4.5 1.2 6.5 0l59.3-34.2c2-1.2 3.3-3.3 3.3-5.7V41.1zm-11.9 62.5c0 2.7-1.4 5.2-3.7 6.5l-46.6 27.5c-1.1.7-2.4 1-3.7 1s-2.5-.3-3.7-1l-46.6-27.5c-2.3-1.3-3.7-3.8-3.7-6.5V54.1c0-1.2.6-2.4 1.7-3 1.1-.6 2.3-.6 3.4 0l8 4.7c1.9 1.1 3 3.3 4.4 5.8.3.5.5 1 .8 1.4 3.5 6.3 5.2 13 6.8 19.5 3 11.9 6 24.2 21.3 28.2 5 1.3 10.4 1.3 15.4 0 15.2-4 18.3-16.3 21.3-28.2C96.8 76 98.5 69.3 102 63c.3-.5.5-1 .8-1.4 1.3-2.5 2.5-4.6 4.4-5.8l8-4.7c1-.6 2.3-.6 3.4 0s1.7 1.7 1.7 3v49.5zM62.6 13.7c2.2-1.3 4.9-1.3 7.1 0L110 37.6c1 .6 1.6 1 1.6 2.2 0 1.2-.6 1.9-1.6 2.5l-7.7 4.6c-3.4 2-5.1 5.2-6.6 8.1l-.1.2c-.2.4-.4.7-.6 1.1-3.8 6.8-6.6 14-8.2 20.4C83.6 89.1 82.4 97.3 72 100c-1.9.5-3.9.7-5.8.7-2 0-3.9-.3-5.8-.7C50 97.3 48.7 89.1 45.6 76.6 44 70.2 41.2 63 37.4 56.2c-.2-.3-.4-.7-.6-1l-.1-.3c-1.5-2.8-3.3-6.1-6.6-8.1l-7.7-4.6c-1-.6-1.6-1.3-1.6-2.5s.6-1.6 1.6-2.2l40.2-23.8z"
-								></path></svg></div
-						><div id="logo-text"><span>Ubiquity DAO</span><span>DevPool Claims</span></div></div
-					></a
-				></header
-			></background
-		><main
-			><table
-				><thead
-					><tr><th>Notice</th><td>Loading...</td></tr></thead
-				><tbody
-					><tr id="Amount"><th>Amount</th><td id="transferDetails.requestedAmount">Loading...</td></tr
-					><tr id="Token"
-						><th>Token</th><td id="permit.permitted.token"><span class="full"></span><span class="short">Loading...</span></td></tr
-					><tr id="To"
-						><th>To</th><td id="transferDetails.to"><span class="full"></span><span class="short">Loading...</span></td></tr
-					><tr id="additional-details-border"
-						><th></th
-						><td
-							><div id="controls"
-								><!--<button id="btnConnectWallet">Connect Wallet</button> --><button id="additionalDetails"
-									><div>Details</div
-									><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
-										<path
-											d="M481.915 798Q497 798 507.5 787.584q10.5-10.415 10.5-25.5Q518 747 507.585 736.5q-10.416-10.5-25.5-10.5Q467 726 456.5 736.416q-10.5 10.415-10.5 25.5Q446 777 456.415 787.5q10.416 10.5 25.5 10.5ZM454 658h52q2-28.648 9.5-46.824T552 564q27-25 40.5-47.919 13.5-22.919 13.5-52.642Q606 413 569.754 383.5 533.507 354 484 354q-48 0-81 25.5T356 440l48 20q8-22 25-40t53-18q38 0 56 21t18 45q0 21-12 37t-30 33q-38 35-49 58t-11 62Zm26.174 298q-78.814 0-148.212-29.911-69.399-29.912-120.734-81.188-51.336-51.277-81.282-120.595Q100 654.988 100 576.174q0-79.07 29.97-148.694 29.971-69.623 81.348-121.126 51.378-51.502 120.594-80.928Q401.128 196 479.826 196q79.06 0 148.676 29.391 69.615 29.392 121.13 80.848 51.516 51.457 80.942 121.018Q860 496.819 860 575.909q0 79.091-29.391 148.149-29.392 69.059-80.835 120.496-51.443 51.436-120.987 81.441Q559.244 956 480.174 956ZM480 902q136.513 0 231.256-94.744Q806 712.513 806 576t-94.744-231.256Q616.513 250 480 250t-231.256 94.744Q154 439.487 154 576t94.744 231.256Q343.487 902 480 902Zm0-326Z"
-										/></svg></button
-								><button id="claimButton"
-									><div>Claim</div
-									><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
-										<path d="M382 802 168 588l38-38 176 176 374-374 38 38-412 412Z" /></svg></button
-								><!--<aside></aside> --></div
-							></td
-						></tr
-					><tr id="Allowance"><th>Allowance</th><td id="permit.permitted.amount"></td></tr><tr id="From"><th>From</th><td id="owner"></td></tr
-					><tr id="Nonce"><th>Nonce</th><td id="permit.nonce"></td></tr><tr id="Deadline"><th>Deadline</th><td id="permit.deadline"></td></tr
-					><tr id="Signature"><th>Signature</th><td id="signature"></td></tr></tbody></table></main
-		><footer
-			><code></code><div id="build"><a target="_blank" rel="noopener noreferrer"></a></div></footer
-		><script src="out/scripts/app.js" type="application/javascript"></script></body
-></html>
+<html>
+  <head>
+    <title>DevPool Claims | Ubiquity DAO</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="out/styles/app.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon.png" />
+  </head>
+
+  <body>
+    <background>
+      <div id="pre-grid"></div>
+      <div id="grid"></div>
+      <header
+        ><a href="http://ubq.fi/">
+          <div id="logo">
+            <div id="logo-icon"
+              ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 151" fill="currentColor">
+                <path
+                  d="M132 41.1c0-2.3-1.3-4.5-3.3-5.7L69.4 1.2c-1-.6-2.1-.9-3.3-.9-1.1 0-2.3.3-3.3.9L3.6 35.4c-2 1.2-3.3 3.3-3.3 5.7v68.5c0 2.3 1.3 4.5 3.3 5.7l59.3 34.2c2 1.2 4.5 1.2 6.5 0l59.3-34.2c2-1.2 3.3-3.3 3.3-5.7V41.1zm-11.9 62.5c0 2.7-1.4 5.2-3.7 6.5l-46.6 27.5c-1.1.7-2.4 1-3.7 1s-2.5-.3-3.7-1l-46.6-27.5c-2.3-1.3-3.7-3.8-3.7-6.5V54.1c0-1.2.6-2.4 1.7-3 1.1-.6 2.3-.6 3.4 0l8 4.7c1.9 1.1 3 3.3 4.4 5.8.3.5.5 1 .8 1.4 3.5 6.3 5.2 13 6.8 19.5 3 11.9 6 24.2 21.3 28.2 5 1.3 10.4 1.3 15.4 0 15.2-4 18.3-16.3 21.3-28.2C96.8 76 98.5 69.3 102 63c.3-.5.5-1 .8-1.4 1.3-2.5 2.5-4.6 4.4-5.8l8-4.7c1-.6 2.3-.6 3.4 0s1.7 1.7 1.7 3v49.5zM62.6 13.7c2.2-1.3 4.9-1.3 7.1 0L110 37.6c1 .6 1.6 1 1.6 2.2 0 1.2-.6 1.9-1.6 2.5l-7.7 4.6c-3.4 2-5.1 5.2-6.6 8.1l-.1.2c-.2.4-.4.7-.6 1.1-3.8 6.8-6.6 14-8.2 20.4C83.6 89.1 82.4 97.3 72 100c-1.9.5-3.9.7-5.8.7-2 0-3.9-.3-5.8-.7C50 97.3 48.7 89.1 45.6 76.6 44 70.2 41.2 63 37.4 56.2c-.2-.3-.4-.7-.6-1l-.1-.3c-1.5-2.8-3.3-6.1-6.6-8.1l-7.7-4.6c-1-.6-1.6-1.3-1.6-2.5s.6-1.6 1.6-2.2l40.2-23.8z"
+                ></path></svg
+            ></div>
+            <div id="logo-text"><span>Ubiquity DAO</span><span>DevPool Claims</span></div>
+          </div>
+        </a></header
+      >
+    </background>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>Notice</th>
+            <td>Loading...</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="Amount">
+            <th>Amount</th>
+            <td id="transferDetails.requestedAmount">Loading...</td>
+          </tr>
+          <tr id="Token">
+            <th>Token</th>
+            <td id="permit.permitted.token"><span class="full"></span><span class="short">Loading...</span></td>
+          </tr>
+          <tr id="To">
+            <th>To</th>
+            <td id="transferDetails.to"><span class="full"></span><span class="short">Loading...</span></td>
+          </tr>
+          <tr id="treasury-id">
+            <th>Treasury</th>
+            <td class="treasury-value">Loading...</td>
+          </tr>
+          <tr id="additional-details-border">
+            <th></th>
+            <td>
+              <div id="controls"
+                ><!--<button id="btnConnectWallet">Connect Wallet</button> --><button id="additionalDetails">
+                  <div>Details</div
+                  ><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
+                    <path
+                      d="M481.915 798Q497 798 507.5 787.584q10.5-10.415 10.5-25.5Q518 747 507.585 736.5q-10.416-10.5-25.5-10.5Q467 726 456.5 736.416q-10.5 10.415-10.5 25.5Q446 777 456.415 787.5q10.416 10.5 25.5 10.5ZM454 658h52q2-28.648 9.5-46.824T552 564q27-25 40.5-47.919 13.5-22.919 13.5-52.642Q606 413 569.754 383.5 533.507 354 484 354q-48 0-81 25.5T356 440l48 20q8-22 25-40t53-18q38 0 56 21t18 45q0 21-12 37t-30 33q-38 35-49 58t-11 62Zm26.174 298q-78.814 0-148.212-29.911-69.399-29.912-120.734-81.188-51.336-51.277-81.282-120.595Q100 654.988 100 576.174q0-79.07 29.97-148.694 29.971-69.623 81.348-121.126 51.378-51.502 120.594-80.928Q401.128 196 479.826 196q79.06 0 148.676 29.391 69.615 29.392 121.13 80.848 51.516 51.457 80.942 121.018Q860 496.819 860 575.909q0 79.091-29.391 148.149-29.392 69.059-80.835 120.496-51.443 51.436-120.987 81.441Q559.244 956 480.174 956ZM480 902q136.513 0 231.256-94.744Q806 712.513 806 576t-94.744-231.256Q616.513 250 480 250t-231.256 94.744Q154 439.487 154 576t94.744 231.256Q343.487 902 480 902Zm0-326Z"
+                    />
+                  </svg> </button
+                ><button id="claimButton">
+                  <div class="claim-title">Claim</div
+                  ><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24" class="claim-icon">
+                    <path d="M382 802 168 588l38-38 176 176 374-374 38 38-412 412Z" />
+                  </svg> </button
+                ><!--<aside></aside> --></div
+              >
+            </td>
+          </tr>
+          <tr id="Allowance">
+            <th>Allowance</th>
+            <td id="permit.permitted.amount"></td>
+          </tr>
+          <tr id="From">
+            <th>From</th>
+            <td id="owner"></td>
+          </tr>
+          <tr id="Nonce">
+            <th>Nonce</th>
+            <td id="permit.nonce"></td>
+          </tr>
+          <tr id="Deadline">
+            <th>Deadline</th>
+            <td id="permit.deadline"></td>
+          </tr>
+          <tr id="Signature">
+            <th>Signature</th>
+            <td id="signature"></td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+    <footer
+      ><code></code>
+      <div id="build"><a target="_blank" rel="noopener noreferrer"></a></div>
+    </footer>
+    <script src="out/scripts/app.js" type="application/javascript"></script>
+  </body>
+</html>

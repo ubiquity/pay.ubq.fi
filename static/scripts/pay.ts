@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { permit2Abi } from "./abis";
+import { daiAbi, permit2Abi } from "./abis";
 import { TxType, txData } from "./render-transaction";
 
-window.onerror = function (error: any) {
+const ErrorHandler = (error: any) => {
   const output = document.querySelector(`footer>code`) as Element;
   delete error.stack;
   output.innerHTML = JSON.stringify(error, null, 2);
@@ -19,7 +19,22 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
 const withdraw = async (signer: JsonRpcSigner, txData: TxType) => {
   const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-  await permit2Contract.permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature).catch(window.onerror);
+  await permit2Contract.permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature).catch((error: any) => ErrorHandler(error));
+};
+
+const fetchTreasury = async (): Promise<number> => {
+  const tokenAddress = txData.permit.permitted.token;
+  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, new ethers.providers.Web3Provider((window as any).ethereum));
+  const balance = await tokenContract.balanceOf(txData.owner);
+  return balance;
+};
+
+const toggleStatus = async (balance: number) => {
+  const treasuryValue = document.querySelector(".treasury-value") as Element;
+  treasuryValue.innerHTML =
+    balance >= Number(txData.permit.permitted.amount)
+      ? `<span id="value-green">$${ethers.utils.formatUnits(balance, 18)}</span`
+      : `<span id="value-red">$${ethers.utils.formatUnits(balance, 18)}</span`;
 };
 
 export const pay = async (): Promise<void> => {
@@ -38,11 +53,20 @@ export const pay = async (): Promise<void> => {
   claimButtonElem.addEventListener("click", async () => {
     try {
       const signer = await connectWallet();
-      await withdraw(signer, txData);
+      const balance = await fetchTreasury();
+      await toggleStatus(balance);
+      if (balance >= Number(txData.permit.permitted.amount)) {
+        await withdraw(signer, txData);
+      } else {
+        ErrorHandler("Error: Not enough funds on treasury to claim");
+      }
     } catch (error: unknown) {
       console.error(error);
     }
   });
+
+  const balance = await fetchTreasury();
+  await toggleStatus(balance);
 
   // display commit hash
   const commit = await fetch("commit.txt");
