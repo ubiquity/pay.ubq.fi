@@ -1,0 +1,30 @@
+name: Cloudflare Pages Deploy
+
+on: push
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.15.0"
+
+      - name: Build and Bundle
+        run: |
+          yarn install
+          yarn build
+
+      - name: Deploy Cloudflare
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: pay-ubq-fi
+          directory: ./static
