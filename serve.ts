@@ -2,7 +2,7 @@ import esbuild from "esbuild";
 
 const init = async () => {
   const ctx = await esbuild.context({
-    entryPoints: ["static/scripts/app.ts", "static/styles/app.css"],
+    entryPoints: ["static/scripts/app.ts", "static/scripts/audit.ts", "static/styles/app.css", "static/styles/audit.css"],
     bundle: true,
     minify: false,
     sourcemap: true,
