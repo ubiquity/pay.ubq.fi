@@ -39,14 +39,13 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 5. Connect the bounty hunter's address.
 6. Click the "withdraw" button to get a reward.
 
-
 ## CloudFlare Setup (GitHub Secrets)
 
 ##### CLOUDFLARE_ACCOUNT_ID =
+
     https://dash.cloudflare.com/***/pages
     https://dash.cloudflare.com/abcd1234/pages
     (Here `abcd1234` is your account ID)
-
 
 ##### CLOUDFLARE_API_TOKEN =
 
@@ -55,13 +54,11 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
     Zone Resources = All Zones
     (Detailed Instructions: https://developers.cloudflare.com/workers/wrangler/ci-cd/)
 
-
 ##### CLOUDFLARE_ASSET_DIRECTORY =
 
     static
 
-
-##### CLOUDFLARE_PROJECT_NAME = 
+##### CLOUDFLARE_PROJECT_NAME =
 
     npm install -g wrangler
     wrangler login
