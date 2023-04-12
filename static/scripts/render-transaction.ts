@@ -78,8 +78,6 @@ const insertTableData = async (table: Element): Promise<Element> => {
   const tokenBoth = document.getElementById(`permit.permitted.token`) as Element;
   tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
 
-  const amountElem = document.getElementById("permit.permitted.amount") as Element;
-  amountElem.textContent = (Number(txData.permit.permitted.amount) / 1e18).toString();
   const ownerElem = document.getElementById("owner") as Element;
   ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.owner}">${txData.owner}</a>`;
   const nonceELem = document.getElementById("permit.nonce") as Element;

@@ -24,9 +24,11 @@ background #pre-grid {
   background-repeat: repeat;
 }
 
-background #grid {}
+background #grid {
+}
 
-background #grid>canvas {}
+background #grid > canvas {
+}
 
 background header {
   opacity: 0.5;

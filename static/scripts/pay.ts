@@ -1,12 +1,18 @@
 import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { permit2Abi } from "./abis";
+import { daiAbi, permit2Abi } from "./abis";
 import { TxType, txData } from "./render-transaction";
 
-window.onerror = function (error: any) {
+const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+
+const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   const output = document.querySelector(`footer>code`) as Element;
   delete error.stack;
-  output.innerHTML = JSON.stringify(error, null, 2);
+  let ErrorData = JSON.stringify(error, null, 2);
+  if (extra !== undefined) {
+    ErrorData = extra + "\n\n" + ErrorData;
+  }
+  output.innerHTML = ErrorData;
 };
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
@@ -16,10 +22,26 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
   return signer;
 };
 
-const withdraw = async (signer: JsonRpcSigner, txData: TxType) => {
-  const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: string | undefined = undefined) => {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-  await permit2Contract.permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature).catch(window.onerror);
+  await permit2Contract
+    .permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature)
+    .catch((error: any) => ErrorHandler(error, predefined));
+};
+
+const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
+  const tokenAddress = txData.permit.permitted.token;
+  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, new ethers.providers.Web3Provider((window as any).ethereum));
+  const balance = await tokenContract.balanceOf(txData.owner);
+  const allowance = await tokenContract.allowance(txData.owner, permit2Address);
+  return { balance, allowance };
+};
+
+const toggleStatus = async (balance: number, allowance: number) => {
+  const trBalance = document.querySelector(".tr-balance") as Element;
+  const trAllowance = document.querySelector(".tr-allowance") as Element;
+  trBalance.textContent = `$${ethers.utils.formatUnits(balance, 18)}`;
+  trAllowance.textContent = `$${ethers.utils.formatUnits(allowance, 18)}`;
 };
 
 export const pay = async (): Promise<void> => {
@@ -38,11 +60,25 @@ export const pay = async (): Promise<void> => {
   claimButtonElem.addEventListener("click", async () => {
     try {
       const signer = await connectWallet();
-      await withdraw(signer, txData);
+      const { balance, allowance } = await fetchTreasury();
+      await toggleStatus(balance, allowance);
+      let predefined: string | undefined = undefined;
+
+      if (!(balance >= Number(txData.permit.permitted.amount) && allowance >= Number(txData.permit.permitted.amount))) {
+        if (balance >= Number(txData.permit.permitted.amount)) {
+          predefined = "Error: Not enough allowance to claim.";
+        } else {
+          predefined = "Error: Not enough funds on treasury to claim.";
+        }
+      }
+      await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
       console.error(error);
     }
   });
+
+  const { balance, allowance } = await fetchTreasury();
+  await toggleStatus(balance, allowance);
 
   // display commit hash
   const commit = await fetch("commit.txt");

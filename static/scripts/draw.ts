@@ -1,8 +1,5 @@
-//@ts-nocheck
-//@todo make it ts compatible
-
 export const drawInit = (): void => {
-  var Cell = function Cell(settings) {
+  var Cell: any = function Cell(settings: any): any {
     var keys = Object.keys(settings),
       x = keys.length;
     while (x--) this[keys[x]] = settings[keys[x]];
@@ -40,7 +37,7 @@ export const drawInit = (): void => {
       target.fillRect(settings.cell_resolution * cell.x, settings.cell_resolution * cell.y, settings.point_resolution, settings.point_resolution);
     },
   };
-  var prep = function (target, settings) {
+  var prep = function (target, settings, temp_resize_switch) {
     var x = settings.cells_per_row;
     while (x--) {
       var y = settings.cells_per_column;
@@ -106,7 +103,7 @@ export const drawInit = (): void => {
       return fps;
     }
   };
-  var local_settings = null;
+  var local_settings: any = null;
   var resize_handler_set = false;
 
   (window as any).draw = function draw(settings) {
@@ -119,7 +116,7 @@ export const drawInit = (): void => {
       requestAnimationFrame(function () {
         offset = setTimeout(function () {
           local_settings.target.innerHTML = "";
-          window.draw(local_settings);
+          (window as any).draw(local_settings);
         }, local_settings.refresh);
       });
     }
@@ -127,8 +124,8 @@ export const drawInit = (): void => {
     if (settings == void 0) {
       throw Error("No settings for grid");
     }
-    var canvas = document.createElement("CANVAS"),
-      context = canvas.getContext("2d");
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d") as CanvasRenderingContext2D;
     if (settings.shade) {
       settings.red = settings.shade;
       settings.green = settings.shade;
@@ -168,7 +165,7 @@ export const drawInit = (): void => {
     var i = -1; //  index
     while (++x < settings.cells_per_row) {
       var y = -1; //  column (actual cell)
-      var row = [];
+      var row: any[] = [];
       while (++y < settings.cells_per_column) {
         var o = Math.random();
         row.push(
@@ -184,7 +181,7 @@ export const drawInit = (): void => {
       }
       settings.model.push(row);
     }
-    temp_resize_switch && prep(context, settings);
+    temp_resize_switch && prep(context, settings, temp_resize_switch);
     //  <== out
   };
 };
