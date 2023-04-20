@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Key Generator</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="out/styles/sec.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container" id="keyGenContent">
+      <h1 class="title">Key Generator</h1>
+      <div class="mb-3">
+        <label for="privKey" class="form-label">x25519_PRIVATE_KEY</label>
+        <input type="text" class="form-control" id="privKey" />
+      </div>
+      <div class="mb-3">
+        <label for="pubKey" class="form-label">x25519_PUBLIC_KEY</label>
+        <input type="text" class="form-control" id="pubKey" />
+      </div>
+      <div class="mb-3">
+        <label for="plainKey" class="form-label">PLAIN_TEXT</label>
+        <input type="text" class="form-control" id="plainKey" />
+      </div>
+      <div class="mb-3">
+        <label for="cipherKey" class="form-label">CIPHER_TEXT</label>
+        <input type="text" class="form-control" id="cipherKey" />
+      </div>
+      <div class="mb-3">
+        <label for="statusKey" class="form-label">STATUS</label>
+        <input type="text" class="form-control" id="statusKey" disabled="true" />
+      </div>
+      <div class="btn-container">
+        <button type="button" class="btn btn-primary mb-3" id="genBtn">🔑 Generate</button>
+        <button type="button" class="btn btn-primary mb-3" id="encryptBtn">🔒 Encrypt</button>
+        <button type="button" class="btn btn-primary mb-3" id="decryptBtn">🔓 Decrypt</button>
+      </div>
+    </div>
+    <script src="out/scripts/keygen.js" type="application/javascript"></script>
+  </body>
+</html>
