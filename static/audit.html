@@ -1,46 +1,46 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Audit report</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="out/styles/audit.css" rel="stylesheet" />
-  </head>
-  <body>
-    <div class="container">
-      <h1 class="audit-tag">Audit report</h1>
-      <!-- params -->
-      <div class="mb-3">
-        <label for="etherscanApiKey" class="form-label">Etherscan API key</label>
-        <input type="text" class="form-control" id="etherscanApiKey" />
-      </div>
-      <div class="mb-3">
-        <label for="rpcUrl" class="form-label">RPC URL</label>
-        <input type="text" class="form-control" id="rpcUrl" />
-      </div>
-      <div class="mb-3">
-        <label for="botWalletAddress" class="form-label">Bot wallet address</label>
-        <input type="text" class="form-control" id="botWalletAddress" />
-      </div>
-      <div class="mb-3">
-        <label for="githubPat" class="form-label">Github personal access token (with "repo" scope)</label>
-        <input type="text" class="form-control" id="githubPat" />
-      </div>
-      <div class="mb-3">
-        <label for="ownerName" class="form-label">Owner name</label>
-        <input type="text" class="form-control" id="ownerName" />
-      </div>
-      <div class="mb-3">
-        <label for="repoName" class="form-label">Repository name</label>
-        <input type="text" class="form-control" id="repoName" />
-      </div>
-      <div class="mb-3">
-        <label for="quickName" class="form-label">Quick Import</label>
-        <textarea
-          type="text"
-          class="form-control"
-          id="quickName"
-          placeholder='
+
+<head>
+  <title>Audit report</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="out/styles/audit.css" rel="stylesheet" />
+  <!-- Font Awesome CDN link for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="audit-tag">Audit report</h1>
+    <!-- params -->
+    <div class="mb-3">
+      <label for="etherscanApiKey" class="form-label">Etherscan API key</label>
+      <input type="text" class="form-control" id="etherscanApiKey" />
+    </div>
+    <div class="mb-3">
+      <label for="rpcUrl" class="form-label">RPC URL</label>
+      <input type="text" class="form-control" id="rpcUrl" />
+    </div>
+    <div class="mb-3">
+      <label for="botWalletAddress" class="form-label">Bot wallet address</label>
+      <input type="text" class="form-control" id="botWalletAddress" />
+    </div>
+    <div class="mb-3">
+      <label for="githubPat" class="form-label">Github personal access token (with "repo" scope)</label>
+      <input type="text" class="form-control" id="githubPat" />
+    </div>
+    <div class="mb-3">
+      <label for="ownerName" class="form-label">Owner name</label>
+      <input type="text" class="form-control" id="ownerName" />
+    </div>
+    <div class="mb-3">
+      <label for="repoName" class="form-label">Repository name</label>
+      <input type="text" class="form-control" id="repoName" />
+    </div>
+    <div class="mb-3">
+      <label for="quickName" class="form-label">Quick Import</label>
+      <textarea type="text" class="form-control" id="quickName" placeholder='
 {
   "API": "",
   "RPC": "",
@@ -48,29 +48,30 @@
   "PAT": "",
   "OWNER": "",
   "REPO": ""
-}'
-        ></textarea>
-      </div>
-      <button type="button" class="btn btn-primary mb-3" id="getReport">Get report</button>
-      <!-- loader -->
-      <div id="loader" class="mb-3" style="display: none">
-        Loading...
-        <p id="log"></p>
-      </div>
-      <!-- result table -->
-      <table id="resultTable" class="table" style="display: none">
-        <thead>
-          <tr>
-            <th scope="col">Issue URL</th>
-            <th scope="col">Transaction URL</th>
-            <th scope="col">Amount (DAI)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- table content -->
-        </tbody>
-      </table>
+}'></textarea>
     </div>
-    <script src="out/scripts/audit.js" type="application/javascript"></script>
-  </body>
+    <button type="button" class="btn btn-primary mb-3" id="getReport">Get report</button>
+    <!-- loader -->
+    <div id="loader" class="mb-3" style="display: none">
+      Loading...
+      <p id="log"></p>
+    </div>
+    <!-- result table -->
+    <table id="resultTable" class="table" style="display: none">
+      <thead>
+        <tr>
+          <th scope="col">Issue URL</th>
+          <th scope="col">Transaction URL</th>
+          <th scope="col">Amount (DAI)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- table content -->
+      </tbody>
+    </table>
+    <ul class="notifications"></ul>
+  </div>
+  <script src="out/scripts/audit.js" type="application/javascript"></script>
+</body>
+
 </html>

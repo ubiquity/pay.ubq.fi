@@ -12,6 +12,16 @@
   letter-spacing: 2px;
 }
 
+/* just for toasts for now */
+:root {
+  --dark: #34495E;
+  --light: #ffffff;
+  --success: #0ABF30;
+  --error: #E24D4C;
+  --warning: #E9BD0C;
+  --info: #3498DB;
+}
+
 body {
   min-height: 100vh;
 }
@@ -51,7 +61,7 @@ a {
   text-align: center;
 }
 
-#logo > #logo-icon {
+#logo>#logo-icon {
   display: inline-block;
   vertical-align: middle;
   padding: 4px;
@@ -59,7 +69,7 @@ a {
   /* color: #fff; */
 }
 
-#logo-icon > svg {
+#logo-icon>svg {
   height: 36px;
   display: block;
   margin: 0;
@@ -69,12 +79,12 @@ a {
   fill: #fff;
 }
 
-#logo > div#logo-text {
+#logo>div#logo-text {
   display: inline-block;
   vertical-align: middle;
 }
 
-#logo > div#logo-text > span {
+#logo>div#logo-text>span {
   font-size: 20px;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -119,12 +129,161 @@ div#build {
   margin: auto;
 }
 
-div#build > a {
+div#build>a {
   opacity: 0.25;
   font-size: 12px;
   color: #fff;
 }
 
-div#build > a:hover {
+div#build>a:hover {
   opacity: 1;
+}
+
+/* toast */
+
+.notifications {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+}
+
+.notifications :where(.toast, .column) {
+  display: flex;
+  align-items: center;
+}
+
+.notifications .toast {
+  width: 400px;
+  height: 50px;
+  position: relative;
+  overflow: hidden;
+  list-style: none;
+  border-radius: 4px;
+  padding: 16px 17px;
+  margin-bottom: 10px;
+  background: var(--light);
+  justify-content: space-between;
+  animation: show_toast 0.3s ease forwards;
+}
+
+@keyframes show_toast {
+  0% {
+    transform: translateX(100%);
+  }
+
+  40% {
+    transform: translateX(-5%);
+  }
+
+  80% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-10px);
+  }
+}
+
+.notifications .toast.hide {
+  animation: hide_toast 0.3s ease forwards;
+}
+
+@keyframes hide_toast {
+  0% {
+    transform: translateX(-10px);
+  }
+
+  40% {
+    transform: translateX(0%);
+  }
+
+  80% {
+    transform: translateX(-5%);
+  }
+
+  100% {
+    transform: translateX(calc(100% + 20px));
+  }
+}
+
+.toast::before {
+  position: absolute;
+  content: "";
+  height: 3px;
+  width: 100%;
+  bottom: 0px;
+  left: 0px;
+  animation: progress 5s linear forwards;
+}
+
+@keyframes progress {
+  100% {
+    width: 0%;
+  }
+}
+
+.toast.success::before,
+.btn#success {
+  background: var(--success);
+}
+
+.toast.error::before,
+.btn#error {
+  background: var(--error);
+}
+
+.toast.warning::before,
+.btn#warning {
+  background: var(--warning);
+}
+
+.toast.info::before,
+.btn#info {
+  background: var(--info);
+}
+
+.toast .column i {
+  font-size: 1.75rem;
+}
+
+.toast.success .column i {
+  color: var(--success);
+}
+
+.toast.error .column i {
+  color: var(--error);
+}
+
+.toast.warning .column i {
+  color: var(--warning);
+}
+
+.toast.info .column i {
+  color: var(--info);
+}
+
+.toast .column span {
+  font-size: 1.07rem;
+  margin-left: 12px;
+}
+
+.toast i:last-child {
+  color: #aeb0d7;
+  cursor: pointer;
+}
+
+.toast i:last-child:hover {
+  color: var(--dark);
+}
+
+@media screen and (max-width: 530px) {
+  .notifications {
+    width: 95%;
+  }
+
+  .notifications .toast {
+    width: 100%;
+    font-size: 1rem;
+    margin-left: 20px;
+  }
 }

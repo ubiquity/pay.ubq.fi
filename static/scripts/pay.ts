@@ -5,14 +5,62 @@ import { TxType, txData } from "./render-transaction";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
+const notifications = document.querySelector(".notifications") as Element;
+
+// Object containing details for different types of toasts
+const toastDetails = {
+    timer: 5000,
+    success: {
+        icon: 'fa-circle-check',
+    },
+    error: {
+        icon: 'fa-circle-xmark',
+    },
+    warning: {
+        icon: 'fa-triangle-exclamation',
+    },
+    info: {
+        icon: 'fa-circle-info',
+    }
+}
+
+const removeToast = (toast) => {
+    toast.classList.add("hide");
+    if(toast.timeoutId) clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
+    setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
+}
+
+const createToast = (id: string, text: string) => {
+    // Getting the icon and text for the toast based on the id passed
+    const { icon } = toastDetails[id];
+    const toast = document.createElement("li"); // Creating a new 'li' element for the toast
+    toast.className = `toast ${id}`; // Setting the classes for the toast
+    // Setting the inner HTML for the toast
+    toast.innerHTML = `
+      <div class="column">
+          <i class="fa-solid ${icon}"></i>
+          <span>${text}</span>
+      </div>
+      <i class="fa-solid fa-xmark" onclick="removeToast(this.parentElement)"></i>
+    `;
+    notifications.appendChild(toast); // Append the toast to the notification ul
+    
+    // Setting a timeout to remove the toast after the specified duration
+    // @ts-ignore
+    toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
+}
+
 const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
-  const output = document.querySelector(`footer>code`) as Element;
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
   if (extra !== undefined) {
-    ErrorData = extra + "\n\n" + ErrorData;
+    createToast('error', extra);
+    return;
   }
-  output.innerHTML = ErrorData;
+  // parse error data to get error message
+  const parsedError = JSON.parse(ErrorData);
+  const errorMessage = parsedError?.error?.message;
+  createToast('error', `Error: ${errorMessage}`)
 };
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
