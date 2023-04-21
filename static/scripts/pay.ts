@@ -6,6 +6,9 @@ import { TxType, txData } from "./render-transaction";
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 const notifications = document.querySelector(".notifications") as Element;
+const claimButtonElem = document.getElementById("claimButton") as Element;
+const buttonMark = document.querySelector('.hide-load');
+const claimLoader = document.querySelector(".claim-loader") as Element;
 
 // Object containing details for different types of toasts
 const toastDetails = {
@@ -50,6 +53,27 @@ const createToast = (id: string, text: string) => {
     toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
 }
 
+const disableClaimButton = () => {
+  // @ts-ignore
+  claimButtonElem!.disabled = true;
+  
+  // @ts-ignore
+  claimLoader!.style!.display = 'block';
+  // @ts-ignore
+  buttonMark!.style!.display = 'none';
+}
+
+const enableClaimButton = () => {
+  // @ts-ignore
+  claimButtonElem!.disabled = false;
+  
+  // @ts-ignore
+  claimLoader!.style!.display = 'none';
+  // take it back to default
+  // @ts-ignore
+  buttonMark!.style!.display = '';
+}
+
 const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
@@ -74,7 +98,18 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   await permit2Contract
     .permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature)
-    .catch((error: any) => ErrorHandler(error, predefined));
+    .then((tx: any) => {
+      // get success message
+      createToast('success', `Transaction sent: ${tx?.hash}`);
+      tx.wait().then((receipt: any) => {
+        createToast('success', `Transaction confirmed: ${receipt?.transactionHash}`);
+      });
+      enableClaimButton()
+    })
+    .catch((error: any) => {
+      ErrorHandler(error, predefined)
+      enableClaimButton()
+    });
 };
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
@@ -104,9 +139,10 @@ export const pay = async (): Promise<void> => {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
-  const claimButtonElem = document.getElementById("claimButton") as Element;
   claimButtonElem.addEventListener("click", async () => {
     try {
+      disableClaimButton()
+
       const signer = await connectWallet();
       const { balance, allowance } = await fetchTreasury();
       await toggleStatus(balance, allowance);
@@ -122,6 +158,7 @@ export const pay = async (): Promise<void> => {
       await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
       console.error(error);
+      enableClaimButton()
     }
   });
 
