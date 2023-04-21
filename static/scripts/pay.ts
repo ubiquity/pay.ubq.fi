@@ -16,10 +16,19 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
 };
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
-  const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
-  await provider.send("eth_requestAccounts", []);
-  const signer = provider.getSigner();
-  return signer;
+  try {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    return signer;
+  } catch (error: any) {
+    if(error?.message?.includes("missing provider")) {
+      alert("Error: Please use a web3 enabled browser.");
+    } else {
+      alert("Error: Please connect your wallet.");
+    }
+    return {} as JsonRpcSigner;
+  }
 };
 
 const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: string | undefined = undefined) => {
@@ -30,11 +39,22 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
 };
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
-  const tokenAddress = txData.permit.permitted.token;
-  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, new ethers.providers.Web3Provider((window as any).ethereum));
-  const balance = await tokenContract.balanceOf(txData.owner);
-  const allowance = await tokenContract.allowance(txData.owner, permit2Address);
-  return { balance, allowance };
+  try {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+
+    const tokenAddress = txData.permit.permitted.token;
+    const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
+    const balance = await tokenContract.balanceOf(txData.owner);
+    const allowance = await tokenContract.allowance(txData.owner, permit2Address);
+    return { balance, allowance };
+  } catch (error: any) {
+    if(error?.message?.includes("missing provider")) {
+      alert("Error: Please use a web3 enabled browser.");
+    } else {
+      alert("Error: Please connect your wallet.");
+    }
+    return { balance: 0, allowance: 0 };
+  }
 };
 
 const toggleStatus = async (balance: number, allowance: number) => {
@@ -60,6 +80,11 @@ export const pay = async (): Promise<void> => {
   claimButtonElem.addEventListener("click", async () => {
     try {
       const signer = await connectWallet();
+
+      if (!signer._isSigner){
+        return
+      }
+
       const { balance, allowance } = await fetchTreasury();
       await toggleStatus(balance, allowance);
       let predefined: string | undefined = undefined;
@@ -73,7 +98,7 @@ export const pay = async (): Promise<void> => {
       }
       await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
-      console.error(error);
+      console.log(error);
     }
   });
 
