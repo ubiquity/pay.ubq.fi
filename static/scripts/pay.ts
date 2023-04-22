@@ -5,10 +5,10 @@ import { TxType, txData } from "./render-transaction";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
-const notifications = document.querySelector(".notifications") as Element;
-const claimButtonElem = document.getElementById("claimButton") as Element;
-const buttonMark = document.querySelector('.hide-load');
-const claimLoader = document.querySelector(".claim-loader") as Element;
+const notifications = document.querySelector(".notifications") as HTMLElement;
+const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
+const buttonMark = document.querySelector('.claim-icon')  as HTMLElement;
+const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
 
 // Object containing details for different types of toasts
 const toastDetails = {
@@ -29,14 +29,16 @@ const toastDetails = {
 
 const removeToast = (toast) => {
     toast.classList.add("hide");
-    if(toast.timeoutId) clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
+    if(toast.timeoutId) {
+      clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
+    }
     setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
 }
 
 const createToast = (id: string, text: string) => {
     // Getting the icon and text for the toast based on the id passed
     const { icon } = toastDetails[id];
-    const toast = document.createElement("li"); // Creating a new 'li' element for the toast
+    const toast = document.createElement("li") as any; // Creating a new 'li' element for the toast
     toast.className = `toast ${id}`; // Setting the classes for the toast
     // Setting the inner HTML for the toast
     toast.innerHTML = `
@@ -49,29 +51,23 @@ const createToast = (id: string, text: string) => {
     notifications.appendChild(toast); // Append the toast to the notification ul
     
     // Setting a timeout to remove the toast after the specified duration
-    // @ts-ignore
     toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
 }
 
 const disableClaimButton = () => {
-  // @ts-ignore
   claimButtonElem!.disabled = true;
   
-  // @ts-ignore
-  claimLoader!.style!.display = 'block';
-  // @ts-ignore
-  buttonMark!.style!.display = 'none';
+  claimLoader?.classList.add('show-cl'), claimLoader?.classList.remove('hide-cl');
+
+  buttonMark?.classList.add('hide-cl'), buttonMark?.classList.remove('show-cl');
 }
 
 const enableClaimButton = () => {
-  // @ts-ignore
   claimButtonElem!.disabled = false;
   
-  // @ts-ignore
-  claimLoader!.style!.display = 'none';
-  // take it back to default
-  // @ts-ignore
-  buttonMark!.style!.display = '';
+  claimLoader?.classList.add('hide-cl'), claimLoader?.classList.remove('show-cl');
+
+  buttonMark?.classList.add('show-cl'), buttonMark?.classList.remove('hide-cl');
 }
 
 const ErrorHandler = (error: any, extra: string | undefined = undefined) => {

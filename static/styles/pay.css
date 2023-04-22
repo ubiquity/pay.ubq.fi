@@ -288,6 +288,10 @@ div#build>a:hover {
   }
 }
 
-.claim-loader {
-  display: none;
+.show-cl {
+  display: block;
+}
+
+.hide-cl {
+  display: none !important;
 }
