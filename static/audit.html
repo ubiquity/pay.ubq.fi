@@ -51,11 +51,16 @@
 }'
         ></textarea>
       </div>
-      <button type="button" class="btn btn-primary mb-3" id="getReport">Get report</button>
-      <!-- loader -->
-      <div id="loader" class="mb-3" style="display: none">
-        Loading...
-        <p id="log"></p>
+      <div class="btn-container">
+        <button type="button" class="btn btn-primary mb-3" id="getReport">
+          <span class="btn-loader" id="report-loader"></span>
+          <span>Get report</span>
+        </button>
+        <div class="tg-list-item">
+          <input class="tgl tgl-flat" id="cb4" type="checkbox" />
+          <label class="tgl-btn" for="cb4"></label>
+          <div class="cache-title">⚡Cache</div>
+        </div>
       </div>
       <!-- result table -->
       <table id="resultTable" class="table" style="display: none">
