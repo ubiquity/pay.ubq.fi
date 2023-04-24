@@ -54,12 +54,15 @@ const createToast = (id: string, text: string) => {
   toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
 };
 
-const disableClaimButton = () => {
+const disableClaimButton = (triggerLoader = true) => {
   claimButtonElem!.disabled = true;
 
-  claimLoader?.classList.add("show-cl"), claimLoader?.classList.remove("hide-cl");
+  // Adding this because not all disabling should trigger loading spinner
+  if (triggerLoader) {
+    claimLoader?.classList.add("show-cl"), claimLoader?.classList.remove("hide-cl");
 
-  buttonMark?.classList.add("hide-cl"), buttonMark?.classList.remove("show-cl");
+    buttonMark?.classList.add("hide-cl"), buttonMark?.classList.remove("show-cl");
+  }
 };
 
 const enableClaimButton = () => {
@@ -109,8 +112,24 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
 };
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
+  const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+  if (!provider || !provider.provider.isMetaMask) {
+    createToast("error", "Please connect to MetaMask.");
+    disableClaimButton(false);
+    return { balance: -1, allowance: -1 };
+  }
+
+  const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
+
+  // if its not on ethereum mainnet, display error
+  if (chainId !== "0x1") {
+    createToast("error", "Please switch to Ethereum Mainnet.");
+    disableClaimButton(false);
+    return { balance: -1, allowance: -1 };
+  }
+
   const tokenAddress = txData.permit.permitted.token;
-  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, new ethers.providers.Web3Provider((window as any).ethereum));
+  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
   const balance = await tokenContract.balanceOf(txData.owner);
   const allowance = await tokenContract.allowance(txData.owner, permit2Address);
   return { balance, allowance };
@@ -153,7 +172,7 @@ export const pay = async (): Promise<void> => {
       }
       await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
-      console.error(error);
+      ErrorHandler(error, "");
       enableClaimButton();
     }
   });
