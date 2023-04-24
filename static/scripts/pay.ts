@@ -17,15 +17,15 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
+    const provider = new ethers.providers.Web3Provider((window).ethereum, "any");
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
     return signer;
   } catch (error: any) {
     if(error?.message?.includes("missing provider")) {
-      alert("Error: Please use a web3 enabled browser.");
+      console.error("Error: Please use a web3 enabled browser.");
     } else {
-      alert("Error: Please connect your wallet.");
+      console.error("Error: Please connect your wallet.");
     }
     return {} as JsonRpcSigner;
   }
@@ -53,15 +53,15 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
     } else {
       alert("Error: Please connect your wallet.");
     }
-    return { balance: 0, allowance: 0 };
+    return { balance: -1, allowance: -1 };
   }
 };
 
 const toggleStatus = async (balance: number, allowance: number) => {
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  trBalance.textContent = `$${ethers.utils.formatUnits(balance, 18)}`;
-  trAllowance.textContent = `$${ethers.utils.formatUnits(allowance, 18)}`;
+  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, 18)}` : 'N/A';
+  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, 18)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
@@ -98,7 +98,7 @@ export const pay = async (): Promise<void> => {
       }
       await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
-      console.log(error);
+      console.error(error);
     }
   });
 
