@@ -40,7 +40,7 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
   try {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+    const provider = new ethers.providers.Web3Provider((window).ethereum)
 
     const tokenAddress = txData.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
