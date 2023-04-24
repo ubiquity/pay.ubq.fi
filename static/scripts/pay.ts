@@ -123,14 +123,15 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 
   // watch for chain changes
   (window as any).ethereum.on("chainChanged", async (chainId: string) => {
-    if (chainId === "0x1") {
+    console.log(chainId)
+    if (chainId === "0x1" || chainId === "0x5") {
       // enable the button once on the correct network
       enableClaimButton();
     } 
   });
 
   // if its not on ethereum mainnet, display error
-  if (chainId !== "0x1") {
+  if (chainId !== "0x1" && chainId !== "0x5") {
     createToast("error", "Please switch to Ethereum Mainnet.");
     disableClaimButton(false);
     return { balance: -1, allowance: -1 };
