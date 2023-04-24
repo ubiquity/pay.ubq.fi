@@ -14,12 +14,12 @@
 
 /* just for toasts for now */
 :root {
-  --dark: #34495E;
+  --dark: #34495e;
   --light: #ffffff;
-  --success: #0ABF30;
-  --error: #E24D4C;
-  --warning: #E9BD0C;
-  --info: #3498DB;
+  --success: #0abf30;
+  --error: #e24d4c;
+  --warning: #e9bd0c;
+  --info: #3498db;
 }
 
 body {
@@ -61,7 +61,7 @@ a {
   text-align: center;
 }
 
-#logo>#logo-icon {
+#logo > #logo-icon {
   display: inline-block;
   vertical-align: middle;
   padding: 4px;
@@ -69,7 +69,7 @@ a {
   /* color: #fff; */
 }
 
-#logo-icon>svg {
+#logo-icon > svg {
   height: 36px;
   display: block;
   margin: 0;
@@ -79,12 +79,12 @@ a {
   fill: #fff;
 }
 
-#logo>div#logo-text {
+#logo > div#logo-text {
   display: inline-block;
   vertical-align: middle;
 }
 
-#logo>div#logo-text>span {
+#logo > div#logo-text > span {
   font-size: 20px;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -129,13 +129,13 @@ div#build {
   margin: auto;
 }
 
-div#build>a {
+div#build > a {
   opacity: 0.25;
   font-size: 12px;
   color: #fff;
 }
 
-div#build>a:hover {
+div#build > a:hover {
   opacity: 1;
 }
 

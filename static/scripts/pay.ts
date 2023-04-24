@@ -7,80 +7,80 @@ const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 const notifications = document.querySelector(".notifications") as HTMLElement;
 const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
-const buttonMark = document.querySelector('.claim-icon')  as HTMLElement;
+const buttonMark = document.querySelector(".claim-icon") as HTMLElement;
 const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
 
 // Object containing details for different types of toasts
 const toastDetails = {
-    timer: 5000,
-    success: {
-        icon: 'fa-circle-check',
-    },
-    error: {
-        icon: 'fa-circle-xmark',
-    },
-    warning: {
-        icon: 'fa-triangle-exclamation',
-    },
-    info: {
-        icon: 'fa-circle-info',
-    }
-}
+  timer: 5000,
+  success: {
+    icon: "fa-circle-check",
+  },
+  error: {
+    icon: "fa-circle-xmark",
+  },
+  warning: {
+    icon: "fa-triangle-exclamation",
+  },
+  info: {
+    icon: "fa-circle-info",
+  },
+};
 
-const removeToast = (toast) => {
-    toast.classList.add("hide");
-    if(toast.timeoutId) {
-      clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
-    }
-    setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
-}
+const removeToast = toast => {
+  toast.classList.add("hide");
+  if (toast.timeoutId) {
+    clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
+  }
+  setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
+};
 
 const createToast = (id: string, text: string) => {
-    // Getting the icon and text for the toast based on the id passed
-    const { icon } = toastDetails[id];
-    const toast = document.createElement("li") as any; // Creating a new 'li' element for the toast
-    toast.className = `toast ${id}`; // Setting the classes for the toast
-    // Setting the inner HTML for the toast
-    toast.innerHTML = `
+  // Getting the icon and text for the toast based on the id passed
+  const { icon } = toastDetails[id];
+  const toast = document.createElement("li") as any; // Creating a new 'li' element for the toast
+  toast.className = `toast ${id}`; // Setting the classes for the toast
+  // Setting the inner HTML for the toast
+  toast.innerHTML = `
       <div class="column">
           <i class="fa-solid ${icon}"></i>
           <span>${text}</span>
       </div>
       <i class="fa-solid fa-xmark" onclick="removeToast(this.parentElement)"></i>
     `;
-    notifications.appendChild(toast); // Append the toast to the notification ul
-    
-    // Setting a timeout to remove the toast after the specified duration
-    toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
-}
+  notifications.appendChild(toast); // Append the toast to the notification ul
+
+  // Setting a timeout to remove the toast after the specified duration
+  toast!.timeoutId = setTimeout(() => removeToast(toast), toastDetails.timer);
+};
 
 const disableClaimButton = () => {
   claimButtonElem!.disabled = true;
-  
-  claimLoader?.classList.add('show-cl'), claimLoader?.classList.remove('hide-cl');
 
-  buttonMark?.classList.add('hide-cl'), buttonMark?.classList.remove('show-cl');
-}
+  claimLoader?.classList.add("show-cl"), claimLoader?.classList.remove("hide-cl");
+
+  buttonMark?.classList.add("hide-cl"), buttonMark?.classList.remove("show-cl");
+};
 
 const enableClaimButton = () => {
   claimButtonElem!.disabled = false;
-  
-  claimLoader?.classList.add('hide-cl'), claimLoader?.classList.remove('show-cl');
 
-  buttonMark?.classList.add('show-cl'), buttonMark?.classList.remove('hide-cl');
-}
+  claimLoader?.classList.add("hide-cl"), claimLoader?.classList.remove("show-cl");
+
+  buttonMark?.classList.add("show-cl"), buttonMark?.classList.remove("hide-cl");
+};
 
 const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
   if (extra !== undefined) {
-    createToast('error', extra);
+    createToast("error", extra);
     return;
   }
   // parse error data to get error message
   const parsedError = JSON.parse(ErrorData);
   const errorMessage = parsedError?.error?.message;
-  createToast('error', `Error: ${errorMessage}`)
+  createToast("error", `Error: ${errorMessage}`);
 };
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
@@ -96,15 +96,15 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
     .permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature)
     .then((tx: any) => {
       // get success message
-      createToast('success', `Transaction sent: ${tx?.hash}`);
+      createToast("success", `Transaction sent: ${tx?.hash}`);
       tx.wait().then((receipt: any) => {
-        createToast('success', `Transaction confirmed: ${receipt?.transactionHash}`);
+        createToast("success", `Transaction confirmed: ${receipt?.transactionHash}`);
       });
-      enableClaimButton()
+      enableClaimButton();
     })
     .catch((error: any) => {
-      ErrorHandler(error, predefined)
-      enableClaimButton()
+      ErrorHandler(error, predefined);
+      enableClaimButton();
     });
 };
 
@@ -137,7 +137,7 @@ export const pay = async (): Promise<void> => {
 
   claimButtonElem.addEventListener("click", async () => {
     try {
-      disableClaimButton()
+      disableClaimButton();
 
       const signer = await connectWallet();
       const { balance, allowance } = await fetchTreasury();
@@ -154,7 +154,7 @@ export const pay = async (): Promise<void> => {
       await withdraw(signer, txData, predefined);
     } catch (error: unknown) {
       console.error(error);
-      enableClaimButton()
+      enableClaimButton();
     }
   });
 
