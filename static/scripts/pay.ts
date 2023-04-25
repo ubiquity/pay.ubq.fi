@@ -173,11 +173,6 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
     const allowance = await tokenContract.allowance(txData.owner, permit2Address);
     return { balance, allowance };
   } catch (error: any) {
-    if (error?.message?.includes("missing provider")) {
-      createToast("error", "Error: Please use a web3 enabled browser.");
-    } else {
-      createToast("error", "Error: Please connect your wallet.");
-    }
     return { balance: -1, allowance: -1 };
   }
 };
