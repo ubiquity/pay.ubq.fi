@@ -1,5 +1,5 @@
 {
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
     "start:ui": "tsx serve.ts",
