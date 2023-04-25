@@ -18,3 +18,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: pay-ubq-fi
           directory: ./static
+          preview: true
