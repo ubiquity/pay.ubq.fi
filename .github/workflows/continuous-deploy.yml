@@ -1,8 +1,12 @@
-name: Deploy to Cloudflare
+name: Cloudflare Preview Deployment
 
 on:
   push:
+      branches-ignore:
+      - main
   pull_request:
+      branches-ignore:
+      - main
 
 jobs:
   deploy:
@@ -18,4 +22,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: pay-ubq-fi
           directory: ./static
-          preview: true
