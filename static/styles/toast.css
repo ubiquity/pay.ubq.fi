@@ -26,48 +26,30 @@
   padding: 16px 17px;
   margin-bottom: 10px;
   justify-content: space-between;
-  animation: show_toast 0.3s ease forwards;
+  animation: show_toast 0.5s ease-in-out;
   border: 1px solid #80808020;
   backdrop-filter: blur(4px);
 }
 
 @keyframes show_toast {
   0% {
-    transform: translateX(100%);
+    opacity: 0;
   }
-
-  40% {
-    transform: translateX(-5%);
-  }
-
-  80% {
-    transform: translateX(0%);
-  }
-
   100% {
-    transform: translateX(-10px);
+    opacity: 1;
   }
 }
 
 .notifications .toast.hide {
-  animation: hide_toast 0.3s ease forwards;
+  animation: hide_toast 0.5s ease-in-out;
 }
 
 @keyframes hide_toast {
   0% {
-    transform: translateX(-10px);
+    opacity: 1;
   }
-
-  40% {
-    transform: translateX(0%);
-  }
-
-  80% {
-    transform: translateX(-5%);
-  }
-
   100% {
-    transform: translateX(calc(100% + 20px));
+    opacity: 0;
   }
 }
 
