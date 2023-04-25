@@ -107,10 +107,19 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
 };
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
-  const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
-  await provider.send("eth_requestAccounts", []);
-  const signer = provider.getSigner();
-  return signer;
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    return signer;
+  } catch (error: any) {
+    if (error?.message?.includes("missing provider")) {
+      createToast("error", "Error: Please use a web3 enabled browser.");
+    } else {
+      createToast("error", "Error: Please connect your wallet.");
+    }
+    return {} as JsonRpcSigner;
+  }
 };
 
 const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: string | undefined = undefined) => {
@@ -132,43 +141,52 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
 };
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
-  const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-  if (!provider || !provider.provider.isMetaMask) {
-    createToast("error", "Please connect to MetaMask.");
-    disableClaimButton(false);
-    return { balance: -1, allowance: -1 };
-  }
-
-  const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
-
-  // watch for chain changes
-  (window as any).ethereum.on("chainChanged", async (chainId: string) => {
-    console.log(chainId);
-    if (chainId === "0x1" || chainId === "0x5") {
-      // enable the button once on the correct network
-      enableClaimButton();
+  try {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+    if (!provider || !provider.provider.isMetaMask) {
+      createToast("error", "Please connect to MetaMask.");
+      disableClaimButton(false);
+      return { balance: -1, allowance: -1 };
     }
-  });
 
-  // if its not on ethereum mainnet, display error
-  if (chainId !== "0x1" && chainId !== "0x5") {
-    createToast("error", "Please switch to Ethereum Mainnet.");
-    disableClaimButton(false);
+    const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
+
+    // watch for chain changes
+    window.ethereum.on("chainChanged", async (chainId: string) => {
+      console.log(chainId);
+      if (chainId === "0x1" || chainId === "0x5") {
+        // enable the button once on the correct network
+        enableClaimButton();
+      }
+    });
+
+    // if its not on ethereum mainnet, display error
+    if (chainId !== "0x1" && chainId !== "0x5") {
+      createToast("error", "Please switch to Ethereum Mainnet.");
+      disableClaimButton(false);
+      return { balance: -1, allowance: -1 };
+    }
+
+    const tokenAddress = txData.permit.permitted.token;
+    const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
+    const balance = await tokenContract.balanceOf(txData.owner);
+    const allowance = await tokenContract.allowance(txData.owner, permit2Address);
+    return { balance, allowance };
+  } catch (error: any) {
     return { balance: -1, allowance: -1 };
   }
-
-  const tokenAddress = txData.permit.permitted.token;
-  const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
-  const balance = await tokenContract.balanceOf(txData.owner);
-  const allowance = await tokenContract.allowance(txData.owner, permit2Address);
-  return { balance, allowance };
 };
 
-const toggleStatus = async (balance: number, allowance: number) => {
+const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcSigner) => {
+  let decimals = 18
+  if (signer._isSigner) {
+    const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
+    decimals = await tokenContract.decimals();
+  }
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  trBalance.textContent = `$${ethers.utils.formatUnits(balance, 18)}`;
-  trAllowance.textContent = `$${ethers.utils.formatUnits(allowance, 18)}`;
+  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, +decimals)}` : 'N/A';
+  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, +decimals)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
@@ -186,19 +204,24 @@ export const pay = async (): Promise<void> => {
   const signer = await connectWallet();
 
   // check if permit is already claimed
-  let claimed = await checkPermitClaimed(signer);
+  if (signer._isSigner) {
+    let claimed = await checkPermitClaimed(signer);
 
-  if (claimed) {
-    setClaimMessage("Notice", `Permit already claimed`);
-    table.setAttribute(`data-claim`, "none");
+    if (claimed) {
+      setClaimMessage("Notice", `Permit already claimed`);
+      table.setAttribute(`data-claim`, "none");
+    }
   }
 
   claimButtonElem.addEventListener("click", async () => {
     try {
+      if (!signer._isSigner) {
+        return;
+      }
       disableClaimButton();
 
       const { balance, allowance } = await fetchTreasury();
-      await toggleStatus(balance, allowance);
+      await toggleStatus(balance, allowance, signer);
       let predefined: string | undefined = undefined;
 
       if (!(balance >= Number(txData.permit.permitted.amount) && allowance >= Number(txData.permit.permitted.amount))) {
@@ -216,7 +239,7 @@ export const pay = async (): Promise<void> => {
   });
 
   const { balance, allowance } = await fetchTreasury();
-  await toggleStatus(balance, allowance);
+  await toggleStatus(balance, allowance, signer);
 
   // display commit hash
   const commit = await fetch("commit.txt");
