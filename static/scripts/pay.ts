@@ -152,7 +152,7 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
     const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
 
     // watch for chain changes
-    (window as any).ethereum.on("chainChanged", async (chainId: string) => {
+    window.ethereum.on("chainChanged", async (chainId: string) => {
       console.log(chainId);
       if (chainId === "0x1" || chainId === "0x5") {
         // enable the button once on the correct network
