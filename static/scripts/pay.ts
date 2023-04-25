@@ -188,8 +188,8 @@ const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcS
   const trAllowance = document.querySelector(".tr-allowance") as Element;
   // get token decimals
   const decimals = await tokenContract.decimals();
-  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, +decimals)}` : 'N/A';
-  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, +decimals)}` : 'N/A';
+  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, decimals)}` : 'N/A';
+  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, decimals)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
