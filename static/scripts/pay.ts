@@ -185,8 +185,8 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 const toggleStatus = async (balance: number, allowance: number) => {
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, 18)}` : "N/A";
-  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, 18)}` : "N/A";
+  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, 18)}` : 'N/A';
+  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, 18)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
