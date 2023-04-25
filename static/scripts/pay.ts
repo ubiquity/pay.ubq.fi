@@ -152,7 +152,7 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
     const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
 
     // watch for chain changes
-    (window as any).ethereum.on("chainChanged", async (chainId: string) => {
+    window.ethereum.on("chainChanged", async (chainId: string) => {
       console.log(chainId);
       if (chainId === "0x1" || chainId === "0x5") {
         // enable the button once on the correct network
@@ -173,23 +173,20 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
     const allowance = await tokenContract.allowance(txData.owner, permit2Address);
     return { balance, allowance };
   } catch (error: any) {
-    if (error?.message?.includes("missing provider")) {
-      createToast("error", "Error: Please use a web3 enabled browser.");
-    } else {
-      createToast("error", "Error: Please connect your wallet.");
-    }
     return { balance: -1, allowance: -1 };
   }
 };
 
 const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcSigner) => {
-  const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
+  let decimals = 18
+  if (signer._isSigner) {
+    const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
+    decimals = await tokenContract.decimals();
+  }
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  // get token decimals
-  const decimals = await tokenContract.decimals();
-  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, decimals)}` : 'N/A';
-  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, decimals)}` : 'N/A';
+  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, decimals)}` : 'N/A';
+  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, decimals)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
@@ -207,17 +204,17 @@ export const pay = async (): Promise<void> => {
   const signer = await connectWallet();
 
   // check if permit is already claimed
-  let claimed = await checkPermitClaimed(signer);
+  if (signer._isSigner) {
+    let claimed = await checkPermitClaimed(signer);
 
-  if (claimed) {
-    setClaimMessage("Notice", `Permit already claimed`);
-    table.setAttribute(`data-claim`, "none");
+    if (claimed) {
+      setClaimMessage("Notice", `Permit already claimed`);
+      table.setAttribute(`data-claim`, "none");
+    }
   }
 
   claimButtonElem.addEventListener("click", async () => {
     try {
-      const signer = await connectWallet();
-
       if (!signer._isSigner) {
         return;
       }
