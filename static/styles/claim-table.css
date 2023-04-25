@@ -1,3 +1,9 @@
+#claimButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 table {
   border-collapse: collapse;
   /* max-width: 512px; */
@@ -155,7 +161,7 @@ table[data-claim-rendered] button > div {
   /* padding: 16px; */
 }
 
-table[data-claim-rendered] button > svg {
+table[data-claim-rendered] button > svg.claim-icon {
   display: unset;
 }
 
