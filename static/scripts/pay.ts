@@ -182,11 +182,14 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
   }
 };
 
-const toggleStatus = async (balance: number, allowance: number) => {
+const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcSigner) => {
+  const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, 18)}` : 'N/A';
-  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, 18)}` : 'N/A';
+  // get token decimals
+  const decimals = await tokenContract.decimals();
+  trBalance.textContent = balance ? `$${ethers.utils.formatUnits(balance, +decimals)}` : 'N/A';
+  trAllowance.textContent = balance ? `$${ethers.utils.formatUnits(allowance, +decimals)}` : 'N/A';
 };
 
 export const pay = async (): Promise<void> => {
@@ -221,7 +224,7 @@ export const pay = async (): Promise<void> => {
       disableClaimButton();
 
       const { balance, allowance } = await fetchTreasury();
-      await toggleStatus(balance, allowance);
+      await toggleStatus(balance, allowance, signer);
       let predefined: string | undefined = undefined;
 
       if (!(balance >= Number(txData.permit.permitted.amount) && allowance >= Number(txData.permit.permitted.amount))) {
@@ -239,7 +242,7 @@ export const pay = async (): Promise<void> => {
   });
 
   const { balance, allowance } = await fetchTreasury();
-  await toggleStatus(balance, allowance);
+  await toggleStatus(balance, allowance, signer);
 
   // display commit hash
   const commit = await fetch("commit.txt");
