@@ -1,7 +1,7 @@
 {
   "license": "ISC",
   "scripts": {
-    "start": "run-s utils:hash start:sign start:ui",
+    "start": "run-s utils:hash utils:build start:sign start:ui",
     "start:ui": "tsx serve.ts",
     "start:sign": "tsx ./generate-permit/generate-permit2-url.ts",
     "utils:build": "tsx build.ts",
