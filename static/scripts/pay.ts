@@ -50,7 +50,7 @@ const checkPermitClaimed = async (signer: JsonRpcSigner) => {
   // Set contract address and ABI
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
 
-  const claimed = await permit2Contract.nonceBitmap(txData?.owner || "", bitmapPositions(tx?.permit?.nonce));
+  const claimed = await permit2Contract.nonceBitmap(txData?.owner, bitmapPositions(tx?.permit?.nonce));
 
   return claimed?.toString() !== "0"; // 0 is not claimed, any digit greater than 0 indicates claimed
 };
