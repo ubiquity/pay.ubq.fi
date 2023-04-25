@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { daiAbi, permit2Abi } from "./abis";
-import { TxType, txData } from "./render-transaction";
+import { TxType, txData, setClaimMessage } from "./render-transaction";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
@@ -33,6 +33,26 @@ const removeToast = toast => {
     clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
   }
   setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
+};
+
+// mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L150
+const bitmapPositions = (nonce: string) => {
+  const dividend = BigInt(nonce);
+  const divisor = BigInt("256");
+  const quotient = dividend / divisor;
+  return quotient.toString();
+};
+
+const checkPermitClaimed = async (signer: JsonRpcSigner) => {
+  // get tx from window
+  let tx = (window as any).txData as typeof txData;
+
+  // Set contract address and ABI
+  const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+
+  const claimed = await permit2Contract.nonceBitmap(txData?.owner || "", bitmapPositions(tx?.permit?.nonce));
+
+  return claimed?.toString() !== "0"; // 0 is not claimed, any digit greater than 0 indicates claimed
 };
 
 const createToast = (id: string, text: string) => {
@@ -123,11 +143,11 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 
   // watch for chain changes
   (window as any).ethereum.on("chainChanged", async (chainId: string) => {
-    console.log(chainId)
+    console.log(chainId);
     if (chainId === "0x1" || chainId === "0x5") {
       // enable the button once on the correct network
       enableClaimButton();
-    } 
+    }
   });
 
   // if its not on ethereum mainnet, display error
@@ -163,11 +183,20 @@ export const pay = async (): Promise<void> => {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
+  const signer = await connectWallet();
+
+  // check if permit is already claimed
+  let claimed = await checkPermitClaimed(signer);
+
+  if (claimed) {
+    setClaimMessage("Notice", `Permit already claimed`);
+    table.setAttribute(`data-claim`, "none");
+  }
+
   claimButtonElem.addEventListener("click", async () => {
     try {
       disableClaimButton();
 
-      const signer = await connectWallet();
       const { balance, allowance } = await fetchTreasury();
       await toggleStatus(balance, allowance);
       let predefined: string | undefined = undefined;
