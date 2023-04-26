@@ -10,7 +10,7 @@ export const ReverseEnsInterface = new ethers.utils.Interface(abi);
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function handleRequest(__address: string) {
+export async function ensLookup(__address: string) {
   const _address = "/".concat(__address); // quick adapter
 
   // try {

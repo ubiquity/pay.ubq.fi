@@ -92,14 +92,16 @@ const insertTableData = async (table: Element): Promise<Element> => {
   return requestedAmountElement;
 };
 
+import { ensLookup } from "./cirip/ens-lookup";
+
 async function renderEnsName(element: Element, address: string, tokenView: boolean = false): Promise<void> {
   // const provider = new ethers.providers.Web3Provider(window.ethereum);
   // const ens = await provider.lookupAddress(address);
-  const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
+
   let href: string = "";
   try {
-    const resolved = await ensResolve.json();
-    let ensName;
+    const resolved = await ensLookup(address);
+    let ensName: undefined | string;
     if (resolved.reverseRecord) {
       ensName = resolved.reverseRecord;
     } else if (resolved.domains.length) {
