@@ -1,9 +1,8 @@
 import { ethers } from "ethers";
-
-const NODE_ADDRESS = "https://rpc.ankr.com/eth";
-
 import abi from "../abis/cirip.json";
-const iface = new ethers.utils.Interface(abi);
+
+const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
+const ReverseEns = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
@@ -21,7 +20,7 @@ export async function handleRequest(request) {
     const address = pathname.substring(start + 1, start + 43).toLowerCase();
     //   console.log('address: ' + address)
 
-    let reverseRecord = null;
+    let reverseRecord = null as null | string;
     let res = "";
     try {
       res = await queryReverseEns(address);
@@ -71,10 +70,10 @@ export async function handleRequest(request) {
   }
 }
 
-async function queryReverseEns(address) {
-  const data = iface.encodeFunctionData("getNames", [[address.substring(2)]]);
+async function queryReverseEns(address: string) {
+  const data = ReverseEns.encodeFunctionData("getNames", [[address.substring(2)]]);
 
-  const resp = await fetch(NODE_ADDRESS, {
+  const response = await fetch(UBIQUITY_RPC_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,11 +86,11 @@ async function queryReverseEns(address) {
     }),
   });
 
-  return resp.text();
+  return response.text();
 }
 
 async function queryGraph(endpoint, query) {
-  const resp = await fetch(endpoint, {
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -100,7 +99,7 @@ async function queryGraph(endpoint, query) {
     body: JSON.stringify({ query }),
   });
 
-  return resp.json();
+  return response.json();
 }
 
 async function fetchEns(address) {
@@ -110,11 +109,6 @@ async function fetchEns(address) {
       name
     }
   }`;
-
-  //console.debug("query: \n" + query);
-
   const res = await queryGraph(endpoint, query);
-  //console.debug(JSON.stringify(res));
-
   return res.data.domains.map(d => d.name);
 }
