@@ -1,15 +1,17 @@
 import { ethers } from "ethers";
 import abi from "../abis/cirip.json";
+import { fetchEns } from "./fetch-ens";
+import { queryReverseEns } from "./query-reverse-ens";
 
-const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
-const ReverseEns = new ethers.utils.Interface(abi);
+export const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
+export const ReverseEns = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function handleRequest(request) {
-  const { pathname } = new URL(request.url);
+export async function handleRequest(pathname: string) {
+  // const { pathname } = new URL(request.url);
 
   try {
     let start = pathname.indexOf("/0x");
@@ -21,22 +23,18 @@ export async function handleRequest(request) {
     //   console.log('address: ' + address)
 
     let reverseRecord = null as null | string;
-    let res = "";
+    let response = "";
     try {
-      res = await queryReverseEns(address);
-      reverseRecord = await res;
-      const res_parsed = JSON.parse(res).result;
-      // console.log(res)
-      let rr = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], res_parsed);
-      // console.log('reverseRecord: ' + JSON.stringify(rr))
-      reverseRecord = rr[0][0];
+      reverseRecord = await queryReverseEns(address);
+      const responseParsed = JSON.parse(reverseRecord).result;
+      let _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
+      reverseRecord = _reverseRecord[0][0];
     } catch (e) {
       console.error(e);
-      throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + res;
+      throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;
     }
 
     let allDomains = await fetchEns(address);
-    //   console.log('all domains owned: ' + JSON.stringify(allDomains))
 
     if (reverseRecord == "") {
       reverseRecord = null;
@@ -68,47 +66,4 @@ export async function handleRequest(request) {
       },
     });
   }
-}
-
-async function queryReverseEns(address: string) {
-  const data = ReverseEns.encodeFunctionData("getNames", [[address.substring(2)]]);
-
-  const response = await fetch(UBIQUITY_RPC_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: "1",
-      method: "eth_call",
-      params: [{ to: "0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C", data: data }, "latest"],
-    }),
-  });
-
-  return response.text();
-}
-
-async function queryGraph(endpoint, query) {
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ query }),
-  });
-
-  return response.json();
-}
-
-async function fetchEns(address) {
-  const endpoint = "https://api.thegraph.com/subgraphs/name/ensdomains/ens";
-  const query = `{
-    domains(where:{owner:"${address.toLowerCase()}"}) {
-      name
-    }
-  }`;
-  const res = await queryGraph(endpoint, query);
-  return res.data.domains.map(d => d.name);
 }
