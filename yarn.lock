@@ -671,6 +671,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/plugin-create-or-update-text-file@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "@octokit/plugin-create-or-update-text-file@npm:2.0.4"
+  dependencies:
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^9.0.0
+  peerDependencies:
+    "@octokit/core": ">= 3"
+  checksum: 5f899a6ed76ba62ac38a257bb269600eff3a37ba17662266fb3eaa4e8699771313f7ea714abf2935546be81b1fa2a9b3ae2c7fde39db2e37baadfa199c1afcd5
+  languageName: node
+  linkType: hard
+
 "@octokit/plugin-paginate-rest@npm:^6.0.0":
   version: 6.0.0
   resolution: "@octokit/plugin-paginate-rest@npm:6.0.0"
@@ -765,6 +777,13 @@ __metadata:
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
   checksum: ad87447820dd3f24825d2d947ebc03072b20a42bfc96cbafec16bff8bbda6c1a81fcb0be56d5b21968560c5359a0af4038a68ba150c3e1694fe4c109a063bed8
+  languageName: node
+  linkType: hard
+
+"@types/libsodium-wrappers@npm:^0.7.10":
+  version: 0.7.10
+  resolution: "@types/libsodium-wrappers@npm:0.7.10"
+  checksum: 717054ebcb5fa553e378144b8d564bed8b691905c0d4e90b95c64d77ba24ec9fe798cb2c58cd61dad545ceacb1f05ab69b5597217f9829f2da7a23f0688d11d0
   languageName: node
   linkType: hard
 
@@ -1956,6 +1975,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"libsodium-wrappers@npm:^0.7.11":
+  version: 0.7.11
+  resolution: "libsodium-wrappers@npm:0.7.11"
+  dependencies:
+    libsodium: ^0.7.11
+  checksum: 6a6ef47b2213e3fb4687196c28fee4c9885f70d89547d845e62d96014d3d5ad9f59cb05fadc601debc0031a3cfd0b9b416d7efbeb5bf66db6aa0ed69f55a6293
+  languageName: node
+  linkType: hard
+
+"libsodium@npm:^0.7.11":
+  version: 0.7.11
+  resolution: "libsodium@npm:0.7.11"
+  checksum: 0a3493ac1829d1e346178b6984c4eb449dc77157c906876441386c0c653142e3fa56f623ce980bb50e580196578689298c9cd406ce6d514904090e370c6bc0f7
+  languageName: node
+  linkType: hard
+
 "load-json-file@npm:^4.0.0":
   version: 4.0.0
   resolution: "load-json-file@npm:4.0.0"
@@ -2492,8 +2527,10 @@ __metadata:
   dependencies:
     "@ethersproject/providers": ^5.7.2
     "@octokit/core": ^4.2.0
+    "@octokit/plugin-create-or-update-text-file": ^2.0.4
     "@octokit/plugin-throttling": ^5.1.0
     "@octokit/rest": ^19.0.7
+    "@types/libsodium-wrappers": ^0.7.10
     "@types/node": ^18.15.11
     "@uniswap/permit2-sdk": ^1.2.0
     axios: ^1.3.5
@@ -2501,10 +2538,12 @@ __metadata:
     esbuild: ^0.17.15
     ethers: ^5.7.2
     godb: ^0.6.2
+    libsodium-wrappers: ^0.7.11
     npm-run-all: ^4.1.5
     prettier: ^2.8.7
     retry-axios: ^3.0.0
     tsx: ^3.12.6
+    yaml: ^2.2.2
   languageName: unknown
   linkType: soft
 
@@ -3003,5 +3042,12 @@ __metadata:
   version: 4.0.0
   resolution: "yallist@npm:4.0.0"
   checksum: 343617202af32df2a15a3be36a5a8c0c8545208f3d3dfbc6bb7c3e3b7e8c6f8e7485432e4f3b88da3031a6e20afa7c711eded32ddfb122896ac5d914e75848d5
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "yaml@npm:2.2.2"
+  checksum: d90c235e099e30094dcff61ba3350437aef53325db4a6bcd04ca96e1bfe7e348b191f6a7a52b5211e2dbc4eeedb22a00b291527da030de7c189728ef3f2b4eb3
   languageName: node
   linkType: hard

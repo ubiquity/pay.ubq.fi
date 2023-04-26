@@ -1,7 +1,8 @@
 import esbuild from "esbuild";
+import { entries } from "./static/scripts/entries";
 
 esbuild.build({
-  entryPoints: ["static/scripts/app.ts", "static/scripts/audit.ts", "static/styles/app.css", "static/styles/audit.css", "static/styles/toast.css", "static/styles/fa.css"],
+  entryPoints: entries,
   bundle: true,
   minify: true,
   loader: {
