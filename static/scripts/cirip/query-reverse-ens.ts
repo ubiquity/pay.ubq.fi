@@ -1,7 +1,7 @@
-import { ReverseEns, UBIQUITY_RPC_ENDPOINT } from "./ens-lookup";
+import { ReverseEnsInterface, UBIQUITY_RPC_ENDPOINT } from "./ens-lookup";
 
 export async function queryReverseEns(address: string) {
-  const data = ReverseEns.encodeFunctionData("getNames", [[address.substring(2)]]);
+  const data = ReverseEnsInterface.encodeFunctionData("getNames", [[address.substring(2)]]);
 
   const response = await fetch(UBIQUITY_RPC_ENDPOINT, {
     method: "POST",
