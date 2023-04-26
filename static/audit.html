@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="out/styles/audit.css" rel="stylesheet" />
   </head>
+
   <body>
     <div class="container">
       <h1 class="audit-tag">Audit report</h1>
@@ -76,6 +77,20 @@
         </tbody>
       </table>
     </div>
+    <!-- result table -->
+    <table id="resultTable" class="table" style="display: none">
+      <thead>
+        <tr>
+          <th scope="col">Issue URL</th>
+          <th scope="col">Transaction URL</th>
+          <th scope="col">Amount (DAI)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- table content -->
+      </tbody>
+    </table>
+    <ul class="notifications"></ul>
     <script src="out/scripts/audit.js" type="application/javascript"></script>
   </body>
 </html>

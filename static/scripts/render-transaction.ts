@@ -34,7 +34,7 @@ export let txData: TxType = {
   signature: "",
 };
 
-const setClaimMessage = (type: string, message: string): void => {
+export const setClaimMessage = (type: string, message: string): void => {
   const claimMessageTypeElement = document.querySelector(`table > thead th`) as Element;
   const claimMessageBodyElement = document.querySelector(`table > thead td`) as Element;
   claimMessageTypeElement.textContent = type;
