@@ -10,16 +10,16 @@ export const ReverseEnsInterface = new ethers.utils.Interface(abi);
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function handleRequest(pathname: string) {
-  // const { pathname } = new URL(request.url);
+export async function handleRequest(__address: string) {
+  const _address = "/".concat(__address); // quick adapter
 
   // try {
-  let start = pathname.indexOf("/0x");
+  let start = _address.indexOf("/0x");
   if (start == -1) throw "No ethereum address provided.";
-  if (pathname.length <= 42 + start) {
+  if (_address.length <= 42 + start) {
     throw "Invalid ethereum address provided.";
   }
-  const address = pathname.substring(start + 1, start + 43).toLowerCase();
+  const address = _address.substring(start + 1, start + 43).toLowerCase();
 
   let reverseRecord = null as null | string;
   // let response = "";
@@ -45,17 +45,18 @@ export async function handleRequest(pathname: string) {
     reverseRecord = null;
   }
 
-  let resp = {
+  let response = {
     reverseRecord: reverseRecord,
     domains: allDomains,
   };
 
-  return new Response(JSON.stringify(resp), {
-    headers: {
-      "Content-Type": "application/json;charset=UTF-8",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  return response;
+  //  new Response(JSON.stringify(response), {
+  //   headers: {
+  //     "Content-Type": "application/json;charset=UTF-8",
+  //     "Access-Control-Allow-Origin": "*",
+  //   },
+  // });
   // } catch (e) {
   //   return new Response("Error: " + e, {
   //     status: 400,
