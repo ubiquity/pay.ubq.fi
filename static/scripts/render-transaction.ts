@@ -1,4 +1,5 @@
 import { getERC20Contract } from "./get-contract";
+import { ethers } from "ethers";
 
 export type TxType = {
   permit: {
@@ -93,21 +94,10 @@ const insertTableData = async (table: Element): Promise<Element> => {
 };
 
 async function renderEnsName(element: Element, address: string, tokenView: boolean = false): Promise<void> {
-  // const provider = new ethers.providers.Web3Provider(window.ethereum);
-  // const ens = await provider.lookupAddress(address);
-  const ensResolve = await fetch(`https://ens.cirip.io/${address}`);
+  const provider = new ethers.providers.JsonRpcProvider("https://rpc-pay.ubq.fi/v1/mainnet");
   let href: string = "";
   try {
-    const resolved = await ensResolve.json();
-    let ensName;
-    if (resolved.reverseRecord) {
-      ensName = resolved.reverseRecord;
-    } else if (resolved.domains.length) {
-      const domain = resolved.domains.shift();
-      if (domain) {
-        ensName = domain;
-      }
-    }
+    const ensName = await provider.lookupAddress(address);
     if (ensName) {
       if (tokenView) {
         href = `https://etherscan.io/token/${txData.permit.permitted.token}?a=${address}`;
@@ -116,7 +106,9 @@ async function renderEnsName(element: Element, address: string, tokenView: boole
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 const shortenAddress = (address: string): string => {
