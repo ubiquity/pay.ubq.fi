@@ -178,15 +178,15 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 };
 
 const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcSigner) => {
-  let decimals = 18
+  let decimals = 18;
   if (signer._isSigner) {
     const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
     decimals = await tokenContract.decimals();
   }
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
-  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, decimals)}` : 'N/A';
-  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, decimals)}` : 'N/A';
+  trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, decimals)}` : "N/A";
+  trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, decimals)}` : "N/A";
 };
 
 export const pay = async (): Promise<void> => {

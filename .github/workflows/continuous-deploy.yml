@@ -2,10 +2,10 @@ name: Cloudflare Preview Deployment
 
 on:
   push:
-      branches-ignore:
+    branches-ignore:
       - main
   pull_request:
-      branches-ignore:
+    branches-ignore:
       - main
 
 jobs:

@@ -1,141 +1,141 @@
 @import url(audit.css);
 
 button {
-    all: unset;
-    background: #0d6efd;
-    border-radius: 6px;
-    padding: 14px 20px;
-    color: white;
-    cursor: pointer;
-    align-self: flex-start;
-    user-select: none;
+  all: unset;
+  background: #0d6efd;
+  border-radius: 6px;
+  padding: 14px 20px;
+  color: white;
+  cursor: pointer;
+  align-self: flex-start;
+  user-select: none;
 }
 
 button:not(:disabled):hover {
-    background: #0a58ca;
+  background: #0a58ca;
 }
 
 .btn-container {
-    display: flex;
-    flex-direction: row;
-    gap: 16px;
-    align-self: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-self: flex-start;
 }
 
 .status-log {
-    text-transform: none;
+  text-transform: none;
 }
 
 .error {
-    color: #ff0b0b;
+  color: #ff0b0b;
 }
 
 .success {
-    color: #8ce700;
+  color: #8ce700;
 }
 
 .warn {
-    color: #ff8d00;
+  color: #ff8d00;
 }
 
 .input-warn:focus {
-    border-color: #fec486;
-    box-shadow: 0 0 0 0.25rem rgb(253 139 13 / 25%);
+  border-color: #fec486;
+  box-shadow: 0 0 0 0.25rem rgb(253 139 13 / 25%);
 }
 
 .input-error:focus {
-    border-color: #fe8686;
-    box-shadow: 0 0 0 0.25rem rgb(253 13 53 / 25%);
+  border-color: #fe8686;
+  box-shadow: 0 0 0 0.25rem rgb(253 13 53 / 25%);
 }
 
 .input-success:focus {
-    border-color: #67e98f;
-    box-shadow: 0 0 0 0.25rem rgb(72 253 13 / 25%);
+  border-color: #67e98f;
+  box-shadow: 0 0 0 0.25rem rgb(72 253 13 / 25%);
 }
 
 .loader-x {
-    width: 48px;
-    height: 48px;
-    border: 5px solid #dbe3ef;
-    border-bottom-color: #0027ff;
-    border-radius: 50%;
-    display: inline-block;
-    box-sizing: border-box;
-    animation: rotation 1s linear infinite;
+  width: 48px;
+  height: 48px;
+  border: 5px solid #dbe3ef;
+  border-bottom-color: #0027ff;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
 }
 
 @keyframes rotation {
-    0% {
-        transform: rotate(0deg);
-    }
+  0% {
+    transform: rotate(0deg);
+  }
 
-    100% {
-        transform: rotate(360deg);
-    }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .pos-rel {
-    position: relative;
+  position: relative;
 }
 
 .out-file {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    text-transform: none;
-    background: #f5f6f9;
-    padding: 4px 6px;
-    border-radius: 4px;
-    color: #8095d1;
-    font-weight: 900;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  text-transform: none;
+  background: #f5f6f9;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: #8095d1;
+  font-weight: 900;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
 .out-file button {
-    padding: 6px 8px;
+  padding: 6px 8px;
 }
 
 .out-parse {
-    background: none;
+  background: none;
 }
 
 #jsonBtn {
-    border-radius: 6px 0 0 6px;
-    background: #ffb100;
+  border-radius: 6px 0 0 6px;
+  background: #ffb100;
 }
 
 #jsonBtn:disabled {
-    background: #ffb100ad;
+  background: #ffb100ad;
 }
 
 #jsonBtn:not(:disabled):hover {
-    background: #ffb100ad;
+  background: #ffb100ad;
 }
 
 #yamlBtn {
-    border-radius: 0 6px 6px 0;
-    background: #ff0000;
+  border-radius: 0 6px 6px 0;
+  background: #ff0000;
 }
 
 #yamlBtn:disabled {
-    background: #ff00007d;
+  background: #ff00007d;
 }
 
 #yamlBtn:not(:disabled):hover {
-    background: #ff00007d;
+  background: #ff00007d;
 }
 
 textarea {
-    padding-top: 15px;
-    line-height: 1.8;
-    color: #248febd1;
-    overflow-y: hidden;
+  padding-top: 15px;
+  line-height: 1.8;
+  color: #248febd1;
+  overflow-y: hidden;
 }
 
 #status-adv {
-    position: absolute;
-    bottom: -22px;
+  position: absolute;
+  bottom: -22px;
 }
