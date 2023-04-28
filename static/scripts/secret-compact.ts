@@ -10,6 +10,7 @@ const githubPAT = document.querySelector("#githubPat") as HTMLInputElement;
 const orgName = document.querySelector("#orgName") as HTMLInputElement;
 const walletPrivateKey = document.querySelector("#walletPrivateKey") as HTMLInputElement;
 const ecPublicKey = document.querySelector("#ecPublicKey") as HTMLInputElement;
+const encryptBtn = document.querySelector("#encryptBtn") as HTMLButtonElement;
 const setBtn = document.querySelector("#setBtn") as HTMLButtonElement;
 const jsonBtn = document.querySelector("#jsonBtn") as HTMLButtonElement;
 const yamlBtn = document.querySelector("#yamlBtn") as HTMLButtonElement;
@@ -21,7 +22,6 @@ const REPO_NAME = "ubiquibot-config";
 const KEY_PATH = ".github/ubiquibot-config.yml";
 const KEY_NAME = "PSK";
 const KEY_PREFIX = "HSK_";
-const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
 let parseMode: "JSON" | "YAML" = "JSON";
@@ -393,25 +393,27 @@ const setInputListeners = () => {
 };
 
 const init = () => {
-  ecPublicKey.value = X25519_KEY;
   setInputListeners();
 
-  setBtn.addEventListener("click", async () => {
+  encryptBtn.addEventListener("click", () => {
     if (walletPrivateKey.value !== "") {
-      await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
-      if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
-        setHandler();
-      } else if (encryptedValue === "") {
-        singleToggle("warn", `Warn: Please encrypt first.`);
-      } else if (orgName.value === "" && githubPAT.value === "") {
-        singleToggle("warn", `Warn: Org Name and GitHub PAT is not set.`);
-      } else if (orgName.value === "") {
-        singleToggle("warn", `Warn: Org Name is not set.`, orgName);
-      } else {
-        singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
-      }
+      sodiumEncryptedSeal(ecPublicKey.value, `${KEY_PREFIX}${walletPrivateKey.value}`);
     } else {
       singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
+    }
+  });
+
+  setBtn.addEventListener("click", () => {
+    if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
+      setHandler();
+    } else if (encryptedValue === "") {
+      singleToggle("warn", `Warn: Please encrypt first.`);
+    } else if (orgName.value === "" && githubPAT.value === "") {
+      singleToggle("warn", `Warn: Org Name and GitHub PAT is not set.`);
+    } else if (orgName.value === "") {
+      singleToggle("warn", `Warn: Org Name is not set.`, orgName);
+    } else {
+      singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
     }
   });
 
