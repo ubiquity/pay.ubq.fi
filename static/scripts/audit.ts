@@ -85,6 +85,10 @@ const getDataSchema = (storeHash: string) => {
         type: String,
         unique: false,
       },
+      title: {
+        type: String,
+        unique: false,
+      },
     },
   };
 
@@ -106,11 +110,12 @@ const updateDB = async (storeHash: string) => {
   await metaTable.put(metaData);
   if (elemList.length > 0) {
     for (let elem of elemList) {
-      const { id, tx, amount } = elem;
+      const { id, tx, amount, title } = elem;
       await storeTable.put({
         id,
         tx,
         amount,
+        title,
       });
     }
   }
@@ -207,14 +212,14 @@ class smartQueue {
       const tx_url = `https://etherscan.io/tx/${ether?.txHash}`;
       const rows = `
         <tr>
-            <td><a href="${issue_url}" target="_blank">${issue_url}</a></td>
-            <td><a href="${tx_url}" target="_blank">${tx_url}</a></td>
-            <td>${ethers.utils.formatEther(amount)}</td>
+            <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+            <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
         </tr>`;
       elemList.push({
         id: git?.issue_number!,
         tx: ether?.txHash!,
         amount: ethers.utils.formatEther(amount)!,
+        title: git?.issue_title!,
       });
 
       resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
@@ -330,6 +335,7 @@ const commentFetcher = async () => {
                   },
                   s: {
                     git: {
+                      issue_title: issueList[0].title,
                       issue_number: issueList[0].number,
                       owner: OWNER_NAME,
                       repo: REPOSITORY_NAME,
@@ -565,9 +571,8 @@ const dbInit = async () => {
           const tx_url = `https://etherscan.io/tx/${data.tx}`;
           const rows = `
           <tr>
-              <td><a href="${issue_url}" target="_blank">${issue_url}</a></td>
-              <td><a href="${tx_url}" target="_blank">${tx_url}</a></td>
-              <td>${data.amount}</td>
+              <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
+              <td><a href="${tx_url}" target="_blank">${data.amount}</a></td>
           </tr>`;
           resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
         }
