@@ -4,12 +4,14 @@ export interface ElemInterface {
   id: number;
   tx: string;
   amount: string;
+  title: string;
 }
 
 export interface GitInterface {
   owner: string;
   repo: string;
   issue_number: number;
+  issue_title: string;
 }
 
 export interface EtherInterface {
