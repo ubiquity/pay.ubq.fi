@@ -35,18 +35,19 @@ interface ConfLabel {
 }
 
 interface IConf {
-  PSK?: string;
-  baseMultiplier?: number;
-  timeLabels?: ConfLabel[];
-  priorityLabels?: ConfLabel[];
-  autoPayMode?: boolean;
-  analyticsMode?: boolean;
+  'PSK'?: string;
+  'base-multiplier'?: number;
+  'time-labels'?: ConfLabel[];
+  'priority-labels'?: ConfLabel[];
+  'auto-pay-mode'?: boolean;
+  'analytics-mode'?: boolean;
+  'max-concurrent-bounties'?: number;
 }
 
 const defaultConf: IConf = {
-  PSK: "",
-  baseMultiplier: 1000,
-  timeLabels: [
+  'PSK': "",
+  'base-multiplier': 1000,
+  'time-labels': [
     {
       name: "Time: <1 Hour",
       weight: 0.125,
@@ -78,7 +79,7 @@ const defaultConf: IConf = {
       target: "Price: 400+ USD",
     },
   ],
-  priorityLabels: [
+  'priority-labels': [
     {
       name: "Priority: 0 (Normal)",
       weight: 1,
@@ -105,8 +106,9 @@ const defaultConf: IConf = {
       target: "Price: 500+ USD",
     },
   ],
-  autoPayMode: true,
-  analyticsMode: false,
+  'auto-pay-mode': true,
+  'analytics-mode': false,
+  'max-concurrent-bounties': 2,
 };
 
 export const parseYAML = async (data: any): Promise<any | undefined> => {
@@ -323,36 +325,42 @@ const setHandler = async () => {
         const parsedConf: IConf | undefined = await parseYAML(conf);
         const advParsed: IConf | undefined = parsedAdv;
         updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["baseMultiplier"] =
-          advParsed && advParsed["baseMultiplier"] && !Number.isNaN(Number(advParsed["baseMultiplier"]))
-            ? Number(advParsed["baseMultiplier"])
-            : parsedConf && parsedConf["baseMultiplier"] && !Number.isNaN(Number(parsedConf["baseMultiplier"]))
-            ? Number(parsedConf["baseMultiplier"])
-            : Number(defaultConf["baseMultiplier"]);
-        updatedConf["timeLabels"] =
-          advParsed && advParsed["timeLabels"] && Array.isArray(advParsed["timeLabels"]) && advParsed["timeLabels"].length > 0
-            ? advParsed["timeLabels"]
-            : parsedConf && parsedConf["timeLabels"] && Array.isArray(parsedConf["timeLabels"]) && parsedConf["timeLabels"].length > 0
-            ? parsedConf["timeLabels"]
-            : defaultConf["timeLabels"];
-        updatedConf["priorityLabels"] =
-          advParsed && advParsed["priorityLabels"] && Array.isArray(advParsed["priorityLabels"]) && advParsed["priorityLabels"].length > 0
-            ? advParsed["priorityLabels"]
-            : parsedConf && parsedConf["priorityLabels"] && Array.isArray(parsedConf["priorityLabels"]) && parsedConf["priorityLabels"].length > 0
-            ? parsedConf["priorityLabels"]
-            : defaultConf["priorityLabels"];
-        updatedConf["autoPayMode"] =
-          advParsed && advParsed["autoPayMode"] && typeof advParsed["autoPayMode"] === "boolean"
-            ? advParsed["autoPayMode"]
-            : parsedConf && parsedConf["autoPayMode"] && typeof parsedConf["autoPayMode"] === "boolean"
-            ? parsedConf["autoPayMode"]
-            : defaultConf["autoPayMode"];
-        updatedConf["analyticsMode"] =
-          advParsed && advParsed["analyticsMode"] && typeof advParsed["analyticsMode"] === "boolean"
-            ? advParsed["analyticsMode"]
-            : parsedConf && parsedConf["analyticsMode"] && typeof parsedConf["analyticsMode"] === "boolean"
-            ? parsedConf["analyticsMode"]
-            : defaultConf["analyticsMode"];
+        updatedConf["base-multiplier"] =
+          advParsed && advParsed["base-multiplier"] && !Number.isNaN(Number(advParsed["base-multiplier"]))
+            ? Number(advParsed["base-multiplier"])
+            : parsedConf && parsedConf["base-multiplier"] && !Number.isNaN(Number(parsedConf["base-multiplier"]))
+            ? Number(parsedConf["base-multiplier"])
+            : Number(defaultConf["base-multiplier"]);
+        updatedConf["time-labels"] =
+          advParsed && advParsed["time-labels"] && Array.isArray(advParsed["time-labels"]) && advParsed["time-labels"].length > 0
+            ? advParsed["time-labels"]
+            : parsedConf && parsedConf["time-labels"] && Array.isArray(parsedConf["time-labels"]) && parsedConf["time-labels"].length > 0
+            ? parsedConf["time-labels"]
+            : defaultConf["time-labels"];
+        updatedConf["priority-labels"] =
+          advParsed && advParsed["priority-labels"] && Array.isArray(advParsed["priority-labels"]) && advParsed["priority-labels"].length > 0
+            ? advParsed["priority-labels"]
+            : parsedConf && parsedConf["priority-labels"] && Array.isArray(parsedConf["priority-labels"]) && parsedConf["priority-labels"].length > 0
+            ? parsedConf["priority-labels"]
+            : defaultConf["priority-labels"];
+        updatedConf["auto-pay-mode"] =
+          advParsed && advParsed["auto-pay-mode"] && typeof advParsed["auto-pay-mode"] === "boolean"
+            ? advParsed["auto-pay-mode"]
+            : parsedConf && parsedConf["auto-pay-mode"] && typeof parsedConf["auto-pay-mode"] === "boolean"
+            ? parsedConf["auto-pay-mode"]
+            : defaultConf["auto-pay-mode"];
+        updatedConf["analytics-mode"] =
+          advParsed && advParsed["analytics-mode"] && typeof advParsed["analytics-mode"] === "boolean"
+            ? advParsed["analytics-mode"]
+            : parsedConf && parsedConf["analytics-mode"] && typeof parsedConf["analytics-mode"] === "boolean"
+            ? parsedConf["analytics-mode"]
+            : defaultConf["analytics-mode"];
+        updatedConf["max-concurrent-bounties"] =
+          advParsed && advParsed["max-concurrent-bounties"] && !Number.isNaN(Number(advParsed["max-concurrent-bounties"]))
+            ? Number(advParsed["max-concurrent-bounties"])
+            : parsedConf && parsedConf["max-concurrent-bounties"] && !Number.isNaN(Number(parsedConf["max-concurrent-bounties"]))
+            ? Number(parsedConf["max-concurrent-bounties"])
+            : Number(defaultConf["max-concurrent-bounties"]);
 
         const stringified = YAMLStringify(updatedConf);
         outKey.value = stringified;
