@@ -295,3 +295,6 @@ table[data-claim="error"] tbody {
 table[data-claim="ok"] tbody {
   display: table-row-group;
 }
+table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"][data-details-visible="false"] {
+  border: none;
+}
