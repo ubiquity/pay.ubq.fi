@@ -19,7 +19,7 @@ const loader = document.querySelector(".loader-wrap") as HTMLElement;
 const APP_ID = 236521;
 const REPO_NAME = "ubiquibot-config";
 const KEY_PATH = ".github/ubiquibot-config.yml";
-const KEY_NAME = "PSK";
+const KEY_NAME = "private-key-encrypted";
 const KEY_PREFIX = "HSK_";
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
@@ -35,7 +35,7 @@ interface ConfLabel {
 }
 
 interface IConf {
-  'PSK'?: string;
+  'private-key-encrypted'?: string;
   'base-multiplier'?: number;
   'time-labels'?: ConfLabel[];
   'priority-labels'?: ConfLabel[];
@@ -45,7 +45,7 @@ interface IConf {
 }
 
 const defaultConf: IConf = {
-  'PSK': "",
+  'private-key-encrypted': "",
   'base-multiplier': 1000,
   'time-labels': [
     {
