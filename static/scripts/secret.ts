@@ -35,6 +35,7 @@ interface ConfLabel {
 }
 
 interface IConf {
+  'chain-id'?: number;
   'private-key-encrypted'?: string;
   'base-multiplier'?: number;
   'time-labels'?: ConfLabel[];
@@ -45,6 +46,7 @@ interface IConf {
 }
 
 const defaultConf: IConf = {
+  'chain-id': 1,
   'private-key-encrypted': "",
   'base-multiplier': 1000,
   'time-labels': [
@@ -325,6 +327,12 @@ const setHandler = async () => {
         const parsedConf: IConf | undefined = await parseYAML(conf);
         const advParsed: IConf | undefined = parsedAdv;
         updatedConf[KEY_NAME] = encryptedValue;
+        updatedConf["chain-id"] =
+          advParsed && advParsed["chain-id"] && !Number.isNaN(Number(advParsed["chain-id"]))
+            ? Number(advParsed["chain-id"])
+            : parsedConf && parsedConf["chain-id"] && !Number.isNaN(Number(parsedConf["chain-id"]))
+            ? Number(parsedConf["chain-id"])
+            : Number(defaultConf["chain-id"]);
         updatedConf["base-multiplier"] =
           advParsed && advParsed["base-multiplier"] && !Number.isNaN(Number(advParsed["base-multiplier"]))
             ? Number(advParsed["base-multiplier"])
