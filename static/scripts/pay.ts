@@ -4,6 +4,13 @@ import { daiAbi, permit2Abi } from "./abis";
 import { TxType, txData, setClaimMessage } from "./render-transaction";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+
+const supportedChains = [
+  "0x1", // mainnet
+  "0x5", // goerli
+  "0x64", // gnosis
+];
 
 const notifications = document.querySelector(".notifications") as HTMLElement;
 const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
@@ -153,16 +160,15 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 
     // watch for chain changes
     window.ethereum.on("chainChanged", async (chainId: string) => {
-      console.log(chainId);
-      if (chainId === "0x1" || chainId === "0x5") {
+      if (supportedChains.includes(chainId)) {
         // enable the button once on the correct network
         enableClaimButton();
       }
     });
 
-    // if its not on ethereum mainnet, display error
-    if (chainId !== "0x1" && chainId !== "0x5") {
-      createToast("error", "Please switch to Ethereum Mainnet.");
+    // if its not on ethereum mainnet or gnosis, display error
+    if (!supportedChains.includes(chainId)) {
+      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? 'Ethereum Mainnet' : 'Gnosis Chain'}`);
       disableClaimButton(false);
       return { balance: -1, allowance: -1 };
     }
