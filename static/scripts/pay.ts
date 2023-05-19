@@ -166,7 +166,7 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
       }
     });
 
-    // if its not on ethereum mainnet or gnosis, display error
+    // if its not on ethereum mainnet, gnosis, or goerli, display error
     if (!supportedChains.includes(chainId)) {
       createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? 'Ethereum Mainnet' : 'Gnosis Chain'}`);
       disableClaimButton(false);
