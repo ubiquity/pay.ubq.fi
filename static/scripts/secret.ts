@@ -35,6 +35,7 @@ interface ConfLabel {
 }
 
 interface IConf {
+  'chain-id'?: number;
   'private-key-encrypted'?: string;
   'base-multiplier'?: number;
   'time-labels'?: ConfLabel[];
@@ -45,6 +46,7 @@ interface IConf {
 }
 
 const defaultConf: IConf = {
+  'chain-id': 1,
   'private-key-encrypted': "",
   'base-multiplier': 1000,
   'time-labels': [
@@ -325,44 +327,11 @@ const setHandler = async () => {
         const parsedConf: IConf | undefined = await parseYAML(conf);
         const advParsed: IConf | undefined = parsedAdv;
         updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["base-multiplier"] =
-          advParsed && advParsed["base-multiplier"] && !Number.isNaN(Number(advParsed["base-multiplier"]))
-            ? Number(advParsed["base-multiplier"])
-            : parsedConf && parsedConf["base-multiplier"] && !Number.isNaN(Number(parsedConf["base-multiplier"]))
-            ? Number(parsedConf["base-multiplier"])
-            : Number(defaultConf["base-multiplier"]);
-        updatedConf["time-labels"] =
-          advParsed && advParsed["time-labels"] && Array.isArray(advParsed["time-labels"]) && advParsed["time-labels"].length > 0
-            ? advParsed["time-labels"]
-            : parsedConf && parsedConf["time-labels"] && Array.isArray(parsedConf["time-labels"]) && parsedConf["time-labels"].length > 0
-            ? parsedConf["time-labels"]
-            : defaultConf["time-labels"];
-        updatedConf["priority-labels"] =
-          advParsed && advParsed["priority-labels"] && Array.isArray(advParsed["priority-labels"]) && advParsed["priority-labels"].length > 0
-            ? advParsed["priority-labels"]
-            : parsedConf && parsedConf["priority-labels"] && Array.isArray(parsedConf["priority-labels"]) && parsedConf["priority-labels"].length > 0
-            ? parsedConf["priority-labels"]
-            : defaultConf["priority-labels"];
-        updatedConf["auto-pay-mode"] =
-          advParsed && advParsed["auto-pay-mode"] && typeof advParsed["auto-pay-mode"] === "boolean"
-            ? advParsed["auto-pay-mode"]
-            : parsedConf && parsedConf["auto-pay-mode"] && typeof parsedConf["auto-pay-mode"] === "boolean"
-            ? parsedConf["auto-pay-mode"]
-            : defaultConf["auto-pay-mode"];
-        updatedConf["analytics-mode"] =
-          advParsed && advParsed["analytics-mode"] && typeof advParsed["analytics-mode"] === "boolean"
-            ? advParsed["analytics-mode"]
-            : parsedConf && parsedConf["analytics-mode"] && typeof parsedConf["analytics-mode"] === "boolean"
-            ? parsedConf["analytics-mode"]
-            : defaultConf["analytics-mode"];
-        updatedConf["max-concurrent-bounties"] =
-          advParsed && advParsed["max-concurrent-bounties"] && !Number.isNaN(Number(advParsed["max-concurrent-bounties"]))
-            ? Number(advParsed["max-concurrent-bounties"])
-            : parsedConf && parsedConf["max-concurrent-bounties"] && !Number.isNaN(Number(parsedConf["max-concurrent-bounties"]))
-            ? Number(parsedConf["max-concurrent-bounties"])
-            : Number(defaultConf["max-concurrent-bounties"]);
 
-        const stringified = YAMLStringify(updatedConf);
+        // combine configs (default + remote org wide + local from the "advanced" text field)
+        const combinedConf = Object.assign(updatedConf, parsedConf, advParsed);
+
+        const stringified = YAMLStringify(combinedConf);
         outKey.value = stringified;
         const { updated } = await octokit.createOrUpdateTextFile({
           owner: orgName.value,
