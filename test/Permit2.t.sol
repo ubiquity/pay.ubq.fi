@@ -330,6 +330,42 @@ contract Permit2Test is Test {
         permit2Contract.permitTransferFrom(permitTransferFromData2, transferDetails2, botAddress, sig);
     }
 
+    function testPermitTransferFrom_ShouldRevert_IfNonceHasBeenInvalidated() public {
+        // nonce we are invalidating
+        uint nonce = 999;
+
+        // bot (or admin) creates a signature for bounty hunter
+        ISignatureTransfer.PermitTransferFrom memory permitTransferFromData = ISignatureTransfer.PermitTransferFrom({
+            permitted: ISignatureTransfer.TokenPermissions({
+                token: address(daiContract),
+                amount: 1e18
+            }),
+            nonce: nonce,
+            deadline: block.timestamp
+        });
+        bytes memory sig = _signPermit(permitTransferFromData, userAddress, botPrivateKey);
+
+        // check that nonce is not used
+        assertFalse(_isNonceUsed(botAddress, nonce));
+
+        // invalidate nonce
+        (uint wordPos, uint mask) = _getParamsForNonceInvalidation(botAddress, nonce);
+        vm.prank(botAddress);
+        permit2Contract.invalidateUnorderedNonces(wordPos, mask);
+
+        // check that nonce is marked as used
+        assertTrue(_isNonceUsed(botAddress, nonce));
+        
+        // bounty hunter calls permitTransferFrom and transfers reward
+        ISignatureTransfer.SignatureTransferDetails memory transferDetails = ISignatureTransfer.SignatureTransferDetails({
+            to: userAddress,
+            requestedAmount: 1e18
+        });
+        vm.prank(userAddress);
+        vm.expectRevert();
+        permit2Contract.permitTransferFrom(permitTransferFromData, transferDetails, botAddress, sig);
+    }
+
     /**
      * Helper functions
      */
@@ -371,5 +407,29 @@ contract Permit2Test is Test {
                 permit.deadline
             ))
         ));
+    }
+
+    // Checks whether a permit nonce is used
+    function _isNonceUsed(address from, uint nonce) internal returns (bool) {
+        // find word position (first 248 bits of nonce)
+        uint wordPos = uint248(nonce >> 8);
+        // find bit position in bitmap
+        uint bitPos = uint8(nonce);
+        // prepare a mask for target bit
+        uint256 bit = 1 << bitPos;
+        // get bitmap with a flipped bit
+        uint sourceBitmap = permit2Contract.nonceBitmap(from, wordPos);
+        uint256 flipped = sourceBitmap ^= bit;
+        // check if any bit has been updated
+        return flipped & bit == 0;
+    }
+
+    // Returns params to be used in "SignatureTransfer.invalidateUnorderedNonces()"
+    function _getParamsForNonceInvalidation(address from, uint nonce) internal returns(uint256 wordPos, uint256 mask) {
+        wordPos = uint248(nonce >> 8);
+        uint bitPos = uint8(nonce);
+        uint256 bit = 1 << bitPos;
+        uint sourceBitmap = permit2Contract.nonceBitmap(from, wordPos);
+        mask = sourceBitmap | bit;
     }
 }
