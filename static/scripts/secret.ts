@@ -43,6 +43,7 @@ interface IConf {
   'auto-pay-mode'?: boolean;
   'analytics-mode'?: boolean;
   'max-concurrent-bounties'?: number;
+  'incentive-mode'?: boolean;
 }
 
 const defaultConf: IConf = {
@@ -110,6 +111,7 @@ const defaultConf: IConf = {
   ],
   'auto-pay-mode': true,
   'analytics-mode': false,
+  'incentive-mode': false,
   'max-concurrent-bounties': 2,
 };
 
