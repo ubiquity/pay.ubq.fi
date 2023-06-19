@@ -1,8 +1,8 @@
 import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { daiAbi, permit2Abi } from "./abis";
-import { TxType, txData, setClaimMessage } from "./render-transaction";
-import { checkIfChainIsCorrect } from "./constants";
+import { TxType, txData, setClaimMessage, claimChainId } from "./render-transaction";
+import { chainName, chainRpc } from "./constants";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
@@ -110,7 +110,7 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
     return signer;
@@ -121,6 +121,15 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
       createToast("error", "Error: Please connect your wallet.");
     }
     return {} as JsonRpcSigner;
+  }
+};
+
+const switchNetwork = async (provider: ethers.providers.Web3Provider): Promise<boolean> => {
+  try {
+    await provider.send("wallet_switchEthereumChain", [{ chainId: claimChainId }]);
+    return true;
+  } catch (error: any) {
+    return false;
   }
 };
 
@@ -142,50 +151,21 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
     });
 };
 
-const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> => {
+const fetchTreasury = async (): Promise<{ balance: number; allowance: number; decimals: number }> => {
   try {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-    if (!provider || !provider.provider.isMetaMask) {
-      createToast("error", "Please connect to MetaMask.");
-      disableClaimButton(false);
-      return { balance: -1, allowance: -1 };
-    }
-
-    const chainId = await provider!.provider!.request!({ method: "eth_chainId" });
-
-    // watch for chain changes
-    window.ethereum.on("chainChanged", async (chainId: string) => {
-      if (checkIfChainIsCorrect(chainId)) {
-        // enable the button once on the correct network
-        enableClaimButton();
-      } else {
-        disableClaimButton(false);
-      }
-    });
-
-    // if its not on ethereum mainnet, gnosis, or goerli, display error
-    if (!checkIfChainIsCorrect(chainId)) {
-      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? "Ethereum Mainnet" : "Gnosis Chain"}`);
-      disableClaimButton(false);
-      return { balance: -1, allowance: -1 };
-    }
-
+    const provider = new ethers.providers.JsonRpcProvider(chainRpc[claimChainId]);
     const tokenAddress = txData.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
     const balance = await tokenContract.balanceOf(txData.owner);
     const allowance = await tokenContract.allowance(txData.owner, permit2Address);
-    return { balance, allowance };
+    const decimals = await tokenContract.decimals();
+    return { balance, allowance, decimals };
   } catch (error: any) {
-    return { balance: -1, allowance: -1 };
+    return { balance: -1, allowance: -1, decimals: -1 };
   }
 };
 
-const toggleStatus = async (balance: number, allowance: number, signer: JsonRpcSigner) => {
-  let decimals = 18;
-  if (signer._isSigner) {
-    const tokenContract = new ethers.Contract(txData.permit.permitted.token, daiAbi, signer);
-    decimals = await tokenContract.decimals();
-  }
+const toggleStatus = async (balance: number, allowance: number, decimals: number) => {
   const trBalance = document.querySelector(".tr-balance") as Element;
   const trAllowance = document.querySelector(".tr-allowance") as Element;
   trBalance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(balance, decimals)}` : "N/A";
@@ -204,6 +184,9 @@ export const pay = async (): Promise<void> => {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
+  const { balance, allowance, decimals } = await fetchTreasury();
+  await toggleStatus(balance, allowance, decimals);
+
   let signer = await connectWallet();
 
   // check if permit is already claimed
@@ -216,6 +199,31 @@ export const pay = async (): Promise<void> => {
     }
   }
 
+  const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+  if (!provider || !provider.provider.isMetaMask) {
+    createToast("error", "Please connect to MetaMask.");
+    disableClaimButton(false);
+  }
+
+  const currentChainId = await provider!.provider!.request!({ method: "eth_chainId" });
+
+  // watch for chain changes
+  (window as any).ethereum.on("chainChanged", async (currentChainId: string) => {
+    if (claimChainId === currentChainId) {
+      // enable the button once on the correct network
+      enableClaimButton();
+    } else {
+      disableClaimButton(false);
+    }
+  });
+
+  // if its not on ethereum mainnet, gnosis, or goerli, display error
+  if (currentChainId !== claimChainId) {
+    createToast("error", `Please switch to ${chainName[claimChainId]}`);
+    disableClaimButton(false);
+    switchNetwork(provider);
+  }
+
   claimButtonElem.addEventListener("click", async () => {
     try {
       if (!signer._isSigner) {
@@ -226,8 +234,8 @@ export const pay = async (): Promise<void> => {
       }
       disableClaimButton();
 
-      const { balance, allowance } = await fetchTreasury();
-      await toggleStatus(balance, allowance, signer);
+      const { balance, allowance, decimals } = await fetchTreasury();
+      await toggleStatus(balance, allowance, decimals);
       let predefined: string | undefined = undefined;
 
       if (!(balance >= Number(txData.permit.permitted.amount) && allowance >= Number(txData.permit.permitted.amount))) {
@@ -243,9 +251,6 @@ export const pay = async (): Promise<void> => {
       enableClaimButton();
     }
   });
-
-  const { balance, allowance } = await fetchTreasury();
-  await toggleStatus(balance, allowance, signer);
 
   // display commit hash
   const commit = await fetch("commit.txt");

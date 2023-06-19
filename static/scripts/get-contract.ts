@@ -1,10 +1,10 @@
 import { Contract, ethers } from "ethers";
 import { daiAbi } from "./abis";
-import { txData } from "./render-transaction";
-import { chainRpc, tokenChain } from "./constants";
+import { claimChainId } from "./render-transaction";
+import { chainRpc } from "./constants";
 
 export const getERC20Contract = async (contractAddress: string): Promise<Contract> => {
-  const provider = new ethers.providers.JsonRpcProvider(chainRpc[tokenChain[txData.permit.permitted.token.toLowerCase()]]);
+  const provider = new ethers.providers.JsonRpcProvider(chainRpc[claimChainId]);
   const contractInstance = new ethers.Contract(contractAddress, daiAbi, provider);
   return contractInstance;
 };
