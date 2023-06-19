@@ -2,15 +2,10 @@ import { ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { daiAbi, permit2Abi } from "./abis";
 import { TxType, txData, setClaimMessage } from "./render-transaction";
+import { checkIfChainIsCorrect } from "./constants";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-
-const supportedChains = [
-  "0x1", // mainnet
-  "0x5", // goerli
-  "0x64", // gnosis
-];
 
 const notifications = document.querySelector(".notifications") as HTMLElement;
 const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
@@ -160,15 +155,17 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 
     // watch for chain changes
     window.ethereum.on("chainChanged", async (chainId: string) => {
-      if (supportedChains.includes(chainId)) {
+      if (checkIfChainIsCorrect(chainId)) {
         // enable the button once on the correct network
         enableClaimButton();
+      } else {
+        disableClaimButton(false);
       }
     });
 
     // if its not on ethereum mainnet, gnosis, or goerli, display error
-    if (!supportedChains.includes(chainId)) {
-      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? 'Ethereum Mainnet' : 'Gnosis Chain'}`);
+    if (!checkIfChainIsCorrect(chainId)) {
+      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? "Ethereum Mainnet" : "Gnosis Chain"}`);
       disableClaimButton(false);
       return { balance: -1, allowance: -1 };
     }
@@ -207,7 +204,7 @@ export const pay = async (): Promise<void> => {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
-  const signer = await connectWallet();
+  let signer = await connectWallet();
 
   // check if permit is already claimed
   if (signer._isSigner) {
@@ -222,7 +219,10 @@ export const pay = async (): Promise<void> => {
   claimButtonElem.addEventListener("click", async () => {
     try {
       if (!signer._isSigner) {
-        return;
+        signer = await connectWallet();
+        if (!signer._isSigner) {
+          return;
+        }
       }
       disableClaimButton();
 

@@ -1,4 +1,5 @@
 import { getERC20Contract } from "./get-contract";
+import { getExplorerUrl } from "./constants";
 
 export type TxType = {
   permit: {
@@ -45,9 +46,9 @@ const renderTokenSymbol = async (table: Element, requestedAmountElement: Element
   const contract = await getERC20Contract(txData.permit.permitted.token);
   const symbol = await contract.symbol();
   table.setAttribute(`data-contract-loaded`, "true");
-  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}?a=${
-    txData.owner
-  }">${Number(txData.transferDetails.requestedAmount) / 1e18} ${symbol}</a>`;
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${getExplorerUrl(txData.permit.permitted.token)}/token/${
+    txData.permit.permitted.token
+  }?a=${txData.owner}">${Number(txData.transferDetails.requestedAmount) / 1e18} ${symbol}</a>`;
 };
 
 // const ensRegistryWithFallbackAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
@@ -66,7 +67,9 @@ const insertTableData = async (table: Element): Promise<Element> => {
   // await
 
   const toBoth = document.getElementById(`transferDetails.to`) as Element;
-  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
+  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${getExplorerUrl(txData.permit.permitted.token)}/address/${
+    txData.transferDetails.to
+  }">${toBoth.innerHTML}</a>`;
 
   // TOKEN
 
@@ -76,10 +79,14 @@ const insertTableData = async (table: Element): Promise<Element> => {
   tokenShort.textContent = shortenAddress(txData.permit.permitted.token);
 
   const tokenBoth = document.getElementById(`permit.permitted.token`) as Element;
-  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/token/${txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
+  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${getExplorerUrl(txData.permit.permitted.token)}/token/${
+    txData.permit.permitted.token
+  }">${tokenBoth.innerHTML}</a>`;
 
   const ownerElem = document.getElementById("owner") as Element;
-  ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="https://etherscan.io/address/${txData.owner}">${txData.owner}</a>`;
+  ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${getExplorerUrl(txData.permit.permitted.token)}/address/${txData.owner}">${
+    txData.owner
+  }</a>`;
   const nonceELem = document.getElementById("permit.nonce") as Element;
   nonceELem.textContent = txData.permit.nonce;
   const deadlineElem = document.getElementById("permit.deadline") as Element;
@@ -112,9 +119,9 @@ async function renderEnsName(element: Element, address: string, tokenView: boole
     }
     if (ensName) {
       if (tokenView) {
-        href = `https://etherscan.io/token/${txData.permit.permitted.token}?a=${address}`;
+        href = `${getExplorerUrl(txData.permit.permitted.token)}/token/${txData.permit.permitted.token}?a=${address}`;
       } else {
-        href = `https://etherscan.io/address/${address}"`;
+        href = `${getExplorerUrl(txData.permit.permitted.token)}/address/${address}"`;
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
