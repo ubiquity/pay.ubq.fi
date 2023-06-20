@@ -104,7 +104,7 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   }
   // parse error data to get error message
   const parsedError = JSON.parse(ErrorData);
-  const errorMessage = parsedError?.error?.message;
+  const errorMessage = parsedError?.error?.message ?? parsedError?.reason;
   createToast("error", `Error: ${errorMessage}`);
 };
 
@@ -146,6 +146,7 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
       enableClaimButton();
     })
     .catch((error: any) => {
+      console.log(error);
       ErrorHandler(error, predefined);
       enableClaimButton();
     });
