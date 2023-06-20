@@ -102,32 +102,6 @@ button:not(:disabled):hover {
   background: none;
 }
 
-#jsonBtn {
-  border-radius: 6px 0 0 6px;
-  background: #ffb100;
-}
-
-#jsonBtn:disabled {
-  background: #ffb100ad;
-}
-
-#jsonBtn:not(:disabled):hover {
-  background: #ffb100ad;
-}
-
-#yamlBtn {
-  border-radius: 0 6px 6px 0;
-  background: #ff0000;
-}
-
-#yamlBtn:disabled {
-  background: #ff00007d;
-}
-
-#yamlBtn:not(:disabled):hover {
-  background: #ff00007d;
-}
-
 textarea {
   padding-top: 15px;
   line-height: 1.8;

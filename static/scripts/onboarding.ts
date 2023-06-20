@@ -9,10 +9,7 @@ const outKey = document.querySelector("#outKey") as HTMLInputElement;
 const githubPAT = document.querySelector("#githubPat") as HTMLInputElement;
 const orgName = document.querySelector("#orgName") as HTMLInputElement;
 const walletPrivateKey = document.querySelector("#walletPrivateKey") as HTMLInputElement;
-const ecPublicKey = document.querySelector("#ecPublicKey") as HTMLInputElement;
 const setBtn = document.querySelector("#setBtn") as HTMLButtonElement;
-const jsonBtn = document.querySelector("#jsonBtn") as HTMLButtonElement;
-const yamlBtn = document.querySelector("#yamlBtn") as HTMLButtonElement;
 const advKey = document.querySelector("#advKey") as HTMLTextAreaElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
@@ -35,22 +32,22 @@ interface ConfLabel {
 }
 
 interface IConf {
-  'chain-id'?: number;
-  'private-key-encrypted'?: string;
-  'base-multiplier'?: number;
-  'time-labels'?: ConfLabel[];
-  'priority-labels'?: ConfLabel[];
-  'auto-pay-mode'?: boolean;
-  'analytics-mode'?: boolean;
-  'max-concurrent-bounties'?: number;
-  'incentive-mode'?: boolean;
+  "chain-id"?: number;
+  "private-key-encrypted"?: string;
+  "base-multiplier"?: number;
+  "time-labels"?: ConfLabel[];
+  "priority-labels"?: ConfLabel[];
+  "auto-pay-mode"?: boolean;
+  "analytics-mode"?: boolean;
+  "max-concurrent-bounties"?: number;
+  "incentive-mode"?: boolean;
 }
 
 const defaultConf: IConf = {
-  'chain-id': 1,
-  'private-key-encrypted': "",
-  'base-multiplier': 1000,
-  'time-labels': [
+  "chain-id": 1,
+  "private-key-encrypted": "",
+  "base-multiplier": 1000,
+  "time-labels": [
     {
       name: "Time: <1 Hour",
       weight: 0.125,
@@ -82,7 +79,7 @@ const defaultConf: IConf = {
       target: "Price: 400+ USD",
     },
   ],
-  'priority-labels': [
+  "priority-labels": [
     {
       name: "Priority: 0 (Normal)",
       weight: 1,
@@ -109,10 +106,10 @@ const defaultConf: IConf = {
       target: "Price: 500+ USD",
     },
   ],
-  'auto-pay-mode': true,
-  'analytics-mode': false,
-  'incentive-mode': false,
-  'max-concurrent-bounties': 2,
+  "auto-pay-mode": true,
+  "analytics-mode": false,
+  "incentive-mode": false,
+  "max-concurrent-bounties": 2,
 };
 
 export const parseYAML = async (data: any): Promise<any | undefined> => {
@@ -156,50 +153,16 @@ export const getConf = async (): Promise<string | undefined> => {
   }
 };
 
-const adVerify = async (adVal: string) => {
-  advKey.style.height = getTextBox(adVal);
-  if (parseMode === "JSON") {
-    const parsedData = await parseJSON(adVal);
-    parsedAdv = parsedData;
-    if (parsedData !== undefined) {
-      singleToggle("success", `Valid: the JSON config is ok.`, advKey);
-    } else {
-      singleToggle("error", `Invalid: the JSON config is incorrect.`, advKey);
-    }
-  } else {
-    const parsedData = await parseYAML(adVal);
-    parsedAdv = parsedData;
-    if (parsedData !== undefined) {
-      singleToggle("success", `Valid: the YAML config is ok.`, advKey);
-    } else {
-      singleToggle("error", `Invalid: the YAML config is incorrect.`, advKey);
-    }
-  }
-};
-
 const getTextBox = (text: string) => {
   const strLen = text.split("\n").length * 22;
   const strPx = `${strLen > 140 ? strLen : 140}px`;
   return strPx;
 };
 
-const toggleParseMode = (type: "JSON" | "YAML") => {
-  parseMode = type;
-  if (type === "JSON") {
-    jsonBtn.disabled = true;
-    yamlBtn.disabled = false;
-  } else {
-    yamlBtn.disabled = true;
-    jsonBtn.disabled = false;
-  }
-  adVerify(advKey.value);
-};
-
 const resetToggle = () => {
   (walletPrivateKey.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
   (githubPAT.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
   (orgName.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-  (ecPublicKey.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
 };
 
 const classListToggle = (targetElem: HTMLElement, target: "error" | "warn" | "success", inputElem?: HTMLInputElement | HTMLTextAreaElement) => {
@@ -264,7 +227,7 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     encryptedValue = output;
     singleToggle("success", `Success: Key Encryption is ok.`);
   } catch (error: any) {
-    singleToggle("error", `Error: ${error.message}`, ecPublicKey);
+    singleToggle("error", `Error: ${error.message}`);
   }
 };
 
@@ -372,7 +335,6 @@ const setInputListeners = () => {
 };
 
 const init = () => {
-  ecPublicKey.value = X25519_KEY;
   setInputListeners();
 
   setBtn.addEventListener("click", async () => {
@@ -392,18 +354,6 @@ const init = () => {
     } else {
       singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
     }
-  });
-
-  jsonBtn.addEventListener("click", () => {
-    toggleParseMode("JSON");
-  });
-
-  yamlBtn.addEventListener("click", () => {
-    toggleParseMode("YAML");
-  });
-
-  advKey.addEventListener("input", async e => {
-    adVerify((e.target as HTMLTextAreaElement).value);
   });
 };
 
