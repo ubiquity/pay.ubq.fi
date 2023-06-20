@@ -10,7 +10,7 @@ const githubPAT = document.querySelector("#githubPat") as HTMLInputElement;
 const orgName = document.querySelector("#orgName") as HTMLInputElement;
 const walletPrivateKey = document.querySelector("#walletPrivateKey") as HTMLInputElement;
 const setBtn = document.querySelector("#setBtn") as HTMLButtonElement;
-const advKey = document.querySelector("#advKey") as HTMLTextAreaElement;
+const chainIdSelect = document.querySelector("#chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
@@ -21,8 +21,6 @@ const KEY_PREFIX = "HSK_";
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
-let parseMode: "JSON" | "YAML" = "JSON";
-let parsedAdv: any | undefined = {};
 
 interface ConfLabel {
   name: string;
@@ -222,6 +220,7 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
     defaultConf[KEY_NAME] = output;
+    defaultConf["chain-id"] = Number(chainIdSelect.value);
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -290,11 +289,11 @@ const setHandler = async () => {
 
         const updatedConf = defaultConf;
         const parsedConf: IConf | undefined = await parseYAML(conf);
-        const advParsed: IConf | undefined = parsedAdv;
         updatedConf[KEY_NAME] = encryptedValue;
+        updatedConf["chain-id"] = Number(chainIdSelect.value);
 
-        // combine configs (default + remote org wide + local from the "advanced" text field)
-        const combinedConf = Object.assign(updatedConf, parsedConf, advParsed);
+        // combine configs (default + remote org wide)
+        const combinedConf = Object.assign(updatedConf, parsedConf);
 
         const stringified = YAMLStringify(combinedConf);
         outKey.value = stringified;

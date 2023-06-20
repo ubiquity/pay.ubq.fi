@@ -10,6 +10,14 @@
     <div class="container" id="user-access">
       <h1 class="title">Onboarding</h1>
       <div class="mb-3">
+        <label for="chainId" class="form-label">CHAIN_ID</label>
+        <select class="form-control" id="chainId">
+          <option value="1">Ethereum Mainnet</option>
+          <option value="100">Gnosis Mainnet</option>
+        </select>
+        <span class="status-log"></span>
+      </div>
+      <div class="mb-3">
         <label for="walletPrivateKey" class="form-label">WALLET_PRIVATE_KEY</label>
         <input type="text" class="form-control" id="walletPrivateKey" />
         <span class="status-log"></span>
