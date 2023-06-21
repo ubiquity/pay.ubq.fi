@@ -146,7 +146,7 @@ export const renderTransaction = async (): Promise<void> => {
 
   try {
     txData = JSON.parse(atob(base64encodedTxData));
-    (window as any).txData = txData;
+    window.txData = txData;
   } catch (error) {
     setClaimMessage("Error", `Invalid claim data passed in URL.`);
     table.setAttribute(`data-claim`, "error");

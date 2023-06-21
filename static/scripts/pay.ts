@@ -47,7 +47,7 @@ const bitmapPositions = (nonce: string) => {
 
 const checkPermitClaimed = async (signer: JsonRpcSigner) => {
   // get tx from window
-  let tx = (window as any).txData as typeof txData;
+  let tx = window.txData;
 
   // Set contract address and ABI
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
@@ -110,7 +110,7 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum, "any");
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
     return signer;
@@ -200,7 +200,7 @@ export const pay = async (): Promise<void> => {
     }
   }
 
-  const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!provider || !provider.provider.isMetaMask) {
     createToast("error", "Please connect to MetaMask.");
     disableClaimButton(false);
@@ -209,7 +209,7 @@ export const pay = async (): Promise<void> => {
   const currentChainId = await provider!.provider!.request!({ method: "eth_chainId" });
 
   // watch for chain changes
-  (window as any).ethereum.on("chainChanged", async (currentChainId: string) => {
+  window.ethereum.on("chainChanged", async (currentChainId: string) => {
     if (claimChainId === currentChainId) {
       // enable the button once on the correct network
       enableClaimButton();
@@ -270,8 +270,8 @@ export const pay = async (): Promise<void> => {
     shade: 255,
     step: 0.01,
     refresh: 1000 / 60,
-    target: document.getElementById("grid"),
+    target: document.getElementById("grid")!,
   };
 
-  systemPrefersDark && (window as any).draw(drawConfig);
+  systemPrefersDark && window.draw(drawConfig);
 };
