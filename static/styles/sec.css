@@ -117,3 +117,40 @@ textarea {
 .ecpx {
   color: #c7c7c7;
 }
+
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 15rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-label {
+  margin-top: 8px;
+  color: #808080;
+}
+
+.step.active .step-number {
+  background-color: #000;
+}
+
+.hidden {
+  display: none;
+}

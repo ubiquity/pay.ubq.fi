@@ -2,6 +2,12 @@ import _sodium from "libsodium-wrappers";
 import { Octokit } from "@octokit/rest";
 import { createOrUpdateTextFile } from "@octokit/plugin-create-or-update-text-file";
 import YAML from "yaml";
+import { connectWallet } from "./pay";
+import { ethers } from "ethers";
+import { daiAbi } from "./abis";
+import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
+import { JsonRpcSigner } from "@ethersproject/providers";
+import { parseUnits } from "ethers/lib/utils";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -11,6 +17,7 @@ const orgName = document.querySelector("#orgName") as HTMLInputElement;
 const walletPrivateKey = document.querySelector("#walletPrivateKey") as HTMLInputElement;
 const safeAddressInput = document.querySelector("#safeAddress") as HTMLInputElement;
 const setBtn = document.querySelector("#setBtn") as HTMLButtonElement;
+const allowanceInput = document.querySelector("#allowance") as HTMLInputElement;
 const chainIdSelect = document.querySelector("#chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
@@ -234,7 +241,7 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
   }
 };
 
-const setHandler = async () => {
+const setConfig = async () => {
   try {
     toggleLoader("start");
     const pluginKit = Octokit.plugin(createOrUpdateTextFile);
@@ -338,25 +345,80 @@ const setInputListeners = () => {
   });
 };
 
-const init = () => {
+let currentStep = 1;
+let signer: JsonRpcSigner | undefined = undefined;
+
+const nextStep = async () => {
+  const step1 = document.getElementById("step1") as HTMLElement;
+  step1.classList.add("hidden");
+  const step2 = document.getElementById("step2") as HTMLElement;
+  step2.classList.remove("hidden");
+  const stepper = document.getElementById("stepper") as HTMLElement;
+  const steps = stepper.querySelectorAll("div.step");
+  steps[0].classList.remove("active");
+  steps[1].classList.add("active");
+  setBtn.innerText = "Approve";
+  currentStep = 2;
+  signer = await connectWallet();
+};
+
+const step1Handler = async () => {
+  return nextStep();
+  if (walletPrivateKey.value !== "") {
+    await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
+    if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
+      setConfig();
+    } else if (encryptedValue === "") {
+      singleToggle("warn", `Warn: Please encrypt first.`);
+    } else if (orgName.value === "" && githubPAT.value === "") {
+      singleToggle("warn", `Warn: Org Name and GitHub PAT is not set.`);
+    } else if (orgName.value === "") {
+      singleToggle("warn", `Warn: Org Name is not set.`, orgName);
+    } else {
+      singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
+    }
+  } else {
+    singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
+  }
+};
+
+const step2Handler = async () => {
+  if (!signer) {
+    signer = await connectWallet();
+    if (!signer) {
+      return;
+    }
+  }
+  try {
+    const walletChainId = await signer.getChainId();
+    if (walletChainId !== Number(chainIdSelect.value)) {
+      singleToggle("error", `Error: Switch to the correct chain.`);
+      return;
+    }
+    // load token contract
+    const erc20 = new ethers.Contract("0x6B175474E89094C44Da98b954EedeAC495271d0F", daiAbi, signer);
+    const decimals = await erc20.decimals();
+    const allowance = Number(allowanceInput.value);
+    if (allowance <= 0) {
+      singleToggle("error", `Error: Allowance should be greater than 0.`);
+      return;
+    }
+
+    await erc20.approve(PERMIT2_ADDRESS, parseUnits(allowance.toString(), decimals));
+  } catch (error) {
+    console.error(error);
+    singleToggle("error", `Error: ${error.reason}`);
+  }
+};
+
+const init = async () => {
   setInputListeners();
 
   setBtn.addEventListener("click", async () => {
-    if (walletPrivateKey.value !== "") {
-      await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
-      if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
-        setHandler();
-      } else if (encryptedValue === "") {
-        singleToggle("warn", `Warn: Please encrypt first.`);
-      } else if (orgName.value === "" && githubPAT.value === "") {
-        singleToggle("warn", `Warn: Org Name and GitHub PAT is not set.`);
-      } else if (orgName.value === "") {
-        singleToggle("warn", `Warn: Org Name is not set.`, orgName);
-      } else {
-        singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
-      }
-    } else {
-      singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
+    if (currentStep === 1) {
+      await step1Handler();
+    } else if (currentStep === 2) {
+      await step2Handler();
     }
   });
 };

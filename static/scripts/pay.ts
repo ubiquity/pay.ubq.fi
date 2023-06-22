@@ -113,7 +113,7 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   createToast("error", `Error: ${errorMessage}`);
 };
 
-const connectWallet = async (): Promise<JsonRpcSigner> => {
+export const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
@@ -168,7 +168,7 @@ const fetchTreasury = async (): Promise<{ balance: number; allowance: number }> 
 
     // if its not on ethereum mainnet, gnosis, or goerli, display error
     if (!supportedChains.includes(chainId)) {
-      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? 'Ethereum Mainnet' : 'Gnosis Chain'}`);
+      createToast("error", `Please switch to ${txData.permit.permitted.token === daiAddress ? "Ethereum Mainnet" : "Gnosis Chain"}`);
       disableClaimButton(false);
       return { balance: -1, allowance: -1 };
     }
