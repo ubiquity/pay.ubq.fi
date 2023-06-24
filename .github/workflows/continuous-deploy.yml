@@ -24,9 +24,6 @@ jobs:
         with:
           node-version: "18.14.1"
 
-      - name: Yarn Install
-        run: yarn install
-      
       - name: Wrangler Install
         run: npm install -g wrangler
 
@@ -34,11 +31,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           REPOSITORY: ${{ github.repository }}
-          PRODUCTION_BRANCH: "main"      
+          PRODUCTION_BRANCH: "main"
           OUTPUT_DIRECTORY: "static"
         run: |
           IFS='/' read -ra fields <<< "$REPOSITORY"
           projectName="${fields[1]}"
+          projectName=$(echo $projectName | sed 's/\./-/g')
           echo $projectName
           wrangler pages project list > project_list.txt
           if grep -q $projectName project_list.txt; then
