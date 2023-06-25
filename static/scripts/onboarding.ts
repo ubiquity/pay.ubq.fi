@@ -2,7 +2,6 @@ import _sodium from "libsodium-wrappers";
 import { Octokit } from "@octokit/rest";
 import { createOrUpdateTextFile } from "@octokit/plugin-create-or-update-text-file";
 import YAML from "yaml";
-import { connectWallet } from "./pay";
 import { ethers } from "ethers";
 import { daiAbi } from "./abis";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
@@ -322,6 +321,8 @@ const setConfig = async () => {
         } else {
           singleToggle("success", `Success: private key is upto date.`);
         }
+
+        await nextStep();
       } else {
         singleToggle("warn", `Warn: Please install the app first.`);
       }
@@ -359,11 +360,75 @@ const nextStep = async () => {
   steps[1].classList.add("active");
   setBtn.innerText = "Approve";
   currentStep = 2;
+
+  if (!window.ethereum) {
+    singleToggle("error", `Error: Please install MetaMask or any other Ethereum wallet.`);
+    return;
+  }
+
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = await connectWallet();
+  if (!signer) {
+    singleToggle("error", `Error: Please connect to MetaMask.`);
+    return;
+  }
+
+  const currentChainId = await signer.getChainId();
+  const configChainId = Number(chainIdSelect.value);
+  const configChainIdHex = `0x${configChainId.toString(16)}`;
+
+  if (configChainId !== currentChainId) {
+    singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
+    if (await switchNetwork(provider, configChainId)) {
+      singleToggle("success", ``);
+    }
+  }
+
+  // watch for chain changes
+  window.ethereum.on("chainChanged", async (currentChainId: string) => {
+    if (configChainIdHex === currentChainId) {
+      singleToggle("success", ``);
+    } else {
+      singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
+      switchNetwork(provider, configChainId);
+    }
+  });
+};
+
+const connectWallet = async (): Promise<JsonRpcSigner | undefined> => {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    return signer;
+  } catch (error: any) {
+    if (error?.message?.includes("missing provider")) {
+      singleToggle("error", "Error: Please install MetaMask.");
+    } else {
+      singleToggle("error", "Error: Please connect your wallet.");
+    }
+    return undefined;
+  }
+};
+
+const switchNetwork = async (provider: ethers.providers.Web3Provider, chainId: string | number): Promise<boolean> => {
+  try {
+    // if chainId is a number then convert it to hex
+    if (typeof chainId === "number") {
+      chainId = `0x${chainId.toString(16)}`;
+    }
+    // if chainId is a string but doesn't start with 0x then convert it to hex
+    if (typeof chainId === "string" && !chainId.startsWith("0x")) {
+      chainId = `0x${Number(chainId).toString(16)}`;
+    }
+    await provider.send("wallet_switchEthereumChain", [{ chainId: chainId }]);
+    return true;
+  } catch (error: any) {
+    return false;
+  }
 };
 
 const step1Handler = async () => {
-  return nextStep();
   if (walletPrivateKey.value !== "") {
     await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
     if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
@@ -383,19 +448,45 @@ const step1Handler = async () => {
 };
 
 const step2Handler = async () => {
-  if (!signer) {
-    signer = await connectWallet();
-    if (!signer) {
-      return;
-    }
-  }
   try {
-    const walletChainId = await signer.getChainId();
-    if (walletChainId !== Number(chainIdSelect.value)) {
-      singleToggle("error", `Error: Switch to the correct chain.`);
+    if (!window.ethereum) {
+      singleToggle("error", `Error: Please install MetaMask or any other Ethereum wallet.`);
       return;
     }
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    // if wallet is still not connected then retry connecting
+    if (!signer) {
+      signer = await connectWallet();
+      if (!signer) {
+        singleToggle("error", `Error: Please connect to MetaMask.`);
+        return;
+      }
+    }
+
+    const walletChainId = await signer.getChainId();
+    const configChainId = Number(chainIdSelect.value);
+    const configChainIdHex = `0x${configChainId.toString(16)}`;
+
+    window.ethereum.on("chainChanged", async (currentChainId: string) => {
+      if (configChainIdHex === currentChainId) {
+        singleToggle("success", ``);
+      } else {
+        singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
+        switchNetwork(provider, configChainId);
+      }
+    });
+
+    if (walletChainId !== configChainId) {
+      if (!(await switchNetwork(provider, configChainId))) {
+        singleToggle("error", `Error: Switch to the correct chain.`);
+        return;
+      }
+    }
+
     // load token contract
+    // TODO: load token contract based on chainId (waiting for PR #76 to be merged)
     const erc20 = new ethers.Contract("0x6B175474E89094C44Da98b954EedeAC495271d0F", daiAbi, signer);
     const decimals = await erc20.decimals();
     const allowance = Number(allowanceInput.value);
@@ -405,6 +496,7 @@ const step2Handler = async () => {
     }
 
     await erc20.approve(PERMIT2_ADDRESS, parseUnits(allowance.toString(), decimals));
+    singleToggle("success", `Success`);
   } catch (error) {
     console.error(error);
     singleToggle("error", `Error: ${error.reason}`);

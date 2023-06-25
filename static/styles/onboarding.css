@@ -151,6 +151,16 @@ textarea {
   background-color: #000;
 }
 
+.step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  width: 100%;
+  justify-content: center;
+  gap: 40px;
+  padding: 32px 0;
+}
+
 .hidden {
   display: none;
 }

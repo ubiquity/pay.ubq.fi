@@ -4,7 +4,7 @@
     <title>Onboarding</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="out/styles/sec.css" rel="stylesheet" />
+    <link href="out/styles/onboarding.css" rel="stylesheet" />
   </head>
   <body style="justify-content: start">
     <div class="container" id="user-access">
@@ -19,7 +19,7 @@
           <span class="step-label">APPROVE</span>
         </div>
       </div>
-      <div id="step1" class="container">
+      <div id="step1" class="step-container">
         <div class="mb-3">
           <label for="chainId" class="form-label">CHAIN_ID</label>
           <select class="form-control" id="chainId">
@@ -54,10 +54,13 @@
           <textarea type="text" class="form-control" id="outKey" disabled="true"></textarea>
         </div>
       </div>
-      <div id="step2" class="container hidden">
+      <div id="step2" class="step-container hidden">
         <div class="mb-3">
           <label for="allowance" class="form-label">ALLOWANCE AMOUNT</label>
-          <input type="text" class="form-control" id="allowance" />
+          <div>
+            <input type="text" class="form-control" style="max-width: 200px" id="allowance" />
+            <span style="font-size: 1.2rem; color: #808080">DAI</span>
+          </div>
         </div>
       </div>
 
