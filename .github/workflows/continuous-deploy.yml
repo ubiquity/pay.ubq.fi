@@ -26,6 +26,12 @@ jobs:
 
       - name: Wrangler Install
         run: npm install -g wrangler
+        
+      - name: Yarn Install
+        run: yarn install
+        
+      - name: Build
+        run: yarn utils:build
 
       - name: Publish to Cloudflare
         env:
