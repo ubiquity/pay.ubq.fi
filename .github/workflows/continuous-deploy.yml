@@ -26,6 +26,9 @@ jobs:
 
       - name: Yarn Install
         run: yarn install
+        
+      - name: Yarn Build
+        run: yarn build
       
       - name: Wrangler Install
         run: npm install -g wrangler
