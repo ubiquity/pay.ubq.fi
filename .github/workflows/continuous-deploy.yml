@@ -2,11 +2,9 @@ name: Cloudflare Preview Deployment
 
 on:
   push:
-    branches-ignore:
-      - main
+    branches:
+      - development
   pull_request:
-    branches-ignore:
-      - main
 
 jobs:
   deploy-to-cloudflare:
@@ -24,21 +22,25 @@ jobs:
         with:
           node-version: "18.14.1"
 
-      - name: Yarn Install
-        run: yarn install
-      
       - name: Wrangler Install
         run: npm install -g wrangler
+        
+      - name: Yarn Install
+        run: yarn install
+        
+      - name: Build
+        run: yarn utils:build
 
       - name: Publish to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           REPOSITORY: ${{ github.repository }}
-          PRODUCTION_BRANCH: "main"      
+          PRODUCTION_BRANCH: "development"
           OUTPUT_DIRECTORY: "static"
         run: |
           IFS='/' read -ra fields <<< "$REPOSITORY"
           projectName="${fields[1]}"
+          projectName=$(echo $projectName | sed 's/\./-/g')
           echo $projectName
           wrangler pages project list > project_list.txt
           if grep -q $projectName project_list.txt; then
