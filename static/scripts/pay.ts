@@ -1,8 +1,9 @@
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { daiAbi, permit2Abi } from "./abis";
 import { TxType, txData, setClaimMessage, claimChainId } from "./render-transaction";
 import { chainName, chainRpc } from "./constants";
+import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
@@ -11,6 +12,7 @@ const notifications = document.querySelector(".notifications") as HTMLElement;
 const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
 const buttonMark = document.querySelector(".claim-icon") as HTMLElement;
 const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
+const invalidateBtn = document.querySelector("#invalidateBtn") as HTMLButtonElement;
 
 // Object containing details for different types of toasts
 const toastDetails = {
@@ -35,26 +37,6 @@ const removeToast = toast => {
     clearTimeout(toast.timeoutId); // Clearing the timeout for the toast
   }
   setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
-};
-
-// mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L150
-const bitmapPositions = (nonce: string) => {
-  const dividend = BigInt(nonce);
-  const divisor = BigInt("256");
-  const quotient = dividend / divisor;
-  return quotient.toString();
-};
-
-const checkPermitClaimed = async (signer: JsonRpcSigner) => {
-  // get tx from window
-  let tx = window.txData;
-
-  // Set contract address and ABI
-  const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-
-  const claimed = await permit2Contract.nonceBitmap(txData?.owner, bitmapPositions(tx?.permit?.nonce));
-
-  return claimed?.toString() !== "0"; // 0 is not claimed, any digit greater than 0 indicates claimed
 };
 
 const createToast = (id: string, text: string) => {
@@ -173,6 +155,37 @@ const toggleStatus = async (balance: number, allowance: number, decimals: number
   trAllowance.textContent = balance > 0 ? `$${ethers.utils.formatUnits(allowance, decimals)}` : "N/A";
 };
 
+const checkPermitClaimed = async () => {
+  // get tx from window
+  let tx = window.txData;
+
+  // Set contract address and ABI
+  const provider = new ethers.providers.JsonRpcProvider(chainRpc[claimChainId]);
+  const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
+
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(tx.permit.nonce));
+  const bitmap = await permit2Contract.nonceBitmap(txData.owner, wordPos);
+  const bit = BigNumber.from(1)
+    .shl(bitPos - 1)
+    .and(bitmap);
+  return !bit.eq(0);
+};
+
+const invalidateNonce = async (signer: ethers.providers.JsonRpcSigner, nonce: BigNumber): Promise<void> => {
+  const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, permit2Abi, signer);
+  const { wordPos, bitPos } = nonceBitmap(nonce);
+  await permit2Contract.invalidateUnorderedNonces(wordPos, bitPos);
+};
+
+// mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L150
+const nonceBitmap = (nonce: BigNumber): { wordPos: BigNumber; bitPos: number } => {
+  // wordPos is the first 248 bits of the nonce
+  const wordPos = BigNumber.from(nonce).shr(8);
+  // bitPos is the last 8 bits of the nonce
+  const bitPos = BigNumber.from(nonce).and(0xff).toNumber();
+  return { wordPos, bitPos };
+};
+
 export const pay = async (): Promise<void> => {
   let detailsVisible = false;
 
@@ -185,25 +198,30 @@ export const pay = async (): Promise<void> => {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
-  const { balance, allowance, decimals } = await fetchTreasury();
-  await toggleStatus(balance, allowance, decimals);
+  fetchTreasury().then(({ balance, allowance, decimals }) => {
+    toggleStatus(balance, allowance, decimals);
+  });
 
   let signer = await connectWallet();
+  const signerAddress = await signer.getAddress();
 
   // check if permit is already claimed
-  if (signer._isSigner) {
-    let claimed = await checkPermitClaimed(signer);
-
+  checkPermitClaimed().then(claimed => {
     if (claimed) {
       setClaimMessage("Notice", `Permit already claimed`);
       table.setAttribute(`data-claim`, "none");
+    } else {
+      if (signerAddress.toLowerCase() === txData.owner.toLowerCase()) {
+        invalidateBtn.style.display = "block";
+      }
     }
-  }
+  });
 
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!provider || !provider.provider.isMetaMask) {
     createToast("error", "Please connect to MetaMask.");
     disableClaimButton(false);
+    invalidateBtn.disabled = true;
   }
 
   const currentChainId = await provider!.provider!.request!({ method: "eth_chainId" });
@@ -213,8 +231,10 @@ export const pay = async (): Promise<void> => {
     if (claimChainId === currentChainId) {
       // enable the button once on the correct network
       enableClaimButton();
+      invalidateBtn.disabled = false;
     } else {
       disableClaimButton(false);
+      invalidateBtn.disabled = true;
     }
   });
 
@@ -222,8 +242,25 @@ export const pay = async (): Promise<void> => {
   if (currentChainId !== claimChainId) {
     createToast("error", `Please switch to ${chainName[claimChainId]}`);
     disableClaimButton(false);
+    invalidateBtn.disabled = true;
     switchNetwork(provider);
   }
+
+  invalidateBtn.addEventListener("click", async () => {
+    if (!signer._isSigner) {
+      signer = await connectWallet();
+      if (!signer._isSigner) {
+        return;
+      }
+    }
+    try {
+      await invalidateNonce(signer, BigNumber.from(txData.permit.nonce));
+    } catch (error: any) {
+      createToast("error", `Error: ${error.reason ?? error.message ?? "Unknown error"}`);
+      return;
+    }
+    createToast("success", "Nonce invalidated!");
+  });
 
   claimButtonElem.addEventListener("click", async () => {
     try {
