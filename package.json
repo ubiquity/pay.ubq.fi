@@ -7,7 +7,8 @@
     "utils:build": "tsx build.ts",
     "utils:hash": "git rev-parse HEAD > static/commit.txt",
     "build": "run-s utils:hash utils:build",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "nonce:get-invalidate-params": "forge script --via-ir solidity-scripts/GetInvalidateNonceParams.s.sol"
   },
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",

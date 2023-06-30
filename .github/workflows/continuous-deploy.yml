@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
+      pull-requests: write 
 
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
@@ -56,3 +57,27 @@ jobs:
 
       - name: Print deploy URL
         run: echo ${{ steps.publish-to-cloudflare.outputs.DEPLOY_URL }}
+
+      - name: Download PR number artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: pr-num
+          workflow: build.yml
+          path: pr-num
+
+      - name: Read PR number from file
+        id: pr-num-reader
+        uses: juliangruber/read-file-action@v1.1.6
+        with:
+          path: pr-num/pr-num.txt
+
+      - name: Print PR number from file
+        run: echo ${{ steps.pr-num-reader.outputs.content }}
+
+      - name: Comment PR
+        # PR number exists only on "pull_request" event so comment only when it exists
+        if: ${{ steps.pr-num-reader.outputs.content }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: ${{ steps.publish-to-cloudflare.outputs.DEPLOY_URL }}
+          pr_number: ${{ steps.pr-num-reader.outputs.content }}
