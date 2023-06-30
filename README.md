@@ -63,3 +63,28 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
     npm install -g wrangler
     wrangler login
     wrangler pages project create
+
+## How to invalidate a permit2 nonce by example
+This section describes how to invalidate the following [permit](https://github.com/ubiquity/ubiquity-dollar/issues/643#issuecomment-1607152588) (i.e. invalidate a permit2 nonce)
+1. Setup `.env` file with the required env varibales: `NONCE` (nonce number), `NONCE_SIGNER_ADDRESS` (i.e. the bot's wallet) and `RPC_PROVIDER_URL`. For this [permit URL](https://github.com/ubiquity/ubiquity-dollar/issues/643#issuecomment-1607152588) the `.env` file will look like this:
+```
+NONCE="9867970486646789738815952475601005014850694197864057371518032581271992954680"
+NONCE_SIGNER_ADDRESS="0xf87ca4583C792212e52720d127E7E0A38B818aD1"
+RPC_PROVIDER_URL="https://rpc.ankr.com/gnosis"
+```
+2. Run `yarn nonce:get-invalidate-params`. You will get this output:
+```
+== Logs ==
+Is nonce used: false
+--------------------
+Params for nonce invalidation via invalidateUnorderedNonces()
+wordPos: 38546759713464022417249814357816425839260524210406474107492314770593722479
+mask: 72057594037927936
+
+```
+3. Open https://gnosisscan.io/address/0x000000000022D473030F116dDEE9F6B43aC78BA3#writeContract and connect your wallet
+4. Call `invalidateUnorderedNonces()` with the `wordPos` and `mask` params you got on step 2
+
+Notice that this examples uses gnosis chain for nonce invalidation. If you need to invalidate nonce on some other chain then:
+1. Set `RPC_PROVIDER_URL` on step 1 to the desired RPC chain provider
+2. On step 3 open UI for the desired chain
