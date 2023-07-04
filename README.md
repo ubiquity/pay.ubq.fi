@@ -1,4 +1,4 @@
-# Generate Permit
+# Generate Permit!
 
 Tool for generating offline permits for bounty hunters to withdraw their payments.
 
