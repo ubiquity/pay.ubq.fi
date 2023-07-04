@@ -1,7 +1,7 @@
 import { getERC20Contract } from "./get-contract";
 import { chainExplorer } from "./constants";
 
-export let claimChainId = "0x01";
+export let claimChainId = "0x1";
 let explorerUrl = chainExplorer[claimChainId];
 
 export type TxType = {
