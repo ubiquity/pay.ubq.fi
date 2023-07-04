@@ -22,11 +22,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18.14.1"
-
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
         
       - name: Yarn Install
         run: yarn install
@@ -36,9 +31,6 @@ jobs:
 
       - name: Add commit SHA file to build folder
         run: echo -n ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }} > static/commit.txt
-
-      - name: Debug
-        run: cat static/commit.txt
 
       - name: Archive build
         uses: actions/upload-artifact@v3
