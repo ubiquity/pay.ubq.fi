@@ -1,6 +1,4 @@
-import { txData } from "./render-transaction";
-
-export enum Chain {
+export enum Network {
   Mainnet = "0x1",
   Goerli = "0x5",
   Gnosis = "0x64",
@@ -11,20 +9,20 @@ export enum Token {
   WXDAI = "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
 }
 
-export const chainName = {
-  [Chain.Mainnet]: "Ethereum Mainnet",
-  [Chain.Goerli]: "Goerli Testnet",
-  [Chain.Gnosis]: "Gnosis Chain",
+export const networkName = {
+  [Network.Mainnet]: "Ethereum Mainnet",
+  [Network.Goerli]: "Goerli Testnet",
+  [Network.Gnosis]: "Gnosis Chain",
 };
 
-export const chainExplorer = {
-  [Chain.Mainnet]: "https://etherscan.io",
-  [Chain.Goerli]: "https://goerli.etherscan.io",
-  [Chain.Gnosis]: "https://gnosisscan.io",
+export const networkExplorer = {
+  [Network.Mainnet]: "https://etherscan.io",
+  [Network.Goerli]: "https://goerli.etherscan.io",
+  [Network.Gnosis]: "https://gnosisscan.io",
 };
 
-export const chainRpc = {
-  [Chain.Mainnet]: "https://rpc-pay.ubq.fi/v1/mainnet",
-  [Chain.Goerli]: "https://rpc-pay.ubq.fi/v1/goerli",
-  [Chain.Gnosis]: "https://rpc.gnosischain.com",
+export const networkRpc = {
+  [Network.Mainnet]: "https://rpc-pay.ubq.fi/v1/mainnet",
+  [Network.Goerli]: "https://rpc-pay.ubq.fi/v1/goerli",
+  [Network.Gnosis]: "https://rpc.gnosischain.com",
 };

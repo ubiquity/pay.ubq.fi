@@ -1,9 +1,9 @@
 import { BigNumber, ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { daiAbi, permit2Abi } from "./abis";
-import { TxType, txData, setClaimMessage, claimChainId } from "./render-transaction";
-import { chainName, chainRpc } from "./constants";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
+import { TxType, txData, setClaimMessage, claimNetworkId } from "./render-transaction";
+import { networkName, networkRpc } from "./constants";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
@@ -108,7 +108,7 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
 
 const switchNetwork = async (provider: ethers.providers.Web3Provider): Promise<boolean> => {
   try {
-    await provider.send("wallet_switchEthereumChain", [{ chainId: claimChainId }]);
+    await provider.send("wallet_switchEthereumChain", [{ chainId: claimNetworkId }]);
     return true;
   } catch (error: any) {
     return false;
@@ -136,7 +136,7 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, predefined: strin
 
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number; decimals: number }> => {
   try {
-    const provider = new ethers.providers.JsonRpcProvider(chainRpc[claimChainId]);
+    const provider = new ethers.providers.JsonRpcProvider(networkRpc[claimNetworkId]);
     const tokenAddress = txData.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
     const balance = await tokenContract.balanceOf(txData.owner);
@@ -224,11 +224,11 @@ export const pay = async (): Promise<void> => {
     invalidateBtn.disabled = true;
   }
 
-  const currentChainId = await provider!.provider!.request!({ method: "eth_chainId" });
+  const currentNetworkId = await provider!.provider!.request!({ method: "eth_chainId" });
 
-  // watch for chain changes
-  window.ethereum.on("chainChanged", async (currentChainId: string) => {
-    if (claimChainId === currentChainId) {
+  // watch for network changes
+  window.ethereum.on("chainChanged", async (currentNetworkId: string) => {
+    if (claimNetworkId === currentNetworkId) {
       // enable the button once on the correct network
       enableClaimButton();
       invalidateBtn.disabled = false;
@@ -239,8 +239,8 @@ export const pay = async (): Promise<void> => {
   });
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
-  if (currentChainId !== claimChainId) {
-    createToast("error", `Please switch to ${chainName[claimChainId]}`);
+  if (currentNetworkId !== claimNetworkId) {
+    createToast("error", `Please switch to ${networkName[claimNetworkId]}`);
     disableClaimButton(false);
     invalidateBtn.disabled = true;
     switchNetwork(provider);
