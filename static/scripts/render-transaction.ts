@@ -1,8 +1,8 @@
 import { getERC20Contract } from "./get-contract";
-import { chainExplorer } from "./constants";
+import { networkExplorer } from "./constants";
 
-export let claimChainId = "0x1";
-let explorerUrl = chainExplorer[claimChainId];
+export let claimNetworkId = "0x1";
+let explorerUrl = networkExplorer[claimNetworkId];
 
 export type TxType = {
   permit: {
@@ -135,8 +135,12 @@ export const renderTransaction = async (): Promise<void> => {
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
-  claimChainId = urlParams.get("chainId") || claimChainId;
-  explorerUrl = chainExplorer[claimChainId] || explorerUrl;
+  claimNetworkId = urlParams.get("network") || claimNetworkId;
+  // if network id is not prefixed with 0x, convert it to hex
+  if (!claimNetworkId.startsWith("0x")) {
+    claimNetworkId = `0x${Number(claimNetworkId).toString(16)}`;
+  }
+  explorerUrl = networkExplorer[claimNetworkId] || explorerUrl;
 
   if (!base64encodedTxData) {
     setClaimMessage("Notice", `No claim data found.`);
