@@ -1,7 +1,7 @@
 import { getERC20Contract } from "./get-contract";
 import { networkExplorer } from "./constants";
 
-export let claimNetworkId = "0x1";
+export let claimNetworkId: string | null = null;
 let explorerUrl = networkExplorer[claimNetworkId];
 
 export type TxType = {
@@ -135,7 +135,14 @@ export const renderTransaction = async (): Promise<void> => {
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
-  claimNetworkId = urlParams.get("network") || claimNetworkId;
+  claimNetworkId = urlParams.get("network");
+
+  if (!claimNetworkId) {
+    setClaimMessage("Error", `No network ID passed in URL.`);
+    table.setAttribute(`data-claim`, "error");
+    return;
+  }
+
   // if network id is not prefixed with 0x, convert it to hex
   if (!claimNetworkId.startsWith("0x")) {
     claimNetworkId = `0x${Number(claimNetworkId).toString(16)}`;
