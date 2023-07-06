@@ -220,7 +220,7 @@ export const pay = async (): Promise<void> => {
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
   if (currentNetworkId !== claimNetworkId) {
-    createToast("error", `Please switch to ${networkName[claimNetworkId]}`);
+    createToast("error", `Please switch to ${networkName[claimNetworkId as keyof typeof networkName]}`);
     disableClaimButton(false);
     switchNetwork(provider);
   }

@@ -1,13 +1,13 @@
-import { TxType } from "./render-transaction";
-import { DrawConfig } from "./draw";
+import { TxType } from "./static/scripts/render-transaction";
+import { DrawConfig } from "./static/scripts/draw";
 
-export interface Ethereumish {
+export interface EthereumIsh {
   autoRefreshOnNetworkChange: boolean;
   chainId: string;
   isMetaMask?: boolean;
   isStatus?: boolean;
   networkVersion: string;
-  selectedAddress: any;
+  selectedAddress: string;
 
   on(event: "close" | "accountsChanged" | "chainChanged" | "networkChanged", callback: (payload: any) => void): void;
   once(event: "close" | "accountsChanged" | "chainChanged" | "networkChanged", callback: (payload: any) => void): void;
@@ -15,7 +15,7 @@ export interface Ethereumish {
 
 declare global {
   interface Window {
-    ethereum: Ethereumish;
+    ethereum: EthereumIsh;
     draw(settings: DrawConfig): void;
     txData: TxType;
   }
