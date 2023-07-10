@@ -1,5 +1,5 @@
 {
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
     "start:ui": "tsx serve.ts",
@@ -29,6 +29,7 @@
     "prettier": "^2.8.7",
     "retry-axios": "^3.0.0",
     "tsx": "^3.12.6",
+    "typescript": "^5.1.6",
     "yaml": "^2.2.2"
   },
   "packageManager": "yarn@3.5.0"
