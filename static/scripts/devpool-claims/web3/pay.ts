@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { networkNames, getNetworkName } from '../constants';
+import { networkNames, getNetworkName } from "../constants";
 import invalidateBtnInnerHTML from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
@@ -59,7 +59,7 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
     if (!networkName) {
       createToast("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
     } else {
-      createToast("error", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
+      createToast("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     disableClaimButton(false);
     invalidateBtnInnerHTML.disabled = true;
@@ -90,16 +90,28 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
       disableClaimButton();
 
       const { balance, allowance, decimals } = await fetchTreasury();
-      await renderTreasuryStatus({ balance, allowance, decimals });
+
+      renderTreasuryStatus({ balance, allowance, decimals }).catch(ErrorHandler);
+
       let errorMessage: string | undefined = undefined;
 
-      if (!(balance >= Number(app.txData.permit.permitted.amount) && allowance >= Number(app.txData.permit.permitted.amount))) {
-        if (balance >= Number(app.txData.permit.permitted.amount)) {
-          errorMessage = "Error: Not enough allowance to claim.";
-        } else {
-          errorMessage = "Error: Not enough funds on treasury to claim.";
-        }
+      const permitted = Number(app.txData.permit.permitted.amount);
+
+      const _balance = Number(balance.toString()) / 1e18;
+      const _permitted = permitted / 1e18;
+      const _allowance = Number(allowance.toString()) / 1e18;
+
+      const solvent = balance >= permitted;
+      const allowed = allowance >= permitted;
+
+      if (!solvent) {
+        errorMessage = `Not enough balance on funding wallet to claim permitted amount.`;
       }
+
+      if (!allowed) {
+        errorMessage = `Not enough allowance to claim.`;
+      }
+
       await withdraw(signer, app.txData, errorMessage);
     } catch (error: unknown) {
       ErrorHandler(error, "");
@@ -127,7 +139,7 @@ function curryPermitClaimedHandler(signerAddress: string, table: HTMLTableElemen
           try {
             await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
           } catch (error: any) {
-            createToast("error", `Error: ${error.reason ?? error.message ?? "Unknown error"}`);
+            createToast("error", `${error.reason ?? error.message ?? "Unknown error"}`);
             return;
           }
           createToast("success", "Nonce invalidated!");
