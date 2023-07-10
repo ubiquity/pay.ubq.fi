@@ -7,6 +7,7 @@ import { daiAbi } from "./abis";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { parseUnits } from "ethers/lib/utils";
+import { Network, Token, networkName } from "./constants";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -350,6 +351,18 @@ let currentStep = 1;
 let signer: JsonRpcSigner | undefined = undefined;
 
 const nextStep = async () => {
+  const configChainId = Number(chainIdSelect.value);
+  const configChainIdHex = `0x${configChainId.toString(16)}`;
+
+  const tokenNameSpan = document.querySelector("#allowance + span");
+  if (tokenNameSpan) {
+    if (configChainIdHex === Network.Mainnet) {
+      tokenNameSpan.innerHTML = "DAI";
+    } else if (configChainIdHex === Network.Gnosis) {
+      tokenNameSpan.innerHTML = "WXDAI";
+    }
+  }
+
   const step1 = document.getElementById("step1") as HTMLElement;
   step1.classList.add("hidden");
   const step2 = document.getElementById("step2") as HTMLElement;
@@ -374,11 +387,9 @@ const nextStep = async () => {
   }
 
   const currentChainId = await signer.getChainId();
-  const configChainId = Number(chainIdSelect.value);
-  const configChainIdHex = `0x${configChainId.toString(16)}`;
 
   if (configChainId !== currentChainId) {
-    singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
+    singleToggle("error", `Error: Please connect to ${networkName[configChainIdHex]}.`);
     if (await switchNetwork(provider, configChainId)) {
       singleToggle("success", ``);
     }
@@ -389,7 +400,7 @@ const nextStep = async () => {
     if (configChainIdHex === currentChainId) {
       singleToggle("success", ``);
     } else {
-      singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
+      singleToggle("error", `Error: Please connect to ${networkName[configChainIdHex]}.`);
       switchNetwork(provider, configChainId);
     }
   });
@@ -486,8 +497,13 @@ const step2Handler = async () => {
     }
 
     // load token contract
-    // TODO: load token contract based on chainId (waiting for PR #76 to be merged)
-    const erc20 = new ethers.Contract("0x6B175474E89094C44Da98b954EedeAC495271d0F", daiAbi, signer);
+    let token = "";
+    if (configChainIdHex === Network.Mainnet) {
+      token = Token.DAI;
+    } else if (configChainIdHex === Network.Gnosis) {
+      token = Token.WXDAI;
+    }
+    const erc20 = new ethers.Contract(token, daiAbi, signer);
     const decimals = await erc20.decimals();
     const allowance = Number(allowanceInput.value);
     if (allowance <= 0) {
