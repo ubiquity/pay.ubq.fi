@@ -160,7 +160,7 @@ const checkPermitClaimed = async () => {
   let tx = window.txData;
 
   // Set contract address and ABI
-  const provider = new ethers.providers.JsonRpcProvider(chainRpc[claimChainId]);
+  const provider = new ethers.providers.JsonRpcProvider(networkRpc[claimNetworkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(tx.permit.nonce));
