@@ -41,8 +41,8 @@ export let txData: TxType = {
 export const setClaimMessage = (type: string, message: string): void => {
   const claimMessageTypeElement = document.querySelector(`table > thead th`) as Element;
   const claimMessageBodyElement = document.querySelector(`table > thead td`) as Element;
-  claimMessageTypeElement.textContent = type;
-  claimMessageBodyElement.textContent = message;
+  claimMessageTypeElement.innerHTML = `<div>${type}</div>`;
+  claimMessageBodyElement.innerHTML = `<div>${message}</div>`;
 };
 
 const renderTokenSymbol = async (table: Element, requestedAmountElement: Element): Promise<void> => {
@@ -62,8 +62,8 @@ const insertTableData = async (table: Element): Promise<Element> => {
   // TO
   const toFull = document.querySelector("#To .full") as Element;
   const toShort = document.querySelector("#To .short") as Element;
-  toFull.textContent = txData.transferDetails.to;
-  toShort.textContent = shortenAddress(txData.transferDetails.to);
+  toFull.innerHTML = `<div>${txData.transferDetails.to}</div>`;
+  toShort.innerHTML = `<div>${shortenAddress(txData.transferDetails.to)}</div>`;
 
   // fetch ens name
   // const ensName = await fetch(`https://api.ens.domains/v1/name/${txData.transferDetails.to}`)
@@ -76,8 +76,8 @@ const insertTableData = async (table: Element): Promise<Element> => {
 
   const tokenFull = document.querySelector("#Token .full") as Element;
   const tokenShort = document.querySelector("#Token .short") as Element;
-  tokenFull.textContent = txData.permit.permitted.token;
-  tokenShort.textContent = shortenAddress(txData.permit.permitted.token);
+  tokenFull.innerHTML = `<div>${txData.permit.permitted.token}</div>`;
+  tokenShort.innerHTML = `<div>${shortenAddress(txData.permit.permitted.token)}</div>`;
 
   const tokenBoth = document.getElementById(`permit.permitted.token`) as Element;
   tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
@@ -85,12 +85,12 @@ const insertTableData = async (table: Element): Promise<Element> => {
   const ownerElem = document.getElementById("owner") as Element;
   ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/address/${txData.owner}">${txData.owner}</a>`;
   const nonceELem = document.getElementById("permit.nonce") as Element;
-  nonceELem.textContent = txData.permit.nonce;
+  nonceELem.innerHTML = `<div>${txData.permit.nonce}</div>`;
   const deadlineElem = document.getElementById("permit.deadline") as Element;
-  deadlineElem.textContent = txData.permit.deadline;
-  requestedAmountElement.textContent = (Number(txData.transferDetails.requestedAmount) / 1e18).toString();
+  deadlineElem.innerHTML = `<div>${txData.permit.deadline}</div>`;
+  requestedAmountElement.innerHTML = `<div>${(Number(txData.transferDetails.requestedAmount) / 1e18).toString()}</div>`;
   const signatureElem = document.getElementById("signature") as Element;
-  signatureElem.textContent = txData.signature;
+  signatureElem.innerHTML = `<div>${txData.signature}</div>`;
 
   table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;

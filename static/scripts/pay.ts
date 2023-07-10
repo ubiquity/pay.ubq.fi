@@ -1,18 +1,18 @@
-import { BigNumber, ethers } from "ethers";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { daiAbi, permit2Abi } from "./abis";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
-import { TxType, txData, setClaimMessage, claimNetworkId } from "./render-transaction";
+import { BigNumber, ethers } from "ethers";
+import { daiAbi, permit2Abi } from "./abis";
 import { networkName, networkRpc } from "./constants";
+import invalidateBtnInnerHTML from "./invalidate-component";
+import { TxType, claimNetworkId, setClaimMessage, txData } from "./render-transaction";
 
 const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
 const notifications = document.querySelector(".notifications") as HTMLElement;
 const claimButtonElem = document.getElementById("claimButton") as HTMLButtonElement;
 const buttonMark = document.querySelector(".claim-icon") as HTMLElement;
 const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
-const invalidateBtn = document.querySelector("#invalidateBtn") as HTMLButtonElement;
+const controls = document.querySelector("#controls") as HTMLElement;
 
 // Object containing details for different types of toasts
 const toastDetails = {
@@ -212,7 +212,26 @@ export const pay = async (): Promise<void> => {
       table.setAttribute(`data-claim`, "none");
     } else {
       if (signerAddress.toLowerCase() === txData.owner.toLowerCase()) {
-        invalidateBtn.style.display = "block";
+        // invalidateBtn.style.display = "block";
+
+        controls.appendChild(invalidateBtnInnerHTML);
+        console.log(invalidateBtnInnerHTML);
+        invalidateBtnInnerHTML.addEventListener("click", async () => {
+          console.trace();
+          if (!signer._isSigner) {
+            signer = await connectWallet();
+            if (!signer._isSigner) {
+              return;
+            }
+          }
+          try {
+            await invalidateNonce(signer, BigNumber.from(txData.permit.nonce));
+          } catch (error: any) {
+            createToast("error", `Error: ${error.reason ?? error.message ?? "Unknown error"}`);
+            return;
+          }
+          createToast("success", "Nonce invalidated!");
+        });
       }
     }
   });
@@ -221,7 +240,7 @@ export const pay = async (): Promise<void> => {
   if (!provider || !provider.provider.isMetaMask) {
     createToast("error", "Please connect to MetaMask.");
     disableClaimButton(false);
-    invalidateBtn.disabled = true;
+    invalidateBtnInnerHTML.disabled = true;
   }
 
   const currentNetworkId = await provider!.provider!.request!({ method: "eth_chainId" });
@@ -231,10 +250,10 @@ export const pay = async (): Promise<void> => {
     if (claimNetworkId === currentNetworkId) {
       // enable the button once on the correct network
       enableClaimButton();
-      invalidateBtn.disabled = false;
+      invalidateBtnInnerHTML.disabled = false;
     } else {
       disableClaimButton(false);
-      invalidateBtn.disabled = true;
+      invalidateBtnInnerHTML.disabled = true;
     }
   });
 
@@ -242,25 +261,9 @@ export const pay = async (): Promise<void> => {
   if (currentNetworkId !== claimNetworkId) {
     createToast("error", `Please switch to ${networkName[claimNetworkId]}`);
     disableClaimButton(false);
-    invalidateBtn.disabled = true;
+    invalidateBtnInnerHTML.disabled = true;
     switchNetwork(provider);
   }
-
-  invalidateBtn.addEventListener("click", async () => {
-    if (!signer._isSigner) {
-      signer = await connectWallet();
-      if (!signer._isSigner) {
-        return;
-      }
-    }
-    try {
-      await invalidateNonce(signer, BigNumber.from(txData.permit.nonce));
-    } catch (error: any) {
-      createToast("error", `Error: ${error.reason ?? error.message ?? "Unknown error"}`);
-      return;
-    }
-    createToast("success", "Nonce invalidated!");
-  });
 
   claimButtonElem.addEventListener("click", async () => {
     try {
@@ -290,25 +293,17 @@ export const pay = async (): Promise<void> => {
     }
   });
 
-  // display commit hash
-  const commit = await fetch("commit.txt");
-  if (commit.ok) {
-    const commitHash = await commit.text();
-    const buildElement = document.querySelector(`#build a`) as any;
-    buildElement.innerHTML = `${commitHash}`;
-    buildElement.href = `https://github.com/ubiquity/generate-permit/commit/${commitHash}`;
-  }
   // check system light mode
-  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  // const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-  const drawConfig = {
-    cell_resolution: 24,
-    point_resolution: 1,
-    shade: 255,
-    step: 0.01,
-    refresh: 1000 / 60,
-    target: document.getElementById("grid")!,
-  };
+  // const drawConfig = {
+  //   cell_resolution: 24,
+  //   point_resolution: 1,
+  //   shade: 255,
+  //   step: 0.01,
+  //   refresh: 1000 / 60,
+  //   target: document.getElementById("grid")!,
+  // };
 
-  systemPrefersDark && window.draw(drawConfig);
+  // systemPrefersDark && window.draw(drawConfig);
 };
