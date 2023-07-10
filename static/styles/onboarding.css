@@ -102,32 +102,6 @@ button:not(:disabled):hover {
   background: none;
 }
 
-#jsonBtn {
-  border-radius: 6px 0 0 6px;
-  background: #ffb100;
-}
-
-#jsonBtn:disabled {
-  background: #ffb100ad;
-}
-
-#jsonBtn:not(:disabled):hover {
-  background: #ffb100ad;
-}
-
-#yamlBtn {
-  border-radius: 0 6px 6px 0;
-  background: #ff0000;
-}
-
-#yamlBtn:disabled {
-  background: #ff00007d;
-}
-
-#yamlBtn:not(:disabled):hover {
-  background: #ff00007d;
-}
-
 textarea {
   padding-top: 15px;
   line-height: 1.8;
@@ -142,4 +116,51 @@ textarea {
 
 .ecpx {
   color: #c7c7c7;
+}
+
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 15rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-label {
+  margin-top: 8px;
+  color: #808080;
+}
+
+.step.active .step-number {
+  background-color: #000;
+}
+
+.step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  width: 100%;
+  justify-content: center;
+  gap: 40px;
+  padding: 32px 0;
+}
+
+.hidden {
+  display: none;
 }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Onboarding</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="out/styles/onboarding.css" rel="stylesheet" />
+  </head>
+  <body style="justify-content: start">
+    <div class="container" id="user-access">
+      <h1 class="title">Onboarding</h1>
+      <div id="stepper" class="stepper">
+        <div class="step active">
+          <span class="step-number">1</span>
+          <span class="step-label">CONFIG</span>
+        </div>
+        <div class="step">
+          <span class="step-number">2</span>
+          <span class="step-label">APPROVE</span>
+        </div>
+      </div>
+      <div id="step1" class="step-container">
+        <div class="mb-3">
+          <label for="chainId" class="form-label">CHAIN_ID</label>
+          <select class="form-control" id="chainId">
+            <option value="1">Ethereum Mainnet</option>
+            <option value="100">Gnosis Mainnet</option>
+          </select>
+          <span class="status-log"></span>
+        </div>
+        <div class="mb-3">
+          <label for="walletPrivateKey" class="form-label">WALLET_PRIVATE_KEY</label>
+          <input type="text" class="form-control" id="walletPrivateKey" />
+          <span class="status-log"></span>
+        </div>
+        <div class="mb-3">
+          <label for="safeAddress" class="form-label">SAFE_ADDRESS</label>
+          <input type="text" class="form-control" id="safeAddress" />
+          <span class="status-log"></span>
+        </div>
+        <div class="mb-3">
+          <label for="githubPat" class="form-label">GITHUB_PAT</label>
+          <input type="text" class="form-control" id="githubPat" />
+          <span class="status-log"></span>
+        </div>
+        <div class="mb-3">
+          <label for="orgName" class="form-label">ORG_NAME</label>
+          <input type="text" class="form-control" id="orgName" />
+          <span class="status-log"></span>
+        </div>
+        <div class="mb-3 pos-rel">
+          <label for="outKey" class="form-label">OUTPUT</label>
+          <div class="out-file">ubiquibot-config.yml</div>
+          <textarea type="text" class="form-control" id="outKey" disabled="true"></textarea>
+        </div>
+      </div>
+      <div id="step2" class="step-container hidden">
+        <div class="mb-3">
+          <label for="allowance" class="form-label">ALLOWANCE AMOUNT</label>
+          <div>
+            <input type="text" class="form-control" style="max-width: 200px" id="allowance" />
+            <span style="font-size: 1.2rem; color: #808080">DAI</span>
+            <span class="status-log"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="statusKey" class="form-label">STATUS</label>
+        <input type="text" class="form-control" id="statusKey" disabled="true" />
+      </div>
+      <div class="mb-3 loader-wrap" style="display: none">
+        <span class="loader-x"></span>
+      </div>
+      <div class="btn-container">
+        <button type="button" class="btn btn-primary mb-3" id="setBtn">🌐 Set</button>
+      </div>
+    </div>
+    <script src="out/scripts/onboarding.js" type="application/javascript"></script>
+  </body>
+</html>

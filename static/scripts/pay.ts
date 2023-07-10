@@ -90,7 +90,7 @@ const ErrorHandler = (error: any, extra: string | undefined = undefined) => {
   createToast("error", `Error: ${errorMessage}`);
 };
 
-const connectWallet = async (): Promise<JsonRpcSigner> => {
+export const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
