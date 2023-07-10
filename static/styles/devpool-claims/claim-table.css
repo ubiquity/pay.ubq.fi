@@ -120,7 +120,7 @@ table[data-claim-rendered] button {
   opacity: 0.5;
 }
 table[data-claim-rendered] button:disabled {
-  opacity: 0.25;
+  opacity: 0;
   pointer-events: none;
 }
 table[data-claim-rendered] button:hover {

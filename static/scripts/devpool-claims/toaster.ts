@@ -55,15 +55,19 @@ export function loadingClaimButton(triggerLoader = true) {
 
   // Adding this because not all disabling should trigger loading spinner
   if (triggerLoader) {
-    claimLoader?.classList.add("show-cl"), claimLoader?.classList.remove("hide-cl");
-    claimIcon?.classList.add("hide-cl"), claimIcon?.classList.remove("show-cl");
+    claimLoader?.classList.add("show-cl");
+    claimLoader?.classList.remove("hide-cl");
+    claimIcon?.classList.add("hide-cl");
+    claimIcon?.classList.remove("show-cl");
   }
 }
 
 export function resetClaimButton() {
   claimButton.disabled = false;
-  claimLoader?.classList.add("hide-cl"), claimLoader?.classList.remove("show-cl");
-  claimIcon?.classList.add("show-cl"), claimIcon?.classList.remove("hide-cl");
+  claimLoader?.classList.add("hide-cl");
+  claimLoader?.classList.remove("show-cl");
+  claimIcon?.classList.add("show-cl");
+  claimIcon?.classList.remove("hide-cl");
 }
 
 export function ErrorHandler(error: any, errorMessage?: string) {
