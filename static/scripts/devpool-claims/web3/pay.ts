@@ -116,7 +116,6 @@ function curryPermitClaimedHandler(signerAddress: string, table: HTMLTableElemen
     } else {
       if (signerAddress.toLowerCase() === app.txData.owner.toLowerCase()) {
         controls.appendChild(invalidateBtnInnerHTML);
-        console.log(invalidateBtnInnerHTML);
         invalidateBtnInnerHTML.addEventListener("click", async () => {
           console.trace();
           if (!signer?._isSigner) {
