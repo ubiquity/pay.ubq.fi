@@ -1,7 +1,7 @@
 import { networkExplorer, networkRpc } from "../constants";
 import { TxType } from "./tx-type";
 
-export const appState = {
+export const app = {
   claimNetworkId: "0x1",
   explorerUrl: networkExplorer["0x1"],
   txData: {

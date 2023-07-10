@@ -1,4 +1,4 @@
-import { appState } from ".";
+import { app } from ".";
 import { shortenAddress } from "./index";
 
 export async function insertTableData(table: Element): Promise<Element> {
@@ -12,32 +12,32 @@ export async function insertTableData(table: Element): Promise<Element> {
 
 function renderDetailsFields(requestedAmountElement: Element) {
   const ownerElem = document.getElementById("owner") as Element;
-  ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${appState.explorerUrl}/address/${appState.txData.owner}">${appState.txData.owner}</a>`;
+  ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${app.explorerUrl}/address/${app.txData.owner}">${app.txData.owner}</a>`;
   const nonceELem = document.getElementById("permit.nonce") as Element;
-  nonceELem.innerHTML = `<div>${appState.txData.permit.nonce}</div>`;
+  nonceELem.innerHTML = `<div>${app.txData.permit.nonce}</div>`;
   const deadlineElem = document.getElementById("permit.deadline") as Element;
-  deadlineElem.innerHTML = `<div>${appState.txData.permit.deadline}</div>`;
-  requestedAmountElement.innerHTML = `<div>${(Number(appState.txData.transferDetails.requestedAmount) / 1000000000000000000).toString()}</div>`;
+  deadlineElem.innerHTML = `<div>${app.txData.permit.deadline}</div>`;
+  requestedAmountElement.innerHTML = `<div>${(Number(app.txData.transferDetails.requestedAmount) / 1000000000000000000).toString()}</div>`;
   const signatureElem = document.getElementById("signature") as Element;
-  signatureElem.innerHTML = `<div>${appState.txData.signature}</div>`;
+  signatureElem.innerHTML = `<div>${app.txData.signature}</div>`;
 }
 
 function renderTokenFields() {
   const tokenFull = document.querySelector("#Token .full") as Element;
   const tokenShort = document.querySelector("#Token .short") as Element;
-  tokenFull.innerHTML = `<div>${appState.txData.permit.permitted.token}</div>`;
-  tokenShort.innerHTML = `<div>${shortenAddress(appState.txData.permit.permitted.token)}</div>`;
+  tokenFull.innerHTML = `<div>${app.txData.permit.permitted.token}</div>`;
+  tokenShort.innerHTML = `<div>${shortenAddress(app.txData.permit.permitted.token)}</div>`;
 
   const tokenBoth = document.getElementById(`permit.permitted.token`) as Element;
-  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${appState.explorerUrl}/token/${appState.txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
+  tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${app.explorerUrl}/token/${app.txData.permit.permitted.token}">${tokenBoth.innerHTML}</a>`;
 }
 
 function renderToFields() {
   const toFull = document.querySelector("#To .full") as Element;
   const toShort = document.querySelector("#To .short") as Element;
-  toFull.innerHTML = `<div>${appState.txData.transferDetails.to}</div>`;
-  toShort.innerHTML = `<div>${shortenAddress(appState.txData.transferDetails.to)}</div>`;
+  toFull.innerHTML = `<div>${app.txData.transferDetails.to}</div>`;
+  toShort.innerHTML = `<div>${shortenAddress(app.txData.transferDetails.to)}</div>`;
 
   const toBoth = document.getElementById(`transferDetails.to`) as Element;
-  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${appState.explorerUrl}/address/${appState.txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
+  toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${app.explorerUrl}/address/${app.txData.transferDetails.to}">${toBoth.innerHTML}</a>`;
 }

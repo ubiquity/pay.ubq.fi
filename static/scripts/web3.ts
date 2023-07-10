@@ -4,7 +4,7 @@ import { BigNumber, ethers } from "ethers";
 import { daiAbi, permit2Abi } from "./abis";
 import { networkName, networkRpc, permit2Address } from "./constants";
 import invalidateBtnInnerHTML from "./invalidate-component";
-import { appState } from "./render-transaction/index";
+import { app } from "./render-transaction/index";
 import { TxType } from "./render-transaction/tx-type";
 import { setClaimMessage } from "./render-transaction/set-claim-message";
 import { createToast, enableClaimButton, ErrorHandler, controls, claimButton, disableClaimButton } from "./toaster";
@@ -26,7 +26,7 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
 };
 const switchNetwork = async (provider: ethers.providers.Web3Provider): Promise<boolean> => {
   try {
-    await provider.send("wallet_switchEthereumChain", [{ chainId: appState.claimNetworkId }]);
+    await provider.send("wallet_switchEthereumChain", [{ chainId: app.claimNetworkId }]);
     return true;
   } catch (error: any) {
     return false;
@@ -52,11 +52,11 @@ const withdraw = async (signer: JsonRpcSigner, txData: TxType, errorMessage?: st
 };
 const fetchTreasury = async (): Promise<{ balance: number; allowance: number; decimals: number }> => {
   try {
-    const provider = new ethers.providers.JsonRpcProvider(networkRpc[appState.claimNetworkId]);
-    const tokenAddress = appState.txData.permit.permitted.token;
+    const provider = new ethers.providers.JsonRpcProvider(networkRpc[app.claimNetworkId]);
+    const tokenAddress = app.txData.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, daiAbi, provider);
-    const balance = await tokenContract.balanceOf(appState.txData.owner);
-    const allowance = await tokenContract.allowance(appState.txData.owner, permit2Address);
+    const balance = await tokenContract.balanceOf(app.txData.owner);
+    const allowance = await tokenContract.allowance(app.txData.owner, permit2Address);
     const decimals = await tokenContract.decimals();
     return { balance, allowance, decimals };
   } catch (error: any) {
@@ -71,14 +71,14 @@ const toggleStatus = async (balance: number, allowance: number, decimals: number
 };
 const checkPermitClaimed = async () => {
   // get tx from window
-  let tx = appState.txData;
+  let tx = app.txData;
 
   // Set contract address and ABI
-  const provider = new ethers.providers.JsonRpcProvider(networkRpc[appState.claimNetworkId]);
+  const provider = new ethers.providers.JsonRpcProvider(networkRpc[app.claimNetworkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(tx.permit.nonce));
-  const bitmap = await permit2Contract.nonceBitmap(appState.txData.owner, wordPos);
+  const bitmap = await permit2Contract.nonceBitmap(app.txData.owner, wordPos);
   const bit = BigNumber.from(1)
     .shl(bitPos - 1)
     .and(bitmap);
@@ -123,7 +123,7 @@ export const pay = async (): Promise<void> => {
       setClaimMessage({ type: "Notice", message: `Permit already claimed` });
       table.setAttribute(`data-claim`, "none");
     } else {
-      if (signerAddress.toLowerCase() === appState.txData.owner.toLowerCase()) {
+      if (signerAddress.toLowerCase() === app.txData.owner.toLowerCase()) {
         // invalidateBtn.style.display = "block";
         controls.appendChild(invalidateBtnInnerHTML);
         console.log(invalidateBtnInnerHTML);
@@ -136,7 +136,7 @@ export const pay = async (): Promise<void> => {
             }
           }
           try {
-            await invalidateNonce(signer, BigNumber.from(appState.txData.permit.nonce));
+            await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
           } catch (error: any) {
             createToast("error", `Error: ${error.reason ?? error.message ?? "Unknown error"}`);
             return;
@@ -158,7 +158,7 @@ export const pay = async (): Promise<void> => {
 
   // watch for network changes
   window.ethereum.on("chainChanged", async (currentNetworkId: string) => {
-    if (appState.claimNetworkId === currentNetworkId) {
+    if (app.claimNetworkId === currentNetworkId) {
       // enable the button once on the correct network
       enableClaimButton();
       invalidateBtnInnerHTML.disabled = false;
@@ -169,8 +169,8 @@ export const pay = async (): Promise<void> => {
   });
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
-  if (currentNetworkId !== appState.claimNetworkId) {
-    createToast("error", `Please switch to ${networkName[appState.claimNetworkId]}`);
+  if (currentNetworkId !== app.claimNetworkId) {
+    createToast("error", `Please switch to ${networkName[app.claimNetworkId]}`);
     disableClaimButton(false);
     invalidateBtnInnerHTML.disabled = true;
     switchNetwork(provider);
@@ -190,14 +190,14 @@ export const pay = async (): Promise<void> => {
       await toggleStatus(balance, allowance, decimals);
       let errorMessage: string | undefined = undefined;
 
-      if (!(balance >= Number(appState.txData.permit.permitted.amount) && allowance >= Number(appState.txData.permit.permitted.amount))) {
-        if (balance >= Number(appState.txData.permit.permitted.amount)) {
+      if (!(balance >= Number(app.txData.permit.permitted.amount) && allowance >= Number(app.txData.permit.permitted.amount))) {
+        if (balance >= Number(app.txData.permit.permitted.amount)) {
           errorMessage = "Error: Not enough allowance to claim.";
         } else {
           errorMessage = "Error: Not enough funds on treasury to claim.";
         }
       }
-      await withdraw(signer, appState.txData, errorMessage);
+      await withdraw(signer, app.txData, errorMessage);
     } catch (error: unknown) {
       ErrorHandler(error, "");
       enableClaimButton();
