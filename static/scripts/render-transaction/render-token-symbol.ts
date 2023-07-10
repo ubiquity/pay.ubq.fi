@@ -1,8 +1,8 @@
-import { getERC20Contract } from "../get-contract";
+import { getDaiLikeContract } from "../get-contract";
 import { appState } from "./index";
 
 export async function renderTokenSymbol({ table, requestedAmountElement }: { table: Element; requestedAmountElement: Element }): Promise<void> {
-  const contract = await getERC20Contract(appState.txData.permit.permitted.token);
+  const contract = await getDaiLikeContract(appState.txData.permit.permitted.token);
   const symbol = await contract.symbol();
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${appState.explorerUrl}/token/${
