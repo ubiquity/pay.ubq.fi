@@ -445,8 +445,6 @@ const isHex = (str: string): boolean => {
 };
 
 const step1Handler = async () => {
-  await nextStep();
-  return;
   if (walletPrivateKey.value === "") {
     singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
     return;
