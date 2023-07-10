@@ -151,9 +151,10 @@ table[data-claim-rendered] tr {
   transition: 125ms ease-in-out opacity;
 }
 table[data-claim-rendered] tr#additional-details-border {
-  border: 1px solid #80808020;
-  border-left: 0;
-  border-right: 0;
+  background-color: #80808010;
+  /* border: 1px solid #80808020; */
+  /* border-left: 0; */
+  /* border-right: 0; */
 }
 table[data-claim-rendered] tr#additional-details-border + tr > * {
   padding-top: 24px;
@@ -228,3 +229,12 @@ table[data-claim="ok"] tbody {
 table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"][data-details-visible="false"] {
   border: none;
 } */
+#transferDetails\.to a {
+  opacity: 0.5;
+}
+#transferDetails\.to a:hover{
+  opacity: 1;
+}
+#transferDetails\.to div {
+  color: #fff;
+}

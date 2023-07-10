@@ -37,4 +37,7 @@
   div#build > a {
     color: #000;
   }
+  #transferDetails\.to div {
+    color: #000;
+  }
 }
