@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 import { permit2Abi } from "../abis";
-import { networkRpc, permit2Address } from "../constants";
+import { networkRpcs, permit2Address } from "../constants";
 import { app } from "../render-transaction/index";
 import { nonceBitmap } from "./nonce-bitmap";
 
@@ -9,7 +9,7 @@ export async function checkPermitClaimed() {
   let tx = app.txData;
 
   // Set contract address and ABI
-  const provider = new ethers.providers.JsonRpcProvider(networkRpc[app.claimNetworkId]);
+  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[app.claimNetworkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(tx.permit.nonce));

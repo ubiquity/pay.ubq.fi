@@ -3,9 +3,10 @@ import { insertTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
-import { networkExplorer, Network } from "../constants";
+import { networkExplorers, NetworkIds } from "../constants";
 
-export async function renderTransaction(): Promise<void> {
+type Success = boolean;
+export async function renderTransaction(): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
 
   // decode base64 to get tx data
@@ -16,22 +17,22 @@ export async function renderTransaction(): Promise<void> {
   if (!_network) {
     setClaimMessage({ type: "Error", message: `No network ID passed in URL.` });
     table.setAttribute(`data-claim`, "error");
-    return;
+    return false;
   }
 
   // if network id is not prefixed with 0x, convert it to hex
   if (!_network.startsWith("0x")) {
-    app.claimNetworkId = `0x${Number(_network).toString(16)}` as Network;
+    app.claimNetworkId = `0x${Number(_network).toString(16)}` as NetworkIds;
   }
 
-  const network = app.claimNetworkId as keyof typeof networkExplorer;
+  const network = app.claimNetworkId as keyof typeof networkExplorers;
 
-  app.explorerUrl = networkExplorer[network] || app.explorerUrl;
+  app.explorerUrl = networkExplorers[network] || app.explorerUrl;
 
   if (!base64encodedTxData) {
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
     table.setAttribute(`data-claim`, "none");
-    return;
+    return false;
   }
 
   try {
@@ -39,7 +40,7 @@ export async function renderTransaction(): Promise<void> {
   } catch (error) {
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL.` });
     table.setAttribute(`data-claim`, "error");
-    return;
+    return false;
   }
   // insert tx data into table
   const requestedAmountElement = await insertTableData(table);
@@ -50,5 +51,7 @@ export async function renderTransaction(): Promise<void> {
   const fromElement = document.getElementById("owner") as Element;
 
   renderEnsName({ element: toElement, address: app.txData.transferDetails.to }).catch(console.error);
-  await renderEnsName({ element: fromElement, address: app.txData.owner, tokenView: true }).catch(console.error);
+  renderEnsName({ element: fromElement, address: app.txData.owner, tokenView: true }).catch(console.error);
+
+  return true;
 }

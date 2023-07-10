@@ -1,4 +1,4 @@
-import { networkRpc } from "../constants";
+import { networkRpcs } from "../constants";
 import { TxType } from "./tx-type";
 
 export const app = {
@@ -23,7 +23,7 @@ export const app = {
 } as AppState;
 
 type AppState = {
-  claimNetworkId?: keyof typeof networkRpc;
+  claimNetworkId?: keyof typeof networkRpcs;
   explorerUrl?: string;
   txData: TxType;
 };

@@ -16,13 +16,13 @@ export async function insertTableData(table: Element): Promise<Element> {
 function renderDetailsFields(requestedAmountElement: Element) {
   const ownerElem = document.getElementById("owner") as Element;
   ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${app.explorerUrl}/address/${app.txData.owner}">${app.txData.owner}</a>`;
-  const nonceELem = document.getElementById("permit.nonce") as Element;
-  nonceELem.innerHTML = `<div>${app.txData.permit.nonce}</div>`;
-  const deadlineElem = document.getElementById("permit.deadline") as Element;
-  deadlineElem.innerHTML = `<div>${app.txData.permit.deadline}</div>`;
-  requestedAmountElement.innerHTML = `<div>${(Number(app.txData.transferDetails.requestedAmount) / 1000000000000000000).toString()}</div>`;
-  const signatureElem = document.getElementById("signature") as Element;
-  signatureElem.innerHTML = `<div>${app.txData.signature}</div>`;
+  // const nonceELem = document.getElementById("permit.nonce") as Element;
+  // nonceELem.innerHTML = `<div>${app.txData.permit.nonce}</div>`;
+  // const deadlineElem = document.getElementById("permit.deadline") as Element;
+  // deadlineElem.innerHTML = `<div>${app.txData.permit.deadline}</div>`;
+  // requestedAmountElement.innerHTML = `<div>${(Number(app.txData.transferDetails.requestedAmount) / 1000000000000000000).toString()}</div>`;
+  // const signatureElem = document.getElementById("signature") as Element;
+  // signatureElem.innerHTML = `<div>${app.txData.signature}</div>`;
 }
 
 function renderTokenFields() {

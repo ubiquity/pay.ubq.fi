@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { networkName } from "../constants";
+import { networkNames } from "../constants";
 import invalidateBtnInnerHTML from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
@@ -45,14 +45,22 @@ export async function pay(): Promise<void> {
   window.ethereum.on("chainChanged", handleIfOnCorrectNetwork);
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
-  unrecognizedNetworkError(currentNetworkId, web3provider);
+  notOnCorrectNetwork(currentNetworkId, web3provider);
 
   claimButton.addEventListener("click", curryClaimButtonHandler(signer));
 }
 
-function unrecognizedNetworkError(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {
+function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {
   if (currentNetworkId !== app.claimNetworkId) {
-    createToast("error", `Please switch to ${networkName[app.claimNetworkId]}`);
+    if (app.claimNetworkId == void 0) {
+      console.error(`You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
+    }
+    const networkName = networkNames[app.claimNetworkId];
+    if (!networkName) {
+      createToast("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
+    } else {
+      createToast("error", `Please switch to ${networkNames[app.claimNetworkId]}`);
+    }
     disableClaimButton(false);
     invalidateBtnInnerHTML.disabled = true;
     switchNetwork(web3provider);

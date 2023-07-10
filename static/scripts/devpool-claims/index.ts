@@ -11,8 +11,10 @@ import { pay } from "./web3/pay";
       buildElement.innerHTML = commitHash;
       buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${commitHash}`;
     }
-    await renderTransaction();
-    await pay();
+    const success = await renderTransaction();
+    if (success) {
+      await pay();
+    }
   } catch (error) {
     console.error(error);
   }

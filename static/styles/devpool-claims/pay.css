@@ -145,10 +145,6 @@ header {
   width: 100%;
 }
 
-table {
-  flex-grow: 1;
-  overflow: auto; /* to make sure the table is scrollable if it exceeds the available space */
-}
 
 footer {
   height: 108px;
