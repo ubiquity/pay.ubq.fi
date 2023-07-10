@@ -6,13 +6,6 @@ const claimIcon = document.querySelector(".claim-icon") as HTMLElement;
 const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
 
 // Object containing details for different types of toasts
-const toastDetails = {
-  timer: 5000,
-  // timeoutId: null,
-} as {
-  timer: number;
-  timeoutId?: NodeJS.Timeout;
-};
 
 const toastIcons = {
   success: "fa-circle-check",
@@ -22,6 +15,13 @@ const toastIcons = {
 };
 
 export function createToast(icon: keyof typeof toastIcons, text: string) {
+  const toastDetails = {
+    timer: 10000,
+    // timeoutId: null,
+  } as {
+    timer: number;
+    timeoutId?: NodeJS.Timeout;
+  };
   // Getting the icon and text for the toast based on the id passed
   const _icon = toastIcons[icon];
   const toast = document.createElement("li"); // Creating a new 'li' element for the toast

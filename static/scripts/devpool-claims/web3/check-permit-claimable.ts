@@ -4,7 +4,7 @@ import { networkRpcs, permit2Address } from "../constants";
 import { app } from "../render-transaction/index";
 import { nonceBitmap } from "./nonce-bitmap";
 
-export async function checkPermitClaimed() {
+export async function checkPermitClaimable() {
   // get tx from window
   let tx = app.txData;
 
@@ -17,5 +17,5 @@ export async function checkPermitClaimed() {
   const bit = BigNumber.from(1)
     .shl(bitPos - 1)
     .and(bitmap);
-  return !bit.eq(0);
+  return bit.eq(0);
 }

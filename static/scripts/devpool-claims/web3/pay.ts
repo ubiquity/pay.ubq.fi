@@ -1,10 +1,10 @@
 import { BigNumber, ethers } from "ethers";
 import { networkNames, getNetworkName } from "../constants";
-import invalidateBtnInnerHTML from "../invalidate-component";
+import invalidateButton from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
 import { ErrorHandler, claimButton, controls, createToast, disableClaimButton, enableClaimButton } from "../toaster";
-import { checkPermitClaimed } from "./check-permit-claimed";
+import { checkPermitClaimable } from "./check-permit-claimable";
 import { connectWallet } from "./connect-wallet";
 import { fetchTreasury } from "./fetch-treasury";
 import { invalidateNonce } from "./invalidate-nonce";
@@ -30,13 +30,13 @@ export async function pay(): Promise<void> {
   const signerAddress = await signer.getAddress();
 
   // check if permit is already claimed
-  checkPermitClaimed().then(curryPermitClaimedHandler(signerAddress, table, signer)).catch(ErrorHandler);
+  checkPermitClaimable().then(curryPermitClaimableHandler(signerAddress, table, signer)).catch(ErrorHandler);
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
     createToast("error", "Please connect to MetaMask.");
     disableClaimButton(false);
-    invalidateBtnInnerHTML.disabled = true;
+    invalidateButton.disabled = true;
   }
 
   const currentNetworkId = await web3provider.provider.request!({ method: "eth_chainId" });
@@ -62,7 +62,7 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
       createToast("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     disableClaimButton(false);
-    invalidateBtnInnerHTML.disabled = true;
+    invalidateButton.disabled = true;
     switchNetwork(web3provider);
   }
 }
@@ -71,10 +71,10 @@ function handleIfOnCorrectNetwork(currentNetworkId: string) {
   if (app.claimNetworkId === currentNetworkId) {
     // enable the button once on the correct network
     enableClaimButton();
-    invalidateBtnInnerHTML.disabled = false;
+    invalidateButton.disabled = false;
   } else {
     disableClaimButton(false);
-    invalidateBtnInnerHTML.disabled = true;
+    invalidateButton.disabled = true;
   }
 }
 
@@ -97,19 +97,23 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
 
       const permitted = Number(app.txData.permit.permitted.amount);
 
-      const _balance = Number(balance.toString()) / 1e18;
-      const _permitted = permitted / 1e18;
-      const _allowance = Number(allowance.toString()) / 1e18;
+      // const _balance = Number(balance.toString()) / 1e18;
+      // const _permitted = permitted / 1e18;
+      // const _allowance = Number(allowance.toString()) / 1e18;
 
       const solvent = balance >= permitted;
       const allowed = allowance >= permitted;
+      const beneficiary = app.txData.transferDetails.to.toLowerCase();
+      const user = (await signer.getAddress()).toLowerCase();
 
-      if (!solvent) {
-        errorMessage = `Not enough balance on funding wallet to claim permitted amount.`;
+      if (beneficiary !== user) {
+        createToast("error", `Your wallet is not the authorized beneficiary.`);
       }
-
+      if (!solvent) {
+        createToast("error", `Not enough balance on funding wallet to claim permitted amount. Please let the funder know.`);
+      }
       if (!allowed) {
-        errorMessage = `Not enough allowance to claim.`;
+        createToast("error", `Not enough allowance to claim. Please let the funder know.`);
       }
 
       await withdraw(signer, app.txData, errorMessage);
@@ -120,31 +124,35 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
   };
 }
 
-function curryPermitClaimedHandler(signerAddress: string, table: HTMLTableElement, signer?: ethers.providers.JsonRpcSigner) {
-  return function checkPermitClaimedHandler(claimed: boolean) {
-    if (claimed) {
-      setClaimMessage({ type: "Notice", message: `Permit already claimed` });
+function curryPermitClaimableHandler(signerAddress: string, table: HTMLTableElement, signer?: ethers.providers.JsonRpcSigner) {
+  return function checkPermitClaimableHandler(claimable: boolean) {
+    if (!claimable) {
+      setClaimMessage({ type: "Error", message: `Permit is not claimable.` });
       table.setAttribute(`data-claim`, "none");
     } else {
       if (signerAddress.toLowerCase() === app.txData.owner.toLowerCase()) {
-        controls.appendChild(invalidateBtnInnerHTML);
-        invalidateBtnInnerHTML.addEventListener("click", async () => {
-          console.trace();
-          if (!signer?._isSigner) {
-            signer = await connectWallet();
-            if (!signer._isSigner) {
-              return;
-            }
-          }
-          try {
-            await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
-          } catch (error: any) {
-            createToast("error", `${error.reason ?? error.message ?? "Unknown error"}`);
-            return;
-          }
-          createToast("success", "Nonce invalidated!");
-        });
+        generateInvalidatePermitAdminControl(signer);
       }
     }
+    return signer;
   };
+}
+function generateInvalidatePermitAdminControl(signer: ethers.providers.JsonRpcSigner | undefined) {
+  controls.appendChild(invalidateButton);
+
+  invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
+    if (!signer?._isSigner) {
+      signer = await connectWallet();
+      if (!signer._isSigner) {
+        return;
+      }
+    }
+    try {
+      await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
+    } catch (error: any) {
+      createToast("error", `${error.reason ?? error.message ?? "Unknown error"}`);
+      return;
+    }
+    createToast("success", "Nonce invalidated!");
+  });
 }
