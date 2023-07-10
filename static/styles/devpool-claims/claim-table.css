@@ -232,7 +232,7 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
 #transferDetails\.to a {
   opacity: 0.5;
 }
-#transferDetails\.to a:hover{
+#transferDetails\.to a:hover {
   opacity: 1;
 }
 #transferDetails\.to div {

@@ -5,7 +5,11 @@ const typescriptEntries = [
   "static/scripts/secrets-manager/secret.ts",
   "static/scripts/key-generator/keygen.ts",
 ];
-const CSSEntries = ["static/styles/devpool-claims/devpool-claims.css", "static/styles/audit-report/audit.css", "static/styles/secrets-manager/secrets-manager.css"];
+const CSSEntries = [
+  "static/styles/devpool-claims/devpool-claims.css",
+  "static/styles/audit-report/audit.css",
+  "static/styles/secrets-manager/secrets-manager.css",
+];
 export const entries = [...typescriptEntries, ...CSSEntries];
 
 export let esBuildContext = {

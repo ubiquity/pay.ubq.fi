@@ -1,5 +1,5 @@
 import esbuild from "esbuild";
-import { esBuildContext } from './esbuild-config';
+import { esBuildContext } from "./esbuild-config";
 
 async function server() {
   const ctx = await esbuild.context(esBuildContext);
