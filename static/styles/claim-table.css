@@ -82,6 +82,9 @@ table td div {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+table td svg ~ div {
+  width: unset;
+}
 table tr:first-of-type > * {
   padding-top: 24px;
 }
