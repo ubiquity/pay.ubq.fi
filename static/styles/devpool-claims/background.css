@@ -20,14 +20,8 @@ background #grid {
 }
 
 background #pre-grid {
-  background-image: url(../media/grid-1.png);
+  background-image: url(../../media/grid-1.png);
   background-repeat: repeat;
-}
-
-background #grid {
-}
-
-background #grid > canvas {
 }
 
 background header {

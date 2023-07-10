@@ -1,5 +1,8 @@
 import { app } from ".";
-import { shortenAddress } from "./index";
+
+export const shortenAddress = (address: string): string => {
+  return `${address.slice(0, 10)}...${address.slice(-8)}`;
+};
 
 export async function insertTableData(table: Element): Promise<Element> {
   const requestedAmountElement = document.getElementById("transferDetails.requestedAmount") as Element;

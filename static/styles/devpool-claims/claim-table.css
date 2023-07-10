@@ -65,7 +65,7 @@ table svg path {
 table td {
   word-break: break-word;
 }
-table th {
+table th div {
   text-align: right;
   color: #80808080;
 }

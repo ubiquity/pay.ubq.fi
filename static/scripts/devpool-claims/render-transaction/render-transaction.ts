@@ -12,8 +12,15 @@ export async function renderTransaction(): Promise<void> {
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
   const _network = urlParams.get("network") || app.claimNetworkId;
+
+  if (!_network) {
+    setClaimMessage({ type: "Error", message: `No network ID passed in URL.` });
+    table.setAttribute(`data-claim`, "error");
+    return;
+  }
+
   // if network id is not prefixed with 0x, convert it to hex
-  if (!app.claimNetworkId.startsWith("0x")) {
+  if (!_network.startsWith("0x")) {
     app.claimNetworkId = `0x${Number(_network).toString(16)}` as Network;
   }
 

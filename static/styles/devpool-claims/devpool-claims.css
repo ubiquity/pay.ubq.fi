@@ -3,6 +3,6 @@
 @import url("claim-table.css");
 @import url("media-queries.css");
 @import url("light-mode.css");
-@import url("proxima.css");
-@import url("toast.css");
-@import url("fa.css");
+@import url("../proxima.css");
+@import url("../toast.css");
+@import url("../fa.css");

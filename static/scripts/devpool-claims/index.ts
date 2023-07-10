@@ -1,5 +1,5 @@
 import { renderTransaction } from "./render-transaction/render-transaction";
-import { pay } from "./web3";
+import { pay } from "./web3/pay";
 
 (async function appAsyncWrapper() {
   try {

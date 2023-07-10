@@ -285,6 +285,10 @@ const setHandler = async () => {
         });
         repository_id = repository_info.id;
       } catch (error) {
+        if (!(error instanceof Error)) {
+          return console.error(error);
+        }
+
         console.error(error.message);
         try {
           const { data: repo_res } = await octokit.rest.repos.createInOrg({
@@ -297,6 +301,9 @@ const setHandler = async () => {
           });
           repository_id = repo_res.id;
         } catch (error) {
+          if (!(error instanceof Error)) {
+            return console.error(error);
+          }
           console.error(error.message);
           singleToggle("error", `Error: Repo initialization failed, try again later.`);
           return;
@@ -355,6 +362,9 @@ const setHandler = async () => {
       singleToggle("error", `Error: Not an organization.`, orgName);
     }
   } catch (error) {
+    if (!(error instanceof Error)) {
+      return console.error(error);
+    }
     console.error(error);
     singleToggle("error", `Error: ${error.message}`);
   }

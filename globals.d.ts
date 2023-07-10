@@ -1,4 +1,4 @@
-export interface Ethereumish {
+export interface EthereumIsh {
   autoRefreshOnNetworkChange: boolean;
   chainId: string;
   isMetaMask?: boolean;
@@ -12,6 +12,6 @@ export interface Ethereumish {
 
 declare global {
   interface Window {
-    ethereum: Ethereumish;
+    ethereum: EthereumIsh;
   }
 }

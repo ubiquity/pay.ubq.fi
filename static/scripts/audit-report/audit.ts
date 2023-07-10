@@ -4,7 +4,7 @@ import { throttling } from "@octokit/plugin-throttling";
 import axios from "axios";
 import * as rax from "retry-axios";
 import GoDB from "godb";
-import { permit2Abi } from "./abis";
+import { permit2Abi } from "../devpool-claims/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema } from "./types";
 
 const interceptorID = rax.attach(axios);
