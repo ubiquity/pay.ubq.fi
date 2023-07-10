@@ -439,23 +439,49 @@ const switchNetwork = async (provider: ethers.providers.Web3Provider, chainId: s
   }
 };
 
+const isHex = (str: string): boolean => {
+  const regexp = /^[0-9a-fA-F]+$/;
+  return regexp.test(str);
+};
+
 const step1Handler = async () => {
-  if (walletPrivateKey.value !== "") {
-    await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
-    if (encryptedValue !== "" && orgName.value !== "" && githubPAT.value !== "") {
-      setConfig();
-    } else if (encryptedValue === "") {
-      singleToggle("warn", `Warn: Please encrypt first.`);
-    } else if (orgName.value === "" && githubPAT.value === "") {
-      singleToggle("warn", `Warn: Org Name and GitHub PAT is not set.`);
-    } else if (orgName.value === "") {
-      singleToggle("warn", `Warn: Org Name is not set.`, orgName);
-    } else {
-      singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
-    }
-  } else {
+  await nextStep();
+  return;
+  if (walletPrivateKey.value === "") {
     singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
+    return;
   }
+  if (!isHex(walletPrivateKey.value)) {
+    singleToggle("warn", `Warn: Private_Key is not a valid hex string.`, walletPrivateKey);
+    return;
+  }
+  if (walletPrivateKey.value.length !== 64) {
+    singleToggle("warn", `Warn: Private_Key must be 32 bytes long.`, walletPrivateKey);
+    return;
+  }
+  if (orgName.value === "") {
+    singleToggle("warn", `Warn: Org Name is not set.`, orgName);
+    return;
+  }
+  if (githubPAT.value === "") {
+    singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
+    return;
+  }
+  if (!safeAddressInput.value.startsWith("0x")) {
+    singleToggle("warn", `Warn: Safe Address must start with 0x.`, safeAddressInput);
+    return;
+  }
+  if (!isHex(safeAddressInput.value.substring(2))) {
+    singleToggle("warn", `Warn: Safe Address is not a valid hex string.`, safeAddressInput);
+    return;
+  }
+  if (safeAddressInput.value.length !== 42) {
+    singleToggle("warn", `Warn: Safe Address must be 20 bytes long.`, safeAddressInput);
+    return;
+  }
+
+  await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
+  setConfig();
 };
 
 const step2Handler = async () => {
