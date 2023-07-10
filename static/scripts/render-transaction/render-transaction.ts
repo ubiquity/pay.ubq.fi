@@ -3,7 +3,7 @@ import { insertTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
-import { networkExplorer, Network } from '../constants';
+import { networkExplorer, Network } from "../constants";
 
 export async function renderTransaction(): Promise<void> {
   const table = document.getElementsByTagName(`table`)[0];
@@ -11,7 +11,7 @@ export async function renderTransaction(): Promise<void> {
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
-  const _network = urlParams.get("network") || appState.claimNetworkId ;
+  const _network = urlParams.get("network") || appState.claimNetworkId;
   // if network id is not prefixed with 0x, convert it to hex
   if (!appState.claimNetworkId.startsWith("0x")) {
     appState.claimNetworkId = `0x${Number(_network).toString(16)}` as Network;

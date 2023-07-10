@@ -2,12 +2,12 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 import { BigNumber, ethers } from "ethers";
 import { daiAbi, permit2Abi } from "./abis";
-import { networkName, networkRpc, permit2Address } from './constants';
+import { networkName, networkRpc, permit2Address } from "./constants";
 import invalidateBtnInnerHTML from "./invalidate-component";
 import { appState } from "./render-transaction/index";
 import { TxType } from "./render-transaction/tx-type";
 import { setClaimMessage } from "./render-transaction/set-claim-message";
-import { createToast, enableClaimButton, ErrorHandler, controls, claimButton, disableClaimButton } from './toaster';
+import { createToast, enableClaimButton, ErrorHandler, controls, claimButton, disableClaimButton } from "./toaster";
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
   try {

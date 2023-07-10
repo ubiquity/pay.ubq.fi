@@ -35,22 +35,22 @@ interface ConfLabel {
 }
 
 interface IConf {
-  'chain-id'?: number;
-  'private-key-encrypted'?: string;
-  'base-multiplier'?: number;
-  'time-labels'?: ConfLabel[];
-  'priority-labels'?: ConfLabel[];
-  'auto-pay-mode'?: boolean;
-  'analytics-mode'?: boolean;
-  'max-concurrent-bounties'?: number;
-  'incentive-mode'?: boolean;
+  "chain-id"?: number;
+  "private-key-encrypted"?: string;
+  "base-multiplier"?: number;
+  "time-labels"?: ConfLabel[];
+  "priority-labels"?: ConfLabel[];
+  "auto-pay-mode"?: boolean;
+  "analytics-mode"?: boolean;
+  "max-concurrent-bounties"?: number;
+  "incentive-mode"?: boolean;
 }
 
 const defaultConf: IConf = {
-  'chain-id': 1,
-  'private-key-encrypted': "",
-  'base-multiplier': 1000,
-  'time-labels': [
+  "chain-id": 1,
+  "private-key-encrypted": "",
+  "base-multiplier": 1000,
+  "time-labels": [
     {
       name: "Time: <1 Hour",
       weight: 0.125,
@@ -82,7 +82,7 @@ const defaultConf: IConf = {
       target: "Price: 400+ USD",
     },
   ],
-  'priority-labels': [
+  "priority-labels": [
     {
       name: "Priority: 0 (Normal)",
       weight: 1,
@@ -109,10 +109,10 @@ const defaultConf: IConf = {
       target: "Price: 500+ USD",
     },
   ],
-  'auto-pay-mode': true,
-  'analytics-mode': false,
-  'incentive-mode': false,
-  'max-concurrent-bounties': 2,
+  "auto-pay-mode": true,
+  "analytics-mode": false,
+  "incentive-mode": false,
+  "max-concurrent-bounties": 2,
 };
 
 export const parseYAML = async (data: any): Promise<any | undefined> => {

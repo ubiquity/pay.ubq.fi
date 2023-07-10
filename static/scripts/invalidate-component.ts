@@ -6,7 +6,7 @@ const invalidateBtnInnerHTML = `<div>Void</div>
 // parse string and turn into an html entity
 const parseHtml = (html: string) => {
   const button = document.createElement("button");
-  button.id="invalidateBtn";
+  button.id = "invalidateBtn";
   button.innerHTML = html;
   return button.cloneNode(true) as HTMLButtonElement;
 };
