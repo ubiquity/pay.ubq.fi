@@ -50,16 +50,21 @@ export async function pay(): Promise<void> {
   claimButton.addEventListener("click", curryClaimButtonHandler(signer));
 }
 
+function getNetworkName(networkId?: string) {
+  if (!networkId) return;
+  return networkNames[networkId as keyof typeof networkNames];
+}
+
 function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {
   if (currentNetworkId !== app.claimNetworkId) {
     if (app.claimNetworkId == void 0) {
       console.error(`You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
     }
-    const networkName = networkNames[app.claimNetworkId];
+    const networkName = getNetworkName(app.claimNetworkId);
     if (!networkName) {
       createToast("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
     } else {
-      createToast("error", `Please switch to ${networkNames[app.claimNetworkId]}`);
+      createToast("error", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     disableClaimButton(false);
     invalidateBtnInnerHTML.disabled = true;
