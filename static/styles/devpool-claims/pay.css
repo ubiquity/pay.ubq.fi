@@ -133,3 +133,24 @@ header a {
 header a:hover {
   opacity: 1;
 }
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* adjust this according to your needs */
+}
+
+header {
+  height: 140px;
+  width: 100%;
+}
+
+table {
+  flex-grow: 1;
+  overflow: auto; /* to make sure the table is scrollable if it exceeds the available space */
+}
+
+footer {
+  height: 108px;
+  width: 100%;
+}
