@@ -1,5 +1,5 @@
 import { appState } from ".";
-import { shortenAddress } from './index';
+import { shortenAddress } from "./index";
 
 export async function insertTableData(table: Element): Promise<Element> {
   const requestedAmountElement = document.getElementById("transferDetails.requestedAmount") as Element;
