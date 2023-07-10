@@ -26,8 +26,7 @@ main {
 }
 
 main {
-  width: 100%;
-  padding: 24px 0;
+  width: 100vw;
   position: relative;
 }
 
@@ -89,8 +88,8 @@ footer {
   /* display: block; */
   /* margin: 16px auto; */
   /* word-break: break-all; */
-  position: fixed;
-  bottom: 0;
+  /* position: fixed; */
+  /* bottom: 0; */
 }
 
 footer code {
@@ -126,5 +125,11 @@ div#build > a {
 }
 
 div#build > a:hover {
+  opacity: 1;
+}
+header a {
+  opacity: 0.5;
+}
+header a:hover {
   opacity: 1;
 }

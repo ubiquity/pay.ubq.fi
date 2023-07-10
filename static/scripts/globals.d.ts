@@ -1,6 +1,3 @@
-import { TxType } from "./render-transaction";
-import { DrawConfig } from "./draw";
-
 export interface Ethereumish {
   autoRefreshOnNetworkChange: boolean;
   chainId: string;
@@ -16,7 +13,5 @@ export interface Ethereumish {
 declare global {
   interface Window {
     ethereum: Ethereumish;
-    draw(settings: DrawConfig): void;
-    txData: TxType;
   }
 }

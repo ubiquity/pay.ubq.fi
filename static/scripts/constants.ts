@@ -26,3 +26,5 @@ export const networkRpc = {
   [Network.Goerli]: "https://rpc-pay.ubq.fi/v1/goerli",
   [Network.Gnosis]: "https://rpc.gnosischain.com",
 };
+
+export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
