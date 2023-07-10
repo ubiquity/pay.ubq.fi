@@ -21,6 +21,17 @@ textarea {
   text-transform: none;
 }
 
+select {
+  outline: 0;
+  border-radius: 5px;
+  width: 90vw;
+  border: 1px solid #d2d2e7;
+  height: 40px;
+  padding-left: 10px;
+  box-sizing: border-box;
+  text-transform: none;
+}
+
 textarea {
   height: 140px;
   white-space: break-spaces;

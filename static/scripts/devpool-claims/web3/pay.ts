@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { networkNames } from "../constants";
+import { networkNames, getNetworkName } from '../constants';
 import invalidateBtnInnerHTML from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
@@ -48,11 +48,6 @@ export async function pay(): Promise<void> {
   notOnCorrectNetwork(currentNetworkId, web3provider);
 
   claimButton.addEventListener("click", curryClaimButtonHandler(signer));
-}
-
-function getNetworkName(networkId?: string) {
-  if (!networkId) return;
-  return networkNames[networkId as keyof typeof networkNames];
 }
 
 function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {

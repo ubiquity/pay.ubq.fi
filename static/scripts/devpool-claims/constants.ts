@@ -15,6 +15,14 @@ export const networkNames = {
   [NetworkIds.Gnosis]: "Gnosis Chain",
 };
 
+export function getNetworkName(networkId?: string) {
+  const networkName = networkNames[networkId as keyof typeof networkNames];
+  if (!networkName) {
+    console.error(`Unknown network ID: ${networkId}`);
+  }
+  return networkName ?? "Unknown Network";
+}
+
 export const networkExplorers = {
   [NetworkIds.Mainnet]: "https://etherscan.io",
   [NetworkIds.Goerli]: "https://goerli.etherscan.io",
