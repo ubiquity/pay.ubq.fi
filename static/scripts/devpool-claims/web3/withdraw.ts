@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
 import { TxType } from "../render-transaction/tx-type";
-import { createToast, enableClaimButton, ErrorHandler } from "../toaster";
+import { createToast, resetClaimButton, ErrorHandler } from "../toaster";
 
 export async function withdraw(signer: JsonRpcSigner, txData: TxType, errorMessage?: string) {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
@@ -15,11 +15,11 @@ export async function withdraw(signer: JsonRpcSigner, txData: TxType, errorMessa
       tx.wait().then((receipt: any) => {
         createToast("success", `Transaction confirmed: ${receipt?.transactionHash}`);
       });
-      enableClaimButton();
+      resetClaimButton();
     })
     .catch((error: any) => {
       console.log(error);
       ErrorHandler(error, errorMessage);
-      enableClaimButton();
+      resetClaimButton();
     });
 }

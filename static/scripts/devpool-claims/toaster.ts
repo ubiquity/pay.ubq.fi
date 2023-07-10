@@ -16,7 +16,7 @@ const toastIcons = {
 
 export function createToast(icon: keyof typeof toastIcons, text: string) {
   const toastDetails = {
-    timer: 10000,
+    timer: 5000,
     // timeoutId: null,
   } as {
     timer: number;
@@ -50,7 +50,7 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
   setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
 }
 
-export function disableClaimButton(triggerLoader = true) {
+export function loadingClaimButton(triggerLoader = true) {
   claimButton.disabled = true;
 
   // Adding this because not all disabling should trigger loading spinner
@@ -60,7 +60,7 @@ export function disableClaimButton(triggerLoader = true) {
   }
 }
 
-export function enableClaimButton() {
+export function resetClaimButton() {
   claimButton.disabled = false;
   claimLoader?.classList.add("hide-cl"), claimLoader?.classList.remove("show-cl");
   claimIcon?.classList.add("show-cl"), claimIcon?.classList.remove("hide-cl");

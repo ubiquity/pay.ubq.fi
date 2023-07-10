@@ -3,7 +3,7 @@ import { networkNames, getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
-import { ErrorHandler, claimButton, controls, createToast, disableClaimButton, enableClaimButton } from "../toaster";
+import { ErrorHandler, claimButton, controls, createToast, loadingClaimButton, resetClaimButton } from "../toaster";
 import { checkPermitClaimable } from "./check-permit-claimable";
 import { connectWallet } from "./connect-wallet";
 import { fetchTreasury } from "./fetch-treasury";
@@ -35,7 +35,7 @@ export async function pay(): Promise<void> {
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
     createToast("error", "Please connect to MetaMask.");
-    disableClaimButton(false);
+    loadingClaimButton(false);
     invalidateButton.disabled = true;
   }
 
@@ -61,7 +61,7 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
     } else {
       createToast("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
-    disableClaimButton(false);
+    loadingClaimButton(false);
     invalidateButton.disabled = true;
     switchNetwork(web3provider);
   }
@@ -70,10 +70,10 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
 function handleIfOnCorrectNetwork(currentNetworkId: string) {
   if (app.claimNetworkId === currentNetworkId) {
     // enable the button once on the correct network
-    enableClaimButton();
+    resetClaimButton();
     invalidateButton.disabled = false;
   } else {
-    disableClaimButton(false);
+    loadingClaimButton(false);
     invalidateButton.disabled = true;
   }
 }
@@ -87,20 +87,15 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
           return;
         }
       }
-      disableClaimButton();
+      loadingClaimButton();
 
       const { balance, allowance, decimals } = await fetchTreasury();
-
       renderTreasuryStatus({ balance, allowance, decimals }).catch(ErrorHandler);
-
       let errorMessage: string | undefined = undefined;
-
       const permitted = Number(app.txData.permit.permitted.amount);
-
       // const _balance = Number(balance.toString()) / 1e18;
       // const _permitted = permitted / 1e18;
       // const _allowance = Number(allowance.toString()) / 1e18;
-
       const solvent = balance >= permitted;
       const allowed = allowance >= permitted;
       const beneficiary = app.txData.transferDetails.to.toLowerCase();
@@ -108,18 +103,19 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
 
       if (beneficiary !== user) {
         createToast("error", `Your wallet is not the authorized beneficiary.`);
-      }
-      if (!solvent) {
+        resetClaimButton();
+      } else if (!solvent) {
         createToast("error", `Not enough balance on funding wallet to claim permitted amount. Please let the funder know.`);
-      }
-      if (!allowed) {
+        resetClaimButton();
+      } else if (!allowed) {
         createToast("error", `Not enough allowance to claim. Please let the funder know.`);
+        resetClaimButton();
+      } else {
+        await withdraw(signer, app.txData, errorMessage);
       }
-
-      await withdraw(signer, app.txData, errorMessage);
     } catch (error: unknown) {
       ErrorHandler(error, "");
-      enableClaimButton();
+      resetClaimButton();
     }
   };
 }
