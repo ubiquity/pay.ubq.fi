@@ -56,8 +56,8 @@ async function generate() {
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
   log.ok("Testing URL:");
-  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
+  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}&network=${process.env.CHAIN_ID}`);
   log.ok("Public URL:");
-  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
+  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}&network=${process.env.CHAIN_ID}`);
   console.log();
 }
