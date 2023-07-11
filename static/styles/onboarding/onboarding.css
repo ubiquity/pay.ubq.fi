@@ -1,0 +1,166 @@
+@import url(../audit-report/audit.css);
+
+button {
+  all: unset;
+  background: #0d6efd;
+  border-radius: 6px;
+  padding: 14px 20px;
+  color: white;
+  cursor: pointer;
+  align-self: flex-start;
+  user-select: none;
+}
+
+button:not(:disabled):hover {
+  background: #0a58ca;
+}
+
+.btn-container {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-self: flex-start;
+}
+
+.status-log {
+  text-transform: none;
+}
+
+.error {
+  color: #ff0b0b;
+}
+
+.success {
+  color: #8ce700;
+}
+
+.warn {
+  color: #ff8d00;
+}
+
+.input-warn:focus {
+  border-color: #fec486;
+  box-shadow: 0 0 0 0.25rem rgb(253 139 13 / 25%);
+}
+
+.input-error:focus {
+  border-color: #fe8686;
+  box-shadow: 0 0 0 0.25rem rgb(253 13 53 / 25%);
+}
+
+.input-success:focus {
+  border-color: #67e98f;
+  box-shadow: 0 0 0 0.25rem rgb(72 253 13 / 25%);
+}
+
+.loader-x {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #dbe3ef;
+  border-bottom-color: #0027ff;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.pos-rel {
+  position: relative;
+}
+
+.out-file {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  text-transform: none;
+  background: #f5f6f9;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: #8095d1;
+  font-weight: 900;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.out-file button {
+  padding: 6px 8px;
+}
+
+.out-parse {
+  background: none;
+}
+
+textarea {
+  padding-top: 15px;
+  line-height: 1.8;
+  color: #248febd1;
+  overflow-y: hidden;
+}
+
+#status-adv {
+  position: absolute;
+  bottom: -22px;
+}
+
+.ecpx {
+  color: #c7c7c7;
+}
+
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 15rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-label {
+  margin-top: 8px;
+  color: #808080;
+}
+
+.step.active .step-number {
+  background-color: #000;
+}
+
+.step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  width: 100%;
+  justify-content: center;
+  gap: 40px;
+  padding: 32px 0;
+}
+
+.hidden {
+  display: none;
+}

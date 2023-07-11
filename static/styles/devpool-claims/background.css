@@ -1,0 +1,36 @@
+background,
+background #pre-grid,
+background #grid {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+background {
+  background-color: #000410;
+}
+
+background #pre-grid,
+background #grid {
+  -webkit-mask-image: linear-gradient(#00000080 0, #00000020 50%, #00000080 100%); 
+  opacity: 1;
+  pointer-events: none;
+}
+
+background #pre-grid {
+  background-image: url(../../media/grid-1.png);
+  background-repeat: repeat;
+}
+
+background header {
+  opacity: 0.5;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+background header:hover {
+  opacity: 1;
+}

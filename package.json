@@ -1,14 +1,14 @@
 {
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
-    "start:ui": "tsx serve.ts",
-    "start:sign": "tsx ./generate-permit/generate-permit2-url.ts",
-    "utils:build": "tsx build.ts",
-    "utils:hash": "git rev-parse HEAD > static/commit.txt",
-    "build": "run-s utils:hash utils:build",
     "format": "prettier --write .",
-    "nonce:get-invalidate-params": "forge script --via-ir solidity-scripts/GetInvalidateNonceParams.s.sol"
+    "build": "run-s utils:hash utils:build",
+    "start:ui": "tsx server.ts",
+    "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
+    "utils:build": "tsx esbuild.ts",
+    "utils:hash": "git rev-parse HEAD > static/commit.txt",
+    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol"
   },
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
@@ -29,6 +29,7 @@
     "prettier": "^2.8.7",
     "retry-axios": "^3.0.0",
     "tsx": "^3.12.6",
+    "typescript": "^5.1.6",
     "yaml": "^2.2.2"
   },
   "packageManager": "yarn@3.5.0"

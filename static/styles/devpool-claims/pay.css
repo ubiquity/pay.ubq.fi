@@ -1,0 +1,151 @@
+* {
+  color: #808080;
+  font-family: "Ubiquity Nova", FT Base, -apple-system, system-ui, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  /* box-sizing: unset; */
+  /* text-align: center; */
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+body {
+  min-height: 100vh;
+}
+
+body,
+main {
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+main {
+  width: 100vw;
+  position: relative;
+}
+
+a {
+  text-decoration: none;
+}
+
+#logo a {
+  display: block;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  flex-direction: row;
+}
+
+#logo {
+  letter-spacing: 2px;
+  padding: 48px 0;
+  -ms-flex-pack: justify;
+  -ms-flex-align: center;
+  line-height: 1;
+  text-align: center;
+}
+
+#logo > #logo-icon {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 4px;
+  text-rendering: geometricPrecision;
+  /* color: #fff; */
+}
+
+#logo-icon > svg {
+  height: 36px;
+  display: block;
+  margin: 0;
+  width: 36px;
+  padding: 0;
+  margin-right: 10px;
+  fill: #fff;
+}
+
+#logo > div#logo-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#logo > div#logo-text > span {
+  font-size: 20px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-rendering: geometricPrecision;
+  color: #fff;
+  /* font-weight: 400; */
+}
+
+footer {
+  width: 100%;
+  /* height: 100%; */
+  /* display: block; */
+  /* margin: 16px auto; */
+  /* word-break: break-all; */
+  /* position: fixed; */
+  /* bottom: 0; */
+}
+
+footer code {
+  /* height: 100%; */
+  /* width: 100%; */
+  /* display: block; */
+  font-family: menlo, ui-monospace, monospace;
+  color: rgb(255 0 0 / 88%);
+  font-size: 16px;
+  line-height: 1;
+  /* width: 87.5vw; */
+  white-space: pre;
+  text-transform: initial;
+  letter-spacing: 0px;
+  text-rendering: geometricprecision;
+}
+
+div#build {
+  padding: 48px 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-rendering: geometricPrecision;
+  /* font-weight: 100; */
+  /* width: 48px; */
+  margin: auto;
+}
+
+div#build > a {
+  opacity: 0.25;
+  font-size: 12px;
+  color: #fff;
+}
+
+div#build > a:hover {
+  opacity: 1;
+}
+header a {
+  opacity: 0.5;
+}
+header a:hover {
+  opacity: 1;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* adjust this according to your needs */
+}
+
+header {
+  height: 140px;
+  width: 100%;
+}
+
+footer {
+  height: 108px;
+  width: 100%;
+}
