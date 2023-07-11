@@ -5,6 +5,19 @@
   --toast-info: #3498db;
 }
 
+.fa-circle-check {
+  color: var(--toast-success);
+}
+.fa-circle-xmark {
+  color: var(--toast-error);
+}
+.fa-triangle-exclamation {
+  color: var(--toast-warning);
+}
+.fa-circle-info {
+  color: var(--toast-info);
+}
+
 .notifications {
   position: fixed;
   bottom: 30px;
@@ -28,8 +41,8 @@
   justify-content: space-between;
   animation: show_toast 0.5s ease-in-out;
   border: 1px solid #80808020;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 @keyframes show_toast {

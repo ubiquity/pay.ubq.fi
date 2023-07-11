@@ -14,6 +14,12 @@ export async function renderTransaction(): Promise<Success> {
   const base64encodedTxData = urlParams.get("claim");
   const _network = urlParams.get("network") || app.claimNetworkId;
 
+  if (!base64encodedTxData) {
+    setClaimMessage({ type: "Notice", message: `No claim data found.` });
+    table.setAttribute(`data-claim`, "none");
+    return false;
+  }
+
   if (!_network) {
     setClaimMessage({ type: "Error", message: `No network ID passed in URL.` });
     table.setAttribute(`data-claim`, "error");
@@ -28,12 +34,6 @@ export async function renderTransaction(): Promise<Success> {
   const network = app.claimNetworkId as keyof typeof networkExplorers;
 
   app.explorerUrl = networkExplorers[network] || app.explorerUrl;
-
-  if (!base64encodedTxData) {
-    setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-claim`, "none");
-    return false;
-  }
 
   try {
     app.txData = JSON.parse(atob(base64encodedTxData));
