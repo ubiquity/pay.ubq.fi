@@ -73,12 +73,12 @@ table svg path {
 table td div {
   word-break: break-word;
 }
-table th div {
+table th {
   text-align: right;
   color: #80808080;
 }
-table td ,
-table th  {
+table td,
+table th {
   padding: 8px;
   text-rendering: geometricPrecision;
   /* max-width: 320px; */
