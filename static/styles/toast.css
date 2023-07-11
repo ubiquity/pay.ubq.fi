@@ -46,6 +46,9 @@
 }
 
 @keyframes show_toast {
+  0% {
+    opacity: 0;
+  }
   100% {
     opacity: 1;
   }
@@ -75,9 +78,6 @@
 }
 
 @keyframes progress {
-  0% {
-    width: 100%;
-  }
   100% {
     width: 0%;
   }
