@@ -70,15 +70,15 @@ table hr {
 table svg path {
   fill: #fff;
 }
-table td {
+table td div {
   word-break: break-word;
 }
-table th {
+table th div {
   text-align: right;
   color: #80808080;
 }
-table td,
-table th {
+table td div,
+table th div {
   padding: 8px;
   text-rendering: geometricPrecision;
   /* max-width: 320px; */
@@ -90,7 +90,7 @@ table td div {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-table td svg ~ div {
+table td div svg ~ div {
   width: unset;
 }
 table tr:first-of-type > * {
