@@ -40,4 +40,7 @@
   #transferDetails\.to div {
     color: #000;
   }
+  html {
+    background-color: #fff;
+  }
 }
