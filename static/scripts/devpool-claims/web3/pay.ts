@@ -26,11 +26,11 @@ export async function pay(): Promise<void> {
 
   fetchTreasury().then(renderTreasuryStatus).catch(ErrorHandler);
 
-  let signer = await connectWallet();
-  const signerAddress = await signer.getAddress();
+  const signer = await connectWallet();
+  const signerAddress = await signer?.getAddress();
 
   // check if permit is already claimed
-  checkPermitClaimable().then(curryPermitClaimableHandler(signerAddress, table, signer)).catch(ErrorHandler);
+  checkPermitClaimable().then(curryPermitClaimableHandler(table, signerAddress, signer)).catch(ErrorHandler);
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
@@ -78,12 +78,12 @@ function handleIfOnCorrectNetwork(currentNetworkId: string) {
   }
 }
 
-function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
+function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) {
   return async function claimButtonHandler() {
     try {
-      if (!signer._isSigner) {
+      if (!signer?._isSigner) {
         signer = await connectWallet();
-        if (!signer._isSigner) {
+        if (!signer?._isSigner) {
           return;
         }
       }
@@ -120,26 +120,26 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner) {
   };
 }
 
-function curryPermitClaimableHandler(signerAddress: string, table: HTMLTableElement, signer?: ethers.providers.JsonRpcSigner) {
+function curryPermitClaimableHandler(table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
   return function checkPermitClaimableHandler(claimable: boolean) {
     if (!claimable) {
       setClaimMessage({ type: "Error", message: `Permit is not claimable.` });
       table.setAttribute(`data-claim`, "none");
     } else {
-      if (signerAddress.toLowerCase() === app.txData.owner.toLowerCase()) {
+      if (signerAddress?.toLowerCase() === app.txData.owner.toLowerCase()) {
         generateInvalidatePermitAdminControl(signer);
       }
     }
     return signer;
   };
 }
-function generateInvalidatePermitAdminControl(signer: ethers.providers.JsonRpcSigner | undefined) {
+function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcSigner | null) {
   controls.appendChild(invalidateButton);
 
   invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
     if (!signer?._isSigner) {
       signer = await connectWallet();
-      if (!signer._isSigner) {
+      if (!signer?._isSigner) {
         return;
       }
     }
