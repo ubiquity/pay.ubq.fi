@@ -77,8 +77,8 @@ table th div {
   text-align: right;
   color: #80808080;
 }
-table td div,
-table th div {
+table td ,
+table th  {
   padding: 8px;
   text-rendering: geometricPrecision;
   /* max-width: 320px; */
