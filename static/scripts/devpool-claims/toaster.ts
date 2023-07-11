@@ -25,7 +25,7 @@ export function createToast(icon: keyof typeof toastIcons, text: string) {
   // Getting the icon and text for the toast based on the id passed
   const _icon = toastIcons[icon];
   const toast = document.createElement("li"); // Creating a new 'li' element for the toast
-  toast.className = `toast .${_icon}`; // Setting the classes for the toast
+  toast.className = `toast .${_icon} ${icon}`; // Setting the classes for the toast
 
   // Setting the inner HTML for the toast
   toast.innerHTML = `<div class="column"><i class="fa-solid ${_icon}"></i><span>${text}</span></div>`;

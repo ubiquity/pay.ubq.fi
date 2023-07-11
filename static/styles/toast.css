@@ -5,6 +5,19 @@
   --toast-info: #3498db;
 }
 
+.fa-circle-check {
+  color: var(--toast-success);
+}
+.fa-circle-xmark {
+  color: var(--toast-error);
+}
+.fa-triangle-exclamation {
+  color: var(--toast-warning);
+}
+.fa-circle-info {
+  color: var(--toast-info);
+}
+
 .notifications {
   position: fixed;
   bottom: 30px;
@@ -65,6 +78,9 @@
 }
 
 @keyframes progress {
+  0% {
+    width: 100%;
+  }
   100% {
     width: 0%;
   }
