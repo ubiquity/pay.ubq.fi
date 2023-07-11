@@ -127,10 +127,10 @@ div#build > a {
 div#build > a:hover {
   opacity: 1;
 }
-header a {
+header a #logo {
   opacity: 0.5;
 }
-header a:hover {
+header a:hover #logo {
   opacity: 1;
 }
 
