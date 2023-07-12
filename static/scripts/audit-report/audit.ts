@@ -651,13 +651,14 @@ const auditInit = () => {
     resultTableTbodyElem.innerHTML = "";
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
-      const { API, RPC, WALLET, PAT, OWNER, REPO }: QuickImport = JSON.parse(quickImportValue);
+      const { API, RPC, WALLET, PAT, OWNER, REPO, CHAIN: _CHAIN }: QuickImport = JSON.parse(quickImportValue);
       CHAINSCAN_API_KEY = API;
       RPC_URL = RPC;
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
       GITHUB_PERSONAL_ACCESS_TOKEN = PAT;
       OWNER_NAME = OWNER.toLocaleLowerCase();
       REPOSITORY_NAME = REPO.toLocaleLowerCase();
+      CHAIN = _CHAIN
     } else {
       CHAINSCAN_API_KEY = (document.querySelector("#chainscanApiKey") as HTMLInputElement).value;
       RPC_URL = (document.querySelector("#rpcUrl") as HTMLInputElement).value;
