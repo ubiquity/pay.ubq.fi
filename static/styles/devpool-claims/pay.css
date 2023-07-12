@@ -1,19 +1,22 @@
 * {
-  color: #808080;
+  -webkit-text-size-adjust: 100%;
   font-family: "Ubiquity Nova", FT Base, -apple-system, system-ui, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   line-height: 1;
   padding: 0;
   margin: 0;
-  /* box-sizing: unset; */
-  /* text-align: center; */
   font-size: 12px;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
 
+a {
+  color: #808080;
+}
+
 body {
-  min-height: 100vh;
+  /* min-height: 100vh; */
+  /* height: calc(100 * var(--vh)); */
 }
 
 body,
@@ -82,32 +85,8 @@ a {
   /* font-weight: 400; */
 }
 
-footer {
-  width: 100%;
-  /* height: 100%; */
-  /* display: block; */
-  /* margin: 16px auto; */
-  /* word-break: break-all; */
-  /* position: fixed; */
-  /* bottom: 0; */
-}
-
-footer code {
-  /* height: 100%; */
-  /* width: 100%; */
-  /* display: block; */
-  font-family: menlo, ui-monospace, monospace;
-  color: rgb(255 0 0 / 88%);
-  font-size: 16px;
-  line-height: 1;
-  /* width: 87.5vw; */
-  white-space: pre;
-  text-transform: initial;
-  letter-spacing: 0px;
-  text-rendering: geometricprecision;
-}
-
 div#build {
+  /* bottom: 48px; */
   padding: 48px 0;
   text-align: center;
   text-transform: uppercase;
@@ -141,11 +120,12 @@ main {
 }
 
 header {
-  height: 140px;
-  width: 100%;
+  /* height: 140px; */
+  /* width: 100%; */
 }
 
 footer {
-  height: 108px;
-  width: 100%;
+  /* height: 108px; */
+  /* width: 100%; */
+  /* padding-bottom: env(safe-area-inset-bottom); */
 }

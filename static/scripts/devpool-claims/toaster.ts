@@ -1,9 +1,9 @@
 export const claimButton = document.getElementById("claimButton") as HTMLButtonElement;
-export const controls = document.getElementById("controls") as HTMLElement;
+export const controls = document.getElementById("controls") as HTMLDivElement;
 
-const notifications = document.querySelector(".notifications") as HTMLElement;
-const claimIcon = document.querySelector(".claim-icon") as HTMLElement;
-const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
+const notifications = document.querySelector(".notifications") as HTMLUListElement;
+const claimIcon = document.querySelector(".claim-icon") as SVGElement;
+const claimLoader = document.querySelector(".claim-loader") as SVGElement;
 
 // Object containing details for different types of toasts
 
@@ -52,22 +52,17 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
 
 export function loadingClaimButton(triggerLoader = true) {
   claimButton.disabled = true;
-
   // Adding this because not all disabling should trigger loading spinner
   if (triggerLoader) {
-    claimLoader?.classList.add("show-cl");
-    claimLoader?.classList.remove("hide-cl");
-    claimIcon?.classList.add("hide-cl");
-    claimIcon?.classList.remove("show-cl");
+    claimButton.classList.add("show-cl");
+    claimButton.classList.remove("hide-cl");
   }
 }
 
 export function resetClaimButton() {
   claimButton.disabled = false;
-  claimLoader?.classList.add("hide-cl");
-  claimLoader?.classList.remove("show-cl");
-  claimIcon?.classList.add("show-cl");
-  claimIcon?.classList.remove("hide-cl");
+  claimButton.classList.add("hide-cl");
+  claimButton.classList.remove("show-cl");
 }
 
 export function ErrorHandler(error: any, errorMessage?: string) {
@@ -79,6 +74,6 @@ export function ErrorHandler(error: any, errorMessage?: string) {
     // parse error data to get error message
     const parsedError = JSON.parse(ErrorData);
     const _errorMessage = parsedError?.error?.message ?? parsedError?.reason;
-    createToast("error", `Error: ${_errorMessage}`);
+    createToast("error", _errorMessage);
   }
 }

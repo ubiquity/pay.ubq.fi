@@ -43,4 +43,23 @@
   html {
     background-color: #fff;
   }
+  #grid {
+    opacity: 0.25;
+  }
+
+  table {
+    background-color: hsl(225 0% 96% / 1);
+    border: 1px solid hsl(225 0% 92% / 1);
+  }
+
+  table[data-claim-rendered] tr#additional-details-border {
+    background-color: hsl(225 0% 94% / 1);
+  }
+  table[data-details-visible="true"] #additional-details-border ~ tr {
+    background-color: hsl(225 0% 94% / 1);
+  }
+  .notifications .toast {
+    border: 1px solid hsl(225 0% 92% / 1);
+    background-color: hsl(225 0% 96% / 1);
+  }
 }

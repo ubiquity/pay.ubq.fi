@@ -11,10 +11,10 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     return signer;
   } catch (error: any) {
     if (error?.message?.includes("missing provider")) {
-      createToast("error", "Please use a web3 enabled browser.");
+      createToast("info", "Please use a web3 enabled browser to collect this reward.");
       claimButton.disabled = true;
     } else {
-      createToast("error", "Please connect your wallet.");
+      createToast("info", "Please connect your wallet to collect this reward.");
       claimButton.disabled = true;
     }
     return null;

@@ -13,7 +13,7 @@
     <meta name="twitter:creator" content="@UbiquityDAO" />
     <meta name="twitter:description" content="DevPool Claims" />
     <meta name="twitter:title" content="DevPool Claims" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
     <meta property="og:description" content="DevPool Claims" />
     <meta property="og:site_name" content="DevPool Claims" />
     <meta property="og:title" content="DevPool Claims" />
@@ -22,8 +22,12 @@
     <meta property="twitter:domain" content="dao.ubq.fi" />
     <meta property="twitter:url" content="https://dao.ubq.fi" />
     <title>DevPool Claims | DevPool Claims</title>
+    <!--
+      icons from: https://fonts.google.com/icons
+      weight: 300
+      optical-size: 24
+     -->
   </head>
-
   <body>
     <background>
       <div id="grid"></div>
@@ -40,8 +44,8 @@
               </svg>
             </div>
             <div id="logo-text">
-              <span>Ubiquity DAO</span>
-              <span>DevPool Claims</span>
+              <span>Ubiquity</span>
+              <span>Rewards</span>
             </div>
           </div>
         </a>
@@ -67,27 +71,33 @@
               </td>
             </tr>
             <tr id="To">
-              <th><div>To</div></th>
+              <th><div>For</div></th>
               <td id="transferDetails.to">
                 <span class="full"><div></div></span>
                 <span class="short"><div>Loading...</div></span>
               </td>
             </tr>
             <tr id="additional-details-border">
-              <th><div></div></th>
-              <td>
-                <div id="controls">
+              <th
+                ><div>
                   <button id="additionalDetails">
                     <div>Details</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
+                    <svg class="opener" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
                       <path
-                        d="M481.915 798Q497 798 507.5 787.584q10.5-10.415 10.5-25.5Q518 747 507.585 736.5q-10.416-10.5-25.5-10.5Q467 726 456.5 736.416q-10.5 10.415-10.5 25.5Q446 777 456.415 787.5q10.416 10.5 25.5 10.5ZM454 658h52q2-28.648 9.5-46.824T552 564q27-25 40.5-47.919 13.5-22.919 13.5-52.642Q606 413 569.754 383.5 533.507 354 484 354q-48 0-81 25.5T356 440l48 20q8-22 25-40t53-18q38 0 56 21t18 45q0 21-12 37t-30 33q-38 35-49 58t-11 62Zm26.174 298q-78.814 0-148.212-29.911-69.399-29.912-120.734-81.188-51.336-51.277-81.282-120.595Q100 654.988 100 576.174q0-79.07 29.97-148.694 29.971-69.623 81.348-121.126 51.378-51.502 120.594-80.928Q401.128 196 479.826 196q79.06 0 148.676 29.391 69.615 29.392 121.13 80.848 51.516 51.457 80.942 121.018Q860 496.819 860 575.909q0 79.091-29.391 148.149-29.392 69.059-80.835 120.496-51.443 51.436-120.987 81.441Q559.244 956 480.174 956ZM480 902q136.513 0 231.256-94.744Q806 712.513 806 576t-94.744-231.256Q616.513 250 480 250t-231.256 94.744Q154 439.487 154 576t94.744 231.256Q343.487 902 480 902Zm0-326Z"
+                        d="M480-134.616 313.078-301.539l43.383-43.383L480-221.384l123.539-123.538 43.383 43.383L480-134.616Zm-123.539-478L313.078-656 480-822.922 646.922-656l-43.383 43.384L480-736.155 356.461-612.616Z"
                       />
                     </svg>
-                  </button>
-                  <button id="claimButton">
+                    <svg class="closer" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                      <path
+                        d="M356-173.847 313.847-216 480-382.153 646.153-216 604-173.847l-124-124-124 124Zm124-404L313.847-744 356-786.153l124 124 124-124L646.153-744 480-577.847Z"
+                      />
+                    </svg> </button></div
+              ></th>
+              <td>
+                <div id="controls">
+                  <button id="claimButton" class="hide-cl">
                     <svg
-                      class="hide-cl claim-loader"
+                      class="claim-loader"
                       version="1.1"
                       id="L9"
                       xmlns="http://www.w3.org/2000/svg"
@@ -110,9 +120,11 @@
                         />
                       </path>
                     </svg>
-                    <div class="claim-title">Claim</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24" class="claim-icon">
-                      <path d="M382 802 168 588l38-38 176 176 374-374 38 38-412 412Z" />
+                    <div class="claim-title">Collect</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="claim-icon">
+                      <path
+                        d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -138,7 +150,6 @@
         </table>
       </div>
       <footer>
-        <code></code>
         <div id="build">
           <a target="_blank" rel="noopener noreferrer"></a>
         </div>

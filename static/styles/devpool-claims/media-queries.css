@@ -1,7 +1,13 @@
 header span:first-child::after {
-  content: " | ";
+  /* content: " | "; */
 }
 
+@media screen and (max-width: 640px) {
+  table {
+    border-left-width: 0px;
+    border-right-width: 0px;
+  }
+}
 @media screen and (max-width: 768px) {
   header span:first-child {
     display: none;

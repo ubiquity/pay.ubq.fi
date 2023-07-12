@@ -13,8 +13,9 @@ background {
 
 background #grid {
   -webkit-mask-image: radial-gradient(#00000020 0, #00000080 100%);
-  opacity: 1;
+  mask-image: radial-gradient(#00000020 0, #00000080 100%);
+  /* opacity: 1; */
   pointer-events: none;
-  background-image: url(../../media/grid-1.png);
-  background-repeat: repeat;
+  /* background-image: url(../../media/grid-1.png); */
+  /* background-repeat: repeat; */
 }

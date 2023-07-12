@@ -1,8 +1,8 @@
 :root {
-  --toast-success: #0abf30;
-  --toast-error: #e24d4c;
-  --toast-warning: #e9bd0c;
-  --toast-info: #3498db;
+  --toast-success: #408040;
+  --toast-error: #804040;
+  --toast-warning: #808040;
+  --toast-info: #808080;
 }
 
 .fa-circle-check {
@@ -20,8 +20,8 @@
 
 .notifications {
   position: fixed;
-  bottom: 30px;
-  right: 20px;
+  bottom: 0;
+  /* right: 20px; */
 }
 
 .notifications :where(.toast, .column) {
@@ -30,19 +30,18 @@
 }
 
 .notifications .toast {
-  width: 400px;
-  height: 50px;
   position: relative;
   overflow: hidden;
   list-style: none;
-  border-radius: 4px;
-  padding: 16px 17px;
-  margin-bottom: 10px;
+  padding: 24px;
+  margin: 12px;
   justify-content: space-between;
   animation: show_toast 0.5s ease-in-out;
-  border: 1px solid #80808020;
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  /* border: 1px solid #80808020; */
+  border: 1px solid hsl(225 33% 8% / 1);
+  /* backdrop-filter: blur(24px); */
+  /* -webkit-backdrop-filter: blur(24px); */
+  background-color: hsl(225 33% 4% / 1);
 }
 
 @keyframes show_toast {
@@ -124,35 +123,18 @@
 }
 
 .toast .column span {
-  font-size: 1.07rem;
+  /* font-size: 1.07rem; */
   margin-left: 12px;
+  color: #808080;
+  line-height: 1.5;
 }
 
 .toast i:last-child {
   color: #aeb0d7;
   cursor: pointer;
+  margin-left: 12px;
 }
 
 .toast i:last-child:hover {
   filter: invert(1);
-}
-
-@media screen and (max-width: 530px) {
-  .notifications {
-    width: 95%;
-  }
-
-  .notifications .toast {
-    width: 100%;
-    font-size: 1rem;
-    margin-left: 20px;
-  }
-}
-
-.show-cl {
-  display: block;
-}
-
-.hide-cl {
-  display: none !important;
 }

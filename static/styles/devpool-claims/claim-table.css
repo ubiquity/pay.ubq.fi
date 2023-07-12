@@ -1,7 +1,5 @@
 :root {
   --left-table-column-width: 120px;
-  --header-height: 140px;
-  --footer-height: 108px;
 }
 #claimButton {
   display: flex;
@@ -18,6 +16,13 @@ main > div {
 }
 table {
   border-collapse: collapse;
+  /* min-width: 480px; */
+  width: 100vw;
+  /* width: calc(200vw / 3); */
+  max-width: 640px;
+  background-color: hsl(225 33% 4% / 1);
+  /* backdrop-filter: blur(24px); */
+  border: 1px solid hsl(225 33% 8% / 1);
 }
 table tr {
   /* width: 100%; */
@@ -29,8 +34,8 @@ table a:hover > div {
   color: #fff;
 }
 table #controls {
-  max-width: 320px;
   display: none;
+  color: #fff;
 }
 table #controls > button {
   flex: 1;
@@ -55,10 +60,12 @@ table button {
   cursor: pointer;
   outline: 0;
   height: 48px;
+  color: currentColor;
 }
 table button div {
   text-transform: uppercase;
-  white-space: nowrap;
+  /* white-space: nowrap; */
+  word-break: break-all;
   text-rendering: geometricPrecision;
   color: #fff;
 }
@@ -68,10 +75,10 @@ table hr {
   border: none;
 }
 table svg path {
-  fill: #fff;
+  fill: currentColor;
 }
 table td div {
-  word-break: break-word;
+  word-break: break-all;
 }
 table th div {
   text-align: right;
@@ -83,10 +90,12 @@ table th {
   text-rendering: geometricPrecision;
   /* max-width: 320px; */
   line-height: 1.25;
+  color: #808080;
 }
 table td div {
   /* width: calc(100vw - var(--left-table-column-width)); */
-  white-space: nowrap;
+  /* white-space: nowrap; */
+  word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -120,7 +129,7 @@ table[data-claim-rendered] button {
   opacity: 0.5;
 }
 table[data-claim-rendered] button:disabled {
-  opacity: 0;
+  opacity: 0.5;
   pointer-events: none;
 }
 table[data-claim-rendered] button:hover {
@@ -130,30 +139,32 @@ table[data-claim-rendered] button:hover {
 table[data-claim-rendered] button > div {
   display: none;
 }
-table[data-claim-rendered] button > svg.claim-icon {
-  display: unset;
+table[data-claim-rendered] button:disabled > svg.claim-icon {
+  display: none;
 }
 table[data-claim-rendered] button:hover > div {
   display: unset;
 }
 table[data-claim-rendered] button:hover > svg {
-  display: none;
+  display: none !important;
 }
 table[data-claim-rendered] button#additionalDetails {
   width: 100%;
-  opacity: 0.25;
+  color: #808080;
+  /* opacity: 0.25; */
 }
 table[data-claim-rendered] button#additionalDetails:hover {
-  opacity: 1;
+  /* opacity: 1; */
 }
 table[data-claim-rendered] tr {
   background-color: #80808000;
   transition: 125ms ease-in-out opacity;
 }
 table[data-claim-rendered] tr#additional-details-border {
-  background-color: #80808010;
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  /* background-color: #80808010; */
+  background-color: hsl(225 33% 6% / 1);
+  /* -webkit-backdrop-filter: blur(4px); */
+  /* backdrop-filter: blur(4px); */
   /* border: 1px solid #80808020; */
   /* border-left: 0; */
   /* border-right: 0; */
@@ -165,6 +176,7 @@ table #additional-details-border ~ tr,
 table[data-details-visible="false"] #additional-details-border ~ tr {
   opacity: 0;
   pointer-events: none;
+  display: none;
 }
 table[data-details-visible="false"] {
   /* border-bottom: 1px solid #80808000; */
@@ -172,6 +184,11 @@ table[data-details-visible="false"] {
 table[data-details-visible="true"] #additional-details-border ~ tr {
   opacity: 1;
   pointer-events: unset;
+  display: table-row;
+  /* background-color: #80808010; */
+  background-color: hsl(225 33% 6% / 1);
+  /* -webkit-backdrop-filter: blur(4px); */
+  /* backdrop-filter: blur(4px); */
 }
 table[data-details-visible="true"] {
   /* border-bottom: 1px solid #80808020; */
@@ -239,4 +256,53 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
 }
 #transferDetails\.to div {
   color: #fff;
+}
+
+.show-cl {
+  display: block;
+}
+
+.hide-cl > svg.claim-loader {
+  display: none;
+}
+.show-cl > svg.claim-loader {
+  display: unset;
+}
+.hide-cl > svg.claim-icon {
+  display: unset;
+}
+.show-cl > svg.claim-icon {
+  display: none;
+}
+
+#additionalDetails svg {
+  /* display: none; */
+}
+table[data-details-visible="true"] #additionalDetails svg.opener {
+  display: none;
+}
+table[data-details-visible="false"] #additionalDetails svg.opener {
+  display: unset;
+}
+
+table[data-details-visible="true"] #additionalDetails svg.closer {
+  display: unset;
+}
+table[data-details-visible="false"] #additionalDetails svg.closer {
+  display: none;
+}
+
+table .full {
+  /* word-break: break-all; */
+}
+
+td#owner > a {
+  word-break: break-all;
+}
+
+table td {
+  padding-right: 16px;
+}
+table th {
+  padding-left: 16px;
 }
