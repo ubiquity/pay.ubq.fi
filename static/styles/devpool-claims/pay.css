@@ -1,15 +1,16 @@
 * {
-  color: #808080;
   font-family: "Ubiquity Nova", FT Base, -apple-system, system-ui, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   line-height: 1;
   padding: 0;
   margin: 0;
-  /* box-sizing: unset; */
-  /* text-align: center; */
   font-size: 12px;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
+}
+
+a {
+  color: #808080;
 }
 
 body {

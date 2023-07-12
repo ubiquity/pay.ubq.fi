@@ -31,6 +31,7 @@ table a:hover > div {
 table #controls {
   max-width: 320px;
   display: none;
+  color: #fff;
 }
 table #controls > button {
   flex: 1;
@@ -55,6 +56,7 @@ table button {
   cursor: pointer;
   outline: 0;
   height: 48px;
+  color: currentColor;
 }
 table button div {
   text-transform: uppercase;
@@ -68,7 +70,7 @@ table hr {
   border: none;
 }
 table svg path {
-  fill: #fff;
+  fill: currentColor;
 }
 table td div {
   word-break: break-word;
@@ -83,6 +85,7 @@ table th {
   text-rendering: geometricPrecision;
   /* max-width: 320px; */
   line-height: 1.25;
+  color: #808080;
 }
 table td div {
   /* width: calc(100vw - var(--left-table-column-width)); */
@@ -141,10 +144,10 @@ table[data-claim-rendered] button:hover > svg {
 }
 table[data-claim-rendered] button#additionalDetails {
   width: 100%;
-  opacity: 0.25;
+  /* opacity: 0.25; */
 }
 table[data-claim-rendered] button#additionalDetails:hover {
-  opacity: 1;
+  /* opacity: 1; */
 }
 table[data-claim-rendered] tr {
   background-color: #80808000;

@@ -1,9 +1,9 @@
 export const claimButton = document.getElementById("claimButton") as HTMLButtonElement;
-export const controls = document.getElementById("controls") as HTMLElement;
+export const controls = document.getElementById("controls") as HTMLDivElement;
 
-const notifications = document.querySelector(".notifications") as HTMLElement;
-const claimIcon = document.querySelector(".claim-icon") as HTMLElement;
-const claimLoader = document.querySelector(".claim-loader") as HTMLElement;
+const notifications = document.querySelector(".notifications") as HTMLUListElement;
+const claimIcon = document.querySelector(".claim-icon") as SVGElement;
+const claimLoader = document.querySelector(".claim-loader") as SVGElement;
 
 // Object containing details for different types of toasts
 
