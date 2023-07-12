@@ -43,4 +43,7 @@
   html {
     background-color: #fff;
   }
+  #grid {
+    opacity: 0.25;
+  }
 }
