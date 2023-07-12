@@ -135,11 +135,3 @@
 .toast i:last-child:hover {
   filter: invert(1);
 }
-
-.show-cl {
-  display: block;
-}
-
-.hide-cl {
-  display: none !important;
-}

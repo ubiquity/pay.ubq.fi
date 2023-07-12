@@ -52,22 +52,17 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
 
 export function loadingClaimButton(triggerLoader = true) {
   claimButton.disabled = true;
-
   // Adding this because not all disabling should trigger loading spinner
   if (triggerLoader) {
-    claimLoader?.classList.add("show-cl");
-    claimLoader?.classList.remove("hide-cl");
-    claimIcon?.classList.add("hide-cl");
-    claimIcon?.classList.remove("show-cl");
+    claimButton.classList.add("show-cl");
+    claimButton.classList.remove("hide-cl");
   }
 }
 
 export function resetClaimButton() {
   claimButton.disabled = false;
-  claimLoader?.classList.add("hide-cl");
-  claimLoader?.classList.remove("show-cl");
-  claimIcon?.classList.add("show-cl");
-  claimIcon?.classList.remove("hide-cl");
+  claimButton.classList.add("hide-cl");
+  claimButton.classList.remove("show-cl");
 }
 
 export function ErrorHandler(error: any, errorMessage?: string) {

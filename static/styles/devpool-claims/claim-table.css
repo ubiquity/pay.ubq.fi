@@ -121,7 +121,7 @@ table[data-claim-rendered] button {
   opacity: 0.5;
 }
 table[data-claim-rendered] button:disabled {
-  opacity: 0;
+  opacity: 0.5;
   pointer-events: none;
 }
 table[data-claim-rendered] button:hover {
@@ -132,7 +132,7 @@ table[data-claim-rendered] button > div {
   display: none;
 }
 table[data-claim-rendered] button > svg.claim-icon {
-  display: unset;
+  /* display: unset; */
 }
 table[data-claim-rendered] button:hover > div {
   display: unset;
@@ -242,4 +242,21 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
 }
 #transferDetails\.to div {
   color: #fff;
+}
+
+.show-cl {
+  display: block;
+}
+
+.hide-cl > svg.claim-loader {
+  display: none;
+}
+.show-cl > svg.claim-loader {
+  display: unset;
+}
+.hide-cl > svg.claim-icon {
+  display: unset;
+}
+.show-cl > svg.claim-icon {
+  display: none;
 }
