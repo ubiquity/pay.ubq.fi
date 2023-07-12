@@ -130,8 +130,8 @@ table[data-claim-rendered] button:hover {
 table[data-claim-rendered] button > div {
   display: none;
 }
-table[data-claim-rendered] button > svg.claim-icon {
-  /* display: unset; */
+table[data-claim-rendered] button:disabled > svg.claim-icon {
+  display: none;
 }
 table[data-claim-rendered] button:hover > div {
   display: unset;
@@ -276,4 +276,8 @@ table[data-details-visible="true"] #additionalDetails svg.closer {
 }
 table[data-details-visible="false"] #additionalDetails svg.closer {
   display: none;
+}
+
+table .full {
+  word-break: break-all;
 }
