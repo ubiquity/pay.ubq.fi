@@ -27,7 +27,6 @@ table a:hover > div {
   color: #fff;
 }
 table #controls {
-  max-width: 320px;
   display: none;
   color: #fff;
 }
