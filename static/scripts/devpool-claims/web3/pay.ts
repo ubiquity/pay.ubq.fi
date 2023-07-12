@@ -18,8 +18,8 @@ export async function pay(): Promise<void> {
   const table = document.getElementsByTagName(`table`)[0];
   table.setAttribute(`data-details-visible`, detailsVisible.toString());
 
-  const additionalDetailsElem = document.getElementById(`additionalDetails`) as Element;
-  additionalDetailsElem.addEventListener("click", () => {
+  const additionalDetails = document.getElementById(`additionalDetails`) as Element;
+  additionalDetails.addEventListener("click", () => {
     detailsVisible = !detailsVisible;
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
@@ -102,13 +102,13 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
       const user = (await signer.getAddress()).toLowerCase();
 
       if (beneficiary !== user) {
-        createToast("error", `Your wallet is not the authorized beneficiary.`);
+        createToast("warning", `This reward is not for you.`);
         resetClaimButton();
       } else if (!solvent) {
-        createToast("error", `Not enough balance on funding wallet to claim permitted amount. Please let the funder know.`);
+        createToast("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
         resetClaimButton();
       } else if (!allowed) {
-        createToast("error", `Not enough allowance to claim. Please let the funder know.`);
+        createToast("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
         resetClaimButton();
       } else {
         await withdraw(signer, app.txData, errorMessage);

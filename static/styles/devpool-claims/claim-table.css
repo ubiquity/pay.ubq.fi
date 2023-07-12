@@ -138,10 +138,11 @@ table[data-claim-rendered] button:hover > div {
   display: unset;
 }
 table[data-claim-rendered] button:hover > svg {
-  display: none;
+  display: none !important;
 }
 table[data-claim-rendered] button#additionalDetails {
   width: 100%;
+  color: #808080;
   /* opacity: 0.25; */
 }
 table[data-claim-rendered] button#additionalDetails:hover {
@@ -258,5 +259,22 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
   display: unset;
 }
 .show-cl > svg.claim-icon {
+  display: none;
+}
+
+#additionalDetails svg {
+  /* display: none; */
+}
+table[data-details-visible="true"] #additionalDetails svg.opener {
+  display: none;
+}
+table[data-details-visible="false"] #additionalDetails svg.opener {
+  display: unset;
+}
+
+table[data-details-visible="true"] #additionalDetails svg.closer {
+  display: unset;
+}
+table[data-details-visible="false"] #additionalDetails svg.closer {
   display: none;
 }

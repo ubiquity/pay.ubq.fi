@@ -28,7 +28,7 @@ export function createToast(icon: keyof typeof toastIcons, text: string) {
   toast.className = `toast .${_icon} ${icon}`; // Setting the classes for the toast
 
   // Setting the inner HTML for the toast
-  toast.innerHTML = `<div class="column"><i class="fa-solid ${_icon}"></i><span>${icon}</span><span>${text}</span></div>`;
+  toast.innerHTML = `<div class="column"><i class="fa-solid ${_icon}"></i><span>${text}</span></div>`;
 
   // attaching a click event listener to the toast to remove it when the close icon is clicked
   const i = document.createElement("i");

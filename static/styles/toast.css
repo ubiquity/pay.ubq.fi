@@ -121,9 +121,10 @@
 }
 
 .toast .column span {
-  font-size: 1.07rem;
+  /* font-size: 1.07rem; */
   margin-left: 12px;
   color: #808080;
+  line-height: 1.5;
 }
 
 .toast i:last-child {
