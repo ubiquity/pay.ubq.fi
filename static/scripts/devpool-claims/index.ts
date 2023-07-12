@@ -1,6 +1,6 @@
 import { renderTransaction } from "./render-transaction/render-transaction";
 import { pay } from "./web3/pay";
-
+import { grid } from "./the-grid";
 (async function appAsyncWrapper() {
   try {
     // display commit hash
@@ -19,3 +19,4 @@ import { pay } from "./web3/pay";
     console.error(error);
   }
 })();
+grid(document.getElementById("grid"));
