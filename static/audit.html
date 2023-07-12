@@ -1,87 +1,70 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Audit report</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="out/styles/audit-report/audit.css" rel="stylesheet" />
-  </head>
 
-  <body>
-    <div class="container">
-      <h1 class="audit-tag">Audit report</h1>
-      <!-- params -->
-      <div class="mb-3">
-        <label for="etherscanApiKey" class="form-label">Etherscan API key</label>
-        <input type="text" class="form-control" id="etherscanApiKey" />
-      </div>
-      <div class="mb-3">
-        <label for="rpcUrl" class="form-label">RPC URL</label>
-        <input type="text" class="form-control" id="rpcUrl" />
-      </div>
-      <div class="mb-3">
-        <label for="botWalletAddress" class="form-label">Bot wallet address</label>
-        <input type="text" class="form-control" id="botWalletAddress" />
-      </div>
-      <div class="mb-3">
-        <label for="githubPat" class="form-label">Github personal access token (with "repo" scope)</label>
-        <input type="text" class="form-control" id="githubPat" />
-      </div>
-      <div class="mb-3">
-        <label for="ownerName" class="form-label">Owner name</label>
-        <input type="text" class="form-control" id="ownerName" />
-      </div>
-      <div class="mb-3">
-        <label for="repoName" class="form-label">Repository name</label>
-        <input type="text" class="form-control" id="repoName" />
-      </div>
-      <div class="mb-3">
-        <label for="quickName" class="form-label">Quick Import</label>
-        <textarea
-          type="text"
-          class="form-control"
-          id="quickName"
-          placeholder='
+<head>
+  <title>Audit report</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="out/styles/audit-report/audit.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="audit-tag">Audit report</h1>
+    <!-- params -->
+    <div class="mb-3">
+      <label for="chainscanApiKey" class="form-label">Etherscan/GnosisScan API key</label>
+      <input type="text" class="form-control" id="chainscanApiKey" />
+    </div>
+    <div class="mb-3">
+      <label for="rpcUrl" class="form-label">RPC URL</label>
+      <input type="text" class="form-control" id="rpcUrl" />
+    </div>
+    <div class="mb-3">
+      <label for="botWalletAddress" class="form-label">Bot wallet address</label>
+      <input type="text" class="form-control" id="botWalletAddress" />
+    </div>
+    <div class="mb-3">
+      <label for="githubPat" class="form-label">Github personal access token (with "repo" scope)</label>
+      <input type="text" class="form-control" id="githubPat" />
+    </div>
+    <div class="mb-3">
+      <label for="ownerName" class="form-label">Owner name</label>
+      <input type="text" class="form-control" id="ownerName" />
+    </div>
+    <div class="mb-3">
+      <label for="repoName" class="form-label">Repository name</label>
+      <input type="text" class="form-control" id="repoName" />
+    </div>
+    <div class="mb-3">
+      <label for="quickName" class="form-label">Quick Import</label>
+      <textarea type="text" class="form-control" id="quickName" placeholder='
 {
   "API": "",
   "RPC": "",
   "WALLET": "",
   "PAT": "",
   "OWNER": "",
-  "REPO": ""
-}'
-        ></textarea>
+  "REPO": "",
+  "CHAIN": ""
+}'></textarea>
+    </div>
+    <div class="btn-container">
+      <button type="button" class="btn btn-primary mb-3" id="getReport">
+        <span class="btn-loader" id="report-loader"></span>
+        <span>Get report</span>
+      </button>
+      <div class="tg-list-item">
+        <input class="tgl tgl-flat" id="cb4" type="checkbox" />
+        <label class="tgl-btn" for="cb4"></label>
+        <div class="cache-title">⚡Cache</div>
       </div>
-      <div class="btn-container">
-        <button type="button" class="btn btn-primary mb-3" id="getReport">
-          <span class="btn-loader" id="report-loader"></span>
-          <span>Get report</span>
-        </button>
-        <div class="tg-list-item">
-          <input class="tgl tgl-flat" id="cb4" type="checkbox" />
-          <label class="tgl-btn" for="cb4"></label>
-          <div class="cache-title">⚡Cache</div>
-        </div>
-      </div>
-      <!-- result table -->
-      <table id="resultTable" class="table" style="display: none">
-        <thead>
-          <tr>
-            <th scope="col">Issue</th>
-            <th scope="col">Amount (DAI)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- table content -->
-        </tbody>
-      </table>
     </div>
     <!-- result table -->
     <table id="resultTable" class="table" style="display: none">
       <thead>
         <tr>
-          <th scope="col">Issue URL</th>
-          <th scope="col">Transaction URL</th>
+          <th scope="col">Issue</th>
           <th scope="col">Amount (DAI)</th>
         </tr>
       </thead>
@@ -89,7 +72,22 @@
         <!-- table content -->
       </tbody>
     </table>
-    <ul class="notifications"></ul>
-    <script src="out/scripts/audit-report/audit.js" type="application/javascript"></script>
-  </body>
+  </div>
+  <!-- result table -->
+  <table id="resultTable" class="table" style="display: none">
+    <thead>
+      <tr>
+        <th scope="col">Issue URL</th>
+        <th scope="col">Transaction URL</th>
+        <th scope="col">Amount (DAI)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- table content -->
+    </tbody>
+  </table>
+  <ul class="notifications"></ul>
+  <script src="out/scripts/audit-report/audit.js" type="application/javascript"></script>
+</body>
+
 </html>

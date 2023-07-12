@@ -9,12 +9,17 @@ import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, Go
 
 const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
-let ETHERSCAN_API_KEY = "";
+let CHAINSCAN_API_KEY = "";
 let RPC_URL = "";
 let BOT_WALLET_ADDRESS = "";
 let GITHUB_PERSONAL_ACCESS_TOKEN = "";
 let OWNER_NAME = "";
 let REPOSITORY_NAME = "";
+
+enum ChainScan {
+  Ethereum = "https://etherscan.io",
+  Gnosis = "https://gnosisscan.io"
+}
 
 const botNodeId = "BOT_kgDOBr8EgA";
 const claimUrlRegExp = /https:\/\/pay\.ubq\.fi\?claim=[a-zA-Z0-9=]+/;
@@ -449,7 +454,7 @@ const etherFetcher = async () => {
       clearInterval(etherIntervalID);
       try {
         const { data } = await axios.get(
-          `https://api.etherscan.io/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${ETHERSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
+          `https://api.etherscan.io/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${CHAINSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
         );
         if (data.result.length > 0) {
           if (!lastEtherHash) {
@@ -618,14 +623,14 @@ const auditInit = () => {
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
       const { API, RPC, WALLET, PAT, OWNER, REPO }: QuickImport = JSON.parse(quickImportValue);
-      ETHERSCAN_API_KEY = API;
+      CHAINSCAN_API_KEY = API;
       RPC_URL = RPC;
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
       GITHUB_PERSONAL_ACCESS_TOKEN = PAT;
       OWNER_NAME = OWNER.toLocaleLowerCase();
       REPOSITORY_NAME = REPO.toLocaleLowerCase();
     } else {
-      ETHERSCAN_API_KEY = (document.querySelector("#etherscanApiKey") as HTMLInputElement).value;
+      CHAINSCAN_API_KEY = (document.querySelector("#chainscanApiKey") as HTMLInputElement).value;
       RPC_URL = (document.querySelector("#rpcUrl") as HTMLInputElement).value;
       BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
       GITHUB_PERSONAL_ACCESS_TOKEN = (document.querySelector("#githubPat") as HTMLInputElement).value;
@@ -634,7 +639,7 @@ const auditInit = () => {
     }
 
     if (
-      ETHERSCAN_API_KEY !== "" &&
+      CHAINSCAN_API_KEY !== "" &&
       RPC_URL !== "" &&
       BOT_WALLET_ADDRESS !== "" &&
       GITHUB_PERSONAL_ACCESS_TOKEN !== "" &&
