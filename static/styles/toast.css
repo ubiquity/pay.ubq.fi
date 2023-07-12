@@ -1,8 +1,8 @@
 :root {
-  --toast-success: #0abf30;
-  --toast-error: #e24d4c;
-  --toast-warning: #e9bd0c;
-  --toast-info: #3498db;
+  --toast-success: #408040;
+  --toast-error: #804040;
+  --toast-warning: #808040;
+  --toast-info: #808080;
 }
 
 .fa-circle-check {
