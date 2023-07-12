@@ -19,4 +19,5 @@ import { grid } from "./the-grid";
     console.error(error);
   }
 })();
+
 grid(document.getElementById("grid"));
