@@ -12,6 +12,18 @@
   <div class="container">
     <h1 class="audit-tag">Audit report</h1>
     <!-- params -->
+    <div class="switches-container">
+      <input type="radio" id="ethereum" name="switchChain" value="Ethereum" checked="checked" />
+      <input type="radio" id="gnosis" name="switchChain" value="Gnosis" />
+      <label for="ethereum">Ethereum</label>
+      <label for="gnosis">Gnosis</label>
+      <div class="switch-wrapper">
+        <div class="switch">
+          <div>Ethereum</div>
+          <div>Gnosis</div>
+        </div>
+      </div>
+    </div>
     <div class="mb-3">
       <label for="chainscanApiKey" class="form-label">Etherscan/GnosisScan API key</label>
       <input type="text" class="form-control" id="chainscanApiKey" />

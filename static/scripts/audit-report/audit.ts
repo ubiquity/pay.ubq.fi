@@ -9,18 +9,24 @@ import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, Go
 
 const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
+
+enum ChainScan {
+  Ethereum = "etherscan.io",
+  Gnosis = "gnosisscan.io"
+}
+
+enum Chain {
+  Ethereum = "Ethereum",
+  Gnosis = "Gnosis"
+}
+
+let CHAIN: string = Chain.Ethereum
 let CHAINSCAN_API_KEY = "";
 let RPC_URL = "";
 let BOT_WALLET_ADDRESS = "";
 let GITHUB_PERSONAL_ACCESS_TOKEN = "";
 let OWNER_NAME = "";
 let REPOSITORY_NAME = "";
-
-enum ChainScan {
-  Ethereum = "https://etherscan.io",
-  Gnosis = "https://gnosisscan.io"
-}
-
 interface RateLimitOptions {
   method: string, url: string
 }
@@ -103,6 +109,25 @@ const getDataSchema = (storeHash: string) => {
 
   return schema;
 };
+
+// Access the container element
+var container = document.querySelector('.switches-container') as HTMLDivElement;
+
+// Get the radio inputs
+var radioInputs = container.querySelectorAll('input[type="radio"][name="switchChain"]') as NodeListOf<HTMLInputElement>;
+
+// Add event listeners to the radio inputs
+radioInputs.forEach(function(input, _) {
+  input.addEventListener('change', function() {
+    if (input.checked) {
+      CHAIN = input.value
+    }
+  });
+});
+
+const getChainScan = () => {
+  return CHAIN === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
+}
 
 const updateDB = async (storeHash: string) => {
   const schema = getDataSchema(storeHash);
@@ -218,7 +243,7 @@ class smartQueue {
         c: { amount },
       } = queueValue;
       const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
-      const tx_url = `https://etherscan.io/tx/${ether?.txHash}`;
+      const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
       const rows = `
         <tr>
             <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
@@ -458,7 +483,7 @@ const etherFetcher = async () => {
       clearInterval(etherIntervalID);
       try {
         const { data } = await axios.get(
-          `https://api.etherscan.io/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${CHAINSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
+          `https://api.${getChainScan()}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${CHAINSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
         );
         if (data.result.length > 0) {
           if (!lastEtherHash) {
@@ -577,7 +602,7 @@ const dbInit = async () => {
       if (tableData.length > 0) {
         for (let data of tableData) {
           const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${data.id}`;
-          const tx_url = `https://etherscan.io/tx/${data.tx}`;
+          const tx_url = `https://${getChainScan()}/tx/${data.tx}`;
           const rows = `
           <tr>
               <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
