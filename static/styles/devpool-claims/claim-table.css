@@ -16,7 +16,10 @@ main > div {
 }
 table {
   border-collapse: collapse;
-  min-width: calc(200vw / 3);
+  /* min-width: 480px; */
+  width: 100vw;
+  /* width: calc(200vw / 3); */
+  max-width: 640px;
   background-color: hsl(225 33% 4% / 1);
   /* backdrop-filter: blur(24px); */
   border: 1px solid hsl(225 33% 8% / 1);
