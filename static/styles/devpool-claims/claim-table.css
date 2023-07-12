@@ -57,7 +57,8 @@ table button {
 }
 table button div {
   text-transform: uppercase;
-  white-space: nowrap;
+  /* white-space: nowrap; */
+  word-break: break-all;
   text-rendering: geometricPrecision;
   color: #fff;
 }
@@ -70,7 +71,7 @@ table svg path {
   fill: currentColor;
 }
 table td div {
-  word-break: break-word;
+  word-break: break-all;
 }
 table th div {
   text-align: right;
@@ -86,7 +87,8 @@ table th {
 }
 table td div {
   /* width: calc(100vw - var(--left-table-column-width)); */
-  white-space: nowrap;
+  /* white-space: nowrap; */
+  word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -279,5 +281,9 @@ table[data-details-visible="false"] #additionalDetails svg.closer {
 }
 
 table .full {
+  /* word-break: break-all; */
+}
+
+td#owner>a{
   word-break: break-all;
 }
