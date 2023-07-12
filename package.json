@@ -7,7 +7,7 @@
     "start:ui": "tsx server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx esbuild.ts",
-    "utils:hash": "git rev-parse HEAD > static/commit.txt",
+    "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
     "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol"
   },
   "dependencies": {
