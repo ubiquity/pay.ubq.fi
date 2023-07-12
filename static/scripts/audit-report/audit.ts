@@ -21,6 +21,10 @@ enum ChainScan {
   Gnosis = "https://gnosisscan.io"
 }
 
+interface RateLimitOptions {
+  method: string, url: string
+}
+
 const botNodeId = "BOT_kgDOBr8EgA";
 const claimUrlRegExp = /https:\/\/pay\.ubq\.fi\?claim=[a-zA-Z0-9=]+/;
 const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
@@ -268,12 +272,12 @@ class QueueSet {
 const updateQueue = new smartQueue();
 const rpcQueue = new QueueSet();
 
-const primaryRateLimitHandler = (retryAfter, options) => {
+const primaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
   console.warn(`Request quota exhausted for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
 };
 
-const secondaryRateLimitHandler = (retryAfter, options) => {
+const secondaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
   console.warn(`Secondary quota detected for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
 };
@@ -288,10 +292,10 @@ const commentFetcher = async () => {
             auth: GITHUB_PERSONAL_ACCESS_TOKEN,
             throttle: {
               onRateLimit: (retryAfter, options) => {
-                return primaryRateLimitHandler(retryAfter, options);
+                return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
               },
               onSecondaryRateLimit: (retryAfter, options) => {
-                return secondaryRateLimitHandler(retryAfter, options);
+                return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
               },
             },
           });
@@ -395,10 +399,10 @@ const gitFetcher = async () => {
           auth: GITHUB_PERSONAL_ACCESS_TOKEN,
           throttle: {
             onRateLimit: (retryAfter, options) => {
-              return primaryRateLimitHandler(retryAfter, options);
+              return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
             },
             onSecondaryRateLimit: (retryAfter, options) => {
-              return secondaryRateLimitHandler(retryAfter, options);
+              return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
             },
           },
         });
