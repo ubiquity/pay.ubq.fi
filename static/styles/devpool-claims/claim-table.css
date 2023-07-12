@@ -290,3 +290,10 @@ table .full {
 td#owner > a {
   word-break: break-all;
 }
+
+table td {
+  padding-right: 16px;
+}
+table th {
+  padding-left: 16px;
+}
