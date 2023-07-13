@@ -31,6 +31,7 @@ interface RateLimitOptions {
   method: string, url: string
 }
 
+const urlRegex = /\((.*?)\)/;
 const botNodeId = "BOT_kgDOBr8EgA";
 const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
@@ -306,6 +307,15 @@ const secondaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions
   return true;
 };
 
+const isValidUrl = (urlString: string) => {
+    try { 
+      return Boolean(new URL(urlString)); 
+    }
+    catch(e){ 
+      return false; 
+    }
+}
+
 const commentFetcher = async () => {
   if (isComment) {
     const commentIntervalID = setInterval(async () => {
@@ -342,48 +352,51 @@ const commentFetcher = async () => {
           } else {
             let isFound = false;
             for (let comment of data) {
-              if(!comment.body) {
-                return; // there can't be an empty comment
-              }
-              // better way to handle url
-              const url = new URL(comment.body);
-              const params = new URLSearchParams(url.search);
-              const base64Payload = params.get("claim");
-              if (comment.user && comment.user.node_id === botNodeId && base64Payload) {
-                const {
-                  owner,
-                  signature,
-                  permit: {
-                    deadline,
-                    nonce,
-                    permitted: { amount, token },
-                  },
-                  transferDetails: { to },
-                } = JSON.parse(window.atob(base64Payload)) as TxData;
-                await updateQueue.add(signature, {
-                  k: signature,
-                  t: "git",
-                  c: {
-                    nonce,
-                    owner,
-                    token,
-                    amount,
-                    to,
-                    deadline,
-                    signature,
-                  },
-                  s: {
-                    git: {
-                      issue_title: issueList[0].title,
-                      issue_number: issueList[0].number,
-                      owner: OWNER_NAME,
-                      repo: REPOSITORY_NAME,
-                    },
-                    ether: undefined,
-                  },
-                });
-                isFound = true;
-                break;
+              if(comment.user && comment.user.node_id === botNodeId && comment.body) {
+                const match = comment.body.match(urlRegex);
+                if (match && isValidUrl(match[1])) {
+                  const url = new URL(match[1]);
+                  const params = new URLSearchParams(url.search);
+                  const base64Payload = params.get("claim");
+                  if (base64Payload) {
+                    const {
+                      owner,
+                      signature,
+                      permit: {
+                        deadline,
+                        nonce,
+                        permitted: { amount, token },
+                      },
+                      transferDetails: { to },
+                    } = JSON.parse(window.atob(base64Payload)) as TxData;
+                    await updateQueue.add(signature, {
+                      k: signature,
+                      t: "git",
+                      c: {
+                        nonce,
+                        owner,
+                        token,
+                        amount,
+                        to,
+                        deadline,
+                        signature,
+                      },
+                      s: {
+                        git: {
+                          issue_title: issueList[0].title,
+                          issue_number: issueList[0].number,
+                          owner: OWNER_NAME,
+                          repo: REPOSITORY_NAME,
+                        },
+                        ether: undefined,
+                      },
+                    });
+                    isFound = true;
+                    break;
+                  }
+                } else {
+                  console.log('URL not found, skipping');
+                }
               }
             }
 
