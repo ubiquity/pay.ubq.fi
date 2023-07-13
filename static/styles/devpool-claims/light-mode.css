@@ -1,0 +1,74 @@
+:root {
+  --light-mode-background-color-default-brightness: calc(100% - var(--background-color-default-brightness));
+  --light-mode-background-color-dark-brightness: calc(100% - var(--background-color-light-brightness));
+
+  --light-mode-background-color-default: hsl(225 0% var(--light-mode-background-color-default-brightness) / 1);
+  --light-mode-background-color-dark: hsl(225 0% var(--light-mode-background-color-dark-brightness) / 1);
+
+  --light-mode-border-color: hsl(225 0% calc(100% - var(--border-brightness)) / 1);
+}
+@media (prefers-color-scheme: light) {
+  background {
+    /* dark mode styles */
+    background-color: #fff;
+    color: #000;
+  }
+
+  table a:hover > div {
+    color: #000;
+  }
+
+  #transferDetails\.requestedAmount > a {
+    color: #000;
+  }
+
+  table svg path {
+    fill: #000;
+  }
+
+  #logo-icon > svg {
+    fill: #000;
+  }
+
+  #logo > div#logo-text > span {
+    color: #000;
+  }
+
+  table button div {
+    color: #000;
+  }
+
+  table a:hover,
+  table a:hover > div {
+    color: #000;
+  }
+
+  div#build > a {
+    color: #000;
+  }
+  #transferDetails\.to div {
+    color: #000;
+  }
+  html {
+    background-color: #fff;
+  }
+  #grid {
+    opacity: 0.25;
+  }
+
+  table {
+    background-color: var(--light-mode-background-color-default);
+    border: 1px solid var(--light-mode-border-color);
+  }
+
+  table[data-claim-rendered] tr#additional-details-border {
+    background-color: var(--light-mode-background-color-dark);
+  }
+  table[data-details-visible="true"] #additional-details-border ~ tr {
+    background-color: var(--light-mode-background-color-dark);
+  }
+  .notifications .toast {
+    border: 1px solid var(--light-mode-border-color);
+    background-color: var(--light-mode-background-color-default);
+  }
+}

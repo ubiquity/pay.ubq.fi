@@ -1,0 +1,131 @@
+* {
+  -webkit-text-size-adjust: 100%;
+  font-family: "Ubiquity Nova", FT Base, -apple-system, system-ui, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+a {
+  color: #808080;
+}
+
+body {
+  /* min-height: 100vh; */
+  /* height: calc(100 * var(--vh)); */
+}
+
+body,
+main {
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+main {
+  width: 100vw;
+  position: relative;
+}
+
+a {
+  text-decoration: none;
+}
+
+#logo a {
+  display: block;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  flex-direction: row;
+}
+
+#logo {
+  letter-spacing: 2px;
+  padding: 48px 0;
+  -ms-flex-pack: justify;
+  -ms-flex-align: center;
+  line-height: 1;
+  text-align: center;
+}
+
+#logo > #logo-icon {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 4px;
+  text-rendering: geometricPrecision;
+  /* color: #fff; */
+}
+
+#logo-icon > svg {
+  height: 36px;
+  display: block;
+  margin: 0;
+  width: 36px;
+  padding: 0;
+  margin-right: 10px;
+  fill: #fff;
+}
+
+#logo > div#logo-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#logo > div#logo-text > span {
+  font-size: 20px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-rendering: geometricPrecision;
+  color: #fff;
+  /* font-weight: 400; */
+}
+
+div#build {
+  /* bottom: 48px; */
+  padding: 48px 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-rendering: geometricPrecision;
+  /* font-weight: 100; */
+  /* width: 48px; */
+  margin: auto;
+}
+
+div#build > a {
+  opacity: 0.25;
+  font-size: 12px;
+  color: #fff;
+}
+
+div#build > a:hover {
+  opacity: 1;
+}
+header a #logo {
+  opacity: 0.5;
+}
+header a:hover #logo {
+  opacity: 1;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* adjust this according to your needs */
+}
+
+header {
+  /* height: 140px; */
+  /* width: 100%; */
+}
+
+footer {
+  /* height: 108px; */
+  /* width: 100%; */
+  /* padding-bottom: env(safe-area-inset-bottom); */
+}

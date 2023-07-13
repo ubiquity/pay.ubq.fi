@@ -1,0 +1,21 @@
+background,
+background #grid {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+html,
+background {
+  background-color: #000410;
+}
+
+background #grid {
+  -webkit-mask-image: radial-gradient(#00000020 0, #00000080 100%);
+  mask-image: radial-gradient(#00000020 0, #00000080 100%);
+  /* opacity: 1; */
+  pointer-events: none;
+  /* background-image: url(../../media/grid-1.png); */
+  /* background-repeat: repeat; */
+}
