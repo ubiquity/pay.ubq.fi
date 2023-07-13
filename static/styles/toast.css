@@ -1,8 +1,8 @@
 :root {
-  --toast-success: #408040;
-  --toast-error: #804040;
-  --toast-warning: #808040;
-  --toast-info: #808080;
+  --toast-success: hsl(120, 50%, 50%);
+  --toast-error: hsl(0, 50%, 50%);
+  --toast-warning: hsl(60, 50%, 50%);
+  --toast-info: hsl(0, 0%, 50%);
 }
 
 .fa-circle-check {
@@ -38,10 +38,10 @@
   justify-content: space-between;
   animation: show_toast 0.5s ease-in-out;
   /* border: 1px solid #80808020; */
-  border: 1px solid hsl(225 50% 8% / 1);
+  border: 1px solid var(--border-color);
   /* backdrop-filter: blur(24px); */
   /* -webkit-backdrop-filter: blur(24px); */
-  background-color: hsl(225 50% 4% / 1);
+  background-color: var(--background-color-default);
 }
 
 @keyframes show_toast {
@@ -130,11 +130,11 @@
 }
 
 .toast i:last-child {
-  color: #aeb0d7;
+  color: #80808080;
   cursor: pointer;
   margin-left: 12px;
 }
 
 .toast i:last-child:hover {
-  filter: invert(1);
+  color: #808080;
 }
