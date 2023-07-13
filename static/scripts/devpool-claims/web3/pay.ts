@@ -3,7 +3,7 @@ import { networkNames, getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
-import { ErrorHandler, claimButton, controls, createToast, loadingClaimButton, resetClaimButton } from "../toaster";
+import { errorToast, claimButton, toast, loadingClaimButton, resetClaimButton } from "../toaster";
 import { checkPermitClaimable } from "./check-permit-claimable";
 import { connectWallet } from "./connect-wallet";
 import { fetchTreasury } from "./fetch-treasury";
@@ -24,17 +24,19 @@ export async function pay(): Promise<void> {
     table.setAttribute(`data-details-visible`, detailsVisible.toString());
   });
 
-  fetchTreasury().then(renderTreasuryStatus).catch(ErrorHandler);
+  fetchTreasury().then(renderTreasuryStatus).catch(errorToast);
 
   const signer = await connectWallet();
   const signerAddress = await signer?.getAddress();
 
   // check if permit is already claimed
-  checkPermitClaimable().then(curryPermitClaimableHandler(table, signerAddress, signer)).catch(ErrorHandler);
+  checkPermitClaimable()
+    .then((claimable: boolean) => curryPermitClaimableHandler(claimable, table, signerAddress, signer))
+    .catch(errorToast);
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
-    createToast("error", "Please connect to MetaMask.");
+    toast.create("error", "Please connect to MetaMask.");
     loadingClaimButton(false);
     invalidateButton.disabled = true;
   }
@@ -47,7 +49,7 @@ export async function pay(): Promise<void> {
   // if its not on ethereum mainnet, gnosis, or goerli, display error
   notOnCorrectNetwork(currentNetworkId, web3provider);
 
-  claimButton.addEventListener("click", curryClaimButtonHandler(signer));
+  claimButton.element.addEventListener("click", curryClaimButtonHandler(signer));
 }
 
 function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {
@@ -57,9 +59,9 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
     }
     const networkName = getNetworkName(app.claimNetworkId);
     if (!networkName) {
-      createToast("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
+      toast.create("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
     } else {
-      createToast("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
+      toast.create("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     loadingClaimButton(false);
     invalidateButton.disabled = true;
@@ -90,7 +92,7 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
       loadingClaimButton();
 
       const { balance, allowance, decimals } = await fetchTreasury();
-      renderTreasuryStatus({ balance, allowance, decimals }).catch(ErrorHandler);
+      renderTreasuryStatus({ balance, allowance, decimals }).catch(errorToast);
       let errorMessage: string | undefined = undefined;
       const permitted = Number(app.txData.permit.permitted.amount);
       // const _balance = Number(balance.toString()) / 1e18;
@@ -102,28 +104,29 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
       const user = (await signer.getAddress()).toLowerCase();
 
       if (beneficiary !== user) {
-        createToast("warning", `This reward is not for you.`);
+        toast.create("warning", `This reward is not for you.`);
         resetClaimButton();
       } else if (!solvent) {
-        createToast("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
+        toast.create("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
         resetClaimButton();
       } else if (!allowed) {
-        createToast("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
+        toast.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
         resetClaimButton();
       } else {
         await withdraw(signer, app.txData, errorMessage);
       }
     } catch (error: unknown) {
-      ErrorHandler(error, "");
+      errorToast(error, "");
       resetClaimButton();
     }
   };
 }
 
-function curryPermitClaimableHandler(table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
-  return function checkPermitClaimableHandler(claimable: boolean) {
+function curryPermitClaimableHandler(claimable: boolean, table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
+  // return function checkPermitClaimableHandler() {
+    console.trace(arguments);
     if (!claimable) {
-      setClaimMessage({ type: "Error", message: `Permit is not claimable.` });
+      setClaimMessage({ type: "Notice", message: `Permit is not claimable` });
       table.setAttribute(`data-claim`, "none");
     } else {
       if (signerAddress?.toLowerCase() === app.txData.owner.toLowerCase()) {
@@ -131,9 +134,10 @@ function curryPermitClaimableHandler(table: HTMLTableElement, signerAddress?: st
       }
     }
     return signer;
-  };
+  // };
 }
 function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcSigner | null) {
+  const controls = document.getElementById("controls") as HTMLDivElement;
   controls.appendChild(invalidateButton);
 
   invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
@@ -146,9 +150,9 @@ function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcS
     try {
       await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
     } catch (error: any) {
-      createToast("error", `${error.reason ?? error.message ?? "Unknown error"}`);
+      toast.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
       return;
     }
-    createToast("success", "Nonce invalidated!");
+    toast.create("success", "Nonce invalidated!");
   });
 }

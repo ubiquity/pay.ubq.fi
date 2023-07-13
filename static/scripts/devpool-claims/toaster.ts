@@ -1,20 +1,28 @@
-export const claimButton = document.getElementById("claimButton") as HTMLButtonElement;
-export const controls = document.getElementById("controls") as HTMLDivElement;
+export const toast = {
+  create: createToast,
+  error: errorToast,
+  icons: {
+    success: "fa-circle-check",
+    error: "fa-circle-xmark",
+    warning: "fa-triangle-exclamation",
+    info: "fa-circle-info",
+  },
+};
+
+export const claimButton = {
+  loading: loadingClaimButton,
+  reset: resetClaimButton,
+  element: document.getElementById("claimButton") as HTMLButtonElement,
+};
+
+const _toastIcons = toast.icons;
+
 
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
-const claimIcon = document.querySelector(".claim-icon") as SVGElement;
-const claimLoader = document.querySelector(".claim-loader") as SVGElement;
 
 // Object containing details for different types of toasts
 
-const toastIcons = {
-  success: "fa-circle-check",
-  error: "fa-circle-xmark",
-  warning: "fa-triangle-exclamation",
-  info: "fa-circle-info",
-};
-
-export function createToast(icon: keyof typeof toastIcons, text: string) {
+export function createToast(icon: keyof typeof _toastIcons, text: string) {
   const toastDetails = {
     timer: 5000,
     // timeoutId: null,
@@ -23,7 +31,7 @@ export function createToast(icon: keyof typeof toastIcons, text: string) {
     timeoutId?: NodeJS.Timeout;
   };
   // Getting the icon and text for the toast based on the id passed
-  const _icon = toastIcons[icon];
+  const _icon = _toastIcons[icon];
   const toast = document.createElement("li"); // Creating a new 'li' element for the toast
   toast.className = `toast .${_icon} ${icon}`; // Setting the classes for the toast
 
@@ -51,29 +59,29 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
 }
 
 export function loadingClaimButton(triggerLoader = true) {
-  claimButton.disabled = true;
+  claimButton.element.disabled = true;
   // Adding this because not all disabling should trigger loading spinner
   if (triggerLoader) {
-    claimButton.classList.add("show-cl");
-    claimButton.classList.remove("hide-cl");
+    claimButton.element.classList.add("show-cl");
+    claimButton.element.classList.remove("hide-cl");
   }
 }
 
 export function resetClaimButton() {
-  claimButton.disabled = false;
-  claimButton.classList.add("hide-cl");
-  claimButton.classList.remove("show-cl");
+  claimButton.element.disabled = false;
+  claimButton.element.classList.add("hide-cl");
+  claimButton.element.classList.remove("show-cl");
 }
 
-export function ErrorHandler(error: any, errorMessage?: string) {
+export function errorToast(error: any, errorMessage?: string) {
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
   if (errorMessage) {
-    createToast("error", errorMessage);
+    toast.create("error", errorMessage);
   } else if (error?.reason) {
     // parse error data to get error message
     const parsedError = JSON.parse(ErrorData);
     const _errorMessage = parsedError?.error?.message ?? parsedError?.reason;
-    createToast("error", _errorMessage);
+    toast.create("error", _errorMessage);
   }
 }
