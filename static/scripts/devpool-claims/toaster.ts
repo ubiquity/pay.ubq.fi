@@ -1,4 +1,4 @@
-export const toast = {
+export const toaster = {
   create: createToast,
   error: errorToast,
   icons: {
@@ -15,39 +15,33 @@ export const claimButton = {
   element: document.getElementById("claimButton") as HTMLButtonElement,
 };
 
-const _toastIcons = toast.icons;
-
-
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
 
-// Object containing details for different types of toasts
-
-export function createToast(icon: keyof typeof _toastIcons, text: string) {
+export function createToast(meaning: keyof typeof toaster.icons, text: string) {
   const toastDetails = {
     timer: 5000,
-    // timeoutId: null,
   } as {
     timer: number;
     timeoutId?: NodeJS.Timeout;
   };
   // Getting the icon and text for the toast based on the id passed
-  const _icon = _toastIcons[icon];
-  const toast = document.createElement("li"); // Creating a new 'li' element for the toast
-  toast.className = `toast .${_icon} ${icon}`; // Setting the classes for the toast
+  const _icon = toaster.icons[meaning];
+  const toastContent = document.createElement("li"); // Creating a new 'li' element for the toast
+  toastContent.className = `toast .${_icon} ${meaning}`; // Setting the classes for the toast
 
   // Setting the inner HTML for the toast
-  toast.innerHTML = `<div class="column"><i class="fa-solid ${_icon}"></i><span>${text}</span></div>`;
+  toastContent.innerHTML = `<div class="column"><i class="fa-solid ${_icon}"></i><span>${text}</span></div>`;
 
   // attaching a click event listener to the toast to remove it when the close icon is clicked
   const i = document.createElement("i");
   i.className = "fa-solid fa-xmark";
-  i.onclick = () => removeToast(toast, toastDetails.timeoutId);
-  toast.appendChild(i);
+  i.onclick = () => removeToast(toastContent, toastDetails.timeoutId);
+  toastContent.appendChild(i);
 
-  notifications.appendChild(toast); // Append the toast to the notification ul
+  notifications.appendChild(toastContent); // Append the toast to the notification ul
 
   // Setting a timeout to remove the toast after the specified duration
-  toastDetails.timeoutId = setTimeout(() => removeToast(toast, toastDetails.timeoutId), toastDetails.timer);
+  toastDetails.timeoutId = setTimeout(() => removeToast(toastContent, toastDetails.timeoutId), toastDetails.timer);
 }
 
 function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
@@ -77,11 +71,11 @@ export function errorToast(error: any, errorMessage?: string) {
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
   if (errorMessage) {
-    toast.create("error", errorMessage);
+    toaster.create("error", errorMessage);
   } else if (error?.reason) {
     // parse error data to get error message
     const parsedError = JSON.parse(ErrorData);
     const _errorMessage = parsedError?.error?.message ?? parsedError?.reason;
-    toast.create("error", _errorMessage);
+    toaster.create("error", _errorMessage);
   }
 }
