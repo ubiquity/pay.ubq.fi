@@ -19,5 +19,5 @@ export async function checkPermitClaimable() {
 
   const bit = BigNumber.from(1).shl(bitPos).and(bitmap);
 
-  return !bit.eq(0);
+  return bit.eq(0);
 }
