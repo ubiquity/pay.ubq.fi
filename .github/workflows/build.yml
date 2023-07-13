@@ -30,7 +30,7 @@ jobs:
         run: yarn utils:build
 
       - name: Add commit SHA file to build folder
-        run: echo -n ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }} > static/commit.txt
+        run: echo -n $(echo "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" | cut -c1-7) > static/commit.txt
 
       - name: Archive build
         uses: actions/upload-artifact@v3
