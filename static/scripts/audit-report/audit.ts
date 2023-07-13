@@ -32,7 +32,6 @@ interface RateLimitOptions {
 }
 
 const botNodeId = "BOT_kgDOBr8EgA";
-const claimUrlRegExp = /https:\/\/pay\.ubq\.fi\?claim=[a-zA-Z0-9=]+/;
 const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
 const getReportElem = document.querySelector("#getReport") as HTMLButtonElement;
@@ -343,8 +342,14 @@ const commentFetcher = async () => {
           } else {
             let isFound = false;
             for (let comment of data) {
-              if (comment.user && comment.user.node_id === botNodeId && comment.body && claimUrlRegExp.test(comment.body)) {
-                const base64Payload = comment.body.match(claimUrlRegExp)![0].replace("https://pay.ubq.fi?claim=", "");
+              if(!comment.body) {
+                return; // there can't be an empty comment
+              }
+              // better way to handle url
+              const url = new URL(comment.body);
+              const params = new URLSearchParams(url.search);
+              const base64Payload = params.get("claim");
+              if (comment.user && comment.user.node_id === botNodeId && base64Payload) {
                 const {
                   owner,
                   signature,
