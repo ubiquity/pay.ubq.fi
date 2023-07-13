@@ -31,7 +31,7 @@ export async function pay(): Promise<void> {
 
   // check if permit is already claimed
   checkPermitClaimable()
-    .then((claimable: boolean) => curryPermitClaimableHandler(claimable, table, signerAddress, signer))
+    .then((claimable: boolean) => checkPermitClaimableHandler(claimable, table, signerAddress, signer))
     .catch(errorToast);
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -95,9 +95,6 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
       renderTreasuryStatus({ balance, allowance, decimals }).catch(errorToast);
       let errorMessage: string | undefined = undefined;
       const permitted = Number(app.txData.permit.permitted.amount);
-      // const _balance = Number(balance.toString()) / 1e18;
-      // const _permitted = permitted / 1e18;
-      // const _allowance = Number(allowance.toString()) / 1e18;
       const solvent = balance >= permitted;
       const allowed = allowance >= permitted;
       const beneficiary = app.txData.transferDetails.to.toLowerCase();
@@ -122,20 +119,18 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
   };
 }
 
-function curryPermitClaimableHandler(claimable: boolean, table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
-  // return function checkPermitClaimableHandler() {
-    console.trace(arguments);
-    if (!claimable) {
-      setClaimMessage({ type: "Notice", message: `This permit is not claimable` });
-      table.setAttribute(`data-claim`, "none");
-    } else {
-      if (signerAddress?.toLowerCase() === app.txData.owner.toLowerCase()) {
-        generateInvalidatePermitAdminControl(signer);
-      }
+function checkPermitClaimableHandler(claimable: boolean, table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
+  if (!claimable) {
+    setClaimMessage({ type: "Notice", message: `This permit is not claimable` });
+    table.setAttribute(`data-claim`, "none");
+  } else {
+    if (signerAddress?.toLowerCase() === app.txData.owner.toLowerCase()) {
+      generateInvalidatePermitAdminControl(signer);
     }
-    return signer;
-  // };
+  }
+  return signer;
 }
+
 function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcSigner | null) {
   const controls = document.getElementById("controls") as HTMLDivElement;
   controls.appendChild(invalidateButton);
