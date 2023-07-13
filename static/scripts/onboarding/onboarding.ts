@@ -6,8 +6,8 @@ import { ethers } from "ethers";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 import { JsonRpcSigner, Network } from "@ethersproject/providers";
 import { parseUnits } from "ethers/lib/utils";
-import { NetworkIds, Tokens, getNetworkName, networkNames } from "../devpool-claims/constants";
-import { daiAbi } from "../devpool-claims/abis/daiAbi";
+import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
+import { daiAbi } from "../rewards/abis/daiAbi";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
