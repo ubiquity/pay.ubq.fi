@@ -242,21 +242,25 @@ class smartQueue {
         s: { ether, git },
         c: { amount },
       } = queueValue;
-      const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
-      const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
-      const rows = `
-        <tr>
-            <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-            <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
-        </tr>`;
-      elemList.push({
-        id: git?.issue_number!,
-        tx: ether?.txHash!,
-        amount: ethers.utils.formatEther(amount)!,
-        title: git?.issue_title!,
-      });
 
-      resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      // check for undefined
+      if(git?.issue_number) {
+        const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
+        const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
+        const rows = `
+          <tr>
+              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
+          </tr>`;
+        elemList.push({
+          id: git?.issue_number!,
+          tx: ether?.txHash!,
+          amount: ethers.utils.formatEther(amount)!,
+          title: git?.issue_title!,
+        });
+
+        resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      }
       this.queue.delete(key);
     } else {
       this.queue.set(key, value);
