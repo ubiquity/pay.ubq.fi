@@ -320,6 +320,15 @@ const isValidUrl = (urlString: string) => {
     }
 }
 
+function getCurrency(comment: string) {
+  if (comment.includes('WXDAI')) {
+    return Chain.Gnosis;
+  } else if (comment.includes('DAI')) {
+    return Chain.Ethereum;
+  }
+  return null;
+}
+
 const commentFetcher = async () => {
   if (isComment) {
     const commentIntervalID = setInterval(async () => {
@@ -362,7 +371,8 @@ const commentFetcher = async () => {
                   const url = new URL(match[1]);
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
-                  if (base64Payload) {
+                  let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+                  if (base64Payload && (network === CHAIN)) {
                     const {
                       owner,
                       signature,
