@@ -6,19 +6,19 @@ import { ethers } from "ethers";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 import { JsonRpcSigner, Network } from "@ethersproject/providers";
 import { parseUnits } from "ethers/lib/utils";
-import { NetworkIds, Tokens, getNetworkName, networkNames } from "../devpool-claims/constants";
-import { daiAbi } from "../devpool-claims/abis/daiAbi";
+import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
+import { daiAbi } from "../rewards/abis/daiAbi";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
-const outKey = document.querySelector("#outKey") as HTMLInputElement;
-const githubPAT = document.querySelector("#githubPat") as HTMLInputElement;
-const orgName = document.querySelector("#orgName") as HTMLInputElement;
-const walletPrivateKey = document.querySelector("#walletPrivateKey") as HTMLInputElement;
-const safeAddressInput = document.querySelector("#safeAddress") as HTMLInputElement;
-const setBtn = document.querySelector("#setBtn") as HTMLButtonElement;
-const allowanceInput = document.querySelector("#allowance") as HTMLInputElement;
-const chainIdSelect = document.querySelector("#chainId") as HTMLSelectElement;
+const outKey = document.getElementById("outKey") as HTMLInputElement;
+const githubPAT = document.getElementById("githubPat") as HTMLInputElement;
+const orgName = document.getElementById("orgName") as HTMLInputElement;
+const walletPrivateKey = document.getElementById("walletPrivateKey") as HTMLInputElement;
+const safeAddressInput = document.getElementById("safeAddress") as HTMLInputElement;
+const setBtn = document.getElementById("setBtn") as HTMLButtonElement;
+const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
+const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
@@ -185,7 +185,7 @@ const classListToggle = (targetElem: HTMLElement, target: "error" | "warn" | "su
 
 const statusToggle = (type: "error" | "warn" | "success", message: string) => {
   resetToggle();
-  const statusKey = document.querySelector("#statusKey") as HTMLInputElement;
+  const statusKey = document.getElementById("statusKey") as HTMLInputElement;
   classListToggle(statusKey, type);
   statusKey.value = message;
 };
@@ -364,7 +364,7 @@ const nextStep = async () => {
   const configChainId = Number(chainIdSelect.value);
   const configChainIdHex = `0x${configChainId.toString(16)}`;
 
-  const tokenNameSpan = document.querySelector("#allowance + span");
+  const tokenNameSpan = document.getElementById("allowance + span");
   if (tokenNameSpan) {
     if (configChainIdHex === NetworkIds.Mainnet) {
       tokenNameSpan.innerHTML = "DAI";

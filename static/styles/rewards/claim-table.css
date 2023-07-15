@@ -149,13 +149,14 @@ table[data-claim-rendered] button:disabled > svg.claim-icon {
 }
 table[data-claim-rendered] button:hover > div {
   display: unset;
+  color: #fff;
 }
 table[data-claim-rendered] button:hover > svg {
   display: none !important;
 }
 table[data-claim-rendered] button#additionalDetails {
   width: 100%;
-  color: #808080;
+  color: #fff;
   /* opacity: 0.25; */
 }
 table[data-claim-rendered] button#additionalDetails:hover {

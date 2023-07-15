@@ -1,11 +1,11 @@
 import esbuild from "esbuild";
 const typescriptEntries = [
-  "static/scripts/devpool-claims/index.ts",
+  "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
   "static/scripts/onboarding/onboarding.ts",
   "static/scripts/key-generator/keygen.ts",
 ];
-const CSSEntries = ["static/styles/devpool-claims/devpool-claims.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
+const CSSEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
 export const entries = [...typescriptEntries, ...CSSEntries];
 
 export let esBuildContext = {

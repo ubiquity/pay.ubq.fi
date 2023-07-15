@@ -37,6 +37,9 @@
   table button div {
     color: #000;
   }
+  table[data-claim-rendered] button:hover > div {
+    color: #000;
+  }
 
   table a:hover,
   table a:hover > div {

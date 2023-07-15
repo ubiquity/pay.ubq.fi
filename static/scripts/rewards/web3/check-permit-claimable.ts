@@ -5,17 +5,19 @@ import { app } from "../render-transaction/index";
 import { nonceBitmap } from "./nonce-bitmap";
 
 export async function checkPermitClaimable() {
-  // get tx from window
-  let tx = app.txData;
-
   // Set contract address and ABI
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[app.claimNetworkId]);
+  const networkId = app.claimNetworkId;
+  if (!networkId) {
+    throw new Error("No network ID provided");
+  }
+
+  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[networkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(tx.permit.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.txData.permit.nonce));
   const bitmap = await permit2Contract.nonceBitmap(app.txData.owner, wordPos);
-  const bit = BigNumber.from(1)
-    .shl(bitPos - 1)
-    .and(bitmap);
+
+  const bit = BigNumber.from(1).shl(bitPos).and(bitmap);
+
   return bit.eq(0);
 }
