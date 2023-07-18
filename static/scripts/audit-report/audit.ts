@@ -200,7 +200,7 @@ class QueueObserver {
   }
 
   private databaseCallback() {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
     updateDB(storeHash);
   }
 
@@ -372,6 +372,7 @@ const commentFetcher = async () => {
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
                   let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+                  console.log(comment.body, url, issueList[0], network, CHAIN)
                   if (base64Payload && (network === CHAIN)) {
                     const {
                       owner,
@@ -621,7 +622,7 @@ const rpcFetcher = async () => {
 
 const dbInit = async () => {
   if (isCache) {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
     const metaData = await readMeta(storeHash);
 
     if (metaData !== undefined) {
