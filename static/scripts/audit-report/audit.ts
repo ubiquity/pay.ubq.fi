@@ -9,15 +9,30 @@ import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, Go
 
 const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
-let ETHERSCAN_API_KEY = "";
+
+enum ChainScan {
+  Ethereum = "etherscan.io",
+  Gnosis = "gnosisscan.io"
+}
+
+enum Chain {
+  Ethereum = "Ethereum",
+  Gnosis = "Gnosis"
+}
+
+let CHAIN: string = Chain.Ethereum
+let CHAINSCAN_API_KEY = "";
 let RPC_URL = "";
 let BOT_WALLET_ADDRESS = "";
 let GITHUB_PERSONAL_ACCESS_TOKEN = "";
 let OWNER_NAME = "";
 let REPOSITORY_NAME = "";
+interface RateLimitOptions {
+  method: string, url: string
+}
 
+const urlRegex = /\((.*?)\)/;
 const botNodeId = "BOT_kgDOBr8EgA";
-const claimUrlRegExp = /https:\/\/pay\.ubq\.fi\?claim=[a-zA-Z0-9=]+/;
 const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
 const getReportElem = document.querySelector("#getReport") as HTMLButtonElement;
@@ -95,6 +110,25 @@ const getDataSchema = (storeHash: string) => {
   return schema;
 };
 
+// Access the container element
+var container = document.querySelector('.switches-container') as HTMLDivElement;
+
+// Get the radio inputs
+var radioInputs = container.querySelectorAll('input[type="radio"][name="switchChain"]') as NodeListOf<HTMLInputElement>;
+
+// Add event listeners to the radio inputs
+radioInputs.forEach(function(input, _) {
+  input.addEventListener('change', function() {
+    if (input.checked) {
+      CHAIN = input.value
+    }
+  });
+});
+
+const getChainScan = () => {
+  return CHAIN === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
+}
+
 const updateDB = async (storeHash: string) => {
   const schema = getDataSchema(storeHash);
   const cacheDB = new GoDB(DatabaseName, schema);
@@ -166,7 +200,7 @@ class QueueObserver {
   }
 
   private databaseCallback() {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
     updateDB(storeHash);
   }
 
@@ -208,21 +242,25 @@ class smartQueue {
         s: { ether, git },
         c: { amount },
       } = queueValue;
-      const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
-      const tx_url = `https://etherscan.io/tx/${ether?.txHash}`;
-      const rows = `
-        <tr>
-            <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-            <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
-        </tr>`;
-      elemList.push({
-        id: git?.issue_number!,
-        tx: ether?.txHash!,
-        amount: ethers.utils.formatEther(amount)!,
-        title: git?.issue_title!,
-      });
 
-      resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      // check for undefined
+      if(git?.issue_number) {
+        const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
+        const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
+        const rows = `
+          <tr>
+              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
+          </tr>`;
+        elemList.push({
+          id: git?.issue_number!,
+          tx: ether?.txHash!,
+          amount: ethers.utils.formatEther(amount)!,
+          title: git?.issue_title!,
+        });
+
+        resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      }
       this.queue.delete(key);
     } else {
       this.queue.set(key, value);
@@ -263,15 +301,33 @@ class QueueSet {
 const updateQueue = new smartQueue();
 const rpcQueue = new QueueSet();
 
-const primaryRateLimitHandler = (retryAfter, options) => {
+const primaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
   console.warn(`Request quota exhausted for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
 };
 
-const secondaryRateLimitHandler = (retryAfter, options) => {
+const secondaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
   console.warn(`Secondary quota detected for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
 };
+
+const isValidUrl = (urlString: string) => {
+    try { 
+      return Boolean(new URL(urlString)); 
+    }
+    catch(e){ 
+      return false; 
+    }
+}
+
+function getCurrency(comment: string) {
+  if (comment.includes('WXDAI')) {
+    return Chain.Gnosis;
+  } else if (comment.includes('DAI')) {
+    return Chain.Ethereum;
+  }
+  return null;
+}
 
 const commentFetcher = async () => {
   if (isComment) {
@@ -283,10 +339,10 @@ const commentFetcher = async () => {
             auth: GITHUB_PERSONAL_ACCESS_TOKEN,
             throttle: {
               onRateLimit: (retryAfter, options) => {
-                return primaryRateLimitHandler(retryAfter, options);
+                return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
               },
               onSecondaryRateLimit: (retryAfter, options) => {
-                return secondaryRateLimitHandler(retryAfter, options);
+                return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
               },
             },
           });
@@ -309,42 +365,53 @@ const commentFetcher = async () => {
           } else {
             let isFound = false;
             for (let comment of data) {
-              if (comment.user && comment.user.node_id === botNodeId && comment.body && claimUrlRegExp.test(comment.body)) {
-                const base64Payload = comment.body.match(claimUrlRegExp)![0].replace("https://pay.ubq.fi?claim=", "");
-                const {
-                  owner,
-                  signature,
-                  permit: {
-                    deadline,
-                    nonce,
-                    permitted: { amount, token },
-                  },
-                  transferDetails: { to },
-                } = JSON.parse(window.atob(base64Payload)) as TxData;
-                await updateQueue.add(signature, {
-                  k: signature,
-                  t: "git",
-                  c: {
-                    nonce,
-                    owner,
-                    token,
-                    amount,
-                    to,
-                    deadline,
-                    signature,
-                  },
-                  s: {
-                    git: {
-                      issue_title: issueList[0].title,
-                      issue_number: issueList[0].number,
-                      owner: OWNER_NAME,
-                      repo: REPOSITORY_NAME,
-                    },
-                    ether: undefined,
-                  },
-                });
-                isFound = true;
-                break;
+              if(comment.user && comment.user.node_id === botNodeId && comment.body) {
+                const match = comment.body.match(urlRegex);
+                if (match && isValidUrl(match[1])) {
+                  const url = new URL(match[1]);
+                  const params = new URLSearchParams(url.search);
+                  const base64Payload = params.get("claim");
+                  let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+                  console.log(comment.body, url, issueList[0], network, CHAIN)
+                  if (base64Payload && (network === CHAIN)) {
+                    const {
+                      owner,
+                      signature,
+                      permit: {
+                        deadline,
+                        nonce,
+                        permitted: { amount, token },
+                      },
+                      transferDetails: { to },
+                    } = JSON.parse(window.atob(base64Payload)) as TxData;
+                    await updateQueue.add(signature, {
+                      k: signature,
+                      t: "git",
+                      c: {
+                        nonce,
+                        owner,
+                        token,
+                        amount,
+                        to,
+                        deadline,
+                        signature,
+                      },
+                      s: {
+                        git: {
+                          issue_title: issueList[0].title,
+                          issue_number: issueList[0].number,
+                          owner: OWNER_NAME,
+                          repo: REPOSITORY_NAME,
+                        },
+                        ether: undefined,
+                      },
+                    });
+                    isFound = true;
+                    break;
+                  }
+                } else {
+                  console.log('URL not found, skipping');
+                }
               }
             }
 
@@ -390,10 +457,10 @@ const gitFetcher = async () => {
           auth: GITHUB_PERSONAL_ACCESS_TOKEN,
           throttle: {
             onRateLimit: (retryAfter, options) => {
-              return primaryRateLimitHandler(retryAfter, options);
+              return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
             },
             onSecondaryRateLimit: (retryAfter, options) => {
-              return secondaryRateLimitHandler(retryAfter, options);
+              return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
             },
           },
         });
@@ -449,7 +516,7 @@ const etherFetcher = async () => {
       clearInterval(etherIntervalID);
       try {
         const { data } = await axios.get(
-          `https://api.etherscan.io/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${ETHERSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
+          `https://api.${getChainScan()}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${CHAINSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
         );
         if (data.result.length > 0) {
           if (!lastEtherHash) {
@@ -555,7 +622,7 @@ const rpcFetcher = async () => {
 
 const dbInit = async () => {
   if (isCache) {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
     const metaData = await readMeta(storeHash);
 
     if (metaData !== undefined) {
@@ -568,7 +635,7 @@ const dbInit = async () => {
       if (tableData.length > 0) {
         for (let data of tableData) {
           const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${data.id}`;
-          const tx_url = `https://etherscan.io/tx/${data.tx}`;
+          const tx_url = `https://${getChainScan()}/tx/${data.tx}`;
           const rows = `
           <tr>
               <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
@@ -617,15 +684,16 @@ const auditInit = () => {
     resultTableTbodyElem.innerHTML = "";
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
-      const { API, RPC, WALLET, PAT, OWNER, REPO }: QuickImport = JSON.parse(quickImportValue);
-      ETHERSCAN_API_KEY = API;
+      const { API, RPC, WALLET, PAT, OWNER, REPO, CHAIN: _CHAIN }: QuickImport = JSON.parse(quickImportValue);
+      CHAINSCAN_API_KEY = API;
       RPC_URL = RPC;
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
       GITHUB_PERSONAL_ACCESS_TOKEN = PAT;
       OWNER_NAME = OWNER.toLocaleLowerCase();
       REPOSITORY_NAME = REPO.toLocaleLowerCase();
+      CHAIN = _CHAIN
     } else {
-      ETHERSCAN_API_KEY = (document.querySelector("#etherscanApiKey") as HTMLInputElement).value;
+      CHAINSCAN_API_KEY = (document.querySelector("#chainscanApiKey") as HTMLInputElement).value;
       RPC_URL = (document.querySelector("#rpcUrl") as HTMLInputElement).value;
       BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
       GITHUB_PERSONAL_ACCESS_TOKEN = (document.querySelector("#githubPat") as HTMLInputElement).value;
@@ -634,7 +702,7 @@ const auditInit = () => {
     }
 
     if (
-      ETHERSCAN_API_KEY !== "" &&
+      CHAINSCAN_API_KEY !== "" &&
       RPC_URL !== "" &&
       BOT_WALLET_ADDRESS !== "" &&
       GITHUB_PERSONAL_ACCESS_TOKEN !== "" &&

@@ -62,6 +62,7 @@ export interface QuickImport {
   PAT: string;
   OWNER: string;
   REPO: string;
+  CHAIN: string
 }
 
 declare type TableIndexTypes = NumberConstructor | StringConstructor | BooleanConstructor | DateConstructor | ObjectConstructor | ArrayConstructor;
