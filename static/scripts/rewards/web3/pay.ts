@@ -148,6 +148,6 @@ function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcS
       toaster.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
       return;
     }
-    toaster.create("success", "Nonce invalidated!");
+    toaster.create("info", "Nonce invalidation transaction sent");
   });
 }
