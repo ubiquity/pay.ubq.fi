@@ -36,7 +36,7 @@ export async function pay(): Promise<void> {
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
-    toaster.create("error", "Please connect to MetaMask.");
+    toaster.create("info", "Please connect to MetaMask.");
     loadingClaimButton(false);
     invalidateButton.disabled = true;
   }
