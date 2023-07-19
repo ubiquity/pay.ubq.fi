@@ -158,6 +158,17 @@ const getDataSchema = (storeHash: string) => {
   return schema;
 };
 
+const shortenTransactionHash = (hash: string | undefined, length = 8): string => {
+  if(!hash) return ""
+  const prefixLength = Math.floor(length / 2);
+  const suffixLength = length - prefixLength;
+
+  const prefix = hash.slice(0, prefixLength);
+  const suffix = hash.slice(-suffixLength);
+
+  return prefix + "..." + suffix;
+};
+
 const getChainScan = (chain: string) => {
   return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
 }
@@ -238,12 +249,16 @@ const updateDB = async (storeHash: string) => {
   await metaTable.put(metaData);
   if (elemList.length > 0) {
     for (let elem of elemList) {
-      const { id, tx, amount, title } = elem;
+      const { id, tx, amount, title, bounty_hunter, network, owner, repo } = elem;
       await storeTable.put({
         id,
         tx,
         amount,
         title,
+        bounty_hunter,
+        network,
+        owner, 
+        repo
       });
     }
   }
@@ -294,7 +309,7 @@ class QueueObserver {
   }
 
   private databaseCallback() {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${"OWNER_NAME"}_${"REPOSITORY_NAME"}_${BOT_WALLET_ADDRESS}_${"CHAIN"}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
     updateDB(storeHash);
   }
 
@@ -347,15 +362,20 @@ class smartQueue {
           <tr>
               <td><a href="https://github.com/${git?.owner}/${git?.repo}" target="_blank">${git?.owner}/${git?.repo}</a></td>
               <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
-              <td><a href="${tx_url}" target="_blank">${ether?.txHash}</a></td>
+              <td><a href="${git?.bounty_hunter?.url}" target="_blank">${git?.bounty_hunter?.name}</a></td>
+              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
+              <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(ether?.txHash)}</a></td>
           </tr>`;
+
         elemList.push({
           id: git?.issue_number!,
           tx: ether?.txHash!,
           amount: ethers.utils.formatEther(amount)!,
           title: git?.issue_title!,
+          bounty_hunter: git?.bounty_hunter,
+          owner: git?.owner,
+          repo: git?.repo,
+          network,
         });
 
         resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
@@ -503,6 +523,10 @@ const commentFetcher = async () => {
                           issue_number: issueList[0].number,
                           owner,
                           repo,
+                          bounty_hunter: {
+                            name: issueList[0].assignee.login,
+                            url: issueList[0].assignee.html_url
+                          }
                         },
                         ether: undefined,
                         network: network as string,
@@ -826,29 +850,35 @@ const rpcFetcher = async () => {
 
 const dbInit = async () => {
   if (isCache) {
-    // const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
-    // const metaData = await readMeta(storeHash);
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
+    const metaData = await readMeta(storeHash);
 
-    // if (metaData !== undefined) {
-    //   const { hash, issue } = metaData;
-    //   gitID = issue as number;
-    //   etherHash = hash as string;
+    if (metaData !== undefined) {
+      const { hash, issue } = metaData;
+      gitID = issue as number;
+      etherHash = hash as string;
 
-    //   const tableData = await readDB(storeHash);
+      const tableData = await readDB(storeHash);
 
-    //   if (tableData.length > 0) {
-    //     for (let data of tableData) {
-    //       const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${data.id}`;
-    //       const tx_url = `https://${getChainScan()}/tx/${data.tx}`;
-    //       const rows = `
-    //       <tr>
-    //           <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
-    //           <td><a href="${tx_url}" target="_blank">${data.amount}</a></td>
-    //       </tr>`;
-    //       resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-    //     }
-    //   }
-    // }
+      if (tableData.length > 0) {
+        for (let data of tableData) {
+          console.log(data)
+          // const issue_url = `https://github.com/${git?.owner}/${git?.repo}/issues/${data?.id}`;
+          // const tx_url = `https://${getChainScan(network)}/tx/${ether?.txHash}`;
+          // const rows = `
+          //   <tr>
+          //       <td><a href="https://github.com/${git?.owner}/${git?.repo}" target="_blank">${git?.owner}/${git?.repo}</a></td>
+          //       <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+          //       <td><a href="${git?.bounty_hunter?.url}" target="_blank">${git?.bounty_hunter?.name}</a></td>
+          //       <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
+          //       <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(ether?.txHash)}</a></td>
+          //   </tr>`;
+
+
+          //resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+        }
+      }
+    }
   }
 };
 

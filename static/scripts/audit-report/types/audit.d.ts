@@ -1,10 +1,19 @@
 export type ObserverKeys = "isRPC" | "isComment" | "isGit" | "isEther";
 
+export interface BountyHunter {
+    name: string, 
+    url: string
+}
+
 export interface ElemInterface {
   id: number;
   tx: string;
   amount: string;
   title: string;
+  bounty_hunter: BountyHunter;
+  owner: string;
+  repo: string;
+  network: string;
 }
 
 export interface GitInterface {
@@ -12,6 +21,7 @@ export interface GitInterface {
   repo: string;
   issue_number: number;
   issue_title: string;
+  bounty_hunter: BountyHunter
 }
 
 export interface EtherInterface {
