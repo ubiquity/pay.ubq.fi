@@ -25,6 +25,29 @@ interface GitHubUrlParts {
   repo: string;
 }
 
+export interface ChainScanResult {
+  blockNumber: string
+  timeStamp: string
+  hash: string
+  nonce: string
+  blockHash: string
+  from: string
+  contractAddress: string
+  to: string
+  value: string
+  tokenName: string
+  tokenSymbol: string
+  tokenDecimal: string
+  transactionIndex: string
+  gas: string
+  gasPrice: string
+  gasUsed: string
+  cumulativeGasUsed: string
+  input: string
+  confirmations: string
+  chain: string
+}
+
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 
@@ -310,28 +333,33 @@ class smartQueue {
       const queueValue = this.queue.get(key) as StandardInterface;
       queueValue.s[value.t] = value.s[value.t] as any;
       const {
-        s: { ether, git },
+        s: { ether, git, network },
         c: { amount },
       } = queueValue;
 
-      // check for undefined
-      // if(git?.issue_number) {
-      //   const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
-      //   const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
-      //   const rows = `
-      //     <tr>
-      //         <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-      //         <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
-      //     </tr>`;
-      //   elemList.push({
-      //     id: git?.issue_number!,
-      //     tx: ether?.txHash!,
-      //     amount: ethers.utils.formatEther(amount)!,
-      //     title: git?.issue_title!,
-      //   });
+      console.log(queueValue)
 
-      //   resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-      // }
+      // check for undefined
+      if(git?.issue_number) {
+        const issue_url = `https://github.com/${git?.owner}/${git?.repo}/issues/${git?.issue_number}`;
+        const tx_url = `https://${getChainScan(network)}/tx/${ether?.txHash}`;
+        const rows = `
+          <tr>
+              <td><a href="https://github.com/${git?.owner}/${git?.repo}" target="_blank">${git?.owner}/${git?.repo}</a></td>
+              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
+              <td><a href="${tx_url}" target="_blank">${ether?.txHash}</a></td>
+          </tr>`;
+        elemList.push({
+          id: git?.issue_number!,
+          tx: ether?.txHash!,
+          amount: ethers.utils.formatEther(amount)!,
+          title: git?.issue_title!,
+        });
+
+        resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      }
       this.queue.delete(key);
     } else {
       this.queue.set(key, value);
@@ -401,6 +429,7 @@ function getCurrency(comment: string) {
 }
 
 const commentFetcher = async () => {
+  console.log(issueList)
   if (isComment) {
     const commentIntervalID = setInterval(async () => {
       clearInterval(commentIntervalID);
@@ -447,7 +476,7 @@ const commentFetcher = async () => {
                   console.log(comment.body, url, issueList[0], network, base64Payload)
                   if (base64Payload) {
                     const {
-                      owner,
+                      owner: ownerAddress,
                       signature,
                       permit: {
                         deadline,
@@ -461,7 +490,7 @@ const commentFetcher = async () => {
                       t: "git",
                       c: {
                         nonce,
-                        owner,
+                        owner: ownerAddress,
                         token,
                         amount,
                         to,
@@ -476,6 +505,7 @@ const commentFetcher = async () => {
                           repo,
                         },
                         ether: undefined,
+                        network: network as string,
                       },
                     });
                     isFound = true;
@@ -668,8 +698,8 @@ const fetchDataFromChainScanAPI = async (url: string, chain: string) => {
   }
 };
 
-const etherFetcher = async (repoUrls: string) => {
-  const ethereumURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
+const etherFetcher = async () => {
+  const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
     Chain.Ethereum
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
@@ -686,16 +716,15 @@ const etherFetcher = async (repoUrls: string) => {
           fetchDataFromChainScanAPI(gnosisURL, Chain.Gnosis),
         ]);
 
-        const combinedData = [...ethereumData, ...gnosisData];
-        
-        if (combinedData.result.length > 0) {
+        const combinedData: ChainScanResult[] = [...ethereumData, ...gnosisData];
+        if (combinedData.length > 0) {
           if (!lastEtherHash) {
-            lastEtherHash = combinedData.result[0].hash;
+            lastEtherHash = combinedData[0].hash;
           }
           let iEF = true;
-          for (let e of combinedData.result) {
+          for (let e of combinedData) {
             if (e.hash !== etherHash) {
-              await rpcQueue.add(e.hash);
+              await rpcQueue.add({ hash: e.hash, chain: e.chain });
             } else {
               iEF = false;
               break;
@@ -704,7 +733,7 @@ const etherFetcher = async (repoUrls: string) => {
 
           if (iEF) {
             etherPageNumber++;
-            etherFetcher(repoUrls);
+            etherFetcher();
           } else {
             isEther = false;
             finishedQueue.mutate("isEther", true);
@@ -723,15 +752,19 @@ const etherFetcher = async (repoUrls: string) => {
   }
 };
 
-const rpcFetcher = async (repoUrls: string) => {
+const rpcFetcher = async () => {
   if (isRPC) {
     const rpcIntervalID = setInterval(async () => {
       clearInterval(rpcIntervalID);
       try {
-        const txHash = await rpcQueue.read();
-        if (txHash) {
-          const provider = new ethers.providers.JsonRpcProvider("RPC_URL");
-          const txInfo = await provider.getTransaction(txHash);
+        const data = await rpcQueue.read();
+        if (data) {
+          const {hash, chain} = data
+
+          const provider = new ethers.providers.JsonRpcProvider(getRandomRpcUrl(chain));
+          const txInfo = await provider.getTransaction(hash);
+
+          console.log(txInfo, hash, chain, getRandomRpcUrl(chain))
 
           if (txInfo.data.startsWith(permitTransferFromSelector)) {
             const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.data);
@@ -764,13 +797,14 @@ const rpcFetcher = async (repoUrls: string) => {
                   block_number: txInfo.blockNumber as number,
                 },
                 git: undefined,
+                network: chain as string,
               },
             });
           }
         }
         await rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher(repoUrls);
+          rpcFetcher();
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
@@ -780,7 +814,7 @@ const rpcFetcher = async (repoUrls: string) => {
         finishedQueue.raise();
         await rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher(repoUrls);
+          rpcFetcher();
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
@@ -841,9 +875,9 @@ const asyncInit = async () => {
 };
 
 const tabInit = (repoUrls: GitHubUrlParts[]) => {
-  //etherFetcher(repoUrls);
+  etherFetcher();
   gitFetcher(repoUrls);
-  //rpcFetcher(repoUrls);
+  rpcFetcher();
 };
 
 const auditInit = () => {

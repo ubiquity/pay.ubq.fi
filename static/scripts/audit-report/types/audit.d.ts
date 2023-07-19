@@ -35,6 +35,7 @@ export interface StandardInterface {
   s: {
     ether: EtherInterface | undefined;
     git: GitInterface | undefined;
+    network: string
   };
 }
 
