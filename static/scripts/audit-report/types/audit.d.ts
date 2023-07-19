@@ -56,13 +56,8 @@ export interface TxData {
 }
 
 export interface QuickImport {
-  API: string;
-  RPC: string;
   WALLET: string;
-  PAT: string;
-  OWNER: string;
   REPO: string;
-  CHAIN: string
 }
 
 declare type TableIndexTypes = NumberConstructor | StringConstructor | BooleanConstructor | DateConstructor | ObjectConstructor | ArrayConstructor;

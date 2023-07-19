@@ -20,11 +20,16 @@ enum Chain {
   Gnosis = "Gnosis"
 }
 
+interface GitHubUrlParts {
+  owner: string;
+  repo: string;
+}
+
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 
 // hardcoded values
-let API_KEYS = {
+const API_KEYS = {
   [Chain.Ethereum]: [
     "35G6PRE7U54QWZMXYGUSI3YWU27TP2TTBK"
   ],
@@ -33,7 +38,7 @@ let API_KEYS = {
   ],
 };
 
-let RPC_URLS = {
+const RPC_URLS = {
   [Chain.Ethereum]: [
     "https://rpc.builder0x69.io"
   ],
@@ -42,9 +47,11 @@ let RPC_URLS = {
   ],
 }
 
-let GITHUB_PATS = [
+const GITHUB_PATS = [
   "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"
 ]
+
+let repoArray: string[] = [];
 interface RateLimitOptions {
   method: string, url: string
 }
@@ -132,17 +139,17 @@ const getChainScan = (chain: string) => {
   return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
 }
 
-function getRandomAPIUrl(chain: Chain): string {
-  const urls = API_KEYS[chain];
-  if (!urls || urls.length === 0) {
+const getRandomAPIKey = (chain: Chain): string  => {
+  const keys = API_KEYS[chain];
+  if (!keys || keys.length === 0) {
     throw new Error(`No API Keys found for chain: ${chain}`);
   }
 
-  const randomIndex = Math.floor(Math.random() * urls.length);
-  return urls[randomIndex];
+  const randomIndex = Math.floor(Math.random() * keys.length);
+  return keys[randomIndex];
 }
 
-function getRandomRpcUrl(chain: Chain): string {
+const getRandomRpcUrl = (chain: Chain): string => {
   const urls = RPC_URLS[chain];
   if (!urls || urls.length === 0) {
     throw new Error(`No RPC URLs found for chain: ${chain}`);
@@ -152,13 +159,45 @@ function getRandomRpcUrl(chain: Chain): string {
   return urls[randomIndex];
 }
 
-function getRandomGitPATS(chain: Chain): string {
+const getRandomGitPATS = (): string => {
   if (!GITHUB_PATS || GITHUB_PATS.length === 0) {
     throw new Error(`No Github PATS found`);
   }
 
   const randomIndex = Math.floor(Math.random() * GITHUB_PATS.length);
   return GITHUB_PATS[randomIndex];
+}
+
+const parseAndAddUrls = (input: string): void => {
+  const urls = input.split(',').map((url) => url.trim());
+  repoArray.push(...urls);
+}
+
+const parseRepoUrl = (issueUrl: string): [string, string] => {
+  const match = issueUrl.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/\d+/i);
+  if (match) {
+    const owner = match[1];
+    const repo = match[2];
+    return [owner, repo];
+  } else {
+    throw new Error("Invalid GitHub issue URL format");
+  }
+};
+
+const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
+  const githubUrlPartsArray: GitHubUrlParts[] = [];
+
+  for (const url of urls) {
+    const regex = /^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i;
+    const matches = url.match(regex);
+    if (matches && matches.length === 3) {
+      const owner = matches[1];
+      const repo = matches[2];
+      githubUrlPartsArray.push({ owner, repo });
+    }
+  }
+
+  return githubUrlPartsArray;
 }
 
 const updateDB = async (storeHash: string) => {
@@ -232,7 +271,7 @@ class QueueObserver {
   }
 
   private databaseCallback() {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
+    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${"OWNER_NAME"}_${"REPOSITORY_NAME"}_${BOT_WALLET_ADDRESS}_${"CHAIN"}`));
     updateDB(storeHash);
   }
 
@@ -276,23 +315,23 @@ class smartQueue {
       } = queueValue;
 
       // check for undefined
-      if(git?.issue_number) {
-        const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
-        const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
-        const rows = `
-          <tr>
-              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
-          </tr>`;
-        elemList.push({
-          id: git?.issue_number!,
-          tx: ether?.txHash!,
-          amount: ethers.utils.formatEther(amount)!,
-          title: git?.issue_title!,
-        });
+      // if(git?.issue_number) {
+      //   const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${git?.issue_number}`;
+      //   const tx_url = `https://${getChainScan()}/tx/${ether?.txHash}`;
+      //   const rows = `
+      //     <tr>
+      //         <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
+      //         <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)}</a></td>
+      //     </tr>`;
+      //   elemList.push({
+      //     id: git?.issue_number!,
+      //     tx: ether?.txHash!,
+      //     amount: ethers.utils.formatEther(amount)!,
+      //     title: git?.issue_title!,
+      //   });
 
-        resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-      }
+      //   resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+      // }
       this.queue.delete(key);
     } else {
       this.queue.set(key, value);
@@ -368,7 +407,7 @@ const commentFetcher = async () => {
       try {
         if (issueList.length !== 0) {
           const octokit = new Octokit({
-            auth: GITHUB_PERSONAL_ACCESS_TOKEN,
+            auth: getRandomGitPATS(),
             throttle: {
               onRateLimit: (retryAfter, options) => {
                 return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
@@ -378,9 +417,10 @@ const commentFetcher = async () => {
               },
             },
           });
+          let [owner, repo] = parseRepoUrl(issueList[0].html_url)
           const { data } = await octokit.rest.issues.listComments({
-            owner: OWNER_NAME,
-            repo: REPOSITORY_NAME,
+            owner,
+            repo,
             issue_number: issueList[0].number,
             per_page: offset,
             page: commentPageNumber,
@@ -404,8 +444,8 @@ const commentFetcher = async () => {
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
                   let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
-                  console.log(comment.body, url, issueList[0], network, CHAIN)
-                  if (base64Payload && (network === CHAIN)) {
+                  console.log(comment.body, url, issueList[0], network, base64Payload)
+                  if (base64Payload) {
                     const {
                       owner,
                       signature,
@@ -432,8 +472,8 @@ const commentFetcher = async () => {
                         git: {
                           issue_title: issueList[0].title,
                           issue_number: issueList[0].number,
-                          owner: OWNER_NAME,
-                          repo: REPOSITORY_NAME,
+                          owner,
+                          repo,
                         },
                         ether: undefined,
                       },
@@ -480,82 +520,180 @@ const commentFetcher = async () => {
   }
 };
 
-const gitFetcher = async () => {
-  if (isGit) {
-    const gitIntervalID = setInterval(async () => {
-      clearInterval(gitIntervalID);
+// const gitFetcher = async (repoUrls: string) => {
+//   if (isGit) {
+//     const gitIntervalID = setInterval(async () => {
+//       clearInterval(gitIntervalID);
+//       try {
+//         const octokit = new rateOctokit({
+//           auth: getRandomGitPATS(),
+//           throttle: {
+//             onRateLimit: (retryAfter, options) => {
+//               return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+//             },
+//             onSecondaryRateLimit: (retryAfter, options) => {
+//               return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+//             },
+//           },
+//         });
+//         const { data } = await octokit.rest.issues.listForRepo({
+//           owner: OWNER_NAME,
+//           repo: REPOSITORY_NAME,
+//           state: "closed",
+//           per_page: offset,
+//           page: gitPageNumber,
+//         });
+//         if (data.length > 0) {
+//           const issues = await data.filter(issue => !issue.pull_request && issue.comments > 0);
+//           if (!lastGitID) {
+//             lastGitID = issues[0].number;
+//           }
+//           let iEF = true;
+//           for (let i of issues) {
+//             if (i.number !== gitID) {
+//               await issueList.push(i);
+//             } else {
+//               iEF = false;
+//               break;
+//             }
+//           }
+
+//           if (iEF) {
+//             gitPageNumber++;
+//             gitFetcher(repoUrls);
+//           } else {
+//             isGit = false;
+//             finishedQueue.mutate("isGit", true);
+//             commentFetcher();
+//           }
+//         } else {
+//           isGit = false;
+//           finishedQueue.mutate("isGit", true);
+//           commentFetcher();
+//         }
+//       } catch (error: any) {
+//         console.error(error);
+//         finishedQueue.raise();
+//         isGit = false;
+//         finishedQueue.mutate("isGit", true);
+//         commentFetcher();
+//       }
+//     }, GIT_INTERVAL);
+//   }
+// };
+
+const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
+  const octokit = new Octokit({
+    auth: getRandomGitPATS(),
+    throttle: {
+      onRateLimit: (retryAfter, options) => {
+        return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+      },
+      onSecondaryRateLimit: (retryAfter, options) => {
+        return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+      },
+    },
+  });
+
+  const getIssuesForRepo = async (owner: string, repo: string) => {
+    const offset = 100; // Adjust this value based on your requirements
+    let gitPageNumber = 1;
+    let lastGitID: number | null = null;
+    const issueList: any[] = [];
+
+    while (true) {
       try {
-        const octokit = new rateOctokit({
-          auth: GITHUB_PERSONAL_ACCESS_TOKEN,
-          throttle: {
-            onRateLimit: (retryAfter, options) => {
-              return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-            },
-            onSecondaryRateLimit: (retryAfter, options) => {
-              return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-            },
-          },
-        });
         const { data } = await octokit.rest.issues.listForRepo({
-          owner: OWNER_NAME,
-          repo: REPOSITORY_NAME,
+          owner,
+          repo,
           state: "closed",
           per_page: offset,
           page: gitPageNumber,
         });
-        if (data.length > 0) {
-          const issues = await data.filter(issue => !issue.pull_request && issue.comments > 0);
+
+        if (data.length === 0) break;
+
+        const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
+        if (issues.length > 0) {
           if (!lastGitID) {
             lastGitID = issues[0].number;
           }
-          let iEF = true;
-          for (let i of issues) {
-            if (i.number !== gitID) {
-              await issueList.push(i);
-            } else {
-              iEF = false;
-              break;
-            }
-          }
 
-          if (iEF) {
-            gitPageNumber++;
-            gitFetcher();
-          } else {
-            isGit = false;
-            finishedQueue.mutate("isGit", true);
-            commentFetcher();
-          }
+          const filteredIssues = issues.filter((issue) => issue.number !== lastGitID);
+          issueList.push(...filteredIssues);
+
+          lastGitID = issues[issues.length - 1].number;
+          gitPageNumber++;
         } else {
-          isGit = false;
-          finishedQueue.mutate("isGit", true);
-          commentFetcher();
+          break;
         }
       } catch (error: any) {
         console.error(error);
-        finishedQueue.raise();
-        isGit = false;
-        finishedQueue.mutate("isGit", true);
-        commentFetcher();
+        throw error;
       }
-    }, GIT_INTERVAL);
+    }
+
+    return issueList;
+  };
+
+  try {
+    const issuesPromises = repoUrls.map((repoUrl) =>
+      getIssuesForRepo(repoUrl.owner, repoUrl.repo)
+    );
+    const allIssues = await Promise.all(issuesPromises);
+
+    for (let i = 0; i < allIssues.length; i++) {
+      const issues = allIssues[i];
+      issueList.push(...issues);
+      console.log(
+        `Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`
+      );
+    }
+
+    isGit = false;
+    finishedQueue.mutate("isGit", true);
+    commentFetcher();
+  } catch (error: any) {
+    console.error("Error fetching issues:", error);
   }
 };
 
-const etherFetcher = async () => {
+const fetchDataFromChainScanAPI = async (url: string, chain: string) => {
+  try {
+    const { data } = await axios.get(url);
+    return data.result.map((item: any) => ({ ...item, chain }));
+  } catch (error: any) {
+    console.error(error);
+    throw error;
+  }
+};
+
+const etherFetcher = async (repoUrls: string) => {
+  const ethereumURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
+    Chain.Ethereum
+  )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
+
+  const gnosisURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
+    Chain.Gnosis
+  )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
+
   if (isEther) {
     const etherIntervalID = setInterval(async () => {
       clearInterval(etherIntervalID);
       try {
-        const { data } = await axios.get(
-          `https://api.${getChainScan()}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${CHAINSCAN_API_KEY}&page=${etherPageNumber}&offset=${offset}&sort=desc`,
-        );
-        if (data.result.length > 0) {
+        const [ethereumData, gnosisData] = await Promise.all([
+          fetchDataFromChainScanAPI(ethereumURL, Chain.Ethereum),
+          fetchDataFromChainScanAPI(gnosisURL, Chain.Gnosis),
+        ]);
+
+        const combinedData = [...ethereumData, ...gnosisData];
+        
+        if (combinedData.result.length > 0) {
           if (!lastEtherHash) {
-            lastEtherHash = data.result[0].hash;
+            lastEtherHash = combinedData.result[0].hash;
           }
           let iEF = true;
-          for (let e of data.result) {
+          for (let e of combinedData.result) {
             if (e.hash !== etherHash) {
               await rpcQueue.add(e.hash);
             } else {
@@ -566,7 +704,7 @@ const etherFetcher = async () => {
 
           if (iEF) {
             etherPageNumber++;
-            etherFetcher();
+            etherFetcher(repoUrls);
           } else {
             isEther = false;
             finishedQueue.mutate("isEther", true);
@@ -585,14 +723,14 @@ const etherFetcher = async () => {
   }
 };
 
-const rpcFetcher = async () => {
+const rpcFetcher = async (repoUrls: string) => {
   if (isRPC) {
     const rpcIntervalID = setInterval(async () => {
       clearInterval(rpcIntervalID);
       try {
         const txHash = await rpcQueue.read();
         if (txHash) {
-          const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+          const provider = new ethers.providers.JsonRpcProvider("RPC_URL");
           const txInfo = await provider.getTransaction(txHash);
 
           if (txInfo.data.startsWith(permitTransferFromSelector)) {
@@ -632,7 +770,7 @@ const rpcFetcher = async () => {
         }
         await rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher();
+          rpcFetcher(repoUrls);
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
@@ -642,7 +780,7 @@ const rpcFetcher = async () => {
         finishedQueue.raise();
         await rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher();
+          rpcFetcher(repoUrls);
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
@@ -654,29 +792,29 @@ const rpcFetcher = async () => {
 
 const dbInit = async () => {
   if (isCache) {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
-    const metaData = await readMeta(storeHash);
+    // const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${OWNER_NAME}_${REPOSITORY_NAME}_${BOT_WALLET_ADDRESS}_${CHAIN}`));
+    // const metaData = await readMeta(storeHash);
 
-    if (metaData !== undefined) {
-      const { hash, issue } = metaData;
-      gitID = issue as number;
-      etherHash = hash as string;
+    // if (metaData !== undefined) {
+    //   const { hash, issue } = metaData;
+    //   gitID = issue as number;
+    //   etherHash = hash as string;
 
-      const tableData = await readDB(storeHash);
+    //   const tableData = await readDB(storeHash);
 
-      if (tableData.length > 0) {
-        for (let data of tableData) {
-          const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${data.id}`;
-          const tx_url = `https://${getChainScan()}/tx/${data.tx}`;
-          const rows = `
-          <tr>
-              <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
-              <td><a href="${tx_url}" target="_blank">${data.amount}</a></td>
-          </tr>`;
-          resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-        }
-      }
-    }
+    //   if (tableData.length > 0) {
+    //     for (let data of tableData) {
+    //       const issue_url = `https://github.com/${OWNER_NAME}/${REPOSITORY_NAME}/issues/${data.id}`;
+    //       const tx_url = `https://${getChainScan()}/tx/${data.tx}`;
+    //       const rows = `
+    //       <tr>
+    //           <td><a href="${issue_url}" target="_blank">#${data.id} - ${data.title}</a></td>
+    //           <td><a href="${tx_url}" target="_blank">${data.amount}</a></td>
+    //       </tr>`;
+    //       resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+    //     }
+    //   }
+    // }
   }
 };
 
@@ -694,6 +832,7 @@ const resetInit = () => {
   etherHash = NULL_HASH;
   lastGitID = false;
   lastEtherHash = false;
+  repoArray = []
 };
 
 const asyncInit = async () => {
@@ -701,10 +840,10 @@ const asyncInit = async () => {
   await dbInit();
 };
 
-const tabInit = () => {
-  etherFetcher();
-  gitFetcher();
-  rpcFetcher();
+const tabInit = (repoUrls: GitHubUrlParts[]) => {
+  //etherFetcher(repoUrls);
+  gitFetcher(repoUrls);
+  //rpcFetcher(repoUrls);
 };
 
 const auditInit = () => {
@@ -716,33 +855,25 @@ const auditInit = () => {
     resultTableTbodyElem.innerHTML = "";
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
-      const { API, RPC, WALLET, PAT, OWNER, REPO, CHAIN: _CHAIN }: QuickImport = JSON.parse(quickImportValue);
-      CHAINSCAN_API_KEY = API;
-      RPC_URL = RPC;
+      const { WALLET, REPO }: QuickImport = JSON.parse(quickImportValue);
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
-      GITHUB_PERSONAL_ACCESS_TOKEN = PAT;
-      OWNER_NAME = OWNER.toLocaleLowerCase();
-      REPOSITORY_NAME = REPO.toLocaleLowerCase();
-      CHAIN = _CHAIN
+      REPOSITORY_URL = REPO.toLocaleLowerCase();
+      parseAndAddUrls(REPOSITORY_URL)
     } else {
-      CHAINSCAN_API_KEY = (document.querySelector("#chainscanApiKey") as HTMLInputElement).value;
-      RPC_URL = (document.querySelector("#rpcUrl") as HTMLInputElement).value;
       BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
-      GITHUB_PERSONAL_ACCESS_TOKEN = (document.querySelector("#githubPat") as HTMLInputElement).value;
-      OWNER_NAME = (document.querySelector("#ownerName") as HTMLInputElement).value.toLocaleLowerCase();
-      REPOSITORY_NAME = (document.querySelector("#repoName") as HTMLInputElement).value.toLocaleLowerCase();
+      REPOSITORY_URL = (document.querySelector("#repoURLs") as HTMLInputElement).value.toLocaleLowerCase();
+      parseAndAddUrls(REPOSITORY_URL)
     }
 
+    const REPOS = getGitHubUrlPartsArray(repoArray)
+
     if (
-      CHAINSCAN_API_KEY !== "" &&
-      RPC_URL !== "" &&
       BOT_WALLET_ADDRESS !== "" &&
-      GITHUB_PERSONAL_ACCESS_TOKEN !== "" &&
-      OWNER_NAME !== "" &&
-      REPOSITORY_NAME !== ""
+      REPOSITORY_URL !== "" &&
+      REPOS.length > 0
     ) {
       await asyncInit();
-      await tabInit();
+      await tabInit(REPOS);
     } else {
       toggleLoader("none");
     }
