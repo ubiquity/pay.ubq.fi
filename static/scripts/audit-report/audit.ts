@@ -20,13 +20,31 @@ enum Chain {
   Gnosis = "Gnosis"
 }
 
-let CHAIN: string = Chain.Ethereum
-let CHAINSCAN_API_KEY = "";
-let RPC_URL = "";
 let BOT_WALLET_ADDRESS = "";
-let GITHUB_PERSONAL_ACCESS_TOKEN = "";
-let OWNER_NAME = "";
-let REPOSITORY_NAME = "";
+let REPOSITORY_URL = "";
+
+// hardcoded values
+let API_KEYS = {
+  [Chain.Ethereum]: [
+    "35G6PRE7U54QWZMXYGUSI3YWU27TP2TTBK"
+  ],
+  [Chain.Gnosis]: [
+    "R75N38X1Y5KP8CRPPDWBRT3EM5VDJ73MUK"
+  ],
+};
+
+let RPC_URLS = {
+  [Chain.Ethereum]: [
+    "https://rpc.builder0x69.io"
+  ],
+  [Chain.Gnosis]: [
+    "https://rpc.ankr.com/gnosis"
+  ],
+}
+
+let GITHUB_PATS = [
+  "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"
+]
 interface RateLimitOptions {
   method: string, url: string
 }
@@ -110,23 +128,37 @@ const getDataSchema = (storeHash: string) => {
   return schema;
 };
 
-// Access the container element
-var container = document.querySelector('.switches-container') as HTMLDivElement;
+const getChainScan = (chain: string) => {
+  return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
+}
 
-// Get the radio inputs
-var radioInputs = container.querySelectorAll('input[type="radio"][name="switchChain"]') as NodeListOf<HTMLInputElement>;
+function getRandomAPIUrl(chain: Chain): string {
+  const urls = API_KEYS[chain];
+  if (!urls || urls.length === 0) {
+    throw new Error(`No API Keys found for chain: ${chain}`);
+  }
 
-// Add event listeners to the radio inputs
-radioInputs.forEach(function(input, _) {
-  input.addEventListener('change', function() {
-    if (input.checked) {
-      CHAIN = input.value
-    }
-  });
-});
+  const randomIndex = Math.floor(Math.random() * urls.length);
+  return urls[randomIndex];
+}
 
-const getChainScan = () => {
-  return CHAIN === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
+function getRandomRpcUrl(chain: Chain): string {
+  const urls = RPC_URLS[chain];
+  if (!urls || urls.length === 0) {
+    throw new Error(`No RPC URLs found for chain: ${chain}`);
+  }
+
+  const randomIndex = Math.floor(Math.random() * urls.length);
+  return urls[randomIndex];
+}
+
+function getRandomGitPATS(chain: Chain): string {
+  if (!GITHUB_PATS || GITHUB_PATS.length === 0) {
+    throw new Error(`No Github PATS found`);
+  }
+
+  const randomIndex = Math.floor(Math.random() * GITHUB_PATS.length);
+  return GITHUB_PATS[randomIndex];
 }
 
 const updateDB = async (storeHash: string) => {
