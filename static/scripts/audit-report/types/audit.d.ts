@@ -16,6 +16,58 @@ export interface ElemInterface {
   network: string;
 }
 
+export enum ChainScan {
+  Ethereum = "etherscan.io",
+  Gnosis = "gnosisscan.io"
+}
+
+export enum Chain {
+  Ethereum = "Ethereum",
+  Gnosis = "Gnosis"
+}
+
+export interface GitHubUrlParts {
+  owner: string;
+  repo: string;
+}
+
+export interface SavedData {
+  owner: string,
+  repo: string,
+  id: number,
+  network: string,
+  tx: string,
+  bounty_hunter: {
+    url: string,
+    name: string
+  },
+  amount: string,
+  title: string
+}
+
+export interface ChainScanResult {
+  blockNumber: string
+  timeStamp: string
+  hash: string
+  nonce: string
+  blockHash: string
+  from: string
+  contractAddress: string
+  to: string
+  value: string
+  tokenName: string
+  tokenSymbol: string
+  tokenDecimal: string
+  transactionIndex: string
+  gas: string
+  gasPrice: string
+  gasUsed: string
+  cumulativeGasUsed: string
+  input: string
+  confirmations: string
+  chain: string
+}
+
 export interface GitInterface {
   owner: string;
   repo: string;

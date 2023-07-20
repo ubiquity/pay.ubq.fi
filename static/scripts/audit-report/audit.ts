@@ -5,62 +5,10 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter } from "./types";
+import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, Chain, ChainScan, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 
 const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
-
-enum ChainScan {
-  Ethereum = "etherscan.io",
-  Gnosis = "gnosisscan.io"
-}
-
-enum Chain {
-  Ethereum = "Ethereum",
-  Gnosis = "Gnosis"
-}
-
-interface GitHubUrlParts {
-  owner: string;
-  repo: string;
-}
-
-interface SavedData {
-  owner: string,
-  repo: string,
-  id: number,
-  network: string,
-  tx: string,
-  bounty_hunter: {
-    url: string,
-    name: string
-  },
-  amount: string,
-  title: string
-}
-
-export interface ChainScanResult {
-  blockNumber: string
-  timeStamp: string
-  hash: string
-  nonce: string
-  blockHash: string
-  from: string
-  contractAddress: string
-  to: string
-  value: string
-  tokenName: string
-  tokenSymbol: string
-  tokenDecimal: string
-  transactionIndex: string
-  gas: string
-  gasPrice: string
-  gasUsed: string
-  cumulativeGasUsed: string
-  input: string
-  confirmations: string
-  chain: string
-}
 
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
@@ -654,16 +602,16 @@ const commentFetcher = async () => {
 // };
 
 const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
-  const octokit = new Octokit({
-    auth: getRandomGitPATS(),
-    throttle: {
-      onRateLimit: (retryAfter, options) => {
-        return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+  const octokit = new rateOctokit({
+      auth: getRandomGitPATS(),
+      throttle: {
+        onRateLimit: (retryAfter, options) => {
+          return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+        },
+        onSecondaryRateLimit: (retryAfter, options) => {
+          return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+        },
       },
-      onSecondaryRateLimit: (retryAfter, options) => {
-        return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-      },
-    },
   });
 
   const getIssuesForRepo = async (owner: string, repo: string) => {
