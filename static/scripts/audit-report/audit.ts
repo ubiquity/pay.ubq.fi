@@ -875,8 +875,6 @@ const dbInit = async () => {
 
       const tableData = await readDB(storeHash);
 
-      console.log(tableData)
-
       if (tableData.length > 0) {
         for (let data of tableData) {
           const {
@@ -903,8 +901,6 @@ const dbInit = async () => {
           });
         }
       }
-
-      
     }
   }
 };
