@@ -100,11 +100,15 @@ a:hover {
   width: 100%;
 }
 
-tbody:before {
+.resultContainer tbody:before {
   content: "@";
   display: block;
   line-height: 10px;
   text-indent: -99999px;
+}
+
+.resultContainer tbody {
+  margin-bottom: 2px;
 }
 
 .resultContainer {

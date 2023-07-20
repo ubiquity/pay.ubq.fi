@@ -353,6 +353,7 @@ class smartQueue {
           network,
         });
         if (elemList.length > 0) {
+          resultTableTbodyElem.innerHTML = "";
           for (let data of elemList) {
             populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
           }
