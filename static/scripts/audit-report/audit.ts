@@ -25,6 +25,20 @@ interface GitHubUrlParts {
   repo: string;
 }
 
+interface SavedData {
+  owner: string,
+  repo: string,
+  id: number,
+  network: string,
+  tx: string,
+  bounty_hunter: {
+    url: string,
+    name: string
+  },
+  amount: string,
+  title: string
+}
+
 export interface ChainScanResult {
   blockNumber: string
   timeStamp: string
@@ -862,20 +876,29 @@ const dbInit = async () => {
 
       if (tableData.length > 0) {
         for (let data of tableData) {
-          console.log(data)
-          // const issue_url = `https://github.com/${git?.owner}/${git?.repo}/issues/${data?.id}`;
-          // const tx_url = `https://${getChainScan(network)}/tx/${ether?.txHash}`;
-          // const rows = `
-          //   <tr>
-          //       <td><a href="https://github.com/${git?.owner}/${git?.repo}" target="_blank">${git?.owner}/${git?.repo}</a></td>
-          //       <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-          //       <td><a href="${git?.bounty_hunter?.url}" target="_blank">${git?.bounty_hunter?.name}</a></td>
-          //       <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
-          //       <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(ether?.txHash)}</a></td>
-          //   </tr>`;
+          const {
+            owner,
+            repo,
+            id,
+            network,
+            tx,
+            bounty_hunter,
+            amount,
+            title,
+          } =  data as unknown as SavedData
+          const issue_url = `https://github.com/${owner}/${repo}/issues/${id}`;
+          const tx_url = `https://${getChainScan(network)}/tx/${tx}`;
+          const rows = `
+            <tr>
+                <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
+                <td><a href="${issue_url}" target="_blank">#${id} - ${title}</a></td>
+                <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
+                <td><a href="${tx_url}" target="_blank">${amount} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
+                <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(tx)}</a></td>
+            </tr>`;
 
 
-          //resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+          resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
         }
       }
     }
