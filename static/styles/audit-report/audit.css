@@ -150,3 +150,7 @@ span {
 #report-loader {
   display: none;
 }
+
+#sortArrow {
+  color: black;
+}

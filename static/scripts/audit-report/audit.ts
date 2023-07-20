@@ -5,7 +5,7 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema } from "./types";
+import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter } from "./types";
 
 const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
@@ -182,6 +182,21 @@ const shortenTransactionHash = (hash: string | undefined, length = 8): string =>
 
   return prefix + "..." + suffix;
 };
+
+function populateTable(owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) {
+  const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
+  const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
+  const rows = `
+    <tr>
+        <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
+        <td><a href="${issue_url}" target="_blank">#${issue_number} - ${issue_title}</a></td>
+        <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
+        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) :  amount} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
+        <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
+    </tr>`;
+
+  resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+}
 
 const getChainScan = (chain: string) => {
   return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
@@ -366,21 +381,8 @@ class smartQueue {
         c: { amount },
       } = queueValue;
 
-      console.log(queueValue)
-
       // check for undefined
       if(git?.issue_number) {
-        const issue_url = `https://github.com/${git?.owner}/${git?.repo}/issues/${git?.issue_number}`;
-        const tx_url = `https://${getChainScan(network)}/tx/${ether?.txHash}`;
-        const rows = `
-          <tr>
-              <td><a href="https://github.com/${git?.owner}/${git?.repo}" target="_blank">${git?.owner}/${git?.repo}</a></td>
-              <td><a href="${issue_url}" target="_blank">#${git?.issue_number} - ${git?.issue_title}</a></td>
-              <td><a href="${git?.bounty_hunter?.url}" target="_blank">${git?.bounty_hunter?.name}</a></td>
-              <td><a href="${tx_url}" target="_blank">${ethers.utils.formatEther(amount)} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
-              <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(ether?.txHash)}</a></td>
-          </tr>`;
-
         elemList.push({
           id: git?.issue_number!,
           tx: ether?.txHash!,
@@ -391,8 +393,11 @@ class smartQueue {
           repo: git?.repo,
           network,
         });
-
-        resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+        if (elemList.length > 0) {
+          for (let data of elemList) {
+            populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
+          }
+        }
       }
       this.queue.delete(key);
     } else {
@@ -463,7 +468,6 @@ function getCurrency(comment: string) {
 }
 
 const commentFetcher = async () => {
-  console.log(issueList)
   if (isComment) {
     const commentIntervalID = setInterval(async () => {
       clearInterval(commentIntervalID);
@@ -507,7 +511,6 @@ const commentFetcher = async () => {
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
                   let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
-                  console.log(comment.body, url, issueList[0], network, base64Payload)
                   if (base64Payload) {
                     const {
                       owner: ownerAddress,
@@ -802,8 +805,6 @@ const rpcFetcher = async () => {
           const provider = new ethers.providers.JsonRpcProvider(getRandomRpcUrl(chain));
           const txInfo = await provider.getTransaction(hash);
 
-          console.log(txInfo, hash, chain, getRandomRpcUrl(chain))
-
           if (txInfo.data.startsWith(permitTransferFromSelector)) {
             const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.data);
             const {
@@ -874,6 +875,8 @@ const dbInit = async () => {
 
       const tableData = await readDB(storeHash);
 
+      console.log(tableData)
+
       if (tableData.length > 0) {
         for (let data of tableData) {
           const {
@@ -886,21 +889,22 @@ const dbInit = async () => {
             amount,
             title,
           } =  data as unknown as SavedData
-          const issue_url = `https://github.com/${owner}/${repo}/issues/${id}`;
-          const tx_url = `https://${getChainScan(network)}/tx/${tx}`;
-          const rows = `
-            <tr>
-                <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
-                <td><a href="${issue_url}" target="_blank">#${id} - ${title}</a></td>
-                <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
-                <td><a href="${tx_url}" target="_blank">${amount} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
-                <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(tx)}</a></td>
-            </tr>`;
-
-
-          resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
+          populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
+          // for filtering
+          elemList.push({
+              id,
+              tx,
+              amount,
+              title,
+              bounty_hunter,
+              owner,
+              repo,
+              network,
+          });
         }
       }
+
+      
     }
   }
 };
@@ -966,5 +970,77 @@ const auditInit = () => {
     }
   });
 };
+
+/**
+ * 
+ * Filter Logics
+ * 
+ */
+
+// Function to filter the table based on search input
+function filterTable() {
+  const input = document.getElementById("searchInput")! as HTMLInputElement
+  let value = input.value.toLowerCase();
+  const filteredData = elemList.filter(
+    (row) =>
+      row.owner.toLowerCase().includes(value) ||
+      row.repo.toLowerCase().includes(value) ||
+      row.amount.toLowerCase().includes(value) ||
+      row.tx.toLowerCase().includes(value) ||
+      row.title.toLowerCase().includes(value) ||
+      row.network.toLowerCase().includes(value) ||
+      row.bounty_hunter.name.toLowerCase().includes(value)
+  );
+  resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
+  for (let data of filteredData) {
+      const {
+        owner,
+        repo,
+        id,
+        network,
+        tx,
+        bounty_hunter,
+        amount,
+        title,
+      } =  data as unknown as SavedData
+      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+  }
+}
+
+// Variables to track sorting
+let sortDirection = 1; // 1 for ascending, -1 for descending
+
+// Function to sort the table by the "Amount" column
+function sortTableByAmount() {
+  elemList.sort((a, b) => sortDirection * (Number(a.amount) - Number(b.amount)));
+  sortDirection *= -1;
+  updateSortArrow();
+  resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
+  for (let data of elemList) {
+      const {
+        owner,
+        repo,
+        id,
+        network,
+        tx,
+        bounty_hunter,
+        amount,
+        title,
+      } =  data as unknown as SavedData
+      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+  }
+}
+
+// Function to update the sort arrow indicator
+function updateSortArrow() {
+  const sortArrow = document.getElementById("sortArrow") as HTMLElement;
+  sortArrow.textContent = sortDirection === 1 ? "\u2191" : "\u2193";
+}
+
+// Add event listener for the search button
+document.getElementById("searchInput")!.addEventListener("keyup", filterTable);
+
+// Add event listener for the "Amount" column header
+document.getElementById("amountHeader")!.addEventListener("click", sortTableByAmount);
 
 auditInit();

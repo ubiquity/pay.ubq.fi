@@ -40,13 +40,15 @@
       </div>
     </div>
     <!-- result table -->
+    <input type="text" id="searchInput" placeholder="Search...">
+
     <table id="resultTable" class="table" style="display: none">
       <thead>
         <tr>
           <th scope="col">Organization/Repo Name</th>
           <th scope="col">Issue URL</th>
           <th scope="col">Bounty Hunter</th>
-          <th scope="col">Amount</th>
+          <th scope="col" id="amountHeader">Amount <span id="sortArrow">&#8595;</span></th>
           <th scope="col">Transaction URL</th>
         </tr>
       </thead>
