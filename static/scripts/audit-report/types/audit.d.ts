@@ -16,16 +16,6 @@ export interface ElemInterface {
   network: string;
 }
 
-export enum ChainScan {
-  Ethereum = "etherscan.io",
-  Gnosis = "gnosisscan.io"
-}
-
-export enum Chain {
-  Ethereum = "Ethereum",
-  Gnosis = "Gnosis"
-}
-
 export interface GitHubUrlParts {
   owner: string;
   repo: string;

@@ -5,9 +5,19 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, Chain, ChainScan, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
+import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 
 const rateOctokit = Octokit.plugin(throttling);
+
+enum ChainScan {
+  Ethereum = "etherscan.io",
+  Gnosis = "gnosisscan.io"
+}
+
+enum Chain {
+  Ethereum = "Ethereum",
+  Gnosis = "Gnosis"
+}
 
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
@@ -24,10 +34,13 @@ const API_KEYS = {
 
 const RPC_URLS = {
   [Chain.Ethereum]: [
-    "https://rpc.builder0x69.io"
+    "https://rpc.builder0x69.io",
+    "https://eth.meowrpc.com",
+    "https://ethereum.publicnode.com"
   ],
   [Chain.Gnosis]: [
-    "https://rpc.ankr.com/gnosis"
+    "https://rpc.ankr.com/gnosis",
+    "https://rpc.gnosischain.com"
   ],
 }
 
