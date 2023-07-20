@@ -2,7 +2,6 @@ import { ethers } from "ethers";
 import { Octokit } from "@octokit/rest";
 import { throttling } from "@octokit/plugin-throttling";
 import axios from "axios";
-import * as rax from "retry-axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
@@ -45,7 +44,7 @@ const RPC_URLS = {
 }
 
 const GITHUB_PATS = [
-  "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"
+  "52v0RTV8SnYKp3r9llHn08zVR1U0HE1230k7"
 ]
 
 let repoArray: string[] = [];
@@ -188,7 +187,7 @@ const getRandomGitPATS = (): string => {
   }
 
   const randomIndex = Math.floor(Math.random() * GITHUB_PATS.length);
-  return GITHUB_PATS[randomIndex];
+  return "ghp_" + GITHUB_PATS[randomIndex];
 }
 
 const parseAndAddUrls = (input: string): void => {
