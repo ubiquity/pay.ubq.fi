@@ -39,7 +39,6 @@ const RPC_URLS = {
   ],
   [Chain.Gnosis]: [
     "https://rpc.ankr.com/gnosis",
-    "https://rpc.gnosischain.com"
   ],
 }
 
