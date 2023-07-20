@@ -7,7 +7,6 @@ import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, Chain, ChainScan, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 
-const interceptorID = rax.attach(axios);
 const rateOctokit = Octokit.plugin(throttling);
 
 let BOT_WALLET_ADDRESS = "";
@@ -538,68 +537,6 @@ const commentFetcher = async () => {
     }, GIT_INTERVAL);
   }
 };
-
-// const gitFetcher = async (repoUrls: string) => {
-//   if (isGit) {
-//     const gitIntervalID = setInterval(async () => {
-//       clearInterval(gitIntervalID);
-//       try {
-//         const octokit = new rateOctokit({
-//           auth: getRandomGitPATS(),
-//           throttle: {
-//             onRateLimit: (retryAfter, options) => {
-//               return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-//             },
-//             onSecondaryRateLimit: (retryAfter, options) => {
-//               return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-//             },
-//           },
-//         });
-//         const { data } = await octokit.rest.issues.listForRepo({
-//           owner: OWNER_NAME,
-//           repo: REPOSITORY_NAME,
-//           state: "closed",
-//           per_page: offset,
-//           page: gitPageNumber,
-//         });
-//         if (data.length > 0) {
-//           const issues = await data.filter(issue => !issue.pull_request && issue.comments > 0);
-//           if (!lastGitID) {
-//             lastGitID = issues[0].number;
-//           }
-//           let iEF = true;
-//           for (let i of issues) {
-//             if (i.number !== gitID) {
-//               await issueList.push(i);
-//             } else {
-//               iEF = false;
-//               break;
-//             }
-//           }
-
-//           if (iEF) {
-//             gitPageNumber++;
-//             gitFetcher(repoUrls);
-//           } else {
-//             isGit = false;
-//             finishedQueue.mutate("isGit", true);
-//             commentFetcher();
-//           }
-//         } else {
-//           isGit = false;
-//           finishedQueue.mutate("isGit", true);
-//           commentFetcher();
-//         }
-//       } catch (error: any) {
-//         console.error(error);
-//         finishedQueue.raise();
-//         isGit = false;
-//         finishedQueue.mutate("isGit", true);
-//         commentFetcher();
-//       }
-//     }, GIT_INTERVAL);
-//   }
-// };
 
 const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
   const octokit = new rateOctokit({
