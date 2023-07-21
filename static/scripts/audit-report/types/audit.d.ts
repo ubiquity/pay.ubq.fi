@@ -111,6 +111,7 @@ export interface TxData {
 export interface QuickImport {
   WALLET: string;
   REPO: string;
+  PAT: string
 }
 
 declare type TableIndexTypes = NumberConstructor | StringConstructor | BooleanConstructor | DateConstructor | ObjectConstructor | ArrayConstructor;

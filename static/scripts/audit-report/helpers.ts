@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { API_KEYS, Chain, ChainScan, GITHUB_PATS, RPC_URLS } from "./constants";
+import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
 import { BountyHunter, GitHubUrlParts } from "./types";
 
 export interface RateLimitOptions {
@@ -20,6 +20,7 @@ export const shortenTransactionHash = (hash: string | undefined, length = 8): st
 };
 
 export const populateTable = (owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) => {
+  if(!txHash) return; // permit not claimed
   const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
   const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
   const rows = `
@@ -27,7 +28,7 @@ export const populateTable = (owner: string, repo: string, issue_number: number,
         <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
         <td><a href="${issue_url}" target="_blank">#${issue_number} - ${issue_title}</a></td>
         <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
-        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) :  amount} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
+        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) :  amount} ${network === Chain.Ethereum ? "DAI" : "WXDAI"}</a></td>
         <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
     </tr>`;
 
@@ -56,15 +57,6 @@ export const getRandomRpcUrl = (chain: Chain): string => {
 
   const randomIndex = Math.floor(Math.random() * urls.length);
   return urls[randomIndex];
-}
-
-export const getRandomGitPATS = (): string => {
-  if (!GITHUB_PATS || GITHUB_PATS.length === 0) {
-    throw new Error(`No Github PATS found`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * GITHUB_PATS.length);
-  return "ghp_" + GITHUB_PATS[randomIndex];
 }
 
 export const parseRepoUrl = (issueUrl: string): [string, string] => {

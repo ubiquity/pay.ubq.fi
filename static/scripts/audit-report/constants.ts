@@ -32,7 +32,3 @@ export const RPC_URLS = {
     "https://rpc.ankr.com/gnosis",
   ],
 }
-
-export const GITHUB_PATS = [
-  "52v0RTV8SnYKp3r9llHn08zVR1U0HE1230k7"
-]

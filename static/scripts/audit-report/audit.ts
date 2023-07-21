@@ -6,12 +6,13 @@ import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
-import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomGitPATS, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
+import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
 
 const rateOctokit = Octokit.plugin(throttling);
 
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
+let GITHUB_PAT = ""
 
 let repoArray: string[] = [];
 
@@ -280,7 +281,7 @@ const commentFetcher = async () => {
       try {
         if (issueList.length !== 0) {
           const octokit = new Octokit({
-            auth: getRandomGitPATS(),
+            auth: GITHUB_PAT,
             throttle: {
               onRateLimit: (retryAfter, options) => {
                 return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
@@ -398,78 +399,86 @@ const commentFetcher = async () => {
 };
 
 const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
-  const octokit = new rateOctokit({
-      auth: getRandomGitPATS(),
-      throttle: {
-        onRateLimit: (retryAfter, options) => {
-          return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+  if (isGit) {
+    const octokit = new rateOctokit({
+        auth: GITHUB_PAT,
+        throttle: {
+          onRateLimit: (retryAfter, options) => {
+            return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+          },
+          onSecondaryRateLimit: (retryAfter, options) => {
+            return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+          },
         },
-        onSecondaryRateLimit: (retryAfter, options) => {
-          return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-        },
-      },
-  });
+    });
 
-  const getIssuesForRepo = async (owner: string, repo: string) => {
-    const offset = 100; // Adjust this value based on your requirements
-    let gitPageNumber = 1;
-    let lastGitID: number | null = null;
-    const issueList: any[] = [];
+    const getIssuesForRepo = async (owner: string, repo: string) => {
+      const issueList: any[] = [];
 
-    while (true) {
-      try {
-        const { data } = await octokit.rest.issues.listForRepo({
-          owner,
-          repo,
-          state: "closed",
-          per_page: offset,
-          page: gitPageNumber,
-        });
+      while (true) {
+        try {
+          const { data } = await octokit.rest.issues.listForRepo({
+            owner,
+            repo,
+            state: "closed",
+            per_page: offset,
+            page: gitPageNumber,
+          });
 
-        if (data.length === 0) break;
+          if (data.length === 0) break;
 
-        const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
-        if (issues.length > 0) {
-          if (!lastGitID) {
-            lastGitID = issues[0].number;
+          const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
+          if (issues.length > 0) {
+            if (!lastGitID) {
+              lastGitID = issues[0].number;
+            }
+            let iEF = true;
+            for (let i of issues) {
+              if (i.number !== gitID) {
+                await issueList.push(i);
+              } else {
+                iEF = false;
+                break;
+              }
+            }
+
+            if (iEF) {
+              gitPageNumber++;
+            } else {
+              break;
+            }
+          } else {
+            break;
           }
-
-          const filteredIssues = issues.filter((issue) => issue.number !== lastGitID);
-          issueList.push(...filteredIssues);
-
-          lastGitID = issues[issues.length - 1].number;
-          gitPageNumber++;
-        } else {
-          break;
+        } catch (error: any) {
+          console.error(error);
+          throw error;
         }
-      } catch (error: any) {
-        console.error(error);
-        throw error;
       }
-    }
 
-    return issueList;
-  };
+      return issueList;
+    };
 
-  try {
-    const issuesPromises = repoUrls.map((repoUrl) =>
-      getIssuesForRepo(repoUrl.owner, repoUrl.repo)
-    );
-    const allIssues = await Promise.all(issuesPromises);
-
-    for (let i = 0; i < allIssues.length; i++) {
-      const issues = allIssues[i];
-      issueList.push(...issues);
-      console.log(
-        `Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`
+    try {
+      const issuesPromises = repoUrls.map((repoUrl) =>
+        getIssuesForRepo(repoUrl.owner, repoUrl.repo)
       );
-    }
+      const allIssues = await Promise.all(issuesPromises);
 
-    isGit = false;
-    finishedQueue.mutate("isGit", true);
-    commentFetcher();
-  } catch (error: any) {
-    console.error("Error fetching issues:", error);
+      for (let i = 0; i < allIssues.length; i++) {
+        const issues = allIssues[i];
+        issueList.push(...issues);
+        console.log(
+          `Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`
+        );
+      }
+
+      isGit = false;
+      finishedQueue.mutate("isGit", true);
+      commentFetcher();
+    } catch (error: any) {
+      console.error("Error fetching issues:", error);
+    }
   }
 };
 
@@ -663,7 +672,7 @@ const resetInit = () => {
   etherHash = NULL_HASH;
   lastGitID = false;
   lastEtherHash = false;
-  repoArray = []
+  repoArray.splice(0, repoArray.length);
 };
 
 const asyncInit = async () => {
@@ -686,13 +695,15 @@ const auditInit = () => {
     resultTableTbodyElem.innerHTML = "";
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
-      const { WALLET, REPO }: QuickImport = JSON.parse(quickImportValue);
+      const { WALLET, REPO, PAT }: QuickImport = JSON.parse(quickImportValue);
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
       REPOSITORY_URL = REPO.toLocaleLowerCase();
+      GITHUB_PAT = PAT;
       parseAndAddUrls(REPOSITORY_URL)
     } else {
       BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
       REPOSITORY_URL = (document.querySelector("#repoURLs") as HTMLInputElement).value.toLocaleLowerCase();
+      GITHUB_PAT = (document.querySelector("#githubPAT") as HTMLInputElement).value;
       parseAndAddUrls(REPOSITORY_URL)
     }
 
@@ -701,6 +712,7 @@ const auditInit = () => {
     if (
       BOT_WALLET_ADDRESS !== "" &&
       REPOSITORY_URL !== "" &&
+      GITHUB_PAT !== "" &&
       REPOS.length > 0
     ) {
       await asyncInit();
