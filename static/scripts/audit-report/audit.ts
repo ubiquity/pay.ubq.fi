@@ -4,52 +4,16 @@ import { throttling } from "@octokit/plugin-throttling";
 import axios from "axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, BountyHunter, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
+import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
+import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
+import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomGitPATS, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
 
 const rateOctokit = Octokit.plugin(throttling);
-
-enum ChainScan {
-  Ethereum = "etherscan.io",
-  Gnosis = "gnosisscan.io"
-}
-
-enum Chain {
-  Ethereum = "Ethereum",
-  Gnosis = "Gnosis"
-}
 
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 
-// hardcoded values
-const API_KEYS = {
-  [Chain.Ethereum]: [
-    "35G6PRE7U54QWZMXYGUSI3YWU27TP2TTBK"
-  ],
-  [Chain.Gnosis]: [
-    "R75N38X1Y5KP8CRPPDWBRT3EM5VDJ73MUK"
-  ],
-};
-
-const RPC_URLS = {
-  [Chain.Ethereum]: [
-    "https://rpc.builder0x69.io",
-    "https://eth.meowrpc.com",
-    "https://ethereum.publicnode.com"
-  ],
-  [Chain.Gnosis]: [
-    "https://rpc.ankr.com/gnosis",
-  ],
-}
-
-const GITHUB_PATS = [
-  "52v0RTV8SnYKp3r9llHn08zVR1U0HE1230k7"
-]
-
 let repoArray: string[] = [];
-interface RateLimitOptions {
-  method: string, url: string
-}
 
 const urlRegex = /\((.*?)\)/;
 const botNodeId = "BOT_kgDOBr8EgA";
@@ -81,15 +45,12 @@ const permitTransferFromSelector = "0x30f28b7a";
 const permitFunctionName = "permitTransferFrom";
 const elemList: ElemInterface[] = [];
 
-const NULL_ID = 0;
-const NULL_HASH = "0x0000000000000000000000000000000000000000";
+
 let gitID = NULL_ID;
 let etherHash = NULL_HASH;
 
 let lastGitID: number | boolean = false;
 let lastEtherHash: string | boolean = false;
-
-const DatabaseName = "file_cache";
 
 const getDataSchema = (storeHash: string) => {
   const schema: GoDBSchema = {
@@ -130,95 +91,9 @@ const getDataSchema = (storeHash: string) => {
   return schema;
 };
 
-const shortenTransactionHash = (hash: string | undefined, length = 8): string => {
-  if(!hash) return ""
-  const prefixLength = Math.floor(length / 2);
-  const suffixLength = length - prefixLength;
-
-  const prefix = hash.slice(0, prefixLength);
-  const suffix = hash.slice(-suffixLength);
-
-  return prefix + "..." + suffix;
-};
-
-function populateTable(owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) {
-  const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
-  const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
-  const rows = `
-    <tr>
-        <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
-        <td><a href="${issue_url}" target="_blank">#${issue_number} - ${issue_title}</a></td>
-        <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
-        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) :  amount} ${network === Chain.Ethereum ? "DAI" : "xDAI"}</a></td>
-        <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
-    </tr>`;
-
-  resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-}
-
-const getChainScan = (chain: string) => {
-  return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
-}
-
-const getRandomAPIKey = (chain: Chain): string  => {
-  const keys = API_KEYS[chain];
-  if (!keys || keys.length === 0) {
-    throw new Error(`No API Keys found for chain: ${chain}`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * keys.length);
-  return keys[randomIndex];
-}
-
-const getRandomRpcUrl = (chain: Chain): string => {
-  const urls = RPC_URLS[chain];
-  if (!urls || urls.length === 0) {
-    throw new Error(`No RPC URLs found for chain: ${chain}`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * urls.length);
-  return urls[randomIndex];
-}
-
-const getRandomGitPATS = (): string => {
-  if (!GITHUB_PATS || GITHUB_PATS.length === 0) {
-    throw new Error(`No Github PATS found`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * GITHUB_PATS.length);
-  return "ghp_" + GITHUB_PATS[randomIndex];
-}
-
 const parseAndAddUrls = (input: string): void => {
   const urls = input.split(',').map((url) => url.trim());
   repoArray.push(...urls);
-}
-
-const parseRepoUrl = (issueUrl: string): [string, string] => {
-  const match = issueUrl.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/\d+/i);
-  if (match) {
-    const owner = match[1];
-    const repo = match[2];
-    return [owner, repo];
-  } else {
-    throw new Error("Invalid GitHub issue URL format");
-  }
-};
-
-const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
-  const githubUrlPartsArray: GitHubUrlParts[] = [];
-
-  for (const url of urls) {
-    const regex = /^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i;
-    const matches = url.match(regex);
-    if (matches && matches.length === 3) {
-      const owner = matches[1];
-      const repo = matches[2];
-      githubUrlPartsArray.push({ owner, repo });
-    }
-  }
-
-  return githubUrlPartsArray;
 }
 
 const updateDB = async (storeHash: string) => {
@@ -397,34 +272,6 @@ class QueueSet {
 
 const updateQueue = new smartQueue();
 const rpcQueue = new QueueSet();
-
-const primaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
-  console.warn(`Request quota exhausted for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
-  return true;
-};
-
-const secondaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
-  console.warn(`Secondary quota detected for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
-  return true;
-};
-
-const isValidUrl = (urlString: string) => {
-    try { 
-      return Boolean(new URL(urlString)); 
-    }
-    catch(e){ 
-      return false; 
-    }
-}
-
-function getCurrency(comment: string) {
-  if (comment.includes('WXDAI')) {
-    return Chain.Gnosis;
-  } else if (comment.includes('DAI')) {
-    return Chain.Ethereum;
-  }
-  return null;
-}
 
 const commentFetcher = async () => {
   if (isComment) {
