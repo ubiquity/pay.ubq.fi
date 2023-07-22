@@ -192,6 +192,13 @@ class QueueObserver {
     }
   }
 
+  clearQueue() {
+    this.queueObject.isComment = false;
+    this.queueObject.isEther = false;
+    this.queueObject.isGit = false;
+    this.queueObject.isRPC = false;
+  }
+
   raise() {
     this.isException = true;
   }
@@ -673,6 +680,7 @@ const resetInit = () => {
   lastGitID = false;
   lastEtherHash = false;
   repoArray.splice(0, repoArray.length);
+  finishedQueue.clearQueue();
 };
 
 const asyncInit = async () => {

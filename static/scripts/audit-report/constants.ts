@@ -26,7 +26,6 @@ export const RPC_URLS = {
   [Chain.Ethereum]: [
     "https://rpc.builder0x69.io",
     "https://eth.meowrpc.com",
-    "https://ethereum.publicnode.com"
   ],
   [Chain.Gnosis]: [
     "https://rpc.ankr.com/gnosis",
