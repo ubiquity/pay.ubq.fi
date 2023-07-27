@@ -95,13 +95,31 @@ a:hover {
   color: black;
 }
 
+#searchInput {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
 #resultTable {
-  display: table;
-  width: 76vw;
+  border-spacing: 0.8em;
+}
+
+.resultContainer tbody:before {
+  content: "@";
+  display: block;
+  line-height: 10px;
+  text-indent: -99999px;
+}
+
+.resultContainer {
+  width: 87vw;
   border-spacing: 14px;
   border: 1px solid #dfdfdf;
   border-radius: 12px;
   box-shadow: 0px 0px 6px #0089ff59;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
 }
 
 td {
@@ -149,4 +167,19 @@ span {
 
 #report-loader {
   display: none;
+}
+
+#amountHeader {
+  position: relative;
+  cursor: pointer;
+}
+
+#sortArrow {
+  color: black;
+  font-size: 16px;
+  margin-left: 5px;
+  /* Adjust the spacing between the text and arrows */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }

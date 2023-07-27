@@ -20,4 +20,4 @@ import { grid } from "./the-grid";
   }
 })();
 
-grid(document.getElementById("grid"));
+grid(document.getElementById("grid") as HTMLElement);

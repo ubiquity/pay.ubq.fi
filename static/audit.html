@@ -12,53 +12,25 @@
   <div class="container">
     <h1 class="audit-tag">Audit report</h1>
     <!-- params -->
-    <div class="switches-container">
-      <input type="radio" id="ethereum" name="switchChain" value="Ethereum" checked="checked" />
-      <input type="radio" id="gnosis" name="switchChain" value="Gnosis" />
-      <label for="ethereum">Ethereum</label>
-      <label for="gnosis">Gnosis</label>
-      <div class="switch-wrapper">
-        <div class="switch">
-          <div>Ethereum</div>
-          <div>Gnosis</div>
-        </div>
-      </div>
-    </div>
-    <div class="mb-3">
-      <label for="chainscanApiKey" class="form-label">Etherscan/GnosisScan API key</label>
-      <input type="text" class="form-control" id="chainscanApiKey" />
-    </div>
-    <div class="mb-3">
-      <label for="rpcUrl" class="form-label">RPC URL</label>
-      <input type="text" class="form-control" id="rpcUrl" />
-    </div>
     <div class="mb-3">
       <label for="botWalletAddress" class="form-label">Bot wallet address</label>
       <input type="text" class="form-control" id="botWalletAddress" />
     </div>
     <div class="mb-3">
-      <label for="githubPat" class="form-label">Github personal access token (with "repo" scope)</label>
-      <input type="text" class="form-control" id="githubPat" />
+      <label for="repoURLs" class="form-label">Repository URLs</label>
+      <input type="text" class="form-control" id="repoURLs" />
     </div>
     <div class="mb-3">
-      <label for="ownerName" class="form-label">Owner name</label>
-      <input type="text" class="form-control" id="ownerName" />
-    </div>
-    <div class="mb-3">
-      <label for="repoName" class="form-label">Repository name</label>
-      <input type="text" class="form-control" id="repoName" />
+      <label for="githubPAT" class="form-label">Github Personal Access Token</label>
+      <input type="text" class="form-control" id="githubPAT" />
     </div>
     <div class="mb-3">
       <label for="quickName" class="form-label">Quick Import</label>
       <textarea type="text" class="form-control" id="quickName" placeholder='
 {
-  "API": "",
-  "RPC": "",
   "WALLET": "",
-  "PAT": "",
-  "OWNER": "",
   "REPO": "",
-  "CHAIN": "Ethereum/Gnosis"
+  "PAT": ""
 }'></textarea>
     </div>
     <div class="btn-container">
@@ -73,31 +45,24 @@
       </div>
     </div>
     <!-- result table -->
-    <table id="resultTable" class="table" style="display: none">
-      <thead>
-        <tr>
-          <th scope="col">Issue</th>
-          <th scope="col">Amount (DAI)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- table content -->
-      </tbody>
-    </table>
+    <div class="resultContainer">
+      <input type="text" id="searchInput" placeholder="Filter Result">
+      <table id="resultTable" class="table" style="display: none">
+        <thead>
+          <tr>
+            <th scope="col">Organization/Repo Name</th>
+            <th scope="col">Issue URL</th>
+            <th scope="col">Bounty Hunter</th>
+            <th scope="col" id="amountHeader">Amount <span id="sortArrow">&#8595;</span></th>
+            <th scope="col">TX URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- table content -->
+        </tbody>
+      </table>
+    </div>
   </div>
-  <!-- result table -->
-  <table id="resultTable" class="table" style="display: none">
-    <thead>
-      <tr>
-        <th scope="col">Issue URL</th>
-        <th scope="col">Transaction URL</th>
-        <th scope="col">Amount (DAI)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- table content -->
-    </tbody>
-  </table>
   <ul class="notifications"></ul>
   <script src="out/scripts/audit-report/audit.js" type="application/javascript"></script>
 </body>
