@@ -10,12 +10,10 @@ jobs:
   deploy-to-cloudflare:
     name: Deploy to Cloudflare Pages
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    uses: whilefoo/.github/.github/workflows/deploy.yml@reusable-workflow
+    uses: ubiquity/.github/.github/workflows/deploy.yml@main
     permissions:
       contents: read
       pull-requests: write
-    with:
-      custom_domain: "pay-ubq-fi.ubiquitydao.dev"
     secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
