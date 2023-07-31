@@ -8,18 +8,7 @@ import { JsonRpcSigner, Network } from "@ethersproject/providers";
 import { parseUnits } from "ethers/lib/utils";
 import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
 import { daiAbi } from "../rewards/abis/daiAbi";
-
-const classes = ["error", "warn", "success"];
-const inputClasses = ["input-warn", "input-error", "input-success"];
-const outKey = document.getElementById("outKey") as HTMLInputElement;
-const githubPAT = document.getElementById("githubPat") as HTMLInputElement;
-const orgName = document.getElementById("orgName") as HTMLInputElement;
-const walletPrivateKey = document.getElementById("walletPrivateKey") as HTMLInputElement;
-const safeAddressInput = document.getElementById("safeAddress") as HTMLInputElement;
-const setBtn = document.getElementById("setBtn") as HTMLButtonElement;
-const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
-const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
-const loader = document.querySelector(".loader-wrap") as HTMLElement;
+import { allowanceInput, chainIdSelect, connectWallet, githubPAT, inputClasses, orgName, outKey, safeAddressInput, setBtn, singleToggle, toggleLoader, walletPrivateKey } from "../helpers";
 
 const APP_ID = 236521;
 const REPO_NAME = "ubiquibot-config";
@@ -165,57 +154,6 @@ const getTextBox = (text: string) => {
   const strLen = text.split("\n").length * 22;
   const strPx = `${strLen > 140 ? strLen : 140}px`;
   return strPx;
-};
-
-const resetToggle = () => {
-  (walletPrivateKey.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-  (githubPAT.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-  (orgName.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-};
-
-const classListToggle = (targetElem: HTMLElement, target: "error" | "warn" | "success", inputElem?: HTMLInputElement | HTMLTextAreaElement) => {
-  classes.forEach(className => targetElem.classList.remove(className));
-  targetElem.classList.add(target);
-
-  if (inputElem) {
-    inputClasses.forEach(className => inputElem.classList.remove(className));
-    inputElem.classList.add(`input-${target}`);
-  }
-};
-
-const statusToggle = (type: "error" | "warn" | "success", message: string) => {
-  resetToggle();
-  const statusKey = document.getElementById("statusKey") as HTMLInputElement;
-  classListToggle(statusKey, type);
-  statusKey.value = message;
-};
-
-const focusToggle = (targetElem: HTMLInputElement | HTMLTextAreaElement, type: "error" | "warn" | "success", message: string) => {
-  resetToggle();
-  const infoElem = targetElem.parentNode?.querySelector(".status-log") as HTMLElement;
-  infoElem.innerHTML = message;
-  classListToggle(infoElem, type, targetElem);
-  targetElem.focus();
-};
-
-const toggleLoader = (state: "start" | "end") => {
-  if (state === "start") {
-    setBtn.disabled = true;
-    loader.style.display = "flex";
-  } else {
-    setBtn.disabled = false;
-    loader.style.display = "none";
-  }
-};
-
-const singleToggle = (type: "error" | "warn" | "success", message: string, focusElem?: HTMLInputElement | HTMLTextAreaElement) => {
-  statusToggle(type, message);
-
-  if (focusElem) {
-    focusToggle(focusElem, type, message);
-  }
-
-  toggleLoader("end");
 };
 
 const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
@@ -414,22 +352,6 @@ const nextStep = async () => {
       switchNetwork(provider, configChainId);
     }
   });
-};
-
-const connectWallet = async (): Promise<JsonRpcSigner | undefined> => {
-  try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    return signer;
-  } catch (error: any) {
-    if (error?.message?.includes("missing provider")) {
-      singleToggle("error", "Error: Please install MetaMask.");
-    } else {
-      singleToggle("error", "Error: Please connect your wallet.");
-    }
-    return undefined;
-  }
 };
 
 const switchNetwork = async (provider: ethers.providers.Web3Provider, chainId: string | number): Promise<boolean> => {

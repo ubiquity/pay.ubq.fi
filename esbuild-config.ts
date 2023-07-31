@@ -4,8 +4,9 @@ const typescriptEntries = [
   "static/scripts/audit-report/audit.ts",
   "static/scripts/onboarding/onboarding.ts",
   "static/scripts/key-generator/keygen.ts",
+  "static/scripts/claim-permits/claim.ts"
 ];
-const CSSEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
+const CSSEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css", "static/styles/claim-permits/index.css"];
 export const entries = [...typescriptEntries, ...CSSEntries];
 
 export let esBuildContext = {
