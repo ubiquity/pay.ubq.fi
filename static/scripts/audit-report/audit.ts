@@ -4,7 +4,7 @@ import { throttling } from "@octokit/plugin-throttling";
 import axios from "axios";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
+import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "../types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
 import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
 

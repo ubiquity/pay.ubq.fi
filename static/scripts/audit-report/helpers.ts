@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
-import { BountyHunter, GitHubUrlParts } from "./types";
+import { BountyHunter, GitHubUrlParts } from "../types";
 
 export interface RateLimitOptions {
   method: string, url: string

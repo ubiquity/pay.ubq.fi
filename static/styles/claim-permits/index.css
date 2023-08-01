@@ -7,3 +7,25 @@
     justify-content: center;
     align-items: center;
 }
+
+#claimAll {
+    all: unset;
+    background: #0d6efd;
+    border-radius: 6px;
+    padding: 14px 20px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    user-select: none;
+}
+
+#claimAll:not(:disabled):hover {
+    background: #0a58ca;
+}
+
+#claimAll:disabled {
+    cursor: default;
+}

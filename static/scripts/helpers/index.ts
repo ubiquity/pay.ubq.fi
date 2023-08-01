@@ -1,5 +1,7 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
+import { permit2Abi } from "../rewards/abis";
+import { TxData } from "../types";
 
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 const classes = ["error", "warn", "success"];
@@ -79,3 +81,34 @@ export const connectWallet = async (): Promise<JsonRpcSigner | undefined> => {
     return undefined;
   }
 };
+
+// Function to decode base64 data to JSON
+export function decodeBase64ToJSON(base64Data: string) {
+  const decodedData = Buffer.from(base64Data, "base64").toString("utf-8");
+  return JSON.parse(decodedData);
+}
+
+// Function to convert permit object to tx data
+export function convertPermitToHex(txData: TxData) {
+  const contractInterface = new ethers.utils.Interface(permit2Abi);
+  const permitTransferFromData = contractInterface.encodeFunctionData("permitTransferFrom", [
+    {
+      permit: {
+        permitted: {
+          token: txData.permit.permitted.token,
+          amount: txData.permit.permitted.amount,
+        },
+        nonce: txData.permit.nonce,
+        deadline: txData.permit.deadline,
+      },
+      transferDetails: {
+        to: txData.transferDetails.to,
+        requestedAmount: txData.transferDetails.requestedAmount,
+      },
+      owner: txData.owner,
+      signature: txData.signature,
+    },
+  ]);
+
+  return permitTransferFromData;
+}
