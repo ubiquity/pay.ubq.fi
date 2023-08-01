@@ -92,8 +92,7 @@ export function decodeBase64ToJSON(base64Data: string) {
 export function convertPermitToHex(txData: TxData) {
   const contractInterface = new ethers.utils.Interface(permit2Abi);
   const permitTransferFromData = contractInterface.encodeFunctionData("permitTransferFrom", [
-    {
-      permit: {
+      {
         permitted: {
           token: txData.permit.permitted.token,
           amount: txData.permit.permitted.amount,
@@ -101,13 +100,12 @@ export function convertPermitToHex(txData: TxData) {
         nonce: txData.permit.nonce,
         deadline: txData.permit.deadline,
       },
-      transferDetails: {
+      {
         to: txData.transferDetails.to,
         requestedAmount: txData.transferDetails.requestedAmount,
       },
-      owner: txData.owner,
-      signature: txData.signature,
-    },
+      txData.owner,
+      txData.signature,
   ]);
 
   return permitTransferFromData;
