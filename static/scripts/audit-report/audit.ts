@@ -7,6 +7,7 @@ import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
 import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
+import {sign} from "crypto";
 
 const rateOctokit = Octokit.plugin(throttling);
 
@@ -213,9 +214,14 @@ class smartQueue {
     this.queue = new Map();
   }
 
-  add(key: string, value: StandardInterface) {
-    if (this.queue.has(key)) {
+  add(key: any, value: StandardInterface) {
+    console.log("Key: " + key);
+    this.queue.set("key", key);
       const queueValue = this.queue.get(key) as StandardInterface;
+
+      this.queue.forEach((key, value) => {
+
+      });
       queueValue.s[value.t] = value.s[value.t] as any;
       const {
         s: { ether, git, network },
@@ -223,6 +229,7 @@ class smartQueue {
       } = queueValue;
 
       // check for undefined
+      console.log("Git closed_at: " + git.closed_at);
       if(git?.issue_number) {
         elemList.push({
           id: git?.issue_number!,
@@ -326,6 +333,7 @@ const commentFetcher = async () => {
                   const base64Payload = params.get("claim");
                   let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
                   if (base64Payload) {
+                    console.log("base64Payload: " + Object.keys(JSON.parse(window.atob(base64Payload))));
                     const {
                       owner: ownerAddress,
                       signature,
@@ -335,7 +343,7 @@ const commentFetcher = async () => {
                         permitted: { amount, token },
                       },
                       transferDetails: { to },
-                    } = JSON.parse(window.atob(base64Payload)) as TxData;
+                    } = JSON.parse(window.atob(base64Payload));
                     await updateQueue.add(signature, {
                       k: signature,
                       t: "git",
@@ -357,7 +365,8 @@ const commentFetcher = async () => {
                           bounty_hunter: {
                             name: issueList[0].assignee.login,
                             url: issueList[0].assignee.html_url
-                          }
+                          },
+                          closed_at: issueList[0].closed_at,
                         },
                         ether: undefined,
                         network: network as string,
@@ -427,14 +436,29 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
           const { data } = await octokit.rest.issues.listForRepo({
             owner,
             repo,
-            state: "closed",
+            state: "all",
             per_page: offset,
             page: gitPageNumber,
           });
 
           if (data.length === 0) break;
 
-          const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
+          const issues = data.filter((issue) => {
+            return !issue.pull_request && issue.comments > 0;
+          });
+
+          // const closedIssues = issues.filter((issue) => issue.state === "closed");
+
+          // console.log("Closed issues length" + closedIssues.length);
+          // for (let i = 0; i < closedIssues.length; i++) {
+          //   console.log("Closed Issues: " + closedIssues[i].title);
+          // }
+          //
+          // console.log("Issues length" + issues.length);
+          // for (let i = 0; i < issues.length; i++) {
+          //   console.log("Issues: " + issues[i].title);
+          // }
+
           if (issues.length > 0) {
             if (!lastGitID) {
               lastGitID = issues[0].number;
