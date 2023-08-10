@@ -19,10 +19,11 @@ export const shortenTransactionHash = (hash: string | undefined, length = 8): st
   return prefix + "..." + suffix;
 };
 
-export const populateTable = (owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) => {
-  if(!txHash) return; // permit not claimed
+export const populateTable = (closed_at: string, owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) => {
+  // if(!txHash) return; // permit not claimed
+  if (!closed_at) return; // issue is not closed
   const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
-  const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
+  const tx_url = txHash ? `https://${getChainScan(network)}/tx/${txHash}` : "test";
   const rows = `
     <tr>
         <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>

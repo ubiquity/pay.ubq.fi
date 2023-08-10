@@ -8,6 +8,7 @@ import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, Go
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
 import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
 import {sign} from "crypto";
+import {map} from "yaml/dist/schema/common/map";
 
 const rateOctokit = Octokit.plugin(throttling);
 
@@ -215,21 +216,16 @@ class smartQueue {
   }
 
   add(key: any, value: StandardInterface) {
-    console.log("Key: " + key);
-    this.queue.set("key", key);
-      const queueValue = this.queue.get(key) as StandardInterface;
+    this.queue.forEach((mapValue, mapKey) => {
+      let queueValue = mapValue;
 
-      this.queue.forEach((key, value) => {
+      queueValue.s[mapValue.t] = mapValue.s[mapValue.t] as any;
 
-      });
-      queueValue.s[value.t] = value.s[value.t] as any;
       const {
         s: { ether, git, network },
         c: { amount },
       } = queueValue;
 
-      // check for undefined
-      console.log("Git closed_at: " + git.closed_at);
       if(git?.issue_number) {
         elemList.push({
           id: git?.issue_number!,
@@ -237,6 +233,7 @@ class smartQueue {
           amount: ethers.utils.formatEther(amount)!,
           title: git?.issue_title!,
           bounty_hunter: git?.bounty_hunter,
+          closed_at: git?.closed_at,
           owner: git?.owner,
           repo: git?.repo,
           network,
@@ -244,10 +241,50 @@ class smartQueue {
         if (elemList.length > 0) {
           resultTableTbodyElem.innerHTML = "";
           for (let data of elemList) {
-            populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
+            // console.log("data owner: " + data.owner);
+            // console.log("data repo: " + data.repo);
+            // console.log("data id: " + data.id);
+            // console.log("data network: " + data.network);
+            // console.log("data tx: " + data.tx);
+            // console.log("data title: " + data.title);
+            // console.log("data amount: " + data.amount);
+            // console.log("data bounty_hunter: " + data.bounty_hunter);
+            console.log("data closed_at: " + data.closed_at);
+            populateTable(data?.closed_at, data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
           }
         }
       }
+
+      // this.queue.set(mapKey, mapValue);
+    })
+    if (this.queue.has(key)) {
+      // const queueValue = this.queue.get(key) as StandardInterface;
+      //
+      // queueValue.s[value.t] = value.s[value.t] as any;
+      // const {
+      //   s: { ether, git, network },
+      //   c: { amount },
+      // } = queueValue;
+      //
+      // // check for undefined
+      // if(git?.issue_number) {
+      //   elemList.push({
+      //     id: git?.issue_number!,
+      //     tx: ether?.txHash!,
+      //     amount: ethers.utils.formatEther(amount)!,
+      //     title: git?.issue_title!,
+      //     bounty_hunter: git?.bounty_hunter,
+      //     owner: git?.owner,
+      //     repo: git?.repo,
+      //     network,
+      //   });
+      //   if (elemList.length > 0) {
+      //     resultTableTbodyElem.innerHTML = "";
+      //     for (let data of elemList) {
+      //       populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
+      //     }
+      //   }
+      // }
       this.queue.delete(key);
     } else {
       this.queue.set(key, value);
@@ -662,6 +699,7 @@ const dbInit = async () => {
       if (tableData.length > 0) {
         for (let data of tableData) {
           const {
+            closed_at,
             owner,
             repo,
             id,
@@ -671,7 +709,7 @@ const dbInit = async () => {
             amount,
             title,
           } =  data as unknown as SavedData
-          populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
+          populateTable(closed_at, owner, repo, id, network, tx, title, amount, bounty_hunter);
           // for filtering
           elemList.push({
               id,
@@ -778,6 +816,7 @@ function filterTable() {
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
   for (let data of filteredData) {
       const {
+        closed_at,
         owner,
         repo,
         id,
@@ -787,7 +826,7 @@ function filterTable() {
         amount,
         title,
       } =  data as unknown as SavedData
-      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+      populateTable(closed_at, owner, repo, id, network, tx, title, amount, bounty_hunter)
   }
 }
 
@@ -802,6 +841,7 @@ function sortTableByAmount() {
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
   for (let data of elemList) {
       const {
+        closed_at,
         owner,
         repo,
         id,
@@ -811,7 +851,7 @@ function sortTableByAmount() {
         amount,
         title,
       } =  data as unknown as SavedData
-      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+      populateTable(closed_at, owner, repo, id, network, tx, title, amount, bounty_hunter)
   }
 }
 
