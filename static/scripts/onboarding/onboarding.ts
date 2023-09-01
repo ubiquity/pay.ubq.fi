@@ -22,8 +22,11 @@ const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
+const DEFAULT_ORG = "ubiquity";
 const REPO_NAME = "ubiquibot-config";
+const DEFAULT_REPO = "ubiquibot";
 const KEY_PATH = ".github/ubiquibot-config.yml";
+const DEFAULT_PATH = "ubiquibot-config-default.json";
 const KEY_NAME = "private-key-encrypted";
 const KEY_PREFIX = "HSK_";
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
@@ -50,75 +53,7 @@ interface IConf {
   "incentive-mode"?: boolean;
 }
 
-const defaultConf: IConf = {
-  "chain-id": 1,
-  "private-key-encrypted": "",
-  "safe-address": "",
-  "base-multiplier": 1000,
-  "time-labels": [
-    {
-      name: "Time: <1 Hour",
-      weight: 0.125,
-      value: 3600,
-      target: "Price: 12.5+ USD",
-    },
-    {
-      name: "Time: <1 Day",
-      weight: 1,
-      value: 86400,
-      target: "Price: 100+ USD",
-    },
-    {
-      name: "Time: <1 Week",
-      weight: 2,
-      value: 604800,
-      target: "Price: 200+ USD",
-    },
-    {
-      name: "Time: <2 Weeks",
-      weight: 3,
-      value: 1209600,
-      target: "Price: 300+ USD",
-    },
-    {
-      name: "Time: <1 Month",
-      weight: 4,
-      value: 2592000,
-      target: "Price: 400+ USD",
-    },
-  ],
-  "priority-labels": [
-    {
-      name: "Priority: 0 (Normal)",
-      weight: 1,
-      target: "Price: 100+ USD",
-    },
-    {
-      name: "Priority: 1 (Medium)",
-      weight: 2,
-      target: "Price: 200+ USD",
-    },
-    {
-      name: "Priority: 2 (High)",
-      weight: 3,
-      target: "Price: 300+ USD",
-    },
-    {
-      name: "Priority: 3 (Urgent)",
-      weight: 4,
-      target: "Price: 400+ USD",
-    },
-    {
-      name: "Priority: 4 (Emergency)",
-      weight: 5,
-      target: "Price: 500+ USD",
-    },
-  ],
-  "auto-pay-mode": true,
-  "analytics-mode": false,
-  "incentive-mode": false,
-  "max-concurrent-bounties": 2,
-};
+let defaultConf = {} as IConf;
 
 export const parseYAML = async (data: any): Promise<any | undefined> => {
   try {
@@ -144,13 +79,13 @@ export const parseJSON = async (data: any): Promise<any | undefined> => {
 
 export const YAMLStringify = (value: any) => YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
 
-export const getConf = async (): Promise<string | undefined> => {
+export const getConf = async (initial: boolean = false): Promise<string | undefined> => {
   try {
     const octokit = new Octokit({ auth: githubPAT.value });
     const { data } = await octokit.rest.repos.getContent({
-      owner: orgName.value,
-      repo: REPO_NAME,
-      path: KEY_PATH,
+      owner: initial ? DEFAULT_ORG : orgName.value,
+      repo: initial ? DEFAULT_REPO : REPO_NAME,
+      path: initial ? DEFAULT_PATH : KEY_PATH,
       mediaType: {
         format: "raw",
       },
@@ -547,22 +482,29 @@ const step2Handler = async () => {
 
     await erc20.approve(PERMIT2_ADDRESS, parseUnits(allowance.toString(), decimals));
     singleToggle("success", `Success`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
     singleToggle("error", `Error: ${error.reason}`);
   }
 };
 
 const init = async () => {
-  setInputListeners();
+  const conf = await getConf(true);
+  if (conf !== undefined) {
+    defaultConf = conf as IConf;
 
-  setBtn.addEventListener("click", async () => {
-    if (currentStep === 1) {
-      await step1Handler();
-    } else if (currentStep === 2) {
-      await step2Handler();
-    }
-  });
+    setInputListeners();
+
+    setBtn.addEventListener("click", async () => {
+      if (currentStep === 1) {
+        await step1Handler();
+      } else if (currentStep === 2) {
+        await step2Handler();
+      }
+    });
+  } else {
+    throw new Error("Default config fetch failed");
+  }
 };
 
 init();
