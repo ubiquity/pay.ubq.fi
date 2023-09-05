@@ -35,9 +35,25 @@ let encryptedValue = "";
 
 interface ConfLabel {
   name: string;
-  weight: number;
-  value?: number | undefined;
-  target: string;
+}
+
+interface CommandLabel {
+  name: string;
+  enabled: boolean;
+}
+
+interface IIncentive {
+  comment: {
+    elements: Record<string, unknown>;
+    totals: {
+      word: number;
+    };
+  };
+}
+
+interface IControl {
+  label: boolean;
+  organization: boolean;
 }
 
 interface IConf {
@@ -45,15 +61,64 @@ interface IConf {
   "private-key-encrypted"?: string;
   "safe-address"?: string;
   "base-multiplier"?: number;
-  "time-labels"?: ConfLabel[];
-  "priority-labels"?: ConfLabel[];
   "auto-pay-mode"?: boolean;
   "analytics-mode"?: boolean;
   "max-concurrent-bounties"?: number;
   "incentive-mode"?: boolean;
+  "evm-network-id"?: number;
+  "price-multiplier"?: number;
+  "issue-creator-multiplier"?: number;
+  "payment-permit-max-price"?: number;
+  "max-concurrent-assigns"?: number;
+  "assistive-pricing"?: boolean;
+  "disable-analytics"?: boolean;
+  "comment-incentives"?: boolean;
+  "register-wallet-with-verification"?: boolean;
+  "promotion-comment"?: string;
+  "default-labels"?: string[];
+  "time-labels"?: ConfLabel[];
+  "priority-labels"?: ConfLabel[];
+  "command-settings"?: CommandLabel[];
+  incentives?: IIncentive;
+  "enable-access-control"?: IControl;
 }
 
-let defaultConf = {} as IConf;
+let defaultConf: IConf = {
+  "chain-id": 1,
+  "private-key-encrypted": "",
+  "safe-address": "",
+  "base-multiplier": 1,
+  "auto-pay-mode": false,
+  "analytics-mode": false,
+  "max-concurrent-bounties": 1,
+  "incentive-mode": false,
+  "evm-network-id": 1,
+  "price-multiplier": 1,
+  "issue-creator-multiplier": 1,
+  "payment-permit-max-price": 1,
+  "max-concurrent-assigns": 1,
+  "assistive-pricing": false,
+  "disable-analytics": false,
+  "comment-incentives": false,
+  "register-wallet-with-verification": false,
+  "promotion-comment": "",
+  "default-labels": [],
+  "time-labels": [],
+  "priority-labels": [],
+  "command-settings": [],
+  incentives: {
+    comment: {
+      elements: {},
+      totals: {
+        word: 0,
+      },
+    },
+  },
+  "enable-access-control": {
+    label: false,
+    organization: true,
+  },
+};
 
 export const parseYAML = async (data: any): Promise<any | undefined> => {
   try {
@@ -489,19 +554,24 @@ const step2Handler = async () => {
 };
 
 const init = async () => {
-  const conf = await getConf(true);
+  let conf = await getConf(true);
   if (conf !== undefined) {
-    defaultConf = conf as IConf;
+    try {
+      conf = JSON.parse(conf);
+      defaultConf = conf as IConf;
+      defaultConf["private-key-encrypted"] = "";
+      setInputListeners();
 
-    setInputListeners();
-
-    setBtn.addEventListener("click", async () => {
-      if (currentStep === 1) {
-        await step1Handler();
-      } else if (currentStep === 2) {
-        await step2Handler();
-      }
-    });
+      setBtn.addEventListener("click", async () => {
+        if (currentStep === 1) {
+          await step1Handler();
+        } else if (currentStep === 2) {
+          await step2Handler();
+        }
+      });
+    } catch (error) {
+      console.error(error);
+    }
   } else {
     throw new Error("Default config fetch failed");
   }
