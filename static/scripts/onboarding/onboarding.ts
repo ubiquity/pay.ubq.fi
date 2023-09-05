@@ -21,7 +21,7 @@ const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
 const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
-const APP_ID = 285638;
+const APP_ID = 236521;
 const DEFAULT_ORG = "ubiquity";
 const REPO_NAME = "ubiquibot-config";
 const DEFAULT_REPO = "ubiquibot";
