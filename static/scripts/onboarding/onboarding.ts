@@ -57,7 +57,6 @@ interface IControl {
 }
 
 interface IConf {
-  "chain-id"?: number;
   "private-key-encrypted"?: string;
   "safe-address"?: string;
   "base-multiplier"?: number;
@@ -84,7 +83,6 @@ interface IConf {
 }
 
 let defaultConf: IConf = {
-  "chain-id": 1,
   "private-key-encrypted": "",
   "safe-address": "",
   "base-multiplier": 1,
@@ -230,7 +228,7 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
     defaultConf[KEY_NAME] = output;
-    defaultConf["chain-id"] = Number(chainIdSelect.value);
+    defaultConf["evm-network-id"] = Number(chainIdSelect.value);
     defaultConf["safe-address"] = safeAddressInput.value;
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
@@ -308,7 +306,7 @@ const setConfig = async () => {
         const updatedConf = defaultConf;
         const parsedConf: IConf | undefined = await parseYAML(conf);
         updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["chain-id"] = Number(chainIdSelect.value);
+        updatedConf["evm-network-id"] = Number(chainIdSelect.value);
         updatedConf["safe-address"] = safeAddressInput.value;
 
         // combine configs (default + remote org wide)
