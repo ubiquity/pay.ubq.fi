@@ -60,8 +60,6 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
     const networkName = getNetworkName(app.claimNetworkId);
     if (!networkName) {
       toaster.create("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
-    } else {
-      toaster.create("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     loadingClaimButton(false);
     invalidateButton.disabled = true;
