@@ -1,8 +1,9 @@
 export function grid(node = document.body) {
   // Create canvas and WebGL context
   const canvas = document.createElement("canvas");
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
   node.appendChild(canvas);
 
   const gl = canvas.getContext("webgl") as WebGLRenderingContext;
@@ -36,16 +37,16 @@ export function grid(node = document.body) {
         vec2 tileNumber = floor(gl_FragCoord.xy / 24.0);
 
         float period = rand(tileNumber) * 9.0 + 1.0; // Random value in the range [1, 10]
-        float phase = fract(u_time / period / 4.0); // Animation four times slower
-        float opacity = (1.0 - abs(phase * 2.0 - 1.0)) * 0.25; // Limit maximum opacity to 0.25
+        float phase = fract(u_time / period / 8.0); // Animation eight times slower
+        float opacity = (1.0 - abs(phase * 2.0 - 1.0)) * 0.125; // Limit maximum opacity to 0.25
 
         vec4 backgroundColor = vec4(color, opacity);
 
         if (tilePosition.x > 23.0 && tilePosition.y < 1.0) {
-            gl_FragColor = vec4(color, 1.0); // Full opacity for the dot
-        } else {
-            gl_FragColor = backgroundColor;
-        }
+          gl_FragColor = vec4(color, 1.0); // Full opacity for the dot
+      } else {
+          gl_FragColor = backgroundColor;
+      }
     }
 `;
 
