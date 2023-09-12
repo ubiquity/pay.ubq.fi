@@ -22,9 +22,6 @@ export async function renderTransaction(): Promise<Success> {
   }
 
   if (!_network) {
-    // setClaimMessage({ type: "Error", message: `No network ID passed in URL.` });
-    // table.setAttribute(`data-claim`, "error");
-    // return false;
     toaster.create("warning", `You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
     setTimeout(() => toaster.create("info", `Defaulted to Ethereum mainnet.`), 5500);
     _network = app.claimNetworkId = "0x1" as NetworkIds;
