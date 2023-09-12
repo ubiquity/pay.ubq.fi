@@ -8,6 +8,11 @@ export enum Chain {
   Gnosis = "Gnosis"
 }
 
+export const ChainMap = {
+  Ethereum: 1,
+  Gnosis: 100
+}
+
 export const NULL_ID = 0;
 export const NULL_HASH = "0x0000000000000000000000000000000000000000";
 export const DatabaseName = "file_cache";

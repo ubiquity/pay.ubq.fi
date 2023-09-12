@@ -36,7 +36,7 @@ export async function pay(): Promise<void> {
 
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
-    toaster.create("error", "Please connect to MetaMask.");
+    toaster.create("info", "Please connect to MetaMask.");
     loadingClaimButton(false);
     invalidateButton.disabled = true;
   }
@@ -60,8 +60,6 @@ function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.provide
     const networkName = getNetworkName(app.claimNetworkId);
     if (!networkName) {
       toaster.create("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
-    } else {
-      toaster.create("info", `Please switch to ${getNetworkName(app.claimNetworkId)}`);
     }
     loadingClaimButton(false);
     invalidateButton.disabled = true;
@@ -148,6 +146,6 @@ function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcS
       toaster.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
       return;
     }
-    toaster.create("success", "Nonce invalidated!");
+    toaster.create("info", "Nonce invalidation transaction sent");
   });
 }

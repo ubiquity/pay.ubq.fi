@@ -7,6 +7,7 @@ import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
 import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
+import { getTxInfo } from "./utils/getTransaction";
 
 const rateOctokit = Octokit.plugin(throttling);
 
@@ -562,11 +563,10 @@ const rpcFetcher = async () => {
         if (data) {
           const {hash, chain} = data
 
-          const provider = new ethers.providers.JsonRpcProvider(getRandomRpcUrl(chain));
-          const txInfo = await provider.getTransaction(hash);
+          const txInfo = await getTxInfo(hash, getRandomRpcUrl(chain),chain);
 
-          if (txInfo.data.startsWith(permitTransferFromSelector)) {
-            const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.data);
+          if (txInfo.input.startsWith(permitTransferFromSelector)) {
+            const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
             const {
               permit: {
                 permitted: { token, amount },
@@ -591,9 +591,9 @@ const rpcFetcher = async () => {
               },
               s: {
                 ether: {
-                  txHash: txInfo.hash as string,
-                  timestamp: txInfo.timestamp as number,
-                  block_number: txInfo.blockNumber as number,
+                  txHash: txInfo.hash,
+                  timestamp: parseInt(txInfo.timestamp, 16),
+                  block_number: parseInt(txInfo.blockNumber, 16),
                 },
                 git: undefined,
                 network: chain as string,

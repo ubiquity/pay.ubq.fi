@@ -74,7 +74,7 @@ export const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
   const githubUrlPartsArray: GitHubUrlParts[] = [];
 
   for (const url of urls) {
-    const regex = /^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i;
+    const regex = /([^/]+)\/([^/]+)$/i;
     const matches = url.match(regex);
     if (matches && matches.length === 3) {
       const owner = matches[1];

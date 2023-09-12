@@ -11,9 +11,9 @@ export async function withdraw(signer: JsonRpcSigner, txData: TxType, errorMessa
     .permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature)
     .then((tx: any) => {
       // get success message
-      toaster.create("success", `Transaction sent. Waiting for confirmation...`);
+      toaster.create("info", `Transaction sent`);
       tx.wait().then((receipt: any) => {
-        toaster.create("success", `Transaction confirmed: ${receipt?.transactionHash}`);
+        toaster.create("success", `Transaction pending: ${receipt?.transactionHash}`);
         loadingClaimButton(false); // disables the claim button
       });
     })
