@@ -356,8 +356,8 @@ const commentFetcher = async () => {
                           owner,
                           repo,
                           bounty_hunter: {
-                            name: issueList[0].assignee.login,
-                            url: issueList[0].assignee.html_url
+                            name: issueList[0].assignee?.login,
+                            url: issueList[0].assignee?.html_url
                           }
                         },
                         ether: undefined,
@@ -365,7 +365,6 @@ const commentFetcher = async () => {
                       },
                     });
                     isFound = true;
-                    break;
                   }
                 } else {
                   console.log('URL not found, skipping');
