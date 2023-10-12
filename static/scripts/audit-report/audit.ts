@@ -356,8 +356,8 @@ const commentFetcher = async () => {
                           owner,
                           repo,
                           bounty_hunter: {
-                            name: issueList[0].assignee?.login,
-                            url: issueList[0].assignee?.html_url
+                            name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees[0]?.login,
+                            url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees[0]?.html_url
                           }
                         },
                         ether: undefined,
