@@ -34,12 +34,24 @@ const sodiumKeyBox = async () => {
 
 const sodiumEncryptedSeal = async () => {
   const pubKey = document.querySelector("#pubKey") as HTMLInputElement;
+  const privKey = document.querySelector("#privKey") as HTMLInputElement;
   const plainKey = document.querySelector("#plainKey") as HTMLInputElement;
   const cipherKey = document.querySelector("#cipherKey") as HTMLInputElement;
   try {
     await _sodium.ready;
     const sodium = _sodium;
 
+    if (!privKey.value && !pubKey.value) {
+      statusToggle("error", `Error: You need to enter either public or private key.`);
+      return;
+    }
+    if (!pubKey.value && privKey.value) {
+      // derive public key from private key
+      const binPriv = sodium.from_base64(privKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
+      const binPub = sodium.crypto_scalarmult_base(binPriv);
+      const output = sodium.to_base64(binPub, sodium.base64_variants.URLSAFE_NO_PADDING);
+      pubKey.value = output;
+    }
     const binkey = sodium.from_base64(pubKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
     const binsec = sodium.from_string(plainKey.value);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
@@ -60,6 +72,17 @@ const sodiumOpenSeal = async () => {
     await _sodium.ready;
     const sodium = _sodium;
 
+    if (!privKey.value) {
+      statusToggle("error", `Error: You need to enter private key.`);
+      return;
+    }
+    if (!pubKey.value && privKey.value) {
+      // derive public key from private key
+      const binPriv = sodium.from_base64(privKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
+      const binPub = sodium.crypto_scalarmult_base(binPriv);
+      const output = sodium.to_base64(binPub, sodium.base64_variants.URLSAFE_NO_PADDING);
+      pubKey.value = output;
+    }
     const binPub = sodium.from_base64(pubKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
     const binPriv = sodium.from_base64(privKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
     const binCipher = sodium.from_base64(cipherKey.value, sodium.base64_variants.URLSAFE_NO_PADDING);
