@@ -12,7 +12,7 @@ import { switchNetwork } from "./switch-network";
 import { renderTreasuryStatus } from "./render-treasury-status";
 import { withdraw } from "./withdraw";
 
-export async function pay(): Promise<void> {
+export async function pay(retry = false): Promise<void> {
   let detailsVisible = false;
 
   const table = document.getElementsByTagName(`table`)[0];
@@ -26,7 +26,7 @@ export async function pay(): Promise<void> {
 
   fetchTreasury().then(renderTreasuryStatus).catch(errorToast);
 
-  const signer = await connectWallet();
+  const signer = await connectWallet(retry);
   const signerAddress = await signer?.getAddress();
 
   // check if permit is already claimed
@@ -47,7 +47,7 @@ export async function pay(): Promise<void> {
   window.ethereum.on("chainChanged", handleIfOnCorrectNetwork);
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
-  notOnCorrectNetwork(currentNetworkId, web3provider);
+  // notOnCorrectNetwork(currentNetworkId, web3provider);
 
   claimButton.element.addEventListener("click", curryClaimButtonHandler(signer));
 }
