@@ -67,6 +67,12 @@ export function resetClaimButton() {
   claimButton.element.classList.remove("show-cl");
 }
 
+export function hideClaimButton() {
+  claimButton.element.disabled = true;
+  claimButton.element.classList.add("hide-cl");
+  claimButton.element.classList.remove("show-cl");
+}
+
 export function errorToast(error: any, errorMessage?: string) {
   delete error.stack;
   let ErrorData = JSON.stringify(error, null, 2);
