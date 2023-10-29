@@ -1,3 +1,5 @@
+import { Web3AuthNoModal } from "@web3auth/no-modal";
+
 export const toaster = {
   create: createToast,
   error: errorToast,
@@ -13,6 +15,12 @@ export const claimButton = {
   loading: loadingClaimButton,
   reset: resetClaimButton,
   element: document.getElementById("claimButton") as HTMLButtonElement,
+};
+
+export const loginButton = {
+  element: document.getElementById("loginButton") as HTMLButtonElement,
+  title: document.getElementById("loginButtonTitle") as HTMLSpanElement,
+  state: "loggedIn" as "loggedIn" | "loggedOut",
 };
 
 const notifications = document.querySelector(".notifications") as HTMLUListElement;

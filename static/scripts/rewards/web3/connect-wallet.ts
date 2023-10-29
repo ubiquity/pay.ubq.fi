@@ -1,16 +1,22 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { ethers } from "ethers";
 import { toaster, claimButton, resetClaimButton } from "../toaster";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import { ethers } from "ethers";
+import { RelayPack } from "@safe-global/relay-kit";
+import { AccountAbstraction } from "./pay";
 
-export async function connectWallet(retry = false): Promise<JsonRpcSigner | null> {
+export interface AccountAbstractionConfig {
+  relayPack: RelayPack;
+}
+
+export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
 
-    if (retry) {
-      await provider.send("eth_requestAccounts", []);
-    }
+    await AccountAbstraction(provider, true);
 
     const signer = provider.getSigner();
+
     resetClaimButton();
     return signer;
   } catch (error: any) {

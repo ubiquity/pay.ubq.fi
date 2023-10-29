@@ -281,6 +281,19 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
   display: none;
 }
 
+.hide-cl > svg.login-icon {
+  display: none;
+}
+.show-cl > svg.login-icon {
+  display: unset;
+}
+.hide-cl > svg.logout-icon {
+  display: unset;
+}
+.show-cl > svg.logout-icon {
+  display: none;
+}
+
 #additionalDetails svg {
   /* display: none; */
 }
