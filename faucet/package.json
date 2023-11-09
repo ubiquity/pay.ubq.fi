@@ -1,0 +1,30 @@
+{
+  "name": "ubq-gas-faucet",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230115.0",
+    "typescript": "^5.2.2",
+    "wrangler": "2.6.2"
+  },
+
+  "private": true,
+  "scripts": {
+    "start": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+
+  "dependencies": {
+    "@ethersproject/address": "^5.7.0",
+    "@supabase/supabase-js": "^2.38.4",
+    "aws-sdk": "link:stub",
+    "defender-relay-client": "^1.38.0",
+    "viem": "^1.6.0"
+  },
+  
+  "pnpm": {
+    "patchedDependencies": {
+      "amazon-cognito-identity-js@6.1.2": "patches/amazon-cognito-identity-js@6.1.2.patch",
+      "defender-base-client@1.38.0": "patches/defender-base-client@1.38.0.patch"
+    }
+  }
+}

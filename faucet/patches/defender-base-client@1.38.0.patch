@@ -1,0 +1,70 @@
+diff --git a/lib/api/api.js b/lib/api/api.js
+index 1908bece5bf87957aa891794b544eb817e7d7416..d22c0c125598019df16738cd80618c205990984d 100644
+--- a/lib/api/api.js
++++ b/lib/api/api.js
+@@ -1,33 +1,43 @@
+ "use strict";
+-var __importDefault = (this && this.__importDefault) || function (mod) {
+-    return (mod && mod.__esModule) ? mod : { "default": mod };
+-};
++var __importDefault =
++  (this && this.__importDefault) ||
++  function (mod) {
++    return mod && mod.__esModule ? mod : { default: mod };
++  };
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.createAuthenticatedApi = exports.createApi = exports.rejectWithDefenderApiError = void 0;
+-const axios_1 = __importDefault(require("axios"));
+-const api_error_1 = require("./api-error");
++exports.createAuthenticatedApi =
++  exports.createApi =
++  exports.rejectWithDefenderApiError =
++    void 0;
+ const auth_1 = require("./auth");
+-function rejectWithDefenderApiError(axiosError) {
+-    return Promise.reject(new api_error_1.DefenderApiResponseError(axiosError));
+-}
+-exports.rejectWithDefenderApiError = rejectWithDefenderApiError;
+ function createApi(key, token, apiUrl, httpsAgent) {
+-    const instance = axios_1.default.create({
+-        baseURL: apiUrl,
++  const fakeAxios = (method) => (url, payload) => {
++    return fetch(
++      apiUrl.substring(0, apiUrl.length - 1) +
++        url +
++        (method === "get" && payload ? new URLSearchParams(payload) : ""),
++      {
++        method: method.toLowerCase(),
++        body: method === "get" ? undefined : JSON.stringify(payload),
+         headers: {
+-            'X-Api-Key': key,
+-            Authorization: `Bearer ${token}`,
+-            'Content-Type': 'application/json',
++          "X-Api-Key": key,
++          Authorization: `Bearer ${token}`,
++          "Content-Type": "application/json",
+         },
+-        httpsAgent,
+-    });
+-    instance.interceptors.response.use(({ data }) => data, rejectWithDefenderApiError);
+-    return instance;
++      }
++    ).then((res) => res.json());
++  };
++  const instance = {
++    get: fakeAxios("get"),
++    post: fakeAxios("post"),
++    put: fakeAxios("put"),
++  };
++  return instance;
+ }
+ exports.createApi = createApi;
+ async function createAuthenticatedApi(userPass, poolData, apiUrl, httpsAgent) {
+-    const token = await auth_1.authenticate(userPass, poolData);
+-    const api = createApi(userPass.Username, token, apiUrl, httpsAgent);
+-    return api;
++  const token = await auth_1.authenticate(userPass, poolData);
++  const api = createApi(userPass.Username, token, apiUrl, httpsAgent);
++  return api;
+ }
+ exports.createAuthenticatedApi = createAuthenticatedApi;
