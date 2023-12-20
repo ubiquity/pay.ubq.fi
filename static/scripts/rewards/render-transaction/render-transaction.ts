@@ -1,19 +1,23 @@
 import { app } from "./index";
-import { insertTableData } from "./insert-table-data";
+import { insertNftTableData, insertTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
-import { renderTokenSymbol } from "./render-token-symbol";
+import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
 import { networkExplorers, NetworkIds } from "../constants";
-import { toaster } from "../toaster";
+import { hideClaimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
+import { Value } from "@sinclair/typebox/value";
+import { Type } from "@sinclair/typebox";
+import { ClaimTx } from "./tx-type";
+import { pay } from "../web3/pay";
+import { ethers } from "ethers";
+import { handleNetwork } from "../web3/wallet";
 
-type Success = boolean;
-export async function renderTransaction(): Promise<Success> {
+export async function init() {
   const table = document.getElementsByTagName(`table`)[0];
 
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
-  let _network = urlParams.get("network");
 
   if (!base64encodedTxData) {
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
@@ -21,38 +25,77 @@ export async function renderTransaction(): Promise<Success> {
     return false;
   }
 
-  if (!_network) {
-    toaster.create("warning", `You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
-    setTimeout(() => toaster.create("info", `Defaulted to Ethereum mainnet.`), 5500);
-    _network = app.claimNetworkId = "0x1" as NetworkIds;
-  }
-
-  // if network id is not prefixed with 0x, convert it to hex
-  if (!_network.startsWith("0x")) {
-    app.claimNetworkId = `0x${Number(_network).toString(16)}` as NetworkIds;
-  }
-
-  const network = app.claimNetworkId as keyof typeof networkExplorers;
-
-  app.explorerUrl = networkExplorers[network] || app.explorerUrl;
-
   try {
-    app.txData = JSON.parse(atob(base64encodedTxData));
+    const claimTxs = Value.Decode(Type.Array(ClaimTx), JSON.parse(atob(base64encodedTxData)));
+    app.claimTxs = claimTxs;
   } catch (error) {
-    setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL.` });
+    console.error(error);
+    setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
     table.setAttribute(`data-claim`, "error");
     return false;
   }
-  // insert tx data into table
-  const requestedAmountElement = await insertTableData(table);
-  table.setAttribute(`data-claim`, "ok");
-  renderTokenSymbol({ table, requestedAmountElement }).catch(console.error);
 
-  const toElement = document.getElementById(`transferDetails.to`) as Element;
-  const fromElement = document.getElementById("owner") as Element;
+  let detailsVisible = false;
 
-  renderEnsName({ element: toElement, address: app.txData.transferDetails.to }).catch(console.error);
-  renderEnsName({ element: fromElement, address: app.txData.owner, tokenView: true }).catch(console.error);
+  table.setAttribute(`data-details-visible`, detailsVisible.toString());
+
+  const additionalDetails = document.getElementById(`additionalDetails`) as Element;
+  additionalDetails.addEventListener("click", () => {
+    detailsVisible = !detailsVisible;
+    table.setAttribute(`data-details-visible`, detailsVisible.toString());
+  });
+
+  renderTransaction();
+}
+
+type Success = boolean;
+export async function renderTransaction(): Promise<Success> {
+  const table = document.getElementsByTagName(`table`)[0];
+  resetClaimButton();
+
+  if (!app.currentTx) {
+    hideClaimButton();
+    return false;
+  }
+
+  handleNetwork(app.currentTx.networkId);
+
+  if (app.currentTx.type === "permit") {
+    // insert tx data into table
+    const requestedAmountElement = insertTableData(app.currentTx, table);
+    table.setAttribute(`data-claim`, "ok");
+
+    renderTokenSymbol({
+      tokenAddress: app.currentTx.permit.permitted.token,
+      ownerAddress: app.currentTx.owner,
+      networkId: app.currentTx.networkId,
+      amount: app.currentTx.transferDetails.requestedAmount,
+      explorerUrl: networkExplorers[app.currentTx.networkId],
+      table,
+      requestedAmountElement,
+    }).catch(console.error);
+
+    const toElement = document.getElementById(`transferDetails.to`) as Element;
+    const fromElement = document.getElementById("owner") as Element;
+
+    renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to }).catch(console.error);
+    renderEnsName({ element: fromElement, address: app.currentTx.owner, tokenAddress: app.currentTx.permit.permitted.token, tokenView: true }).catch(
+      console.error,
+    );
+
+    await pay(app.currentTx);
+  } else if (app.currentTx.type === "nft-mint") {
+    const requestedAmountElement = insertNftTableData(app.currentTx, table);
+    table.setAttribute(`data-claim`, "ok");
+
+    renderNftSymbol({
+      tokenAddress: app.currentTx.nftAddress,
+      networkId: app.currentTx.networkId,
+      explorerUrl: networkExplorers[app.currentTx.networkId],
+      table,
+      requestedAmountElement,
+    }).catch(console.error);
+  }
 
   return true;
 }

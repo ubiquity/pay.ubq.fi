@@ -23,16 +23,17 @@ export function getNetworkName(networkId?: string) {
   return networkName ?? "Unknown Network";
 }
 
-export const networkExplorers = {
+export const networkExplorers: Record<string, string> = {
   [NetworkIds.Mainnet]: "https://etherscan.io",
   [NetworkIds.Goerli]: "https://goerli.etherscan.io",
   [NetworkIds.Gnosis]: "https://gnosisscan.io",
 };
 
-export const networkRpcs = {
+export const networkRpcs: Record<string, string> = {
   [NetworkIds.Mainnet]: "https://rpc-pay.ubq.fi/v1/mainnet",
   [NetworkIds.Goerli]: "https://rpc-pay.ubq.fi/v1/goerli",
   [NetworkIds.Gnosis]: "https://rpc.gnosischain.com",
 };
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+export const nftAddress = "0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b";

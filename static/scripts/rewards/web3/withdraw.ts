@@ -2,15 +2,16 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
-import { TxType } from "../render-transaction/tx-type";
+import { Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, hideClaimButton } from "../toaster";
 import { app } from "../render-transaction";
 import { shortenAddress } from "../render-transaction/insert-table-data";
+import { renderTransaction } from "../render-transaction/render-transaction";
 
-export async function withdraw(signer: JsonRpcSigner, txData: TxType, errorMessage?: string) {
+export async function withdraw(signer: JsonRpcSigner, permit: Permit, errorMessage?: string) {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   await permit2Contract
-    .permitTransferFrom(txData.permit, txData.transferDetails, txData.owner, txData.signature)
+    .permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature)
     .then((tx: any) => {
       // get success message
       toaster.create("info", `Transaction sent`);
@@ -18,7 +19,8 @@ export async function withdraw(signer: JsonRpcSigner, txData: TxType, errorMessa
         toaster.create("success", `Claim Complete: ${receipt?.transactionHash}`);
         const requestedAmountElement = document.getElementById("transferDetails.requestedAmount") as Element;
         requestedAmountElement.innerHTML += " has been claimed!";
-        hideClaimButton();
+        app.nextTx();
+        renderTransaction();
       });
     })
     .catch((error: any) => {

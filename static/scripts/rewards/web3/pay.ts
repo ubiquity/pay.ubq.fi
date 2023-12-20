@@ -1,84 +1,33 @@
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 import { networkNames, getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { app } from "../render-transaction/index";
 import { setClaimMessage } from "../render-transaction/set-claim-message";
 import { errorToast, claimButton, toaster, loadingClaimButton, resetClaimButton } from "../toaster";
 import { checkPermitClaimable } from "./check-permit-claimable";
-import { connectWallet } from "./connect-wallet";
-import { fetchTreasury } from "./fetch-treasury";
-import { invalidateNonce } from "./invalidate-nonce";
-import { switchNetwork } from "./switch-network";
-import { renderTreasuryStatus } from "./render-treasury-status";
+import { connectWallet } from "./wallet";
+import { invalidateNonce } from "./nonce";
+import { renderTreasuryStatus, fetchTreasury } from "./permit-treasury";
 import { withdraw } from "./withdraw";
+import { Permit } from "../render-transaction/tx-type";
+import { renderTransaction } from "../render-transaction/render-transaction";
 
-export async function pay(): Promise<void> {
-  let detailsVisible = false;
-
+export async function pay(permit: Permit): Promise<void> {
   const table = document.getElementsByTagName(`table`)[0];
-  table.setAttribute(`data-details-visible`, detailsVisible.toString());
-
-  const additionalDetails = document.getElementById(`additionalDetails`) as Element;
-  additionalDetails.addEventListener("click", () => {
-    detailsVisible = !detailsVisible;
-    table.setAttribute(`data-details-visible`, detailsVisible.toString());
-  });
-
-  fetchTreasury().then(renderTreasuryStatus).catch(errorToast);
+  fetchTreasury(permit).then(renderTreasuryStatus).catch(errorToast);
 
   const signer = await connectWallet();
   const signerAddress = await signer?.getAddress();
 
   // check if permit is already claimed
-  checkPermitClaimable()
-    .then((claimable: boolean) => checkPermitClaimableHandler(claimable, table, signerAddress, signer))
+  checkPermitClaimable(permit)
+    .then((claimable: boolean) => checkPermitClaimableHandler(claimable, table, permit.owner, permit.permit.nonce, signerAddress, signer))
     .catch(errorToast);
 
-  const web3provider = new ethers.providers.Web3Provider(window.ethereum);
-  if (!web3provider || !web3provider.provider.isMetaMask) {
-    toaster.create("info", "Please connect to MetaMask.");
-    loadingClaimButton(false);
-    invalidateButton.disabled = true;
-  }
-
-  const currentNetworkId = await web3provider.provider.request!({ method: "eth_chainId" });
-
-  // watch for network changes
-  window.ethereum.on("chainChanged", handleIfOnCorrectNetwork);
-
-  // if its not on ethereum mainnet, gnosis, or goerli, display error
-  notOnCorrectNetwork(currentNetworkId, web3provider);
-
-  claimButton.element.addEventListener("click", curryClaimButtonHandler(signer));
+  claimButton.element.addEventListener("click", curryClaimButtonHandler(permit, signer));
 }
 
-function notOnCorrectNetwork(currentNetworkId: any, web3provider: ethers.providers.Web3Provider) {
-  if (currentNetworkId !== app.claimNetworkId) {
-    if (app.claimNetworkId == void 0) {
-      console.error(`You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
-    }
-    const networkName = getNetworkName(app.claimNetworkId);
-    if (!networkName) {
-      toaster.create("error", `This dApp currently does not support payouts for network ID ${app.claimNetworkId}`);
-    }
-    loadingClaimButton(false);
-    invalidateButton.disabled = true;
-    switchNetwork(web3provider);
-  }
-}
-
-function handleIfOnCorrectNetwork(currentNetworkId: string) {
-  if (app.claimNetworkId === currentNetworkId) {
-    // enable the button once on the correct network
-    resetClaimButton();
-    invalidateButton.disabled = false;
-  } else {
-    loadingClaimButton(false);
-    invalidateButton.disabled = true;
-  }
-}
-
-function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) {
+function curryClaimButtonHandler(permit: Permit, signer: ethers.providers.JsonRpcSigner | null) {
   return async function claimButtonHandler() {
     try {
       if (!signer?._isSigner) {
@@ -88,14 +37,17 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
         }
       }
       loadingClaimButton();
+      app.nextTx();
+      renderTransaction();
+      return;
 
-      const { balance, allowance, decimals } = await fetchTreasury();
+      const { balance, allowance, decimals } = await fetchTreasury(permit);
       renderTreasuryStatus({ balance, allowance, decimals }).catch(errorToast);
       let errorMessage: string | undefined = undefined;
-      const permitted = Number(app.txData.permit.permitted.amount);
-      const solvent = balance >= permitted;
-      const allowed = allowance >= permitted;
-      const beneficiary = app.txData.transferDetails.to.toLowerCase();
+      const permitted = BigNumber.from(permit.permit.permitted.amount);
+      const solvent = balance.gte(permitted);
+      const allowed = allowance.gte(permitted);
+      const beneficiary = permit.transferDetails.to.toLowerCase();
       const user = (await signer.getAddress()).toLowerCase();
 
       if (beneficiary !== user) {
@@ -108,7 +60,7 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
         toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
         resetClaimButton();
       } else {
-        await withdraw(signer, app.txData, errorMessage);
+        await withdraw(signer, permit, errorMessage);
       }
     } catch (error: unknown) {
       errorToast(error, "");
@@ -117,19 +69,26 @@ function curryClaimButtonHandler(signer: ethers.providers.JsonRpcSigner | null) 
   };
 }
 
-function checkPermitClaimableHandler(claimable: boolean, table: HTMLTableElement, signerAddress?: string, signer?: ethers.providers.JsonRpcSigner | null) {
+function checkPermitClaimableHandler(
+  claimable: boolean,
+  table: HTMLTableElement,
+  ownerAddress: string,
+  nonce: BigNumberish,
+  signerAddress?: string,
+  signer?: ethers.providers.JsonRpcSigner | null,
+) {
   if (!claimable) {
     setClaimMessage({ type: "Notice", message: `This permit is not claimable` });
     table.setAttribute(`data-claim`, "none");
   } else {
-    if (signerAddress?.toLowerCase() === app.txData.owner.toLowerCase()) {
-      generateInvalidatePermitAdminControl(signer);
+    if (signerAddress?.toLowerCase() === ownerAddress.toLowerCase()) {
+      generateInvalidatePermitAdminControl(nonce, signer);
     }
   }
   return signer;
 }
 
-function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcSigner | null) {
+function generateInvalidatePermitAdminControl(nonce: BigNumberish, signer?: ethers.providers.JsonRpcSigner | null) {
   const controls = document.getElementById("controls") as HTMLDivElement;
   controls.appendChild(invalidateButton);
 
@@ -141,7 +100,7 @@ function generateInvalidatePermitAdminControl(signer?: ethers.providers.JsonRpcS
       }
     }
     try {
-      await invalidateNonce(signer, BigNumber.from(app.txData.permit.nonce));
+      await invalidateNonce(signer, nonce);
     } catch (error: any) {
       toaster.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
       return;
