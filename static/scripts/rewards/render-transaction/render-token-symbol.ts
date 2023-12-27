@@ -1,6 +1,5 @@
-import { BigNumber, BigNumberish, utils } from "ethers";
-import { getDaiLikeContract } from "../get-contract";
-import { app } from "./index";
+import { BigNumberish, utils } from "ethers";
+import { getErc20Contract } from "../get-contract";
 
 export async function renderTokenSymbol({
   table,
@@ -19,7 +18,7 @@ export async function renderTokenSymbol({
   amount: BigNumberish;
   explorerUrl: string;
 }): Promise<void> {
-  const contract = await getDaiLikeContract(tokenAddress, networkId);
+  const contract = await getErc20Contract(tokenAddress, networkId);
   const symbol = await contract.symbol();
   const decimals = await contract.decimals();
   table.setAttribute(`data-contract-loaded`, "true");
@@ -42,7 +41,7 @@ export async function renderNftSymbol({
   networkId: string;
   explorerUrl: string;
 }): Promise<void> {
-  const contract = await getDaiLikeContract(tokenAddress, networkId);
+  const contract = await getErc20Contract(tokenAddress, networkId);
   const symbol = await contract.symbol();
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}">1 ${symbol}</a>`;

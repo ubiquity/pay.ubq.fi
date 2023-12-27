@@ -178,8 +178,8 @@ table[data-claim-rendered] tr#additional-details-border {
 table[data-claim-rendered] tr#additional-details-border + tr > * {
   padding-top: 24px;
 }
-table #additional-details-border ~ tr,
-table[data-details-visible="false"] #additional-details-border ~ tr {
+table #additionalDetailsTable tr,
+table[data-details-visible="false"] #additionalDetailsTable tr {
   opacity: 0;
   pointer-events: none;
   display: none;
@@ -187,7 +187,7 @@ table[data-details-visible="false"] #additional-details-border ~ tr {
 table[data-details-visible="false"] {
   /* border-bottom: 1px solid #80808000; */
 }
-table[data-details-visible="true"] #additional-details-border ~ tr {
+table[data-details-visible="true"] #additionalDetailsTable tr {
   opacity: 1;
   pointer-events: unset;
   display: table-row;
@@ -202,24 +202,24 @@ table[data-details-visible="true"] {
 table[data-contract-loaded] #Token {
   display: none;
 }
-#transferDetails\.requestedAmount > a {
+#rewardAmount > a {
   color: #fff;
   font-size: 24px;
 }
-table[data-details-visible="false"] #permit\.permitted\.token .full,
-table[data-details-visible="true"] #permit\.permitted\.token .short {
+table[data-details-visible="false"] #rewardToken .full,
+table[data-details-visible="true"] #rewardToken .short {
   display: none;
 }
-table[data-details-visible="false"] #permit\.permitted\.token .short,
-table[data-details-visible="true"] #permit\.permitted\.token .full {
+table[data-details-visible="false"] #rewardToken .short,
+table[data-details-visible="true"] #rewardToken .full {
   display: initial;
 }
-table[data-details-visible="false"] #transferDetails\.to .full,
-table[data-details-visible="true"] #transferDetails\.to .short {
+table[data-details-visible="false"] #rewardRecipient .full,
+table[data-details-visible="true"] #rewardRecipient .short {
   display: none;
 }
-table[data-details-visible="false"] #transferDetails\.to .short,
-table[data-details-visible="true"] #transferDetails\.to .full {
+table[data-details-visible="false"] #rewardRecipient .short,
+table[data-details-visible="true"] #rewardRecipient .full {
   display: initial;
 }
 #To > td,
@@ -254,13 +254,13 @@ table[data-claim="ok"] tbody {
 table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"][data-details-visible="false"] {
   border: none;
 } */
-#transferDetails\.to a div {
+#rewardRecipient a div {
   opacity: 0.66;
 }
-#transferDetails\.to a:hover div {
+#rewardRecipient a:hover div {
   opacity: 1;
 }
-#transferDetails\.to div {
+#rewardRecipient div {
   color: #fff;
 }
 

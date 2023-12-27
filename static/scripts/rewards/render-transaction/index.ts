@@ -1,9 +1,13 @@
 import { networkRpcs, networkExplorers } from "../constants";
-import { Permit, NftMint, ClaimTx } from "./tx-type";
+import { ClaimTx } from "./tx-type";
 
 class AppState {
   public claimTxs: ClaimTx[] = [];
-  private currentIndex = 0;
+  private _currentIndex = 0;
+
+  get currentIndex(): number {
+    return this._currentIndex;
+  }
 
   get currentTx(): ClaimTx | null {
     return this.currentIndex < this.claimTxs.length ? this.claimTxs[this.currentIndex] : null;
@@ -24,7 +28,12 @@ class AppState {
   }
 
   nextTx(): ClaimTx | null {
-    this.currentIndex++;
+    this._currentIndex = Math.min(this.claimTxs.length - 1, this._currentIndex + 1);
+    return this.currentTx;
+  }
+
+  previousTx(): ClaimTx | null {
+    this._currentIndex = Math.max(0, this._currentIndex - 1);
     return this.currentTx;
   }
 }

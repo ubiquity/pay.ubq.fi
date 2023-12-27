@@ -1,3 +1,4 @@
+import { BigNumber, ethers } from "ethers";
 import { app } from ".";
 import { NftMint, Permit } from "./tx-type";
 
@@ -5,33 +6,74 @@ export const shortenAddress = (address: string): string => {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
 };
 
-export function insertTableData(permit: Permit, table: Element): Element {
-  const requestedAmountElement = document.getElementById("transferDetails.requestedAmount") as Element;
+export function insertPermitTableData(
+  permit: Permit,
+  table: Element,
+  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string },
+): Element {
+  const requestedAmountElement = document.getElementById("rewardAmount") as Element;
   renderToFields(permit.transferDetails.to, app.currentExplorerUrl);
   renderTokenFields(permit.permit.permitted.token, app.currentExplorerUrl);
-  renderDetailsFields(permit.owner, app.currentExplorerUrl, requestedAmountElement);
+  renderDetailsFields([
+    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.owner}">${permit.owner}</a>` },
+    {
+      name: "Expiry",
+      value: permit.permit.deadline.gt(Number.MAX_SAFE_INTEGER.toString()) ? "Never" : new Date(permit.permit.deadline.toNumber()).toLocaleString(),
+    },
+    { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+    { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+  ]);
   table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
-export function insertNftTableData(permit: NftMint, table: Element): Element {
-  const requestedAmountElement = document.getElementById("transferDetails.requestedAmount") as Element;
-  renderToFields(permit.request.beneficiary, app.currentExplorerUrl);
-  renderTokenFields(permit.nftAddress, app.currentExplorerUrl);
+export function insertNftTableData(nftMint: NftMint, table: Element): Element {
+  const requestedAmountElement = document.getElementById("rewardAmount") as Element;
+  renderToFields(nftMint.request.beneficiary, app.currentExplorerUrl);
+  renderTokenFields(nftMint.nftAddress, app.currentExplorerUrl);
+  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = nftMint.nftMetadata;
+  renderDetailsFields([
+    {
+      name: "NFT address",
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${nftMint.nftAddress}">${nftMint.nftAddress}</a>`,
+    },
+    {
+      name: "Expiry",
+      value: nftMint.request.deadline.gt(Number.MAX_SAFE_INTEGER.toString()) ? "Never" : new Date(nftMint.request.deadline.toNumber()).toLocaleString(),
+    },
+    {
+      name: "GitHub Organization",
+      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_ORGANIZATION_NAME}">${GITHUB_ORGANIZATION_NAME}</a>`,
+    },
+    {
+      name: "GitHub Repository",
+      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_ORGANIZATION_NAME}/${GITHUB_REPOSITORY_NAME}">${GITHUB_REPOSITORY_NAME}</a>`,
+    },
+    {
+      name: "GitHub Issue",
+      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_ORGANIZATION_NAME}/${GITHUB_REPOSITORY_NAME}/issues/${GITHUB_ISSUE_ID}">${GITHUB_ISSUE_ID}</a>`,
+    },
+    {
+      name: "GitHub Username",
+      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_USERNAME}">${GITHUB_USERNAME}</a>`,
+    },
+    { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE },
+  ]);
   table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
-function renderDetailsFields(ownerAddress: string, explorerUrl: string, requestedAmountElement: Element) {
-  const ownerElem = document.getElementById("owner") as Element;
-  ownerElem.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/address/${ownerAddress}">${ownerAddress}</a>`;
-  // const nonceELem = document.getElementById("permit.nonce") as Element;
-  // nonceELem.innerHTML = `<div>${app.txData.permit.nonce}</div>`;
-  // const deadlineElem = document.getElementById("permit.deadline") as Element;
-  // deadlineElem.innerHTML = `<div>${app.txData.permit.deadline}</div>`;
-  // requestedAmountElement.innerHTML = `<div>${(Number(app.txData.transferDetails.requestedAmount) / 1000000000000000000).toString()}</div>`;
-  // const signatureElem = document.getElementById("signature") as Element;
-  // signatureElem.innerHTML = `<div>${app.txData.signature}</div>`;
+function renderDetailsFields(additionalDetails: { name: string; value: string }[]) {
+  const additionalDetailsDiv = document.getElementById("additionalDetailsTable") as Element;
+  let additionalDetailsHtml = "";
+  for (const { name, value } of additionalDetails) {
+    additionalDetailsHtml += `<tr>
+      <th><div>${name}</div></th>
+      <td><div>${value}</div></td>
+    </tr>`;
+  }
+
+  additionalDetailsDiv.innerHTML = additionalDetailsHtml;
 }
 
 function renderTokenFields(tokenAddress: string, explorerUrl: string) {
@@ -40,7 +82,7 @@ function renderTokenFields(tokenAddress: string, explorerUrl: string) {
   tokenFull.innerHTML = `<div>${tokenAddress}</div>`;
   tokenShort.innerHTML = `<div>${shortenAddress(tokenAddress)}</div>`;
 
-  const tokenBoth = document.getElementById(`permit.permitted.token`) as Element;
+  const tokenBoth = document.getElementById(`rewardToken`) as Element;
   tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}">${tokenBoth.innerHTML}</a>`;
 }
 
@@ -50,6 +92,6 @@ function renderToFields(receiverAddress: string, explorerUrl: string) {
   toFull.innerHTML = `<div>${receiverAddress}</div>`;
   toShort.innerHTML = `<div>${shortenAddress(receiverAddress)}</div>`;
 
-  const toBoth = document.getElementById(`transferDetails.to`) as Element;
+  const toBoth = document.getElementById(`rewardRecipient`) as Element;
   toBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/address/${receiverAddress}">${toBoth.innerHTML}</a>`;
 }
