@@ -11,6 +11,7 @@ import { ClaimTx } from "./tx-type";
 import { handleNetwork } from "../web3/wallet";
 import { mintNftHandler } from "../web3/nft-mint";
 import { claimPermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/permit";
+import { removeAllEventListeners } from "./utils";
 
 export async function init() {
   const table = document.getElementsByTagName(`table`)[0];
@@ -52,6 +53,7 @@ export async function init() {
     const nextTxButton = document.getElementById("nextTx");
     if (nextTxButton) {
       nextTxButton.addEventListener("click", () => {
+        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
         app.nextTx();
         rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
         table.setAttribute(`data-claim`, "none");
@@ -62,6 +64,7 @@ export async function init() {
     const prevTxButton = document.getElementById("previousTx");
     if (prevTxButton) {
       prevTxButton.addEventListener("click", () => {
+        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
         app.previousTx();
         rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
         table.setAttribute(`data-claim`, "none");
