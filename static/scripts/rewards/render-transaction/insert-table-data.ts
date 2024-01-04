@@ -18,7 +18,7 @@ export function insertPermitTableData(
     { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.owner}">${permit.owner}</a>` },
     {
       name: "Expiry",
-      value: permit.permit.deadline.gt(Number.MAX_SAFE_INTEGER.toString()) ? "Never" : new Date(permit.permit.deadline.toNumber()).toLocaleString(),
+      value: permit.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.permit.deadline.toNumber()).toLocaleString() : undefined,
     },
     { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
     { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
@@ -39,7 +39,7 @@ export function insertNftTableData(nftMint: NftMint, table: Element): Element {
     },
     {
       name: "Expiry",
-      value: nftMint.request.deadline.gt(Number.MAX_SAFE_INTEGER.toString()) ? "Never" : new Date(nftMint.request.deadline.toNumber()).toLocaleString(),
+      value: nftMint.request.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(nftMint.request.deadline.toNumber()).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",
@@ -57,16 +57,17 @@ export function insertNftTableData(nftMint: NftMint, table: Element): Element {
       name: "GitHub Username",
       value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_USERNAME}">${GITHUB_USERNAME}</a>`,
     },
-    { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE },
+    { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE.split(",").join(", ") },
   ]);
   table.setAttribute(`data-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
-function renderDetailsFields(additionalDetails: { name: string; value: string }[]) {
+function renderDetailsFields(additionalDetails: { name: string; value: string | undefined }[]) {
   const additionalDetailsDiv = document.getElementById("additionalDetailsTable") as Element;
   let additionalDetailsHtml = "";
   for (const { name, value } of additionalDetails) {
+    if (!value) continue;
     additionalDetailsHtml += `<tr>
       <th><div>${name}</div></th>
       <td><div>${value}</div></td>
