@@ -18,7 +18,7 @@
     color: #000;
   }
 
-  #transferDetails\.requestedAmount > a {
+  #rewardAmount > a {
     color: #000;
   }
 
@@ -49,9 +49,13 @@
   div#build > a {
     color: #000;
   }
-  #transferDetails\.to div {
+  #rewardAmount div, #rewardRecipient div, #rewardsCount  {
     color: #000;
   }
+  #nextTx, #previousTx {
+    fill: #000;
+  }
+  
   html {
     background-color: #fff;
   }

@@ -1,4 +1,5 @@
 import esbuild from "esbuild";
+import { invertColors } from "./plugins/invert-colors";
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -11,6 +12,7 @@ export const entries = [...typescriptEntries, ...CSSEntries];
 export let esBuildContext = {
   sourcemap: true,
   entryPoints: entries,
+  //plugins: [invertColors],
   bundle: true,
   minify: false,
   loader: {

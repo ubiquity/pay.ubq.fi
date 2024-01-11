@@ -4,9 +4,9 @@
     "start": "run-s utils:hash start:sign start:ui",
     "format": "prettier --write .",
     "build": "run-s utils:hash utils:build",
-    "start:ui": "tsx server.ts",
+    "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
-    "utils:build": "tsx esbuild.ts",
+    "utils:build": "tsx build/esbuild-build.ts",
     "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
     "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol"
   },

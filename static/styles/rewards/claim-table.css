@@ -191,8 +191,7 @@ table[data-details-visible="true"] #additionalDetailsTable tr {
   opacity: 1;
   pointer-events: unset;
   display: table-row;
-  /* background-color: #80808010; */
-  background-color: var(--background-color-light);
+  background-color: #80808000;
   /* -webkit-backdrop-filter: blur(4px); */
   /* backdrop-filter: blur(4px); */
 }
@@ -202,9 +201,14 @@ table[data-details-visible="true"] {
 table[data-contract-loaded] #Token {
   display: none;
 }
-#rewardAmount > a {
-  color: #fff;
+#rewardAmount a {
   font-size: 24px;
+}
+#rewardAmount a, #rewardRecipient div, #rewardsCount {
+  color: #fff;
+}
+#nextTx, #previousTx {
+  fill: #fff;
 }
 table[data-details-visible="false"] #rewardToken .full,
 table[data-details-visible="true"] #rewardToken .short {
