@@ -7,7 +7,7 @@ import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
 import { JsonRpcSigner, Network } from "@ethersproject/providers";
 import { parseUnits } from "ethers/lib/utils";
 import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
-import { daiAbi } from "../rewards/abis/daiAbi";
+import { erc20Abi } from "../rewards/abis/erc20Abi";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -535,7 +535,7 @@ const step2Handler = async () => {
     } else if (configChainIdHex === NetworkIds.Gnosis) {
       token = Tokens.WXDAI;
     }
-    const erc20 = new ethers.Contract(token, daiAbi, signer);
+    const erc20 = new ethers.Contract(token, erc20Abi, signer);
     const decimals = await erc20.decimals();
     const allowance = Number(allowanceInput.value);
     if (allowance <= 0) {

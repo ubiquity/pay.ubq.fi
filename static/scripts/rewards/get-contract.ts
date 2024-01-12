@@ -1,11 +1,11 @@
 import { Contract, ethers } from "ethers";
-import { daiAbi } from "./abis";
+import { erc20Abi } from "./abis";
 import { app } from "./render-transaction";
 import { networkRpcs } from "./constants";
 
-export const getDaiLikeContract = async (contractAddress: string): Promise<Contract> => {
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[app.claimNetworkId]);
-  const contractInstance = new ethers.Contract(contractAddress, daiAbi, provider);
+export const getErc20Contract = async (contractAddress: string, networkId: string): Promise<Contract> => {
+  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[networkId]);
+  const contractInstance = new ethers.Contract(contractAddress, erc20Abi, provider);
   return contractInstance;
 };
 

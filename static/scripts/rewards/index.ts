@@ -1,6 +1,6 @@
-import { renderTransaction } from "./render-transaction/render-transaction";
-import { pay } from "./web3/pay";
+import { init } from "./render-transaction/render-transaction";
 import { grid } from "./the-grid";
+
 (async function appAsyncWrapper() {
   try {
     // display commit hash
@@ -11,10 +11,7 @@ import { grid } from "./the-grid";
       buildElement.innerHTML = commitHash;
       buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${commitHash}`;
     }
-    const success = await renderTransaction();
-    if (success) {
-      await pay();
-    }
+    init();
   } catch (error) {
     console.error(error);
   }

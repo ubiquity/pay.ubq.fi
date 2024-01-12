@@ -52,6 +52,41 @@
         </a>
       </header>
       <div>
+        <div style="display: flex; flex-direction: row; align-items: center; align-self: center; margin-bottom: 10px">
+          <svg
+            id="previousTx"
+            height="12px"
+            width="12px"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 0 490 490"
+            xml:space="preserve"
+            style="cursor: pointer; padding: 10px"
+          >
+            <g>
+              <polygon points="332.668,490 82.631,244.996 332.668,0 407.369,76.493 235.402,244.996 407.369,413.507" />
+            </g>
+          </svg>
+
+          <div id="rewardsCount">1/x reward</div>
+
+          <svg
+            id="nextTx"
+            height="12px"
+            width="12px"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 0 490 490"
+            xml:space="preserve"
+            style="cursor: pointer; padding: 10px"
+          >
+            <g transform="matrix(-1, 0.0007910000276751816, 0, 1, 490.0000305175781, -0.1938260048627818)">
+              <polygon points="332.668,490 82.631,244.996 332.668,0 407.369,76.493 235.402,244.996 407.369,413.507" />
+            </g>
+          </svg>
+        </div>
         <table>
           <thead>
             <tr>
@@ -62,18 +97,18 @@
           <tbody>
             <tr id="Amount">
               <th><div>Amount</div></th>
-              <td id="transferDetails.requestedAmount"><div>Loading...</div></td>
+              <td id="rewardAmount"><div>Loading...</div></td>
             </tr>
             <tr id="Token">
               <th><div>Token</div></th>
-              <td id="permit.permitted.token">
+              <td id="rewardToken">
                 <span class="full"><div></div></span>
                 <span class="short"><div>Loading...</div></span>
               </td>
             </tr>
             <tr id="To">
               <th><div>For</div></th>
-              <td id="transferDetails.to">
+              <td id="rewardRecipient">
                 <span class="full"><div></div></span>
                 <span class="short"><div>Loading...</div></span>
               </td>
@@ -131,23 +166,8 @@
                 </div>
               </td>
             </tr>
-            <tr id="From">
-              <th><div>From</div></th>
-              <td id="owner"><div></div></td>
-            </tr>
-            <tr id="Allowance">
-              <th><div>Allowance</div></th>
-              <td class="tr-allowance">
-                <div>Loading...</div>
-              </td>
-            </tr>
-            <tr id="Balance">
-              <th><div>Balance</div></th>
-              <td class="tr-balance">
-                <div>Loading...</div>
-              </td>
-            </tr>
           </tbody>
+          <tbody id="additionalDetailsTable"></tbody>
         </table>
       </div>
       <footer>
