@@ -1,5 +1,5 @@
 import { app } from "./index";
-import { insertNftTableData, insertPermitTableData } from "./insert-table-data";
+import { insertErc721PermitTableData, insertErc20PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
@@ -9,8 +9,8 @@ import { Value } from "@sinclair/typebox/value";
 import { Type } from "@sinclair/typebox";
 import { ClaimTx } from "./tx-type";
 import { handleNetwork } from "../web3/wallet";
-import { mintNftHandler } from "../web3/nft-mint";
-import { claimPermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/permit";
+import { claimErc721PermitHandler } from "../web3/erc721-permit";
+import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { removeAllEventListeners } from "./utils";
 
 export async function init() {
@@ -95,11 +95,11 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
   handleNetwork(app.currentTx.networkId);
 
-  if (app.currentTx.type === "permit") {
+  if (app.currentTx.type === "erc20-permit") {
     const treasury = await fetchTreasury(app.currentTx);
 
     // insert tx data into table
-    const requestedAmountElement = insertPermitTableData(app.currentTx, table, treasury);
+    const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
     table.setAttribute(`data-claim`, "ok");
 
     renderTokenSymbol({
@@ -117,9 +117,9 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.currentTx);
 
-    claimButton.element.addEventListener("click", claimPermitHandler(app.currentTx));
-  } else if (app.currentTx.type === "nft-mint") {
-    const requestedAmountElement = insertNftTableData(app.currentTx, table);
+    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx));
+  } else if (app.currentTx.type === "erc721-permit") {
+    const requestedAmountElement = insertErc721PermitTableData(app.currentTx, table);
     table.setAttribute(`data-claim`, "ok");
 
     renderNftSymbol({
@@ -133,7 +133,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary });
 
-    claimButton.element.addEventListener("click", mintNftHandler(app.currentTx));
+    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx));
   }
 
   return true;

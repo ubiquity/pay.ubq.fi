@@ -1,13 +1,13 @@
 import { BigNumber, ethers } from "ethers";
 import { app } from ".";
-import { NftMint, Permit } from "./tx-type";
+import { Erc721Permit, Erc20Permit } from "./tx-type";
 
 export const shortenAddress = (address: string): string => {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
 };
 
-export function insertPermitTableData(
-  permit: Permit,
+export function insertErc20PermitTableData(
+  permit: Erc20Permit,
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string },
 ): Element {
@@ -27,19 +27,19 @@ export function insertPermitTableData(
   return requestedAmountElement;
 }
 
-export function insertNftTableData(nftMint: NftMint, table: Element): Element {
+export function insertErc721PermitTableData(permit: Erc721Permit, table: Element): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(nftMint.request.beneficiary, app.currentExplorerUrl);
-  renderTokenFields(nftMint.nftAddress, app.currentExplorerUrl);
-  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = nftMint.nftMetadata;
+  renderToFields(permit.request.beneficiary, app.currentExplorerUrl);
+  renderTokenFields(permit.nftAddress, app.currentExplorerUrl);
+  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = permit.nftMetadata;
   renderDetailsFields([
     {
       name: "NFT address",
-      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${nftMint.nftAddress}">${nftMint.nftAddress}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.nftAddress}">${permit.nftAddress}</a>`,
     },
     {
       name: "Expiry",
-      value: nftMint.request.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(nftMint.request.deadline.toNumber()).toLocaleString() : undefined,
+      value: permit.request.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.request.deadline.toNumber()).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",
