@@ -1,14 +1,13 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { networkRpcs, permit2Address } from "../constants";
-import { Permit } from "../render-transaction/tx-type";
+import { Erc20Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
-import { shortenAddress } from "../render-transaction/insert-table-data";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
 
-export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
     const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
     const tokenAddress = permit.permit.permitted.token;
@@ -23,7 +22,7 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
   }
 }
 
-export function claimPermitHandler(permit: Permit) {
+export function claimErc20PermitHandler(permit: Erc20Permit) {
   return async function handler() {
     try {
       const signer = await connectWallet();
@@ -53,7 +52,7 @@ export function claimPermitHandler(permit: Permit) {
   };
 }
 
-export async function checkPermitClaimable(permit: Permit, signer: ethers.providers.JsonRpcSigner | null) {
+export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
   const claimed = await isNonceClaimed(permit);
   if (claimed) {
     toaster.create("error", `This reward has already been claimed or invalidated.`);
@@ -91,7 +90,7 @@ export async function checkPermitClaimable(permit: Permit, signer: ethers.provid
   return true;
 }
 
-export async function generateInvalidatePermitAdminControl(permit: Permit) {
+export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) {
   const signer = await connectWallet();
   if (!signer) {
     return;
@@ -126,7 +125,7 @@ export async function generateInvalidatePermitAdminControl(permit: Permit) {
   });
 }
 
-export async function isNonceClaimed(permit: Permit): Promise<boolean> {
+export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
   const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 

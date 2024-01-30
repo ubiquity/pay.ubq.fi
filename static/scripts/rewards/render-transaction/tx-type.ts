@@ -17,8 +17,8 @@ const TSignature = T.Transform(T.RegExp(/^0x[a-fA-F0-9]+$/))
   .Decode(value => value.toLowerCase())
   .Encode(value => value);
 
-const Permit = T.Object({
-  type: T.Literal("permit"),
+const Erc20Permit = T.Object({
+  type: T.Literal("erc20-permit"),
   permit: T.Object({
     permitted: T.Object({
       token: TAddress,
@@ -36,10 +36,10 @@ const Permit = T.Object({
   networkId: TNetworkId,
 });
 
-export type Permit = StaticDecode<typeof Permit>;
+export type Erc20Permit = StaticDecode<typeof Erc20Permit>;
 
-const NftMint = T.Object({
-  type: T.Literal("nft-mint"),
+const Erc721Permit = T.Object({
+  type: T.Literal("erc721-permit"),
   request: T.Object({
     beneficiary: TAddress,
     deadline: TBigNumber,
@@ -59,8 +59,8 @@ const NftMint = T.Object({
   signature: TSignature,
 });
 
-export type NftMint = StaticDecode<typeof NftMint>;
+export type Erc721Permit = StaticDecode<typeof Erc721Permit>;
 
-export const ClaimTx = T.Union([Permit, NftMint]);
+export const ClaimTx = T.Union([Erc20Permit, Erc721Permit]);
 
 export type ClaimTx = StaticDecode<typeof ClaimTx>;
