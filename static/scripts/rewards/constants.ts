@@ -15,12 +15,6 @@ export const networkNames = {
   [NetworkIds.Gnosis]: "Gnosis Chain",
 };
 
-export const networkCurrencies: Record<number, object> = {
-  [NetworkIds.Mainnet]: { symbol: "ETH", decimals: 18 },
-  [NetworkIds.Goerli]: { symbol: "GoerliETH", decimals: 18 },
-  [NetworkIds.Gnosis]: { symbol: "XDAI", decimals: 18 },
-};
-
 export function getNetworkName(networkId?: number) {
   const networkName = networkNames[networkId as keyof typeof networkNames];
   if (!networkName) {

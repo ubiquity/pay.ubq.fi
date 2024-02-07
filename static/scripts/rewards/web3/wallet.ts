@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
-import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
+import { getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { JsonRpcSigner } from "@ethersproject/providers";
 
@@ -69,27 +69,6 @@ function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: nu
 export async function switchNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   try {
     await provider.send("wallet_switchEthereumChain", [{ chainId: "0x" + networkId.toString(16) }]);
-    return true;
-  } catch (error: any) {
-    // Add network if it doesn't exist.
-    if (error.code == 4902) {
-      return await addNetwork(provider, networkId);
-    }
-    return false;
-  }
-}
-
-export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
-  try {
-    await provider.send("wallet_addEthereumChain", [
-      {
-        chainId: "0x" + networkId.toString(16),
-        chainName: getNetworkName(networkId),
-        rpcUrls: networkRpcs[networkId],
-        blockExplorerUrls: [networkExplorers[networkId]],
-        nativeCurrency: networkCurrencies[networkId],
-      },
-    ]);
     return true;
   } catch (error: any) {
     return false;
