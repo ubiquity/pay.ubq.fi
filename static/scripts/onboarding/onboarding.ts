@@ -360,13 +360,12 @@ let signer: JsonRpcSigner | undefined = undefined;
 
 const nextStep = async () => {
   const configChainId = Number(chainIdSelect.value);
-  const configChainIdHex = `0x${configChainId.toString(16)}`;
 
   const tokenNameSpan = document.getElementById("allowance + span");
   if (tokenNameSpan) {
-    if (configChainIdHex === NetworkIds.Mainnet) {
+    if (configChainId === NetworkIds.Mainnet) {
       tokenNameSpan.innerHTML = "DAI";
-    } else if (configChainIdHex === NetworkIds.Gnosis) {
+    } else if (configChainId === NetworkIds.Gnosis) {
       tokenNameSpan.innerHTML = "WXDAI";
     }
   }
@@ -397,7 +396,7 @@ const nextStep = async () => {
   const currentChainId = await signer.getChainId();
 
   if (configChainId !== currentChainId) {
-    singleToggle("error", `Error: Please connect to ${getNetworkName(configChainIdHex)}.`);
+    singleToggle("error", `Error: Please connect to ${getNetworkName(configChainId)}.`);
     if (await switchNetwork(provider, configChainId)) {
       singleToggle("success", ``);
     }
@@ -405,10 +404,10 @@ const nextStep = async () => {
 
   // watch for chain changes
   window.ethereum.on("chainChanged", async (currentChainId: string) => {
-    if (configChainIdHex === currentChainId) {
+    if (configChainId === parseInt(currentChainId, 16)) {
       singleToggle("success", ``);
     } else {
-      singleToggle("error", `Error: Please connect to ${getNetworkName(configChainIdHex)}.`);
+      singleToggle("error", `Error: Please connect to ${getNetworkName(configChainId)}.`);
       switchNetwork(provider, configChainId);
     }
   });
@@ -510,10 +509,9 @@ const step2Handler = async () => {
 
     const walletChainId = await signer.getChainId();
     const configChainId = Number(chainIdSelect.value);
-    const configChainIdHex = `0x${configChainId.toString(16)}`;
 
     window.ethereum.on("chainChanged", async (currentChainId: string) => {
-      if (configChainIdHex === currentChainId) {
+      if (configChainId === parseInt(currentChainId, 16)) {
         singleToggle("success", ``);
       } else {
         singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
@@ -530,9 +528,9 @@ const step2Handler = async () => {
 
     // load token contract
     let token = "";
-    if (configChainIdHex === NetworkIds.Mainnet) {
+    if (configChainId === NetworkIds.Mainnet) {
       token = Tokens.DAI;
-    } else if (configChainIdHex === NetworkIds.Gnosis) {
+    } else if (configChainId === NetworkIds.Gnosis) {
       token = Tokens.WXDAI;
     }
     const erc20 = new ethers.Contract(token, erc20Abi, signer);
