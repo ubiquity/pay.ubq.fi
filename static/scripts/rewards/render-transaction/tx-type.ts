@@ -5,9 +5,11 @@ const TBigNumber = T.Transform(T.Union([T.RegExp(/^\d+$/), T.Number()]))
   .Decode(value => BigNumber.from(value))
   .Encode(value => value.toString());
 
-const TNetworkId = T.Transform(T.Union([T.RegExp(/^0x\d+$/), T.Number()]))
-  .Decode(value => (typeof value === "number" ? "0x" + value.toString(16) : value))
-  .Encode(value => value);
+// const TNetworkId = T.Transform(T.Union([T.RegExp(/^0x\d+$/), T.Number()]))
+//   .Decode(value => (typeof value === "number" ? "0x" + value.toString(16) : value))
+//   .Encode(value => value);
+
+const TNetworkId = T.Number();
 
 const TAddress = T.Transform(T.RegExp(/^0x[a-fA-F0-9]{40}$/))
   .Decode(value => value.toLowerCase())
