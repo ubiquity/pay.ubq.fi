@@ -6,14 +6,25 @@ import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
-import { getCurrency, getGitHubUrlPartsArray, getRandomAPIKey, getRandomRpcUrl, isValidUrl, parseRepoUrl, populateTable, primaryRateLimitHandler, RateLimitOptions, secondaryRateLimitHandler } from "./helpers";
+import {
+  getCurrency,
+  getGitHubUrlPartsArray,
+  getRandomAPIKey,
+  getOptimalRPC,
+  isValidUrl,
+  parseRepoUrl,
+  populateTable,
+  primaryRateLimitHandler,
+  RateLimitOptions,
+  secondaryRateLimitHandler,
+} from "./helpers";
 import { getTxInfo } from "./utils/getTransaction";
 
 const rateOctokit = Octokit.plugin(throttling);
 
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
-let GITHUB_PAT = ""
+let GITHUB_PAT = "";
 
 let repoArray: string[] = [];
 
@@ -46,7 +57,6 @@ const permit2Interface = new ethers.utils.Interface(permit2Abi);
 const permitTransferFromSelector = "0x30f28b7a";
 const permitFunctionName = "permitTransferFrom";
 const elemList: ElemInterface[] = [];
-
 
 let gitID = NULL_ID;
 let etherHash = NULL_HASH;
@@ -94,9 +104,9 @@ const getDataSchema = (storeHash: string) => {
 };
 
 const parseAndAddUrls = (input: string): void => {
-  const urls = input.split(',').map((url) => url.trim());
+  const urls = input.split(",").map(url => url.trim());
   repoArray.push(...urls);
-}
+};
 
 const updateDB = async (storeHash: string) => {
   const schema = getDataSchema(storeHash);
@@ -121,8 +131,8 @@ const updateDB = async (storeHash: string) => {
         title,
         bounty_hunter,
         network,
-        owner, 
-        repo
+        owner,
+        repo,
       });
     }
   }
@@ -224,7 +234,7 @@ class smartQueue {
       } = queueValue;
 
       // check for undefined
-      if(git?.issue_number) {
+      if (git?.issue_number) {
         elemList.push({
           id: git?.issue_number!,
           tx: ether?.txHash!,
@@ -238,7 +248,7 @@ class smartQueue {
         if (elemList.length > 0) {
           resultTableTbodyElem.innerHTML = "";
           for (let data of elemList) {
-            populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter)
+            populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
           }
         }
       }
@@ -299,7 +309,7 @@ const commentFetcher = async () => {
               },
             },
           });
-          let [owner, repo] = parseRepoUrl(issueList[0].html_url)
+          let [owner, repo] = parseRepoUrl(issueList[0].html_url);
           const { data } = await octokit.rest.issues.listComments({
             owner,
             repo,
@@ -319,13 +329,13 @@ const commentFetcher = async () => {
           } else {
             let isFound = false;
             for (let comment of data) {
-              if(comment.user && comment.user.node_id === botNodeId && comment.body) {
+              if (comment.user && comment.user.node_id === botNodeId && comment.body) {
                 const match = comment.body.match(urlRegex);
                 if (match && isValidUrl(match[1])) {
                   const url = new URL(match[1]);
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
-                  let network = getCurrency(comment.body) // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+                  let network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
                   if (base64Payload) {
                     const {
                       owner: ownerAddress,
@@ -357,8 +367,8 @@ const commentFetcher = async () => {
                           repo,
                           bounty_hunter: {
                             name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees[0]?.login,
-                            url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees[0]?.html_url
-                          }
+                            url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees[0]?.html_url,
+                          },
                         },
                         ether: undefined,
                         network: network as string,
@@ -367,7 +377,7 @@ const commentFetcher = async () => {
                     isFound = true;
                   }
                 } else {
-                  console.log('URL not found, skipping');
+                  console.log("URL not found, skipping");
                 }
               }
             }
@@ -408,15 +418,15 @@ const commentFetcher = async () => {
 const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
   if (isGit) {
     const octokit = new rateOctokit({
-        auth: GITHUB_PAT,
-        throttle: {
-          onRateLimit: (retryAfter, options) => {
-            return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-          },
-          onSecondaryRateLimit: (retryAfter, options) => {
-            return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-          },
+      auth: GITHUB_PAT,
+      throttle: {
+        onRateLimit: (retryAfter, options) => {
+          return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
         },
+        onSecondaryRateLimit: (retryAfter, options) => {
+          return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+        },
+      },
     });
 
     const getIssuesForRepo = async (owner: string, repo: string) => {
@@ -434,7 +444,7 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
 
           if (data.length === 0) break;
 
-          const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
+          const issues = data.filter(issue => !issue.pull_request && issue.comments > 0);
           if (issues.length > 0) {
             if (!lastGitID) {
               lastGitID = issues[0].number;
@@ -467,17 +477,13 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
     };
 
     try {
-      const issuesPromises = repoUrls.map((repoUrl) =>
-        getIssuesForRepo(repoUrl.owner, repoUrl.repo)
-      );
+      const issuesPromises = repoUrls.map(repoUrl => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
       const allIssues = await Promise.all(issuesPromises);
 
       for (let i = 0; i < allIssues.length; i++) {
         const issues = allIssues[i];
         issueList.push(...issues);
-        console.log(
-          `Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`
-        );
+        console.log(`Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
       }
 
       isGit = false;
@@ -501,11 +507,11 @@ const fetchDataFromChainScanAPI = async (url: string, chain: string) => {
 
 const etherFetcher = async () => {
   const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Ethereum
+    Chain.Ethereum,
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   const gnosisURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Gnosis
+    Chain.Gnosis,
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   if (isEther) {
@@ -560,9 +566,10 @@ const rpcFetcher = async () => {
       try {
         const data = await rpcQueue.read();
         if (data) {
-          const {hash, chain} = data
+          const { hash, chain } = data;
 
-          const txInfo = await getTxInfo(hash, getRandomRpcUrl(chain),chain);
+          const providerUrl = await getOptimalRPC(chain);
+          const txInfo = await getTxInfo(hash, providerUrl, chain);
 
           if (txInfo.input.startsWith(permitTransferFromSelector)) {
             const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
@@ -636,27 +643,18 @@ const dbInit = async () => {
 
       if (tableData.length > 0) {
         for (let data of tableData) {
-          const {
-            owner,
-            repo,
-            id,
-            network,
-            tx,
-            bounty_hunter,
-            amount,
-            title,
-          } =  data as unknown as SavedData
+          const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
           populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
           // for filtering
           elemList.push({
-              id,
-              tx,
-              amount,
-              title,
-              bounty_hunter,
-              owner,
-              repo,
-              network,
+            id,
+            tx,
+            amount,
+            title,
+            bounty_hunter,
+            owner,
+            repo,
+            network,
           });
         }
       }
@@ -706,22 +704,17 @@ const auditInit = () => {
       BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
       REPOSITORY_URL = REPO.toLocaleLowerCase();
       GITHUB_PAT = PAT;
-      parseAndAddUrls(REPOSITORY_URL)
+      parseAndAddUrls(REPOSITORY_URL);
     } else {
       BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
       REPOSITORY_URL = (document.querySelector("#repoURLs") as HTMLInputElement).value.toLocaleLowerCase();
       GITHUB_PAT = (document.querySelector("#githubPAT") as HTMLInputElement).value;
-      parseAndAddUrls(REPOSITORY_URL)
+      parseAndAddUrls(REPOSITORY_URL);
     }
 
-    const REPOS = getGitHubUrlPartsArray(repoArray)
+    const REPOS = getGitHubUrlPartsArray(repoArray);
 
-    if (
-      BOT_WALLET_ADDRESS !== "" &&
-      REPOSITORY_URL !== "" &&
-      GITHUB_PAT !== "" &&
-      REPOS.length > 0
-    ) {
+    if (BOT_WALLET_ADDRESS !== "" && REPOSITORY_URL !== "" && GITHUB_PAT !== "" && REPOS.length > 0) {
       await asyncInit();
       await tabInit(REPOS);
     } else {
@@ -731,38 +724,29 @@ const auditInit = () => {
 };
 
 /**
- * 
+ *
  * Filter Logics
- * 
+ *
  */
 
 // Function to filter the table based on search input
 function filterTable() {
-  const input = document.getElementById("searchInput")! as HTMLInputElement
+  const input = document.getElementById("searchInput")! as HTMLInputElement;
   let value = input.value.toLowerCase();
   const filteredData = elemList.filter(
-    (row) =>
+    row =>
       row.owner.toLowerCase().includes(value) ||
       row.repo.toLowerCase().includes(value) ||
       row.amount.toLowerCase().includes(value) ||
       row.tx.toLowerCase().includes(value) ||
       row.title.toLowerCase().includes(value) ||
       row.network.toLowerCase().includes(value) ||
-      row.bounty_hunter.name.toLowerCase().includes(value)
+      row.bounty_hunter.name.toLowerCase().includes(value),
   );
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
   for (let data of filteredData) {
-      const {
-        owner,
-        repo,
-        id,
-        network,
-        tx,
-        bounty_hunter,
-        amount,
-        title,
-      } =  data as unknown as SavedData
-      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+    const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
+    populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }
 }
 
@@ -776,17 +760,8 @@ function sortTableByAmount() {
   updateSortArrow();
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
   for (let data of elemList) {
-      const {
-        owner,
-        repo,
-        id,
-        network,
-        tx,
-        bounty_hunter,
-        amount,
-        title,
-      } =  data as unknown as SavedData
-      populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter)
+    const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
+    populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }
 }
 

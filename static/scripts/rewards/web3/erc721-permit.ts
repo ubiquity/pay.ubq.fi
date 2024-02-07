@@ -4,7 +4,7 @@ import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster 
 import { connectWallet } from "./wallet";
 import { nftRewardAbi } from "../abis/nftRewardAbi";
 import { TransactionResponse } from "@ethersproject/providers";
-import { networkRpcs } from "../constants";
+import { getOptimalRPC } from "../helpers";
 import { renderTransaction } from "../render-transaction/render-transaction";
 
 export function claimErc721PermitHandler(permit: Erc721Permit) {
@@ -54,7 +54,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
 }
 
 export async function isNonceRedeemed(nftMint: Erc721Permit): Promise<boolean> {
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[nftMint.networkId]);
+  const providerUrl = await getOptimalRPC(nftMint.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const nftContract = new ethers.Contract(nftMint.nftAddress, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(nftMint.request.nonce);
 }

@@ -1,4 +1,5 @@
 import { networkRpcs, networkExplorers } from "../constants";
+import { getOptimalRPC } from "../helpers";
 import { ClaimTx } from "./tx-type";
 
 class AppState {
@@ -13,11 +14,11 @@ class AppState {
     return this.currentIndex < this.claimTxs.length ? this.claimTxs[this.currentIndex] : null;
   }
 
-  get currentNetworkRpc(): string {
+  async currentNetworkRpc(): Promise<string> {
     if (!this.currentTx) {
-      return "0x1";
+      return getOptimalRPC(1);
     }
-    return networkRpcs[this.currentTx.networkId] || "0x1";
+    return getOptimalRPC(this.currentTx.networkId);
   }
 
   get currentExplorerUrl(): string {
