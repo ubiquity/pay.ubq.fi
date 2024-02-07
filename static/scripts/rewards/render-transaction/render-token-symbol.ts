@@ -1,5 +1,5 @@
 import { BigNumberish, utils } from "ethers";
-import { getErc20Contract } from "../get-contract";
+import { getErc20Contract } from "../helpers";
 
 export async function renderTokenSymbol({
   table,
