@@ -37,27 +37,31 @@ async function generate() {
     process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1,
   );
   const signature = await myWallet._signTypedData(domain, types, values);
-  const txData = {
-    permit: {
-      permitted: {
-        token: permitTransferFromData.permitted.token,
-        amount: permitTransferFromData.permitted.amount.toString(),
+  const txData = [
+    {
+      type: "erc20-permit",
+      permit: {
+        permitted: {
+          token: permitTransferFromData.permitted.token,
+          amount: permitTransferFromData.permitted.amount.toString(),
+        },
+        nonce: permitTransferFromData.nonce.toString(),
+        deadline: permitTransferFromData.deadline.toString(),
       },
-      nonce: permitTransferFromData.nonce.toString(),
-      deadline: permitTransferFromData.deadline.toString(),
+      transferDetails: {
+        to: permitTransferFromData.spender,
+        requestedAmount: permitTransferFromData.permitted.amount.toString(),
+      },
+      owner: myWallet.address,
+      signature: signature,
+      networkId: Number(process.env.CHAIN_ID),
     },
-    transferDetails: {
-      to: permitTransferFromData.spender,
-      requestedAmount: permitTransferFromData.permitted.amount.toString(),
-    },
-    owner: myWallet.address,
-    signature: signature,
-  };
+  ];
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
   log.ok("Testing URL:");
-  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}&network=${process.env.CHAIN_ID}`);
+  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
   log.ok("Public URL:");
-  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}&network=${process.env.CHAIN_ID}`);
+  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
   console.log();
 }
