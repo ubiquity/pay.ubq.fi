@@ -125,6 +125,7 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
   });
 }
 
+//mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
   const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
@@ -132,9 +133,10 @@ export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));
   const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos);
 
-  const bit = BigNumber.from(1).shl(bitPos).and(bitmap);
+  const bit = BigNumber.from(1).shl(bitPos);
+  const flipped = BigNumber.from(bitmap).xor(bit);
 
-  return bit.eq(0);
+  return bit.and(flipped).eq(0);
 }
 
 export async function invalidateNonce(signer: ethers.providers.JsonRpcSigner, nonce: BigNumberish): Promise<void> {
@@ -147,7 +149,7 @@ export async function invalidateNonce(signer: ethers.providers.JsonRpcSigner, no
   await permit2Contract.invalidateUnorderedNonces(wordPos, mask);
 }
 
-// mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L150
+// mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L142
 export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number } {
   // wordPos is the first 248 bits of the nonce
   const wordPos = BigNumber.from(nonce).shr(8);
