@@ -1,13 +1,15 @@
-import _sodium from "libsodium-wrappers";
-import { Octokit } from "@octokit/rest";
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { createOrUpdateTextFile } from "@octokit/plugin-create-or-update-text-file";
-import YAML from "yaml";
-import { ethers } from "ethers";
+import { Octokit } from "@octokit/rest";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
-import { JsonRpcSigner, Network } from "@ethersproject/providers";
+import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
-import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
+import _sodium from "libsodium-wrappers";
+import YAML from "yaml";
+import { DefaultConfig } from "../../../lib/ubiquibot/src/configs/ubiquibot-config-default";
+import { MergedConfig } from "../../../lib/ubiquibot/src/types";
 import { erc20Abi } from "../rewards/abis/erc20Abi";
+import { getNetworkName, NetworkIds, Tokens } from "../rewards/constants";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -33,96 +35,14 @@ const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
 
-interface ConfLabel {
-  name: string;
-}
+let defaultConf = DefaultConfig
 
-interface CommandLabel {
-  name: string;
-  enabled: boolean;
-}
-
-interface IIncentive {
-  comment: {
-    elements: Record<string, unknown>;
-    totals: {
-      word: number;
-    };
-  };
-}
-
-interface IControl {
-  label: boolean;
-  organization: boolean;
-}
-
-interface IConf {
-  "private-key-encrypted"?: string;
-  "safe-address"?: string;
-  "base-multiplier"?: number;
-  "auto-pay-mode"?: boolean;
-  "analytics-mode"?: boolean;
-  "max-concurrent-bounties"?: number;
-  "incentive-mode"?: boolean;
-  "evm-network-id"?: number;
-  "price-multiplier"?: number;
-  "issue-creator-multiplier"?: number;
-  "payment-permit-max-price"?: number;
-  "max-concurrent-assigns"?: number;
-  "assistive-pricing"?: boolean;
-  "disable-analytics"?: boolean;
-  "comment-incentives"?: boolean;
-  "register-wallet-with-verification"?: boolean;
-  "promotion-comment"?: string;
-  "default-labels"?: string[];
-  "time-labels"?: ConfLabel[];
-  "priority-labels"?: ConfLabel[];
-  "command-settings"?: CommandLabel[];
-  incentives?: IIncentive;
-  "enable-access-control"?: IControl;
-}
-
-let defaultConf: IConf = {
-  "private-key-encrypted": "",
-  "safe-address": "",
-  "base-multiplier": 1,
-  "auto-pay-mode": false,
-  "analytics-mode": false,
-  "max-concurrent-bounties": 1,
-  "incentive-mode": false,
-  "evm-network-id": 1,
-  "price-multiplier": 1,
-  "issue-creator-multiplier": 1,
-  "payment-permit-max-price": 1,
-  "max-concurrent-assigns": 1,
-  "assistive-pricing": false,
-  "disable-analytics": false,
-  "comment-incentives": false,
-  "register-wallet-with-verification": false,
-  "promotion-comment": "",
-  "default-labels": [],
-  "time-labels": [],
-  "priority-labels": [],
-  "command-settings": [],
-  incentives: {
-    comment: {
-      elements: {},
-      totals: {
-        word: 0,
-      },
-    },
-  },
-  "enable-access-control": {
-    label: false,
-    organization: true,
-  },
-};
-
-export const parseYAML = async (data: any): Promise<any | undefined> => {
+export const parseYAML = async <T>(data: string | undefined) => {
+  if (!data) return undefined
   try {
     const parsedData = await YAML.parse(data);
     if (parsedData !== null) {
-      return parsedData;
+      return parsedData as T;
     } else {
       return undefined;
     }
@@ -131,10 +51,10 @@ export const parseYAML = async (data: any): Promise<any | undefined> => {
   }
 };
 
-export const parseJSON = async (data: any): Promise<any | undefined> => {
+export const parseJSON = async <T>(data: string) => {
   try {
     const parsedData = await JSON.parse(data);
-    return parsedData;
+    return parsedData as T;
   } catch (error) {
     return undefined;
   }
@@ -227,9 +147,9 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const binsec = sodium.from_string(secret);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
-    defaultConf[KEY_NAME] = output;
-    defaultConf["evm-network-id"] = Number(chainIdSelect.value);
-    defaultConf["safe-address"] = safeAddressInput.value;
+    // defaultConf[KEY_NAME] = output;
+    defaultConf["evmNetworkId"] = Number(chainIdSelect.value);
+    // defaultConf["safe-address"] = safeAddressInput.value;
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -304,10 +224,10 @@ const setConfig = async () => {
         const conf = await getConf();
 
         const updatedConf = defaultConf;
-        const parsedConf: IConf | undefined = await parseYAML(conf);
-        updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["evm-network-id"] = Number(chainIdSelect.value);
-        updatedConf["safe-address"] = safeAddressInput.value;
+        const parsedConf  = await parseYAML<MergedConfig>(conf);
+        // updatedConf[KEY_NAME] = encryptedValue;
+        updatedConf["evmNetworkId"] = Number(chainIdSelect.value);
+        // updatedConf["safe-address"] = safeAddressInput.value;
 
         // combine configs (default + remote org wide)
         const combinedConf = Object.assign(updatedConf, parsedConf);
@@ -555,9 +475,12 @@ const init = async () => {
   let conf = await getConf(true);
   if (conf !== undefined) {
     try {
-      conf = JSON.parse(conf);
-      defaultConf = conf as IConf;
-      defaultConf["private-key-encrypted"] = "";
+      const parsedConf  = JSON.parse(conf) as MergedConfig;
+      if (!parsedConf) {
+        throw new Error("Configuration could not be parsed!")
+      }
+      defaultConf = parsedConf;
+      // defaultConf["private-key-encrypted"] = "";
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
