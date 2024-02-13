@@ -29,7 +29,8 @@ const REPO_NAME = "ubiquibot-config";
 const DEFAULT_REPO = "ubiquibot";
 const KEY_PATH = ".github/ubiquibot-config.yml";
 const DEFAULT_PATH = "ubiquibot-config-default.json";
-const KEY_NAME = "private-key-encrypted";
+const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
+const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
@@ -147,9 +148,8 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const binsec = sodium.from_string(secret);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
-    // defaultConf[KEY_NAME] = output;
-    defaultConf["evmNetworkId"] = Number(chainIdSelect.value);
-    // defaultConf["safe-address"] = safeAddressInput.value;
+    defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
+    defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -225,9 +225,8 @@ const setConfig = async () => {
 
         const updatedConf = defaultConf;
         const parsedConf  = await parseYAML<MergedConfig>(conf);
-        // updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["evmNetworkId"] = Number(chainIdSelect.value);
-        // updatedConf["safe-address"] = safeAddressInput.value;
+        updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
+        updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
 
         // combine configs (default + remote org wide)
         const combinedConf = Object.assign(updatedConf, parsedConf);
