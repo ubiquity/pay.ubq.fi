@@ -204,10 +204,13 @@ table[data-contract-loaded] #Token {
 #rewardAmount a {
   font-size: 24px;
 }
-#rewardAmount a, #rewardRecipient div, #rewardsCount {
+#rewardAmount a,
+#rewardRecipient div,
+#rewardsCount {
   color: #fff;
 }
-#nextTx, #previousTx {
+#nextTx,
+#previousTx {
   fill: #fff;
 }
 table[data-details-visible="false"] #rewardToken .full,
