@@ -479,7 +479,7 @@ const init = async () => {
         throw new Error("Configuration could not be parsed!")
       }
       defaultConf = parsedConf;
-      // defaultConf["private-key-encrypted"] = "";
+      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = "";
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
