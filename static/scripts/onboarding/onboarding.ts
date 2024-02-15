@@ -473,7 +473,7 @@ const step2Handler = async () => {
 const init = async () => {
   if (defaultConf !== undefined) {
     try {
-      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = "";
+      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
