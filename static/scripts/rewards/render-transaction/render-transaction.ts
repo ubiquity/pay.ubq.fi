@@ -33,6 +33,7 @@ export async function init() {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
     table.setAttribute(`data-claim`, "error");
+
     return false;
   }
 
@@ -47,29 +48,36 @@ export async function init() {
   });
 
   const rewardsCount = document.getElementById("rewardsCount");
+
   if (rewardsCount) {
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
 
-    const nextTxButton = document.getElementById("nextTx");
-    if (nextTxButton) {
-      nextTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.nextTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
-    }
+      const nextTxButton = document.getElementById("nextTx");
+      if (nextTxButton) {
+        nextTxButton.style.display = "block";
+        nextTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.nextTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
 
-    const prevTxButton = document.getElementById("previousTx");
-    if (prevTxButton) {
-      prevTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.previousTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
+      const prevTxButton = document.getElementById("previousTx");
+      if (prevTxButton) {
+        prevTxButton.style.display = "block";
+        prevTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.previousTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
     }
   }
 
