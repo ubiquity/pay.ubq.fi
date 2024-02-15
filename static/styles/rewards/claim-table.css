@@ -288,6 +288,12 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
   display: none;
 }
 
+.paginateClaims {
+  display: none;
+  cursor: pointer;
+  padding: 10px;
+}
+
 #additionalDetails svg {
   /* display: none; */
 }

@@ -48,28 +48,34 @@ export async function init() {
 
   const rewardsCount = document.getElementById("rewardsCount");
   if (rewardsCount) {
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
 
-    const nextTxButton = document.getElementById("nextTx");
-    if (nextTxButton) {
-      nextTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.nextTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
-    }
+      const nextTxButton = document.getElementById("nextTx");
+      if (nextTxButton) {
+        nextTxButton.style.display = "block";
+        nextTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.nextTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
 
-    const prevTxButton = document.getElementById("previousTx");
-    if (prevTxButton) {
-      prevTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.previousTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
+      const prevTxButton = document.getElementById("previousTx");
+      if (prevTxButton) {
+        prevTxButton.style.display = "block";
+        prevTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.previousTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
     }
   }
 
@@ -83,9 +89,16 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
   if (nextTx) {
     app.nextTx();
-    const rewardsCount = document.getElementById("rewardsCount") as Element;
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-    table.setAttribute(`data-claim`, "none");
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      document.getElementById("nextTx")!.style.display = "block";
+      document.getElementById("previousTx")!.style.display = "block";
+
+      const rewardsCount = document.getElementById("rewardsCount") as Element;
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+      table.setAttribute(`data-claim`, "none");
+    }
   }
 
   if (!app.currentTx) {
