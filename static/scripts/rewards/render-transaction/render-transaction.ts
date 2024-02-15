@@ -53,7 +53,6 @@ export async function init() {
     if (!app.claimTxs || app.claimTxs.length <= 1) {
       // already hidden
     } else {
-      document.getElementById("rewardsPaginate")?.classList.remove("hidden");
       rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
 
       const nextTxButton = document.getElementById("nextTx");
