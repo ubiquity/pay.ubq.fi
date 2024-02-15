@@ -1,6 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
-import { networkRpcs, permit2Address } from "../constants";
+import { permit2Address } from "../constants";
+import { getOptimalRPC } from "../helpers";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
 import { renderTransaction } from "../render-transaction/render-transaction";
@@ -9,7 +10,8 @@ import invalidateButton from "../invalidate-component";
 
 export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
-    const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
+    const providerUrl = await getOptimalRPC(permit.networkId);
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
     const tokenAddress = permit.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
     const balance = await tokenContract.balanceOf(permit.owner);
@@ -127,7 +129,8 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
+  const providerUrl = await getOptimalRPC(permit.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));

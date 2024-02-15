@@ -1,5 +1,5 @@
 import { BigNumberish, utils } from "ethers";
-import { getErc20Contract } from "../get-contract";
+import { getErc20Contract } from "../helpers";
 
 export async function renderTokenSymbol({
   table,
@@ -14,7 +14,7 @@ export async function renderTokenSymbol({
   requestedAmountElement: Element;
   tokenAddress: string;
   ownerAddress: string;
-  networkId: string;
+  networkId: number;
   amount: BigNumberish;
   explorerUrl: string;
 }): Promise<void> {
@@ -38,7 +38,7 @@ export async function renderNftSymbol({
   table: Element;
   requestedAmountElement: Element;
   tokenAddress: string;
-  networkId: string;
+  networkId: number;
   explorerUrl: string;
 }): Promise<void> {
   const contract = await getErc20Contract(tokenAddress, networkId);

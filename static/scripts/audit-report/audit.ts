@@ -10,7 +10,7 @@ import {
   getCurrency,
   getGitHubUrlPartsArray,
   getRandomAPIKey,
-  getRandomRpcUrl,
+  getOptimalRPC,
   isValidUrl,
   parseRepoUrl,
   populateTable,
@@ -568,7 +568,8 @@ const rpcFetcher = async () => {
         if (data) {
           const { hash, chain } = data;
 
-          const txInfo = await getTxInfo(hash, getRandomRpcUrl(chain), chain);
+          const providerUrl = await getOptimalRPC(chain);
+          const txInfo = await getTxInfo(hash, providerUrl, chain);
 
           if (txInfo.input.startsWith(permitTransferFromSelector)) {
             const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);

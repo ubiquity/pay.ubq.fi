@@ -1,7 +1,7 @@
 export enum NetworkIds {
-  Mainnet = "0x1",
-  Goerli = "0x5",
-  Gnosis = "0x64",
+  Mainnet = 1,
+  Goerli = 5,
+  Gnosis = 100,
 }
 
 export enum Tokens {
@@ -15,7 +15,13 @@ export const networkNames = {
   [NetworkIds.Gnosis]: "Gnosis Chain",
 };
 
-export function getNetworkName(networkId?: string) {
+export const networkCurrencies: Record<number, object> = {
+  [NetworkIds.Mainnet]: { symbol: "ETH", decimals: 18 },
+  [NetworkIds.Goerli]: { symbol: "GoerliETH", decimals: 18 },
+  [NetworkIds.Gnosis]: { symbol: "XDAI", decimals: 18 },
+};
+
+export function getNetworkName(networkId?: number) {
   const networkName = networkNames[networkId as keyof typeof networkNames];
   if (!networkName) {
     console.error(`Unknown network ID: ${networkId}`);
@@ -23,16 +29,16 @@ export function getNetworkName(networkId?: string) {
   return networkName ?? "Unknown Network";
 }
 
-export const networkExplorers: Record<string, string> = {
+export const networkExplorers: Record<number, string> = {
   [NetworkIds.Mainnet]: "https://etherscan.io",
   [NetworkIds.Goerli]: "https://goerli.etherscan.io",
   [NetworkIds.Gnosis]: "https://gnosisscan.io",
 };
 
-export const networkRpcs: Record<string, string> = {
-  [NetworkIds.Mainnet]: "https://rpc-pay.ubq.fi/v1/mainnet",
-  [NetworkIds.Goerli]: "https://rpc-pay.ubq.fi/v1/goerli",
-  [NetworkIds.Gnosis]: "https://rpc.gnosischain.com",
+export const networkRpcs: Record<number, string[]> = {
+  [NetworkIds.Mainnet]: ["https://rpc-pay.ubq.fi/v1/mainnet"],
+  [NetworkIds.Goerli]: ["https://rpc-pay.ubq.fi/v1/goerli"],
+  [NetworkIds.Gnosis]: ["https://rpc.gnosischain.com"],
 };
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
