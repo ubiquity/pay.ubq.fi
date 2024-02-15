@@ -471,14 +471,8 @@ const step2Handler = async () => {
 };
 
 const init = async () => {
-  let conf = await getConf(true);
-  if (conf !== undefined) {
+  if (defaultConf !== undefined) {
     try {
-      const parsedConf  = JSON.parse(conf) as MergedConfig;
-      if (!parsedConf) {
-        throw new Error("Configuration could not be parsed!")
-      }
-      defaultConf = parsedConf;
       defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = "";
       setInputListeners();
 
