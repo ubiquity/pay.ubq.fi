@@ -92,7 +92,12 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   if (nextTx) {
     app.nextTx();
     const rewardsCount = document.getElementById("rewardsCount") as Element;
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+    }
+
     table.setAttribute(`data-claim`, "none");
   }
 
