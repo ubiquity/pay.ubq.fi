@@ -271,12 +271,6 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
   color: #fff;
 }
 
-.paginateClaims {
-  display: none;
-  cursor: pointer;
-  padding: 10px;
-}
-
 .show-cl {
   display: block;
 }
