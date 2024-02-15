@@ -36,10 +36,10 @@ const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
 
-let defaultConf = DefaultConfig
+let defaultConf = { ...DefaultConfig, "safe-address": "" };
 
 export const parseYAML = async <T>(data: string | undefined) => {
-  if (!data) return undefined
+  if (!data) return undefined;
   try {
     const parsedData = await YAML.parse(data);
     if (parsedData !== null) {
@@ -150,6 +150,7 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
     defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
     defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
+    defaultConf["safe-address"] = safeAddressInput.value;
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -224,9 +225,10 @@ const setConfig = async () => {
         const conf = await getConf();
 
         const updatedConf = defaultConf;
-        const parsedConf  = await parseYAML<MergedConfig>(conf);
+        const parsedConf = await parseYAML<MergedConfig>(conf);
         updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
         updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
+        defaultConf["safe-address"] = safeAddressInput.value;
 
         // combine configs (default + remote org wide)
         const combinedConf = Object.assign(updatedConf, parsedConf);
