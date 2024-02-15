@@ -33,7 +33,7 @@ const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
 
-let defaultConf = { ...DefaultConfig, "safe-address": "" };
+let defaultConf = DefaultConfig;
 
 export const parseYAML = async <T>(data: string | undefined) => {
   if (!data) return undefined;
@@ -147,7 +147,6 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
     defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
     defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
-    defaultConf["safe-address"] = safeAddressInput.value;
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -225,7 +224,6 @@ const setConfig = async () => {
         const parsedConf = await parseYAML<MergedConfig>(conf);
         updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
         updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
-        defaultConf["safe-address"] = safeAddressInput.value;
 
         // combine configs (default + remote org wide)
         const combinedConf = Object.assign(updatedConf, parsedConf);
@@ -389,18 +387,6 @@ const step1Handler = async () => {
   }
   if (githubPAT.value === "") {
     singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
-    return;
-  }
-  if (!safeAddressInput.value.startsWith("0x")) {
-    singleToggle("warn", `Warn: Safe Address must start with 0x.`, safeAddressInput);
-    return;
-  }
-  if (!isHex(safeAddressInput.value.substring(2))) {
-    singleToggle("warn", `Warn: Safe Address is not a valid hex string.`, safeAddressInput);
-    return;
-  }
-  if (safeAddressInput.value.length !== 42) {
-    singleToggle("warn", `Warn: Safe Address must be 20 bytes long.`, safeAddressInput);
     return;
   }
 
