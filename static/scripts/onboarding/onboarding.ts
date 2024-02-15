@@ -24,11 +24,8 @@ const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
-const DEFAULT_ORG = "ubiquity";
 const REPO_NAME = "ubiquibot-config";
-const DEFAULT_REPO = "ubiquibot";
 const KEY_PATH = ".github/ubiquibot-config.yml";
-const DEFAULT_PATH = "ubiquibot-config-default.json";
 const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
 const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
@@ -63,13 +60,13 @@ export const parseJSON = async <T>(data: string) => {
 
 export const YAMLStringify = (value: any) => YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
 
-export const getConf = async (initial: boolean = false): Promise<string | undefined> => {
+export const getConf = async (): Promise<string | undefined> => {
   try {
     const octokit = new Octokit({ auth: githubPAT.value });
     const { data } = await octokit.rest.repos.getContent({
-      owner: initial ? DEFAULT_ORG : orgName.value,
-      repo: initial ? DEFAULT_REPO : REPO_NAME,
-      path: initial ? DEFAULT_PATH : KEY_PATH,
+      owner: orgName.value,
+      repo: REPO_NAME,
+      path: KEY_PATH,
       mediaType: {
         format: "raw",
       },
