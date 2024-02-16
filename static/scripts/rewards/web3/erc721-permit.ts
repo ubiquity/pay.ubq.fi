@@ -1,11 +1,11 @@
+import { TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
+import { nftRewardAbi } from "../abis/nftRewardAbi";
+import { getOptimalRPC } from "../helpers";
+import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./wallet";
-import { nftRewardAbi } from "../abis/nftRewardAbi";
-import { TransactionResponse } from "@ethersproject/providers";
-import { getOptimalRPC } from "../helpers";
-import { renderTransaction } from "../render-transaction/render-transaction";
 
 export function claimErc721PermitHandler(permit: Erc721Permit) {
   return async function claimButtonHandler() {
@@ -40,7 +40,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
       const tx: TransactionResponse = await nftContract.safeMint(permit.request, permit.signature);
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
-      toaster.create("success", `Claim Complete: ${receipt.transactionHash}`);
+      toaster.create("success", `Claim Complete.`);
+      console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", claimButtonHandler);
 

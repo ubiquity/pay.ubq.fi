@@ -40,9 +40,9 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
       const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
       toaster.create("info", `Transaction sent`);
-
       const receipt = await tx.wait();
-      toaster.create("success", `Claim Complete: ${receipt?.transactionHash}`);
+      toaster.create("success", `Claim Complete.`);
+      console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
       renderTransaction(true);
