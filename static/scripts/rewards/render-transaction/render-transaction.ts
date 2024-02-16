@@ -48,32 +48,48 @@ export async function init() {
 
   const rewardsCount = document.getElementById("rewardsCount");
   if (rewardsCount) {
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
 
-    const nextTxButton = document.getElementById("nextTx");
-    if (nextTxButton) {
-      nextTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.nextTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
-    }
+      const nextTxButton = document.getElementById("nextTx");
+      if (nextTxButton) {
+        nextTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.nextTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
 
-    const prevTxButton = document.getElementById("previousTx");
-    if (prevTxButton) {
-      prevTxButton.addEventListener("click", () => {
-        claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
-        app.previousTx();
-        rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-        table.setAttribute(`data-claim`, "none");
-        renderTransaction();
-      });
+      const prevTxButton = document.getElementById("previousTx");
+      if (prevTxButton) {
+        prevTxButton.addEventListener("click", () => {
+          claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+          app.previousTx();
+          rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+          table.setAttribute(`data-claim`, "none");
+          renderTransaction();
+        });
+      }
+
+      setPagination(nextTxButton, prevTxButton);
     }
   }
 
   renderTransaction();
+}
+
+function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
+  if (app.claimTxs.length > 1) {
+    prevTxButton!.classList.remove("hide-pagination");
+    nextTxButton!.classList.remove("hide-pagination");
+
+    prevTxButton!.classList.add("show-pagination");
+    nextTxButton!.classList.add("show-pagination");
+  }
 }
 
 type Success = boolean;
@@ -83,9 +99,15 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
   if (nextTx) {
     app.nextTx();
-    const rewardsCount = document.getElementById("rewardsCount") as Element;
-    rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
-    table.setAttribute(`data-claim`, "none");
+    if (!app.claimTxs || app.claimTxs.length <= 1) {
+      // already hidden
+    } else {
+      setPagination(document.getElementById("nextTx"), document.getElementById("previousTx"));
+
+      const rewardsCount = document.getElementById("rewardsCount") as Element;
+      rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
+      table.setAttribute(`data-claim`, "none");
+    }
   }
 
   if (!app.currentTx) {

@@ -57,7 +57,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
   const claimed = await isNonceClaimed(permit);
   if (claimed) {
-    toaster.create("error", `This reward has already been claimed or invalidated.`);
+    toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
     return false;
   }
 
