@@ -4,6 +4,7 @@ import { renderEnsName } from "./render-ens-name";
 import { renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
 import { networkExplorers, NetworkIds } from "../constants";
+import { toaster } from "../toaster";
 
 type Success = boolean;
 export async function renderTransaction(): Promise<Success> {
@@ -12,7 +13,7 @@ export async function renderTransaction(): Promise<Success> {
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
-  const _network = urlParams.get("network") || app.claimNetworkId;
+  let _network = urlParams.get("network");
 
   if (!base64encodedTxData) {
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
@@ -21,9 +22,9 @@ export async function renderTransaction(): Promise<Success> {
   }
 
   if (!_network) {
-    setClaimMessage({ type: "Error", message: `No network ID passed in URL.` });
-    table.setAttribute(`data-claim`, "error");
-    return false;
+    toaster.create("warning", `You must pass in an EVM network ID in the URL query parameters using the key 'network' e.g. '?network=1'`);
+    setTimeout(() => toaster.create("info", `Defaulted to Ethereum mainnet.`), 5500);
+    _network = app.claimNetworkId = "0x1" as NetworkIds;
   }
 
   // if network id is not prefixed with 0x, convert it to hex
