@@ -16,6 +16,12 @@ import { removeAllEventListeners } from "./utils";
 export async function init() {
   const table = document.getElementsByTagName(`table`)[0];
 
+  /**
+   * Moving this here takes us from ~40 requests at 3.97s
+   * down to ~7 requests at 0.82s
+   */
+  handleNetwork(app.currentTx!.networkId);
+
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
   const base64encodedTxData = urlParams.get("claim");
