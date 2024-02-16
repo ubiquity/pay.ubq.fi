@@ -1,11 +1,48 @@
-import { getDaiLikeContract } from "../get-contract";
-import { app } from "./index";
+import { BigNumberish, utils } from "ethers";
+import { getErc20Contract } from "../helpers";
 
-export async function renderTokenSymbol({ table, requestedAmountElement }: { table: Element; requestedAmountElement: Element }): Promise<void> {
-  const contract = await getDaiLikeContract(app.txData.permit.permitted.token);
+export async function renderTokenSymbol({
+  table,
+  requestedAmountElement,
+  tokenAddress,
+  ownerAddress,
+  networkId,
+  amount,
+  explorerUrl,
+}: {
+  table: Element;
+  requestedAmountElement: Element;
+  tokenAddress: string;
+  ownerAddress: string;
+  networkId: number;
+  amount: BigNumberish;
+  explorerUrl: string;
+}): Promise<void> {
+  const contract = await getErc20Contract(tokenAddress, networkId);
+  const symbol = await contract.symbol();
+  const decimals = await contract.decimals();
+  table.setAttribute(`data-contract-loaded`, "true");
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
+    amount,
+    decimals,
+  )} ${symbol}</a>`;
+}
+
+export async function renderNftSymbol({
+  table,
+  requestedAmountElement,
+  tokenAddress,
+  networkId,
+  explorerUrl,
+}: {
+  table: Element;
+  requestedAmountElement: Element;
+  tokenAddress: string;
+  networkId: number;
+  explorerUrl: string;
+}): Promise<void> {
+  const contract = await getErc20Contract(tokenAddress, networkId);
   const symbol = await contract.symbol();
   table.setAttribute(`data-contract-loaded`, "true");
-  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${app.explorerUrl}/token/${app.txData.permit.permitted.token}?a=${
-    app.txData.owner
-  }">${Number(app.txData.transferDetails.requestedAmount) / 1000000000000000000} ${symbol}</a>`;
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}">1 ${symbol}</a>`;
 }

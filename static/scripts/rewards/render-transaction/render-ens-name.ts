@@ -1,9 +1,21 @@
 import { ensLookup } from "../cirip/ens-lookup";
 import { app } from "./index";
 
-export async function renderEnsName({ element, address, tokenView = false }: { element: Element; address: string; tokenView?: boolean }): Promise<void> {
-  // const provider = new ethers.providers.Web3Provider(window.ethereum);
-  // const ens = await provider.lookupAddress(address);
+type EnsParams =
+  | {
+      element: Element;
+      address: string;
+      tokenAddress: string;
+      tokenView: true;
+    }
+  | {
+      element: Element;
+      address: string;
+      tokenAddress?: undefined;
+      tokenView?: false;
+    };
+
+export async function renderEnsName({ element, address, tokenAddress, tokenView }: EnsParams): Promise<void> {
   let href: string = "";
   try {
     const resolved = await ensLookup(address);
@@ -18,11 +30,13 @@ export async function renderEnsName({ element, address, tokenView = false }: { e
     }
     if (ensName) {
       if (tokenView) {
-        href = `${app.explorerUrl}/token/${app.txData.permit.permitted.token}?a=${address}`;
+        href = `${app.currentExplorerUrl}/token/${tokenAddress}?a=${address}`;
       } else {
-        href = `${app.explorerUrl}/address/${address}"`;
+        href = `${app.currentExplorerUrl}/address/${address}"`;
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+  }
 }

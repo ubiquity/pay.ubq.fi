@@ -1,4 +1,4 @@
-export const daiAbi = [
+export const erc20Abi = [
   { inputs: [{ internalType: "uint256", name: "chainId_", type: "uint256" }], payable: false, stateMutability: "nonpayable", type: "constructor" },
   {
     anonymous: false,
