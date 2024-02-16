@@ -55,7 +55,6 @@ export async function init() {
 
       const nextTxButton = document.getElementById("nextTx");
       if (nextTxButton) {
-        nextTxButton.style.display = "block";
         nextTxButton.addEventListener("click", () => {
           claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
           app.nextTx();
@@ -67,7 +66,6 @@ export async function init() {
 
       const prevTxButton = document.getElementById("previousTx");
       if (prevTxButton) {
-        prevTxButton.style.display = "block";
         prevTxButton.addEventListener("click", () => {
           claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
           app.previousTx();
@@ -76,10 +74,22 @@ export async function init() {
           renderTransaction();
         });
       }
+
+      setPagination(nextTxButton, prevTxButton);
     }
   }
 
   renderTransaction();
+}
+
+function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
+  if (app.claimTxs.length > 1) {
+    prevTxButton!.classList.remove("hide-pagination");
+    nextTxButton!.classList.remove("hide-pagination");
+
+    prevTxButton!.classList.add("show-pagination");
+    nextTxButton!.classList.add("show-pagination");
+  }
 }
 
 type Success = boolean;
@@ -92,8 +102,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     if (!app.claimTxs || app.claimTxs.length <= 1) {
       // already hidden
     } else {
-      document.getElementById("nextTx")!.style.display = "block";
-      document.getElementById("previousTx")!.style.display = "block";
+      setPagination(document.getElementById("nextTx"), document.getElementById("previousTx"));
 
       const rewardsCount = document.getElementById("rewardsCount") as Element;
       rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
