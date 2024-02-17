@@ -2,11 +2,11 @@ import { BigNumber, BigNumberish, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
 import { getOptimalRPC } from "../helpers";
-import { Erc20Permit } from "../render-transaction/tx-type";
-import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
-import { renderTransaction } from "../render-transaction/render-transaction";
-import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
+import { renderTransaction } from "../render-transaction/render-transaction";
+import { Erc20Permit } from "../render-transaction/tx-type";
+import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
+import { connectWallet } from "./wallet";
 
 export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {

@@ -1,9 +1,7 @@
 import axios from "axios";
-import { NetworkIds, networkRpcs } from "./constants";
 import { Contract, ethers } from "ethers";
 import { erc20Abi } from "./abis";
-import { Type as T, StaticDecode } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { networkRpcs } from "./constants";
 
 type DataType = {
   jsonrpc: string;
@@ -39,8 +37,7 @@ const RPC_HEADER = {
 export const getErc20Contract = async (contractAddress: string, networkId: number): Promise<Contract> => {
   const providerUrl = await getOptimalRPC(networkId);
   const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-  const contractInstance = new ethers.Contract(contractAddress, erc20Abi, provider);
-  return contractInstance;
+  return new ethers.Contract(contractAddress, erc20Abi, provider);
 };
 
 export const getOptimalRPC = async (networkId: number): Promise<string> => {

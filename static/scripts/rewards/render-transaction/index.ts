@@ -1,4 +1,4 @@
-import { networkRpcs, networkExplorers } from "../constants";
+import { networkExplorers } from "../constants";
 import { getOptimalRPC } from "../helpers";
 import { ClaimTx } from "./tx-type";
 

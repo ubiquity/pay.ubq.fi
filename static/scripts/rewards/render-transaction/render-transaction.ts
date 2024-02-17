@@ -1,16 +1,16 @@
+import { Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
+import { networkExplorers } from "../constants";
+import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
+import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
+import { claimErc721PermitHandler } from "../web3/erc721-permit";
+import { handleNetwork } from "../web3/wallet";
 import { app } from "./index";
-import { insertErc721PermitTableData, insertErc20PermitTableData } from "./insert-table-data";
+import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
-import { networkExplorers } from "../constants";
-import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
-import { Value } from "@sinclair/typebox/value";
-import { Type } from "@sinclair/typebox";
 import { ClaimTx } from "./tx-type";
-import { handleNetwork } from "../web3/wallet";
-import { claimErc721PermitHandler } from "../web3/erc721-permit";
-import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { removeAllEventListeners } from "./utils";
 
 export async function init() {

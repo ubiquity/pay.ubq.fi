@@ -14,7 +14,7 @@ export async function ensLookup(__address: string) {
   const _address = "/".concat(__address); // quick adapter
 
   // try {
-  let start = _address.indexOf("/0x");
+  const start = _address.indexOf("/0x");
   if (start == -1) throw "No ethereum address provided.";
   if (_address.length <= 42 + start) {
     throw "Invalid ethereum address provided.";
@@ -26,14 +26,14 @@ export async function ensLookup(__address: string) {
   try {
     reverseRecord = await queryReverseEns(address);
     const responseParsed = JSON.parse(reverseRecord).result;
-    let _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
+    const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
     reverseRecord = _reverseRecord[0][0];
   } catch (e) {
     console.error(e);
     //   throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;
   }
 
-  let allDomains = await fetchEns(address);
+  const allDomains = await fetchEns(address);
 
   if (reverseRecord == "") {
     reverseRecord = null;
@@ -45,12 +45,10 @@ export async function ensLookup(__address: string) {
     reverseRecord = null;
   }
 
-  let response = {
+  return {
     reverseRecord: reverseRecord,
     domains: allDomains,
   };
-
-  return response;
   //  new Response(JSON.stringify(response), {
   //   headers: {
   //     "Content-Type": "application/json;charset=UTF-8",

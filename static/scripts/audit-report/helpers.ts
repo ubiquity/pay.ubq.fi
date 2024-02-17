@@ -1,7 +1,7 @@
+import axios from "axios";
 import { ethers } from "ethers";
 import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
 import { BountyHunter, GitHubUrlParts } from "./types";
-import axios from "axios";
 
 export interface RateLimitOptions {
   method: string;

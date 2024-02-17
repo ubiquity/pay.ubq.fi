@@ -1,4 +1,4 @@
-import { Type as T, StaticDecode } from "@sinclair/typebox";
+import { StaticDecode, Type as T } from "@sinclair/typebox";
 import { BigNumber } from "ethers";
 
 const TBigNumber = T.Transform(T.Union([T.RegExp(/^\d+$/), T.Number()]))

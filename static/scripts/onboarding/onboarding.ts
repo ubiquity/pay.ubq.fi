@@ -1,13 +1,13 @@
-import _sodium from "libsodium-wrappers";
-import { Octokit } from "@octokit/rest";
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { createOrUpdateTextFile } from "@octokit/plugin-create-or-update-text-file";
-import YAML from "yaml";
-import { ethers } from "ethers";
+import { Octokit } from "@octokit/rest";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
-import { JsonRpcSigner, Network } from "@ethersproject/providers";
+import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
-import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
+import _sodium from "libsodium-wrappers";
+import YAML from "yaml";
 import { erc20Abi } from "../rewards/abis/erc20Abi";
+import { NetworkIds, Tokens, getNetworkName } from "../rewards/constants";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -133,8 +133,7 @@ export const parseYAML = async (data: any): Promise<any | undefined> => {
 
 export const parseJSON = async (data: any): Promise<any | undefined> => {
   try {
-    const parsedData = await JSON.parse(data);
-    return parsedData;
+    return await JSON.parse(data);
   } catch (error) {
     return undefined;
   }
@@ -161,8 +160,7 @@ export const getConf = async (initial: boolean = false): Promise<string | undefi
 
 const getTextBox = (text: string) => {
   const strLen = text.split("\n").length * 22;
-  const strPx = `${strLen > 140 ? strLen : 140}px`;
-  return strPx;
+  return `${strLen > 140 ? strLen : 140}px`;
 };
 
 const resetToggle = () => {
@@ -417,8 +415,7 @@ const connectWallet = async (): Promise<JsonRpcSigner | undefined> => {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    return signer;
+    return provider.getSigner();
   } catch (error: any) {
     if (error?.message?.includes("missing provider")) {
       singleToggle("error", "Error: Please install MetaMask.");

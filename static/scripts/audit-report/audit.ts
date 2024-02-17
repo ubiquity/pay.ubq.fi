@@ -1,23 +1,23 @@
-import { ethers } from "ethers";
-import { Octokit } from "@octokit/rest";
 import { throttling } from "@octokit/plugin-throttling";
+import { Octokit } from "@octokit/rest";
 import axios from "axios";
+import { ethers } from "ethers";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { ObserverKeys, ElemInterface, QuickImport, StandardInterface, TxData, GoDBSchema, GitHubUrlParts, ChainScanResult, SavedData } from "./types";
 import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
 import {
+  RateLimitOptions,
   getCurrency,
   getGitHubUrlPartsArray,
-  getRandomAPIKey,
   getOptimalRPC,
+  getRandomAPIKey,
   isValidUrl,
   parseRepoUrl,
   populateTable,
   primaryRateLimitHandler,
-  RateLimitOptions,
   secondaryRateLimitHandler,
 } from "./helpers";
+import { ChainScanResult, ElemInterface, GitHubUrlParts, GoDBSchema, ObserverKeys, QuickImport, SavedData, StandardInterface, TxData } from "./types";
 import { getTxInfo } from "./utils/getTransaction";
 
 const rateOctokit = Octokit.plugin(throttling);
@@ -26,7 +26,7 @@ let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 let GITHUB_PAT = "";
 
-let repoArray: string[] = [];
+const repoArray: string[] = [];
 
 const urlRegex = /\((.*?)\)/;
 const botNodeId = "BOT_kgDOBr8EgA";
@@ -64,7 +64,7 @@ let etherHash = NULL_HASH;
 let lastGitID: number | boolean = false;
 let lastEtherHash: string | boolean = false;
 
-const getDataSchema = (storeHash: string) => {
+function getDataSchema(storeHash: string) {
   const schema: GoDBSchema = {
     [NULL_HASH]: {
       id: {
@@ -101,14 +101,14 @@ const getDataSchema = (storeHash: string) => {
   };
 
   return schema;
-};
+}
 
-const parseAndAddUrls = (input: string): void => {
-  const urls = input.split(",").map(url => url.trim());
+function parseAndAddUrls(input: string): void {
+  const urls = input.split(",").map((url) => url.trim());
   repoArray.push(...urls);
-};
+}
 
-const updateDB = async (storeHash: string) => {
+async function updateDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
   const cacheDB = new GoDB(DatabaseName, schema);
   const metaTable = cacheDB.table(NULL_HASH);
@@ -122,7 +122,7 @@ const updateDB = async (storeHash: string) => {
 
   await metaTable.put(metaData);
   if (elemList.length > 0) {
-    for (let elem of elemList) {
+    for (const elem of elemList) {
       const { id, tx, amount, title, bounty_hunter, network, owner, repo } = elem;
       await storeTable.put({
         id,
@@ -138,30 +138,30 @@ const updateDB = async (storeHash: string) => {
   }
   await cacheDB.close();
   return;
-};
+}
 
-const readDB = async (storeHash: string) => {
+async function readDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
   const cacheDB = new GoDB(DatabaseName, schema);
   const storeTable = cacheDB.table(storeHash);
   const tableData = await storeTable.getAll();
   await cacheDB.close();
   return tableData;
-};
+}
 
-const readMeta = async (storeHash: string) => {
+async function readMeta(storeHash: string) {
   const schema = getDataSchema(storeHash);
   const cacheDB = new GoDB(DatabaseName, schema);
   const metaTable = cacheDB.table(NULL_HASH);
   const metaData = await metaTable.get({ id: storeHash });
   await cacheDB.close();
   return metaData;
-};
+}
 
-const toggleLoader = (type: "none" | "block") => {
+function toggleLoader(type: "none" | "block") {
   getReportElem.disabled = type === "block" ? true : false;
   reportLoader.style.display = type;
-};
+}
 
 class QueueObserver {
   private readonly queueObject: {
@@ -217,16 +217,16 @@ class QueueObserver {
 
 const finishedQueue = new QueueObserver();
 
-class smartQueue {
-  private readonly queue: Map<string, StandardInterface>;
+class SmartQueue {
+  private readonly _queue: Map<string, StandardInterface>;
 
   constructor() {
-    this.queue = new Map();
+    this._queue = new Map();
   }
 
   add(key: string, value: StandardInterface) {
-    if (this.queue.has(key)) {
-      const queueValue = this.queue.get(key) as StandardInterface;
+    if (this._queue.has(key)) {
+      const queueValue = this._queue.get(key) as StandardInterface;
       queueValue.s[value.t] = value.s[value.t] as any;
       const {
         s: { ether, git, network },
@@ -247,14 +247,14 @@ class smartQueue {
         });
         if (elemList.length > 0) {
           resultTableTbodyElem.innerHTML = "";
-          for (let data of elemList) {
+          for (const data of elemList) {
             populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
           }
         }
       }
-      this.queue.delete(key);
+      this._queue.delete(key);
     } else {
-      this.queue.set(key, value);
+      this._queue.set(key, value);
     }
   }
 }
@@ -289,7 +289,7 @@ class QueueSet {
   }
 }
 
-const updateQueue = new smartQueue();
+const updateQueue = new SmartQueue();
 const rpcQueue = new QueueSet();
 
 const commentFetcher = async () => {
@@ -309,7 +309,7 @@ const commentFetcher = async () => {
               },
             },
           });
-          let [owner, repo] = parseRepoUrl(issueList[0].html_url);
+          const [owner, repo] = parseRepoUrl(issueList[0].html_url);
           const { data } = await octokit.rest.issues.listComments({
             owner,
             repo,
@@ -328,14 +328,14 @@ const commentFetcher = async () => {
             }
           } else {
             let isFound = false;
-            for (let comment of data) {
+            for (const comment of data) {
               if (comment.user && comment.user.node_id === botNodeId && comment.body) {
                 const match = comment.body.match(urlRegex);
                 if (match && isValidUrl(match[1])) {
                   const url = new URL(match[1]);
                   const params = new URLSearchParams(url.search);
                   const base64Payload = params.get("claim");
-                  let network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+                  const network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
                   if (base64Payload) {
                     const {
                       owner: ownerAddress,
@@ -444,13 +444,13 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
 
           if (data.length === 0) break;
 
-          const issues = data.filter(issue => !issue.pull_request && issue.comments > 0);
+          const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
           if (issues.length > 0) {
             if (!lastGitID) {
               lastGitID = issues[0].number;
             }
             let iEF = true;
-            for (let i of issues) {
+            for (const i of issues) {
               if (i.number !== gitID) {
                 await issueList.push(i);
               } else {
@@ -477,7 +477,7 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
     };
 
     try {
-      const issuesPromises = repoUrls.map(repoUrl => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
+      const issuesPromises = repoUrls.map((repoUrl) => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
       const allIssues = await Promise.all(issuesPromises);
 
       for (let i = 0; i < allIssues.length; i++) {
@@ -507,11 +507,11 @@ const fetchDataFromChainScanAPI = async (url: string, chain: string) => {
 
 const etherFetcher = async () => {
   const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Ethereum,
+    Chain.Ethereum
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   const gnosisURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Gnosis,
+    Chain.Gnosis
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   if (isEther) {
@@ -529,7 +529,7 @@ const etherFetcher = async () => {
             lastEtherHash = combinedData[0].hash;
           }
           let iEF = true;
-          for (let e of combinedData) {
+          for (const e of combinedData) {
             if (e.hash !== etherHash) {
               await rpcQueue.add({ hash: e.hash, chain: e.chain });
             } else {
@@ -642,7 +642,7 @@ const dbInit = async () => {
       const tableData = await readDB(storeHash);
 
       if (tableData.length > 0) {
-        for (let data of tableData) {
+        for (const data of tableData) {
           const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
           populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
           // for filtering
@@ -732,19 +732,19 @@ const auditInit = () => {
 // Function to filter the table based on search input
 function filterTable() {
   const input = document.getElementById("searchInput")! as HTMLInputElement;
-  let value = input.value.toLowerCase();
+  const value = input.value.toLowerCase();
   const filteredData = elemList.filter(
-    row =>
+    (row) =>
       row.owner.toLowerCase().includes(value) ||
       row.repo.toLowerCase().includes(value) ||
       row.amount.toLowerCase().includes(value) ||
       row.tx.toLowerCase().includes(value) ||
       row.title.toLowerCase().includes(value) ||
       row.network.toLowerCase().includes(value) ||
-      row.bounty_hunter.name.toLowerCase().includes(value),
+      row.bounty_hunter.name.toLowerCase().includes(value)
   );
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
-  for (let data of filteredData) {
+  for (const data of filteredData) {
     const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
     populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }
@@ -759,7 +759,7 @@ function sortTableByAmount() {
   sortDirection *= -1;
   updateSortArrow();
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
-  for (let data of elemList) {
+  for (const data of elemList) {
     const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
     populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }

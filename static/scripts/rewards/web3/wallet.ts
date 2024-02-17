@@ -1,8 +1,8 @@
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
 import invalidateButton from "../invalidate-component";
-import { JsonRpcSigner } from "@ethersproject/providers";
+import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {

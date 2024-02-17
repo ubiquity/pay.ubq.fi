@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 import { app } from ".";
-import { Erc721Permit, Erc20Permit } from "./tx-type";
+import { Erc20Permit, Erc721Permit } from "./tx-type";
 
 export const shortenAddress = (address: string): string => {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;

@@ -75,7 +75,7 @@ export function hideClaimButton() {
 
 export function errorToast(error: any, errorMessage?: string) {
   delete error.stack;
-  let ErrorData = JSON.stringify(error, null, 2);
+  const ErrorData = JSON.stringify(error, null, 2);
   if (errorMessage) {
     toaster.create("error", errorMessage);
   } else if (error?.reason) {

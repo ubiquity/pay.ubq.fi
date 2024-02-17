@@ -1,7 +1,7 @@
 import axios from "axios";
+import { Chain } from "../constants";
 import { ITransaction } from "../types/transaction";
 import { getBlockInfo, updateBlockInfo } from "./blockInfo";
-import { Chain } from "../constants";
 
 export const getTxInfo = async (hash: string, url: string, chain: Chain): Promise<ITransaction> => {
   try {
@@ -13,7 +13,7 @@ export const getTxInfo = async (hash: string, url: string, chain: Chain): Promis
     });
     const transaction = transactionResponse.data.result as ITransaction;
 
-    let timestamp = await getBlockInfo(transaction.blockNumber, chain);
+    const timestamp = await getBlockInfo(transaction.blockNumber, chain);
     if (timestamp !== null) {
       transaction.timestamp = timestamp;
     } else {

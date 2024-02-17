@@ -98,8 +98,8 @@ export function grid(node = document.body) {
   // Resize function
   function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
     // Lookup the size the browser is displaying the canvas.
-    var displayWidth = window.innerWidth;
-    var displayHeight = window.innerHeight;
+    const displayWidth = window.innerWidth;
+    const displayHeight = window.innerHeight;
 
     // Check if the canvas is not the same size.
     if (canvas.width != displayWidth || canvas.height != displayHeight) {
