@@ -4,7 +4,7 @@ import axios from "axios";
 import { ethers } from "ethers";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
+import { Chain, ChainScan, DATABASE_NAME, NULL_HASH, NULL_ID } from "./constants";
 import {
   RateLimitOptions,
   getCurrency,
@@ -124,7 +124,7 @@ function parseAndAddUrls(input: string): void {
 
 async function updateDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const metaTable = cacheDB.table(NULL_HASH);
   const storeTable = cacheDB.table(storeHash);
 
@@ -159,7 +159,7 @@ async function updateDB(storeHash: string) {
 
 async function readDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const storeTable = cacheDB.table(storeHash);
   const tableData = await storeTable.getAll();
   cacheDB.close();
@@ -168,7 +168,7 @@ async function readDB(storeHash: string) {
 
 async function readMeta(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const metaTable = cacheDB.table(NULL_HASH);
   const metaData = await metaTable.get({ id: storeHash });
   cacheDB.close();
