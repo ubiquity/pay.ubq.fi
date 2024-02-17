@@ -12,15 +12,13 @@ import { handleNetwork } from "../web3/wallet";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { removeAllEventListeners } from "./utils";
+import { getOptimalRPC } from "../helpers";
+import { JsonRpcProvider } from "@ethersproject/providers";
+
+let optimalRPC: JsonRpcProvider;
 
 export async function init() {
   const table = document.getElementsByTagName(`table`)[0];
-
-  /**
-   * Moving this here takes us from ~40 requests at 3.97s
-   * down to ~7 requests at 0.82s
-   */
-  handleNetwork(app.currentTx!.networkId);
 
   // decode base64 to get tx data
   const urlParams = new URLSearchParams(window.location.search);
@@ -35,6 +33,9 @@ export async function init() {
   try {
     const claimTxs = Value.Decode(Type.Array(ClaimTx), JSON.parse(atob(base64encodedTxData)));
     app.claimTxs = claimTxs;
+    optimalRPC = await getOptimalRPC(app.currentTx?.networkId ?? app.claimTxs[0].networkId);
+
+    handleNetwork(app.currentTx?.networkId ?? app.claimTxs[0].networkId, optimalRPC);
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
@@ -66,7 +67,7 @@ export async function init() {
           app.nextTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction();
+          renderTransaction(optimalRPC, undefined);
         });
       }
 
@@ -77,7 +78,7 @@ export async function init() {
           app.previousTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction();
+          renderTransaction(optimalRPC, undefined);
         });
       }
 
@@ -85,7 +86,7 @@ export async function init() {
     }
   }
 
-  renderTransaction();
+  renderTransaction(optimalRPC, undefined);
 }
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
@@ -99,7 +100,7 @@ function setPagination(nextTxButton: Element | null, prevTxButton: Element | nul
 }
 
 type Success = boolean;
-export async function renderTransaction(nextTx?: boolean): Promise<Success> {
+export async function renderTransaction(provider: JsonRpcProvider, nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
   resetClaimButton();
 
@@ -121,10 +122,8 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     return false;
   }
 
-  handleNetwork(app.currentTx.networkId);
-
   if (app.currentTx.type === "erc20-permit") {
-    const treasury = await fetchTreasury(app.currentTx);
+    const treasury = await fetchTreasury(app.currentTx, provider);
 
     // insert tx data into table
     const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
@@ -133,11 +132,11 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     renderTokenSymbol({
       tokenAddress: app.currentTx.permit.permitted.token,
       ownerAddress: app.currentTx.owner,
-      networkId: app.currentTx.networkId,
       amount: app.currentTx.transferDetails.requestedAmount,
       explorerUrl: networkExplorers[app.currentTx.networkId],
       table,
       requestedAmountElement,
+      provider,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
@@ -145,23 +144,23 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.currentTx);
 
-    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx));
+    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx, optimalRPC));
   } else if (app.currentTx.type === "erc721-permit") {
     const requestedAmountElement = insertErc721PermitTableData(app.currentTx, table);
     table.setAttribute(`data-claim`, "ok");
 
     renderNftSymbol({
       tokenAddress: app.currentTx.nftAddress,
-      networkId: app.currentTx.networkId,
       explorerUrl: networkExplorers[app.currentTx.networkId],
       table,
       requestedAmountElement,
+      provider,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary });
 
-    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx));
+    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx, provider));
   }
 
   return true;

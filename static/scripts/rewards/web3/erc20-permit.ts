@@ -7,24 +7,40 @@ import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton 
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import { tokens } from "../render-transaction/render-token-symbol";
 
-export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+export async function fetchTreasury(
+  permit: Erc20Permit,
+  providerUrl: JsonRpcProvider,
+): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
-    const providerUrl = await getOptimalRPC(permit.networkId);
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
     const tokenAddress = permit.permit.permitted.token;
-    const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
-    const balance = await tokenContract.balanceOf(permit.owner);
-    const allowance = await tokenContract.allowance(permit.owner, permit2Address);
-    const decimals = await tokenContract.decimals();
-    const symbol = await tokenContract.symbol();
-    return { balance, allowance, decimals, symbol };
+    const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, providerUrl);
+
+    if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
+      const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
+      const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
+      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
+
+      return { balance, allowance, decimals, symbol };
+    } else {
+      console.log(`Hardcode this token in render-token-symbol.ts and save two calls: ${tokenAddress}`);
+      const [balance, allowance, decimals, symbol] = await Promise.all([
+        tokenContract.balanceOf(permit.owner),
+        tokenContract.allowance(permit.owner, permit2Address),
+        tokenContract.decimals(),
+        tokenContract.symbol(),
+      ]);
+
+      return { balance, allowance, decimals, symbol };
+    }
   } catch (error: any) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
 }
 
-export function claimErc20PermitHandler(permit: Erc20Permit) {
+export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcProvider) {
   return async function handler() {
     try {
       const signer = await connectWallet();
@@ -32,7 +48,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
         return;
       }
 
-      if (!(await checkPermitClaimable(permit, signer))) {
+      if (!(await checkPermitClaimable(permit, signer, provider))) {
         return;
       }
 
@@ -45,7 +61,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
-      renderTransaction(true);
+      renderTransaction(provider);
     } catch (error: any) {
       console.log(error);
       errorToast(error, error.message);
@@ -54,7 +70,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
   };
 }
 
-export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
+export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
   const claimed = await isNonceClaimed(permit);
   if (claimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
@@ -66,7 +82,7 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
     return false;
   }
 
-  const { balance, allowance } = await fetchTreasury(permit);
+  const { balance, allowance } = await fetchTreasury(permit, provider);
   const permitted = BigNumber.from(permit.permit.permitted.amount);
   const solvent = balance.gte(permitted);
   const allowed = allowance.gte(permitted);
@@ -129,8 +145,8 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const providerUrl = await getOptimalRPC(permit.networkId);
-  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+  const provider = await getOptimalRPC(permit.networkId);
+
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));

@@ -2,8 +2,7 @@ import axios from "axios";
 import { NetworkIds, networkRpcs } from "./constants";
 import { Contract, ethers } from "ethers";
 import { erc20Abi } from "./abis";
-import { Type as T, StaticDecode } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { JsonRpcProvider } from "@ethersproject/providers";
 
 type DataType = {
   jsonrpc: string;
@@ -36,14 +35,12 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
-export const getErc20Contract = async (contractAddress: string, networkId: number): Promise<Contract> => {
-  const providerUrl = await getOptimalRPC(networkId);
-  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+export const getErc20Contract = async (contractAddress: string, provider: JsonRpcProvider): Promise<Contract> => {
   const contractInstance = new ethers.Contract(contractAddress, erc20Abi, provider);
   return contractInstance;
 };
 
-export const getOptimalRPC = async (networkId: number): Promise<string> => {
+export const getOptimalRPC = async (networkId: number) => {
   const promises = networkRpcs[networkId].map(async (baseURL: string) => {
     try {
       const startTime = performance.now();
@@ -69,5 +66,9 @@ export const getOptimalRPC = async (networkId: number): Promise<string> => {
   });
 
   const { baseURL: optimalRPC } = await Promise.any(promises);
-  return optimalRPC;
+  return new ethers.providers.JsonRpcProvider(optimalRPC, {
+    name: NetworkIds[networkId],
+    chainId: networkId,
+    ensAddress: "",
+  });
 };

@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
 import invalidateButton from "../invalidate-component";
-import { JsonRpcSigner } from "@ethersproject/providers";
+import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -23,7 +23,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   }
 }
 
-export async function handleNetwork(desiredNetworkId: number) {
+export async function handleNetwork(desiredNetworkId: number, provider: JsonRpcProvider) {
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
     toaster.create("info", "Please connect to MetaMask.");
@@ -31,7 +31,7 @@ export async function handleNetwork(desiredNetworkId: number) {
     invalidateButton.disabled = true;
   }
 
-  const currentNetworkId = parseInt(await web3provider.provider.request!({ method: "eth_chainId" }), 16);
+  const currentNetworkId = provider.network.chainId;
 
   // watch for network changes
   window.ethereum.on("chainChanged", newNetworkId => handleIfOnCorrectNetwork(parseInt(newNetworkId, 16), desiredNetworkId));

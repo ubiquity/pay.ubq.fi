@@ -1,3 +1,4 @@
+import { JsonRpcProvider } from "@ethersproject/providers";
 import { networkRpcs, networkExplorers } from "../constants";
 import { getOptimalRPC } from "../helpers";
 import { ClaimTx } from "./tx-type";
@@ -14,7 +15,7 @@ class AppState {
     return this.currentIndex < this.claimTxs.length ? this.claimTxs[this.currentIndex] : null;
   }
 
-  async currentNetworkRpc(): Promise<string> {
+  async currentNetworkRpc(): Promise<JsonRpcProvider> {
     if (!this.currentTx) {
       return getOptimalRPC(1);
     }

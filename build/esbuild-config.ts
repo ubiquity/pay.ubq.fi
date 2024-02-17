@@ -14,7 +14,7 @@ export let esBuildContext = {
   entryPoints: entries,
   //plugins: [invertColors],
   bundle: true,
-  minify: false,
+  minify: true,
   loader: {
     ".png": "dataurl",
     ".woff": "dataurl",
