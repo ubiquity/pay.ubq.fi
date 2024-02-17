@@ -12,7 +12,7 @@ import { handleNetwork } from "../web3/wallet";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { removeAllEventListeners } from "./utils";
-import { getOptimalRPC } from "../helpers";
+import { getOptimalProvider } from "../helpers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
 let optimalRPC: JsonRpcProvider;
@@ -33,7 +33,7 @@ export async function init() {
   try {
     const claimTxs = Value.Decode(Type.Array(ClaimTx), JSON.parse(atob(base64encodedTxData)));
     app.claimTxs = claimTxs;
-    optimalRPC = await getOptimalRPC(app.currentTx?.networkId ?? app.claimTxs[0].networkId);
+    optimalRPC = await getOptimalProvider(app.currentTx?.networkId ?? app.claimTxs[0].networkId);
 
     handleNetwork(app.currentTx?.networkId ?? app.claimTxs[0].networkId, optimalRPC);
   } catch (error) {

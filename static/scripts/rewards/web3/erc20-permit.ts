@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
-import { getOptimalRPC } from "../helpers";
+import { getErc20Contract, getOptimalProvider } from "../helpers";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
 import { renderTransaction } from "../render-transaction/render-transaction";
@@ -12,15 +12,16 @@ import { tokens } from "../render-transaction/render-token-symbol";
 
 export async function fetchTreasury(
   permit: Erc20Permit,
-  providerUrl: JsonRpcProvider,
+  provider: JsonRpcProvider,
 ): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
-    const tokenAddress = permit.permit.permitted.token;
-    const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, providerUrl);
+    const tokenAddress = permit.permit.permitted.token.toLowerCase();
+    const tokenContract = await getErc20Contract(tokenAddress, provider);
 
     if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
       const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
       const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
+
       const [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
 
       return { balance, allowance, decimals, symbol };
@@ -145,7 +146,7 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const provider = await getOptimalRPC(permit.networkId);
+  const provider = await getOptimalProvider(permit.networkId);
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 

@@ -40,7 +40,7 @@ export const getErc20Contract = async (contractAddress: string, provider: JsonRp
   return contractInstance;
 };
 
-export const getOptimalRPC = async (networkId: number) => {
+export const getOptimalProvider = async (networkId: number) => {
   const promises = networkRpcs[networkId].map(async (baseURL: string) => {
     try {
       const startTime = performance.now();

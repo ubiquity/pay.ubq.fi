@@ -1,3 +1,7 @@
+header span:first-child::after {
+  /* content: " | "; */
+}
+
 @media screen and (max-width: 640px) {
   table {
     border-left-width: 0px;
