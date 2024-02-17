@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
 import { BountyHunter, GitHubUrlParts } from "./types";
+import axios from "axios";
 
 export interface RateLimitOptions {
   method: string;
@@ -8,6 +9,27 @@ export interface RateLimitOptions {
 }
 
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
+
+type DataType = {
+  jsonrpc: string;
+  id: number;
+  result: {
+    number: string;
+    timestamp: string;
+    hash: string;
+  };
+};
+
+const RPC_BODY = JSON.stringify({
+  jsonrpc: "2.0",
+  method: "eth_getBlockByNumber",
+  params: ["latest", false],
+  id: 1,
+});
+
+const RPC_HEADER = {
+  "Content-Type": "application/json",
+};
 
 export const shortenTransactionHash = (hash: string | undefined, length = 8): string => {
   if (!hash) return "";
@@ -69,6 +91,45 @@ export const getRandomRpcUrl = (chain: Chain): string => {
 
   const randomIndex = Math.floor(Math.random() * urls.length);
   return urls[randomIndex];
+};
+
+const verifyBlock = (data: DataType) => {
+  try {
+    const { jsonrpc, id, result } = data;
+    const { number, timestamp, hash } = result;
+    return jsonrpc === "2.0" && id === 1 && parseInt(number, 16) > 0 && parseInt(timestamp, 16) > 0 && hash.match(/[0-9|a-f|A-F|x]/gm)?.join("").length === 66;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getOptimalRPC = async (chain: Chain): Promise<string> => {
+  const promises = RPC_URLS[chain].map(async (baseURL: string) => {
+    try {
+      const startTime = performance.now();
+      const API = axios.create({
+        baseURL,
+        headers: RPC_HEADER,
+      });
+
+      const { data } = await API.post("", RPC_BODY);
+      const endTime = performance.now();
+      const latency = endTime - startTime;
+      if (await verifyBlock(data)) {
+        return Promise.resolve({
+          latency,
+          baseURL,
+        });
+      } else {
+        return Promise.reject();
+      }
+    } catch (error) {
+      return Promise.reject();
+    }
+  });
+
+  const { baseURL: optimalRPC } = await Promise.any(promises);
+  return optimalRPC;
 };
 
 export const parseRepoUrl = (issueUrl: string): [string, string] => {

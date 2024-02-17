@@ -11,12 +11,16 @@ import {
   getGitHubUrlPartsArray,
   getRandomAPIKey,
   getRandomRpcUrl,
+  getOptimalRPC,
+  isValidUrl,
+  parseRepoUrl,
   populateTable,
   primaryRateLimitHandler,
   RateLimitOptions,
   secondaryRateLimitHandler,
 } from "./helpers";
 import { ChainScanResult, ElemInterface, GitHubUrlParts, GoDBSchema, ObserverKeys, QuickImport, SavedData, StandardInterface, TxData } from "./types";
+=======
 import { getTxInfo } from "./utils/getTransaction";
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
@@ -468,8 +472,8 @@ const rpcFetcher = async () => {
         const data = await rpcQueue.read();
         if (data) {
           const { hash, chain } = data;
-
-          const txInfo = await getTxInfo(hash, getRandomRpcUrl(chain), chain);
+          const providerUrl = await getOptimalRPC(chain);
+          const txInfo = await getTxInfo(hash, providerUrl, chain);
 
           if (txInfo.input.startsWith(permitTransferFromSelector)) {
             const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);

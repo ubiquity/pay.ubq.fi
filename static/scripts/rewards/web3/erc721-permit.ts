@@ -1,11 +1,11 @@
+import { TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
+import { nftRewardAbi } from "../abis/nftRewardAbi";
+import { getOptimalRPC } from "../helpers";
+import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./wallet";
-import { nftRewardAbi } from "../abis/nftRewardAbi";
-import { TransactionResponse } from "@ethersproject/providers";
-import { networkRpcs } from "../constants";
-import { renderTransaction } from "../render-transaction/render-transaction";
 
 export function claimErc721PermitHandler(permit: Erc721Permit) {
   return async function claimButtonHandler() {
@@ -40,7 +40,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
       const tx: TransactionResponse = await nftContract.safeMint(permit.request, permit.signature);
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
-      toaster.create("success", `Claim Complete: ${receipt.transactionHash}`);
+      toaster.create("success", `Claim Complete.`);
+      console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", claimButtonHandler);
 
@@ -54,7 +55,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
 }
 
 export async function isNonceRedeemed(nftMint: Erc721Permit): Promise<boolean> {
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[nftMint.networkId]);
+  const providerUrl = await getOptimalRPC(nftMint.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const nftContract = new ethers.Contract(nftMint.nftAddress, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(nftMint.request.nonce);
 }

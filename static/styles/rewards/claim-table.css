@@ -204,10 +204,13 @@ table[data-contract-loaded] #Token {
 #rewardAmount a {
   font-size: 24px;
 }
-#rewardAmount a, #rewardRecipient div, #rewardsCount {
+#rewardAmount a,
+#rewardRecipient div,
+#rewardsCount {
   color: #fff;
 }
-#nextTx, #previousTx {
+#nextTx,
+#previousTx {
   fill: #fff;
 }
 table[data-details-visible="false"] #rewardToken .full,
@@ -282,6 +285,16 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
   display: unset;
 }
 .show-cl > svg.claim-icon {
+  display: none;
+}
+
+.show-pagination {
+  display: flex;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.hide-pagination {
   display: none;
 }
 

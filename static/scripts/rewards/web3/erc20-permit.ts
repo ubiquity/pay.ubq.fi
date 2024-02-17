@@ -1,6 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
-import { networkRpcs, permit2Address } from "../constants";
+import { permit2Address } from "../constants";
+import { getOptimalRPC } from "../helpers";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
 import { renderTransaction } from "../render-transaction/render-transaction";
@@ -9,7 +10,8 @@ import invalidateButton from "../invalidate-component";
 
 export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
-    const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
+    const providerUrl = await getOptimalRPC(permit.networkId);
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
     const tokenAddress = permit.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
     const balance = await tokenContract.balanceOf(permit.owner);
@@ -38,9 +40,9 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
       const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
       toaster.create("info", `Transaction sent`);
-
       const receipt = await tx.wait();
-      toaster.create("success", `Claim Complete: ${receipt?.transactionHash}`);
+      toaster.create("success", `Claim Complete.`);
+      console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
       renderTransaction(true);
@@ -55,7 +57,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
   const claimed = await isNonceClaimed(permit);
   if (claimed) {
-    toaster.create("error", `This reward has already been claimed or invalidated.`);
+    toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
     return false;
   }
 
@@ -127,7 +129,8 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const provider = new ethers.providers.JsonRpcProvider(networkRpcs[permit.networkId]);
+  const providerUrl = await getOptimalRPC(permit.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));
