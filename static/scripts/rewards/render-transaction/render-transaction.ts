@@ -10,7 +10,7 @@ import { insertErc20PermitTableData, insertErc721PermitTableData } from "./inser
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
-import { ClaimTx } from "./tx-type";
+import { claimTxT } from "./tx-type";
 import { removeAllEventListeners } from "./utils";
 
 export async function init() {
@@ -27,7 +27,7 @@ export async function init() {
   }
 
   try {
-    const claimTxs = Value.Decode(Type.Array(ClaimTx), JSON.parse(atob(base64encodedTxData)));
+    const claimTxs = Value.Decode(Type.Array(claimTxT), JSON.parse(atob(base64encodedTxData)));
     app.claimTxs = claimTxs;
   } catch (error) {
     console.error(error);
