@@ -36,14 +36,14 @@ export async function init() {
     return false;
   }
 
-  let detailsVisible = false;
+  let isDetailsVisible = false;
 
-  table.setAttribute(`data-details-visible`, detailsVisible.toString());
+  table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
 
   const additionalDetails = document.getElementById(`additionalDetails`) as Element;
   additionalDetails.addEventListener("click", () => {
-    detailsVisible = !detailsVisible;
-    table.setAttribute(`data-details-visible`, detailsVisible.toString());
+    isDetailsVisible = !isDetailsVisible;
+    table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
   });
 
   const rewardsCount = document.getElementById("rewardsCount");
@@ -60,7 +60,7 @@ export async function init() {
           app.nextTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction();
+          renderTransaction().catch(console.error);
         });
       }
 
@@ -71,7 +71,7 @@ export async function init() {
           app.previousTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction();
+          renderTransaction().catch(console.error);
         });
       }
 
@@ -79,16 +79,17 @@ export async function init() {
     }
   }
 
-  renderTransaction();
+  renderTransaction().catch(console.error);
 }
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
+  if (!nextTxButton || !prevTxButton) return;
   if (app.claimTxs.length > 1) {
-    prevTxButton!.classList.remove("hide-pagination");
-    nextTxButton!.classList.remove("hide-pagination");
+    prevTxButton.classList.remove("hide-pagination");
+    nextTxButton.classList.remove("hide-pagination");
 
-    prevTxButton!.classList.add("show-pagination");
-    nextTxButton!.classList.add("show-pagination");
+    prevTxButton.classList.add("show-pagination");
+    nextTxButton.classList.add("show-pagination");
   }
 }
 
@@ -115,7 +116,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     return false;
   }
 
-  handleNetwork(app.currentTx.networkId);
+  handleNetwork(app.currentTx.networkId).catch(console.error);
 
   if (app.currentTx.type === "erc20-permit") {
     const treasury = await fetchTreasury(app.currentTx);
@@ -135,9 +136,9 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to });
+    renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to }).catch(console.error);
 
-    generateInvalidatePermitAdminControl(app.currentTx);
+    generateInvalidatePermitAdminControl(app.currentTx).catch(console.error);
 
     claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx));
   } else if (app.currentTx.type === "erc721-permit") {
@@ -153,7 +154,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary });
+    renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary }).catch(console.error);
 
     claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx));
   }
