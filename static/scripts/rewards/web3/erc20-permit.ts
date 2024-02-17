@@ -19,7 +19,7 @@ export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: Big
     const decimals = await tokenContract.decimals();
     const symbol = await tokenContract.symbol();
     return { balance, allowance, decimals, symbol };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
 }
@@ -45,11 +45,13 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
-      renderTransaction(true);
-    } catch (error: any) {
-      console.log(error);
-      errorToast(error, error.message);
-      resetClaimButton();
+      renderTransaction(true).catch(console.error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error);
+        errorToast(error, error.message);
+        resetClaimButton();
+      }
     }
   };
 }

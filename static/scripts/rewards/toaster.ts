@@ -73,14 +73,16 @@ export function hideClaimButton() {
   claimButton.element.classList.remove("show-cl");
 }
 
-export function errorToast(error: any, errorMessage?: string) {
+type Err = { stack: unknown; reason: string } extends Error ? Error : { stack: unknown; reason: string };
+
+export function errorToast(error: Err, errorMessage?: string) {
   delete error.stack;
-  const ErrorData = JSON.stringify(error, null, 2);
+  const errorData = JSON.stringify(error, null, 2);
   if (errorMessage) {
     toaster.create("error", errorMessage);
   } else if (error?.reason) {
     // parse error data to get error message
-    const parsedError = JSON.parse(ErrorData);
+    const parsedError = JSON.parse(errorData);
     const _errorMessage = parsedError?.error?.message ?? parsedError?.reason;
     toaster.create("error", _errorMessage);
   }
