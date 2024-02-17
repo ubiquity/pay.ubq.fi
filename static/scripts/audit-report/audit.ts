@@ -20,7 +20,6 @@ import {
   secondaryRateLimitHandler,
 } from "./helpers";
 import { ChainScanResult, ElemInterface, GitHubUrlParts, GoDBSchema, ObserverKeys, QuickImport, SavedData, StandardInterface, TxData } from "./types";
-=======
 import { getTxInfo } from "./utils/getTransaction";
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
