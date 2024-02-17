@@ -121,7 +121,8 @@ let defaultConf: Configuration = {
   },
 };
 //                                            // a cheaky way to get around the any type that parse returns
-export async function parseYAML(data: string): Promise<ReturnType<typeof YAML.parse> | undefined> {
+export async function parseYAML(data: string | undefined): Promise<ReturnType<typeof YAML.parse> | undefined> {
+  if (!data) return undefined;
   try {
     const parsedData = await YAML.parse(data);
     if (parsedData !== null) {
@@ -262,51 +263,7 @@ async function setConfig() {
       });
       const ins = appInstallations.installations.filter((installation) => installation.app_id === APP_ID);
 
-      if (ins.length > 0) {
-        const installationId = ins[0].id;
-        const { data: installedRepos } = await octokit.rest.apps.listInstallationReposForAuthenticatedUser({
-          installation_id: installationId,
-        });
-        const irs = installedRepos.repositories.filter((installedRepo) => installedRepo.id === repositoryId);
-
-        if (irs.length === 0) {
-          await octokit.rest.apps.addRepoToInstallationForAuthenticatedUser({
-            installation_id: installationId,
-            repository_id: repositoryId,
-          });
-        }
-
-        const conf = await getConf();
-
-        const updatedConf = defaultConf;
-        const parsedConf: Configuration | undefined = await parseYAML(conf);
-        updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf[EVM_NETWORK_ID] = Number(chainIdSelect.value);
-        updatedConf[SAFE_ADDRESS] = safeAddressInput.value;
-
-        // combine configs (default + remote org wide)
-        const combinedConf = Object.assign(updatedConf, parsedConf);
-
-        const stringified = stringifyYAML(combinedConf);
-        outKey.value = stringified;
-        const { updated: isUpdated } = await octokit.createOrUpdateTextFile({
-          owner: orgName.value,
-          repo: REPO_NAME,
-          path: KEY_PATH,
-          content: stringified,
-          message: `${crypto.randomUUID()}`,
-        });
-
-        if (isUpdated) {
-          singleToggle("success", `Success: private key is updated.`);
-        } else {
-          singleToggle("success", `Success: private key is upto date.`);
-        }
-
-        await nextStep();
-      } else {
-        singleToggle("warn", `Warn: Please install the app first.`);
-      }
+      await handleInstall(octokit, orgName, repositoryId, ins, chainIdSelect, safeAddressInput);
     } else {
       singleToggle("error", `Error: Not an organization.`, orgName);
     }
@@ -316,6 +273,65 @@ async function setConfig() {
     }
     console.error(error);
     singleToggle("error", `Error: ${error.message}`);
+  }
+}
+
+async function handleInstall(
+  octokit: Octokit,
+  orgName: HTMLInputElement,
+  repositoryId: number | null,
+  ins: { id: number }[],
+  chainIdSelect: HTMLSelectElement,
+  safeAddressInput: HTMLInputElement
+) {
+  if (ins.length > 0) {
+    const installationId = ins[0].id;
+    const { data: installedRepos } = await octokit.rest.apps.listInstallationReposForAuthenticatedUser({
+      installation_id: installationId,
+    });
+    const irs = installedRepos.repositories.filter((installedRepo) => installedRepo.id === repositoryId);
+
+    if (irs.length === 0) {
+      if (!repositoryId) {
+        singleToggle("error", `Error: Repo initialization failed, try again later.`);
+        return;
+      }
+      await octokit.rest.apps.addRepoToInstallationForAuthenticatedUser({
+        installation_id: installationId,
+        repository_id: repositoryId,
+      });
+    }
+
+    const conf = await getConf();
+
+    const updatedConf = defaultConf;
+    const parsedConf: Configuration | undefined = await parseYAML(conf);
+    updatedConf[KEY_NAME] = encryptedValue;
+    updatedConf[EVM_NETWORK_ID] = Number(chainIdSelect.value);
+    updatedConf[SAFE_ADDRESS] = safeAddressInput.value;
+
+    // combine configs (default + remote org wide)
+    const combinedConf = Object.assign(updatedConf, parsedConf);
+
+    const stringified = stringifyYAML(combinedConf);
+    outKey.value = stringified;
+    const { status } = await octokit.repos.createOrUpdateFileContents({
+      owner: orgName.value,
+      repo: REPO_NAME,
+      path: KEY_PATH,
+      content: stringified,
+      message: `${crypto.randomUUID()}`,
+    });
+
+    if (status === 201 || status === 200) {
+      singleToggle("success", `Success: private key is updated.`);
+    } else {
+      singleToggle("success", `Success: private key is upto date.`);
+    }
+
+    await nextStep();
+  } else {
+    singleToggle("warn", `Warn: Please install the app first.`);
   }
 }
 

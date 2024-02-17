@@ -34,6 +34,8 @@ import { getTxInfo } from "./utils/getTransaction";
 
 const rateOctokit = Octokit.plugin(throttling);
 
+let octokit: Octokit;
+
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 let GITHUB_PAT = "";
@@ -53,8 +55,10 @@ let isCache = true;
 let isComment = true;
 let commentPageNumber = 1;
 
-type ListForRepoData = ReturnType<typeof Octokit.prototype.rest.issues.listForRepo>;
-const issueList: ListForRepoData[] = [];
+type ListForRepoDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listForRepo>>["data"][0];
+type ListCommentsDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listComments>>["data"][0];
+
+const issueList: ListForRepoDataItem[] = [];
 
 const GIT_INTERVAL = 100;
 let isGit = true;
@@ -275,7 +279,7 @@ class SmartQueue {
     }
   }
 }
-type QueueItem = { hash: string; chain: string };
+type QueueItem = ChainScanResult;
 type Queue = QueueItem extends string ? string[] : QueueItem[];
 
 class QueueSet {
@@ -299,7 +303,7 @@ class QueueSet {
     if (v) this._set.delete(v);
   }
 
-  read(): NonNullable<unknown> {
+  read(): ChainScanResult {
     return this._queue[0];
   }
 
@@ -311,7 +315,6 @@ class QueueSet {
 const updateQueue = new SmartQueue();
 const rpcQueue = new QueueSet();
 
-// @TODO - Sonar 83/15
 async function commentFetcher() {
   if (isComment) {
     const commentIntervalID = setInterval(async () => {
@@ -329,7 +332,9 @@ async function commentFetcher() {
               },
             },
           });
+
           const [owner, repo] = parseRepoUrl(issueList[0].html_url);
+
           const { data } = await octokit.rest.issues.listComments({
             owner,
             repo,
@@ -337,85 +342,8 @@ async function commentFetcher() {
             per_page: offset,
             page: commentPageNumber,
           });
-          if (data.length === 0) {
-            commentPageNumber = 1;
-            await issueList.shift();
-            if (issueList.length > 0) {
-              await commentFetcher();
-            } else {
-              isComment = false;
-              finishedQueue.mutate("isComment", true);
-            }
-          } else {
-            let isFound = false;
-            for (const comment of data) {
-              if (comment.user && comment.user.node_id === botNodeId && comment.body) {
-                const match = comment.body.match(urlRegex);
-                if (match && isValidUrl(match[1])) {
-                  const url = new URL(match[1]);
-                  const params = new URLSearchParams(url.search);
-                  const base64Payload = params.get("claim");
-                  const network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
-                  if (base64Payload) {
-                    const {
-                      owner: ownerAddress,
-                      signature,
-                      permit: {
-                        deadline,
-                        nonce,
-                        permitted: { amount, token },
-                      },
-                      transferDetails: { to },
-                    } = JSON.parse(window.atob(base64Payload)) as TxData;
-                    updateQueue.add(signature, {
-                      k: signature,
-                      t: "git",
-                      c: {
-                        nonce,
-                        owner: ownerAddress,
-                        token,
-                        amount,
-                        to,
-                        deadline,
-                        signature,
-                      },
-                      s: {
-                        git: {
-                          issue_title: issueList[0].title,
-                          issue_number: issueList[0].number,
-                          owner,
-                          repo,
-                          bounty_hunter: {
-                            name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees[0]?.login,
-                            url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees[0]?.html_url,
-                          },
-                        },
-                        ether: undefined,
-                        network: network as string,
-                      },
-                    });
-                    isFound = true;
-                  }
-                } else {
-                  console.log("URL not found, skipping");
-                }
-              }
-            }
 
-            if (isFound) {
-              commentPageNumber = 1;
-              await issueList.shift();
-            } else {
-              commentPageNumber++;
-            }
-
-            if (issueList.length > 0) {
-              await commentFetcher();
-            } else {
-              isComment = false;
-              finishedQueue.mutate("isComment", true);
-            }
-          }
+          await fetchComment(owner, repo, data);
         } else {
           isComment = false;
           finishedQueue.mutate("isComment", true);
@@ -423,7 +351,7 @@ async function commentFetcher() {
       } catch (error) {
         console.error(error);
         finishedQueue.raise();
-        await issueList.shift();
+        issueList.shift();
         if (issueList.length > 0) {
           await commentFetcher();
         } else {
@@ -434,6 +362,108 @@ async function commentFetcher() {
     }, GIT_INTERVAL);
   }
 }
+
+async function fetchComment(owner: string, repo: string, data: ListCommentsDataItem[]) {
+  let isFound = false;
+  if (data.length === 0) {
+    commentPageNumber = 1;
+    issueList.shift();
+    if (issueList.length > 0) {
+      await commentFetcher();
+    } else {
+      isComment = false;
+      finishedQueue.mutate("isComment", true);
+    }
+  } else {
+    isFound = await processComments(owner, repo, data);
+
+    if (isFound) {
+      commentPageNumber = 1;
+      issueList.shift();
+    } else {
+      commentPageNumber++;
+    }
+
+    if (issueList.length > 0) {
+      commentFetcher().catch((error) => console.error(error));
+    } else {
+      isComment = false;
+      finishedQueue.mutate("isComment", true);
+    }
+  }
+}
+
+async function processComments(owner: string, repo: string, comments: ListCommentsDataItem[]) {
+  let isFound = false;
+
+  for (const comment of comments) {
+    if (comment.user && comment.user.node_id === botNodeId && comment.body) {
+      isFound = await processComment(owner, repo, comment);
+      if (isFound) {
+        break;
+      }
+    }
+  }
+  return isFound;
+}
+
+async function processComment(owner: string, repo: string, comment: ListCommentsDataItem) {
+  let isFound = false;
+
+  if (!comment.body) return isFound;
+
+  const match = comment.body.match(urlRegex);
+  if (match && isValidUrl(match[1])) {
+    const params = new URLSearchParams(new URL(match[1]).search);
+    const base64Payload = params.get("claim");
+    const network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+    if (base64Payload) {
+      const {
+        owner: ownerAddress,
+        signature,
+        permit: {
+          deadline,
+          nonce,
+          permitted: { amount, token },
+        },
+        transferDetails: { to },
+      } = JSON.parse(window.atob(base64Payload)) as TxData;
+      updateQueue.add(signature, {
+        k: signature,
+        t: "git",
+        c: {
+          nonce,
+          owner: ownerAddress,
+          token,
+          amount,
+          to,
+          deadline,
+          signature,
+        },
+        s: {
+          git: {
+            issue_title: issueList[0].title,
+            issue_number: issueList[0].number,
+            owner,
+            repo,
+            bounty_hunter: {
+              name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees?.[0].login || "",
+              url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees?.[0].html_url || "",
+            },
+          },
+          ether: undefined,
+          network: network as string,
+        },
+      });
+      isFound = true;
+    }
+  } else {
+    console.log("URL not found, skipping");
+  }
+
+  return isFound;
+}
+
 async function gitFetcher(repoUrls: GitHubUrlParts[]) {
   if (isGit) {
     try {
@@ -455,9 +485,8 @@ async function gitFetcher(repoUrls: GitHubUrlParts[]) {
   }
 }
 
-// @TODO - Sonar 24/15
 async function getIssuesForRepo(owner: string, repo: string) {
-  const issueList: ListForRepoData[] = [];
+  const issueList: ListForRepoDataItem[] = [];
 
   const octokit = new rateOctokit({
     auth: GITHUB_PAT,
@@ -471,7 +500,7 @@ async function getIssuesForRepo(owner: string, repo: string) {
     },
   });
 
-  let isIEF = true;
+  const isIEF = true;
 
   while (isIEF) {
     try {
@@ -486,26 +515,11 @@ async function getIssuesForRepo(owner: string, repo: string) {
       if (data.length === 0) break;
 
       const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
-      if (issues.length > 0) {
-        if (!lastGitID) {
-          lastGitID = issues[0].number;
-        }
-        for (const i of issues) {
-          if (i.number !== gitID) {
-            issueList.push(i);
-          } else {
-            isIEF = false;
-            break;
-          }
-        }
+      const { isIEF: isIEF2, issueList: processed } = await processIssues(isIEF, issueList, issues);
 
-        if (isIEF) {
-          gitPageNumber++;
-        } else {
-          break;
-        }
-      } else {
-        isIEF = false;
+      issueList.push(...processed);
+
+      if (!isIEF2) {
         break;
       }
     } catch (error: unknown) {
@@ -515,6 +529,30 @@ async function getIssuesForRepo(owner: string, repo: string) {
   }
 
   return issueList;
+}
+
+async function processIssues(isIEF: boolean, issueList: ListForRepoDataItem[], issues: ListForRepoDataItem[]) {
+  if (issues.length > 0) {
+    if (!lastGitID) {
+      lastGitID = issues[0].number;
+    }
+    for (const i of issues) {
+      if (i.number !== gitID) {
+        issueList.push(i);
+      } else {
+        isIEF = false;
+        break;
+      }
+    }
+
+    if (isIEF) {
+      gitPageNumber++;
+    } else {
+      isIEF = false;
+    }
+  }
+
+  return { isIEF, issueList };
 }
 
 async function fetchDataFromChainScanAPI(url: string, chain: string) {
@@ -527,7 +565,6 @@ async function fetchDataFromChainScanAPI(url: string, chain: string) {
   }
 }
 
-// @TODO - Sonar 27/15
 async function etherFetcher() {
   const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
     Chain.Ethereum
@@ -547,31 +584,7 @@ async function etherFetcher() {
         ]);
 
         const combinedData: ChainScanResult[] = [...ethereumData, ...gnosisData];
-        if (combinedData.length > 0) {
-          if (!lastEtherHash) {
-            lastEtherHash = combinedData[0].hash;
-          }
-          let isIEF = true;
-          for (const e of combinedData) {
-            if (e.hash !== etherHash) {
-              rpcQueue.add({ hash: e.hash, chain: e.chain });
-            } else {
-              isIEF = false;
-              break;
-            }
-          }
-
-          if (isIEF) {
-            etherPageNumber++;
-            await etherFetcher();
-          } else {
-            isEther = false;
-            finishedQueue.mutate("isEther", true);
-          }
-        } else {
-          isEther = false;
-          finishedQueue.mutate("isEther", true);
-        }
+        await handleCombinedData(combinedData);
       } catch (error: unknown) {
         console.error(error);
         finishedQueue.raise();
@@ -582,55 +595,41 @@ async function etherFetcher() {
   }
 }
 
-// @TODO: Sonar 22/15
+async function handleCombinedData(combinedData: ChainScanResult[]) {
+  if (combinedData.length > 0) {
+    if (!lastEtherHash) {
+      lastEtherHash = combinedData[0].hash;
+    }
+    let isIEF = true;
+    for (const e of combinedData) {
+      if (e.hash !== etherHash) {
+        rpcQueue.add({ hash: e.hash, chain: e.chain });
+      } else {
+        isIEF = false;
+        break;
+      }
+    }
+
+    if (isIEF) {
+      etherPageNumber++;
+      await etherFetcher();
+    } else {
+      isEther = false;
+      finishedQueue.mutate("isEther", true);
+    }
+  } else {
+    isEther = false;
+    finishedQueue.mutate("isEther", true);
+  }
+}
+
 async function rpcFetcher() {
   if (isRPC) {
     const rpcIntervalID = setInterval(async () => {
       clearInterval(rpcIntervalID);
       try {
         const data = rpcQueue.read();
-        if (data) {
-          const { hash, chain } = data as { hash: string; chain: string };
-
-          const providerUrl = await getOptimalRPC(chain as Chain);
-          const txInfo = await getTxInfo(hash, providerUrl, chain as Chain);
-
-          if (txInfo.input.startsWith(permitTransferFromSelector)) {
-            const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
-            const {
-              permit: {
-                permitted: { token, amount },
-                nonce,
-                deadline,
-              },
-              transferDetails: { to },
-              owner,
-              signature,
-            } = decodedFunctionData as unknown as TxData;
-            updateQueue.add(signature, {
-              k: signature,
-              t: "ether",
-              c: {
-                nonce,
-                owner,
-                token,
-                amount,
-                to,
-                deadline,
-                signature,
-              },
-              s: {
-                ether: {
-                  txHash: txInfo.hash,
-                  timestamp: parseInt(txInfo.timestamp, 16),
-                  block_number: parseInt(txInfo.blockNumber, 16),
-                },
-                git: undefined,
-                network: chain as string,
-              },
-            });
-          }
-        }
+        await handleRPCData(data);
         rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
           await rpcFetcher();
@@ -650,6 +649,51 @@ async function rpcFetcher() {
         }
       }
     }, RPC_INTERVAL);
+  }
+}
+
+async function handleRPCData(data: ChainScanResult) {
+  if (data) {
+    const { hash, chain } = data as { hash: string; chain: string };
+
+    const providerUrl = await getOptimalRPC(chain as Chain);
+    const txInfo = await getTxInfo(hash, providerUrl, chain as Chain);
+
+    if (txInfo.input.startsWith(permitTransferFromSelector)) {
+      const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
+      const {
+        permit: {
+          permitted: { token, amount },
+          nonce,
+          deadline,
+        },
+        transferDetails: { to },
+        owner,
+        signature,
+      } = decodedFunctionData as unknown as TxData;
+      updateQueue.add(signature, {
+        k: signature,
+        t: "ether",
+        c: {
+          nonce,
+          owner,
+          token,
+          amount,
+          to,
+          deadline,
+          signature,
+        },
+        s: {
+          ether: {
+            txHash: txInfo.hash,
+            timestamp: parseInt(txInfo.timestamp, 16),
+            block_number: parseInt(txInfo.blockNumber, 16),
+          },
+          git: undefined,
+          network: chain as string,
+        },
+      });
+    }
   }
 }
 

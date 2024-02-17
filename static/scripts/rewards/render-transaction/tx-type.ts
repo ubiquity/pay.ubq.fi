@@ -56,7 +56,7 @@ const erc721Permit = T.Object({
     GITHUB_USERNAME: T.String(),
     GITHUB_CONTRIBUTION_TYPE: T.String(),
   }),
-  nftaddress: addressT,
+  nftAddress: addressT,
   networkId: networkIdT,
   signature: signatureT,
 });
