@@ -57,8 +57,8 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
 }
 
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
-  const claimed = await isNonceClaimed(permit);
-  if (claimed) {
+  const isClaimed = await isNonceClaimed(permit);
+  if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
     return false;
   }
@@ -70,14 +70,14 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
 
   const { balance, allowance } = await fetchTreasury(permit);
   const permitted = BigNumber.from(permit.permit.permitted.amount);
-  const solvent = balance.gte(permitted);
-  const allowed = allowance.gte(permitted);
+  const isSolvent = balance.gte(permitted);
+  const isAllowed = allowance.gte(permitted);
 
-  if (!solvent) {
+  if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
     return false;
   }
-  if (!allowed) {
+  if (!isAllowed) {
     toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
     return false;
   }
@@ -115,15 +115,18 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
       if (!signer) {
         return;
       }
-      const claimed = await isNonceClaimed(permit);
-      if (claimed) {
+      const isClaimed = await isNonceClaimed(permit);
+      if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
         return;
       }
       await invalidateNonce(signer, permit.permit.nonce);
-    } catch (error: any) {
-      toaster.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
-      return;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error);
+        errorToast(error, error.message);
+        return;
+      }
     }
     toaster.create("info", "Nonce invalidation transaction sent");
   });

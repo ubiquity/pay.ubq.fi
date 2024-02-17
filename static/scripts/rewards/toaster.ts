@@ -73,7 +73,7 @@ export function hideClaimButton() {
   claimButton.element.classList.remove("show-cl");
 }
 
-type Err = { stack: unknown; reason: string } extends Error ? Error : { stack: unknown; reason: string };
+type Err = { stack?: unknown; reason?: string } extends Error ? Error : { stack?: unknown; reason?: string };
 
 export function errorToast(error: Err, errorMessage?: string) {
   delete error.stack;
