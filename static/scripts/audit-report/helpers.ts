@@ -50,7 +50,7 @@ export const populateTable = (
   txHash: string,
   issue_title: string,
   amount: string,
-  bounty_hunter: BountyHunter,
+  bounty_hunter: BountyHunter
 ) => {
   if (!txHash) return; // permit not claimed
   const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
