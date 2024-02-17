@@ -1,5 +1,6 @@
+import * as dotenv from "dotenv";
 import esbuild from "esbuild";
-import { invertColors } from "./plugins/invert-colors";
+
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -24,4 +25,19 @@ export let esBuildContext = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_KEY"]),
 } as esbuild.BuildOptions;
+
+function createEnvDefines(variableNames: string[]): Record<string, string> {
+  const defines: Record<string, string> = {};
+  dotenv.config();
+  for (const name of variableNames) {
+    const envVar = process.env[name];
+    if (envVar !== undefined) {
+      defines[`process.env.${name}`] = JSON.stringify(envVar);
+    } else {
+      throw new Error(`Missing environment variable: ${name}`);
+    }
+  }
+  return defines;
+}

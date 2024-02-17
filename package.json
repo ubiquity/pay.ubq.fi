@@ -17,6 +17,7 @@
     "@octokit/plugin-throttling": "^5.1.0",
     "@octokit/rest": "^19.0.7",
     "@sinclair/typebox": "^0.31.28",
+    "@supabase/supabase-js": "2.39.6",
     "@types/libsodium-wrappers": "^0.7.10",
     "@types/node": "^18.15.11",
     "@uniswap/permit2-sdk": "^1.2.0",

@@ -3,13 +3,14 @@ import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
 import { BountyHunter, GitHubUrlParts } from "./types";
 
 export interface RateLimitOptions {
-  method: string, url: string
+  method: string;
+  url: string;
 }
 
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
 
 export const shortenTransactionHash = (hash: string | undefined, length = 8): string => {
-  if(!hash) return ""
+  if (!hash) return "";
   const prefixLength = Math.floor(length / 2);
   const suffixLength = length - prefixLength;
 
@@ -19,8 +20,17 @@ export const shortenTransactionHash = (hash: string | undefined, length = 8): st
   return prefix + "..." + suffix;
 };
 
-export const populateTable = (owner: string, repo: string, issue_number: number, network: string, txHash: string, issue_title: string, amount: string, bounty_hunter: BountyHunter) => {
-  if(!txHash) return; // permit not claimed
+export const populateTable = (
+  owner: string,
+  repo: string,
+  issue_number: number,
+  network: string,
+  txHash: string,
+  issue_title: string,
+  amount: string,
+  bounty_hunter: BountyHunter,
+) => {
+  //if (!txHash) return; // permit not claimed
   const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
   const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
   const rows = `
@@ -28,18 +38,20 @@ export const populateTable = (owner: string, repo: string, issue_number: number,
         <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
         <td><a href="${issue_url}" target="_blank">#${issue_number} - ${issue_title}</a></td>
         <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
-        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) :  amount} ${network === Chain.Ethereum ? "DAI" : "WXDAI"}</a></td>
+        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
+    network === Chain.Ethereum ? "DAI" : "WXDAI"
+  }</a></td>
         <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
     </tr>`;
 
   resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-}
+};
 
 export const getChainScan = (chain: string) => {
-  return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis
-}
+  return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis;
+};
 
-export const getRandomAPIKey = (chain: Chain): string  => {
+export const getRandomAPIKey = (chain: Chain): string => {
   const keys = API_KEYS[chain];
   if (!keys || keys.length === 0) {
     throw new Error(`No API Keys found for chain: ${chain}`);
@@ -47,7 +59,7 @@ export const getRandomAPIKey = (chain: Chain): string  => {
 
   const randomIndex = Math.floor(Math.random() * keys.length);
   return keys[randomIndex];
-}
+};
 
 export const getRandomRpcUrl = (chain: Chain): string => {
   const urls = RPC_URLS[chain];
@@ -57,7 +69,7 @@ export const getRandomRpcUrl = (chain: Chain): string => {
 
   const randomIndex = Math.floor(Math.random() * urls.length);
   return urls[randomIndex];
-}
+};
 
 export const parseRepoUrl = (issueUrl: string): [string, string] => {
   const match = issueUrl.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/\d+/i);
@@ -84,7 +96,7 @@ export const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
   }
 
   return githubUrlPartsArray;
-}
+};
 
 export const primaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
   console.warn(`Request quota exhausted for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
@@ -97,19 +109,18 @@ export const secondaryRateLimitHandler = (retryAfter: number, options: RateLimit
 };
 
 export const isValidUrl = (urlString: string) => {
-    try { 
-      return Boolean(new URL(urlString)); 
-    }
-    catch(e){ 
-      return false; 
-    }
-}
+  try {
+    return Boolean(new URL(urlString));
+  } catch (e) {
+    return false;
+  }
+};
 
-export const getCurrency = (comment: string) => {
-  if (comment.includes('WXDAI')) {
+export const getCurrency = (id: number) => {
+  if (id === 100) {
     return Chain.Gnosis;
-  } else if (comment.includes('DAI')) {
+  } else if (id === 1) {
     return Chain.Ethereum;
   }
   return null;
-}
+};
