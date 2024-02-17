@@ -245,7 +245,6 @@ async function sodiumEncryptedSeal(publicKey: string, secret: string) {
   }
 }
 
-// @TODO = Sonar 27/15
 async function setConfig() {
   try {
     toggleLoader("start");
@@ -255,38 +254,7 @@ async function setConfig() {
       username: orgName.value,
     });
     if (userInfo.type === "Organization") {
-      let repositoryId: number | null = null;
-      try {
-        const { data: repositoryInfo } = await octokit.rest.repos.get({
-          owner: orgName.value,
-          repo: REPO_NAME,
-        });
-        repositoryId = repositoryInfo.id;
-      } catch (error) {
-        if (!(error instanceof Error)) {
-          return console.error(error);
-        }
-
-        console.error(error.message);
-        try {
-          const { data: repoRes } = await octokit.rest.repos.createInOrg({
-            org: orgName.value,
-            name: REPO_NAME,
-            auto_init: true,
-            private: true,
-            visibility: "private",
-            has_downloads: true,
-          });
-          repositoryId = repoRes.id;
-        } catch (error) {
-          if (!(error instanceof Error)) {
-            return console.error(error);
-          }
-          console.error(error.message);
-          singleToggle("error", `Error: Repo initialization failed, try again later.`);
-          return;
-        }
-      }
+      const repositoryId = await getRepoID(octokit, orgName.value, REPO_NAME);
 
       const { data: appInstallations } = await octokit.rest.orgs.listAppInstallations({
         org: orgName.value,
@@ -349,6 +317,45 @@ async function setConfig() {
     console.error(error);
     singleToggle("error", `Error: ${error.message}`);
   }
+}
+
+async function getRepoID(octokit: Octokit, orgName: string, repoName: string): Promise<number | null> {
+  let repositoryId: number | null = null;
+
+  try {
+    const { data: repositoryInfo } = await octokit.rest.repos.get({
+      owner: orgName,
+      repo: repoName,
+    });
+    repositoryId = repositoryInfo.id;
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      console.error(error);
+      return null;
+    }
+
+    console.error(error.message);
+    try {
+      const { data: repoRes } = await octokit.rest.repos.createInOrg({
+        org: orgName,
+        name: repoName,
+        auto_init: true,
+        private: true,
+        visibility: "private",
+        has_downloads: true,
+      });
+      repositoryId = repoRes.id;
+    } catch (error) {
+      if (!(error instanceof Error)) {
+        console.error(error);
+        return null;
+      }
+      console.error(error.message);
+      singleToggle("error", `Error: Repo initialization failed, try again later.`);
+      return null;
+    }
+  }
+  return repositoryId;
 }
 
 function setInputListeners() {
