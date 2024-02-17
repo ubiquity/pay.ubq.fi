@@ -5,3 +5,9 @@ out
 .yarn
 .DS_Store
 commit.txt
+# macOS
+# node
+# yarn2
+.pnp.cjs
+.pnp.loader.mjs
+static/dist

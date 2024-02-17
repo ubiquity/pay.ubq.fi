@@ -1,15 +1,34 @@
 {
+  "name": "pay.ubq.fi",
+  "version": "1.0.0",
+  "description": "Claim your DevPool rewards.",
+  "main": "build/index.ts",
+  "author": "Ubiquity DAO",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.10.0"
+  },
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
-    "format": "prettier --write .",
+    "format": "run-s format:lint format:prettier format:cspell",
     "build": "run-s utils:hash utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx build/esbuild-build.ts",
     "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
-    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol"
+    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol",
+    "format:lint": "eslint --fix .",
+    "format:prettier": "prettier --write .",
+    "format:cspell": "cspell **/*",
+    "prepare": "husky install"
   },
+  "keywords": [
+    "typescript",
+    "template",
+    "dao",
+    "ubiquity",
+    "open-source"
+  ],
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
     "@octokit/core": "^4.2.0",
@@ -33,7 +52,41 @@
     "typescript": "^5.1.6",
     "yaml": "^2.2.2"
   },
-  "engines": {
-    "node": ">=20.10.0"
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@cspell/dict-node": "^4.0.3",
+    "@cspell/dict-software-terms": "^3.3.17",
+    "@cspell/dict-typescript": "^3.1.2",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "cspell": "^8.3.2",
+    "esbuild": "^0.19.8",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-sonarjs": "^0.23.0",
+    "husky": "^8.0.3",
+    "knip": "^3.3.0",
+    "lint-staged": "^15.1.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.1.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.2"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "yarn prettier --write",
+      "eslint --fix"
+    ],
+    "src/**.{ts,json}": [
+      "cspell"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   }
 }
