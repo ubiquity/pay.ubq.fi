@@ -30,7 +30,7 @@ export const populateTable = (
   amount: string,
   bounty_hunter: BountyHunter,
 ) => {
-  //if (!txHash) return; // permit not claimed
+  if (!txHash) return; // permit not claimed
   const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
   const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
   const rows = `

@@ -235,7 +235,7 @@ class smartQueue {
       } = queueValue;
 
       // check for undefined
-      if(git?.issue_number) {
+      if (git?.issue_number) {
         elemList.push({
           id: git?.issue_number!,
           tx: ether?.txHash!,
@@ -342,9 +342,7 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
       for (let i = 0; i < allIssues.length; i++) {
         const issues = allIssues[i];
         issueList.push(...issues);
-        console.log(
-          `Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`
-        );
+        console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
       }
 
       isGit = false;
@@ -360,7 +358,6 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
           owner: issue.owner,
           repo: issue.repo,
         });
-        // console.log("user", data, userData, issueData, issue);
         updateQueue.add(issue.signature, {
           c: {
             amount: issue.amount,
@@ -379,7 +376,7 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
                 name: userData.login,
                 url: userData.html_url,
               },
-              issue_number: issue.issue_id,
+              issue_number: issueData.number,
               issue_title: issueData.title,
               owner: issue.owner,
               repo: issue.repo,
