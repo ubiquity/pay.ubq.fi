@@ -15,6 +15,7 @@ const outKey = document.getElementById("outKey") as HTMLInputElement;
 const githubPAT = document.getElementById("githubPat") as HTMLInputElement;
 const orgName = document.getElementById("orgName") as HTMLInputElement;
 const walletPrivateKey = document.getElementById("walletPrivateKey") as HTMLInputElement;
+// cspell: word ress // weird cspell bug seperating add and ress
 const safeAddressInput = document.getElementById("safeAddress") as HTMLInputElement;
 const setBtn = document.getElementById("setBtn") as HTMLButtonElement;
 const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
@@ -29,6 +30,7 @@ const KEY_PATH = ".github/ubiquibot-config.yml";
 const DEFAULT_PATH = "ubiquibot-config-default.json";
 const KEY_NAME = "private-key-encrypted";
 const KEY_PREFIX = "HSK_";
+// cspell:disable-next-line
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 const SAFE_ADDRESS = "safe-address";
 const EVM_NETWORK_ID = "evm-network-id";
@@ -120,7 +122,7 @@ let defaultConf: Configuration = {
     organization: true,
   },
 };
-//                                            // a cheaky way to get around the any type that parse returns
+//                                            // a cheeky way to get around the any type that parse returns
 export async function parseYAML(data: string | undefined): Promise<ReturnType<typeof YAML.parse> | undefined> {
   if (!data) return undefined;
   try {

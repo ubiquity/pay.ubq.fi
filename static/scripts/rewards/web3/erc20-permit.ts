@@ -74,11 +74,11 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
   const isAllowed = allowance.gte(permitted);
 
   if (!isSolvent) {
-    toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
+    toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
     return false;
   }
   if (!isAllowed) {
-    toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
+    toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
     return false;
   }
 

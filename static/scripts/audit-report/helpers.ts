@@ -61,8 +61,8 @@ export function populateTable(
         <td><a href="${issueUrl}" target="_blank">#${issueNumber} - ${issueTitle}</a></td>
         <td><a href="${bountyHunter?.url}" target="_blank">${bountyHunter?.name}</a></td>
         <td><a href="${txUrl}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
-    network === Chain.Ethereum ? "DAI" : "WXDAI"
-  }</a></td>
+          network === Chain.Ethereum ? "DAI" : "WXDAI"
+        }</a></td>
         <td><a href="${txUrl}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
     </tr>`;
 

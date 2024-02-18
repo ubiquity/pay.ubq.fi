@@ -1,3 +1,4 @@
+// cspell: word lockdown
 export const permit2Abi = [
   { inputs: [{ internalType: "uint256", name: "deadline", type: "uint256" }], name: "AllowanceExpired", type: "error" },
   { inputs: [], name: "ExcessiveInvalidation", type: "error" },
