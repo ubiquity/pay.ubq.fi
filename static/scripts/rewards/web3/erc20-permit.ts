@@ -19,7 +19,7 @@ export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: Big
     const decimals = await tokenContract.decimals();
     const symbol = await tokenContract.symbol();
     return { balance, allowance, decimals, symbol };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
 }
@@ -45,18 +45,20 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
-      renderTransaction(true);
-    } catch (error: any) {
-      console.log(error);
-      errorToast(error, error.message);
-      resetClaimButton();
+      renderTransaction(true).catch(console.error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error);
+        errorToast(error, error.message);
+        resetClaimButton();
+      }
     }
   };
 }
 
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
-  const claimed = await isNonceClaimed(permit);
-  if (claimed) {
+  const isClaimed = await isNonceClaimed(permit);
+  if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
     return false;
   }
@@ -68,15 +70,15 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
 
   const { balance, allowance } = await fetchTreasury(permit);
   const permitted = BigNumber.from(permit.permit.permitted.amount);
-  const solvent = balance.gte(permitted);
-  const allowed = allowance.gte(permitted);
+  const isSolvent = balance.gte(permitted);
+  const isAllowed = allowance.gte(permitted);
 
-  if (!solvent) {
-    toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the funder know.`);
+  if (!isSolvent) {
+    toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
     return false;
   }
-  if (!allowed) {
-    toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the funder know.`);
+  if (!isAllowed) {
+    toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
     return false;
   }
 
@@ -113,15 +115,18 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
       if (!signer) {
         return;
       }
-      const claimed = await isNonceClaimed(permit);
-      if (claimed) {
+      const isClaimed = await isNonceClaimed(permit);
+      if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
         return;
       }
       await invalidateNonce(signer, permit.permit.nonce);
-    } catch (error: any) {
-      toaster.create("error", `${error.reason ?? error.message ?? "Unknown error"}`);
-      return;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error);
+        errorToast(error, error.message);
+        return;
+      }
     }
     toaster.create("info", "Nonce invalidation transaction sent");
   });

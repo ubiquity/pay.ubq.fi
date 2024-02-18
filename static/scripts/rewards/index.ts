@@ -11,10 +11,10 @@ import { grid } from "./the-grid";
       buildElement.innerHTML = commitHash;
       buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${commitHash}`;
     }
-    init();
+    init().catch(console.error);
   } catch (error) {
     console.error(error);
   }
-})();
+})().catch(console.error);
 
 grid(document.getElementById("grid") as HTMLElement);

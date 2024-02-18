@@ -4,14 +4,14 @@ import { fetchEns } from "./fetch-ens";
 import { queryReverseEns } from "./query-reverse-ens";
 
 export const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
-export const ReverseEnsInterface = new ethers.utils.Interface(abi);
+export const reverseEnsInterface = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function ensLookup(__address: string) {
-  const _address = "/".concat(__address); // quick adapter
+export async function ensLookup(addr: string) {
+  const _address = "/".concat(addr); // quick adapter
 
   // try {
   const start = _address.indexOf("/0x");

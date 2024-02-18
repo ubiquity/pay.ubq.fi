@@ -1,52 +1,52 @@
 import { StaticDecode, Type as T } from "@sinclair/typebox";
 import { BigNumber } from "ethers";
 
-const TBigNumber = T.Transform(T.Union([T.RegExp(/^\d+$/), T.Number()]))
-  .Decode(value => BigNumber.from(value))
-  .Encode(value => value.toString());
+const bigNumberT = T.Transform(T.Union([T.RegExp(/^\d+$/), T.Number()]))
+  .Decode((value) => BigNumber.from(value))
+  .Encode((value) => value.toString());
 
-// const TNetworkId = T.Transform(T.Union([T.RegExp(/^0x\d+$/), T.Number()]))
+// const networkIdT = T.Transform(T.Union([T.RegExp(/^0x\d+$/), T.Number()]))
 //   .Decode(value => (typeof value === "number" ? "0x" + value.toString(16) : value))
 //   .Encode(value => value);
 
-const TNetworkId = T.Number();
+const networkIdT = T.Number();
 
-const TAddress = T.Transform(T.RegExp(/^0x[a-fA-F0-9]{40}$/))
-  .Decode(value => value.toLowerCase())
-  .Encode(value => value);
+const addressT = T.Transform(T.RegExp(/^0x[a-fA-F0-9]{40}$/))
+  .Decode((value) => value.toLowerCase())
+  .Encode((value) => value);
 
-const TSignature = T.Transform(T.RegExp(/^0x[a-fA-F0-9]+$/))
-  .Decode(value => value.toLowerCase())
-  .Encode(value => value);
+const signatureT = T.Transform(T.RegExp(/^0x[a-fA-F0-9]+$/))
+  .Decode((value) => value.toLowerCase())
+  .Encode((value) => value);
 
-const Erc20Permit = T.Object({
+const erc20PermitT = T.Object({
   type: T.Literal("erc20-permit"),
   permit: T.Object({
     permitted: T.Object({
-      token: TAddress,
-      amount: TBigNumber,
+      token: addressT,
+      amount: bigNumberT,
     }),
-    nonce: TBigNumber,
-    deadline: TBigNumber,
+    nonce: bigNumberT,
+    deadline: bigNumberT,
   }),
   transferDetails: T.Object({
-    to: TAddress,
-    requestedAmount: TBigNumber,
+    to: addressT,
+    requestedAmount: bigNumberT,
   }),
-  owner: TAddress,
-  signature: TSignature,
-  networkId: TNetworkId,
+  owner: addressT,
+  signature: signatureT,
+  networkId: networkIdT,
 });
 
-export type Erc20Permit = StaticDecode<typeof Erc20Permit>;
+export type Erc20Permit = StaticDecode<typeof erc20PermitT>;
 
-const Erc721Permit = T.Object({
+const erc721Permit = T.Object({
   type: T.Literal("erc721-permit"),
   request: T.Object({
-    beneficiary: TAddress,
-    deadline: TBigNumber,
+    beneficiary: addressT,
+    deadline: bigNumberT,
     keys: T.Array(T.String()),
-    nonce: TBigNumber,
+    nonce: bigNumberT,
     values: T.Array(T.String()),
   }),
   nftMetadata: T.Object({
@@ -56,13 +56,13 @@ const Erc721Permit = T.Object({
     GITHUB_USERNAME: T.String(),
     GITHUB_CONTRIBUTION_TYPE: T.String(),
   }),
-  nftAddress: TAddress,
-  networkId: TNetworkId,
-  signature: TSignature,
+  nftAddress: addressT,
+  networkId: networkIdT,
+  signature: signatureT,
 });
 
-export type Erc721Permit = StaticDecode<typeof Erc721Permit>;
+export type Erc721Permit = StaticDecode<typeof erc721Permit>;
 
-export const ClaimTx = T.Union([Erc20Permit, Erc721Permit]);
+export const claimTxT = T.Union([erc20PermitT, erc721Permit]);
 
-export type ClaimTx = StaticDecode<typeof ClaimTx>;
+export type ClaimTx = StaticDecode<typeof claimTxT>;

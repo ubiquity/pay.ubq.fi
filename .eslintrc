@@ -8,8 +8,19 @@
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:sonarjs/recommended"],
   "ignorePatterns": ["**/*.js"],
   "rules": {
-    "prefer-arrow-callback": ["warn", { "allowNamedFunctions": true }],
-    "func-style": ["warn", "declaration", { "allowArrowFunctions": false }],
+    "prefer-arrow-callback": [
+      "warn",
+      {
+        "allowNamedFunctions": true
+      }
+    ],
+    "func-style": [
+      "warn",
+      "declaration",
+      {
+        "allowArrowFunctions": false
+      }
+    ],
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-non-null-assertion": "error",
     "constructor-super": "error",
@@ -38,16 +49,60 @@
     "sonarjs/no-identical-expressions": "error",
     "@typescript-eslint/naming-convention": [
       "error",
-      { "selector": "interface", "format": ["PascalCase"], "custom": { "regex": "^I[A-Z]", "match": false } },
-      { "selector": "memberLike", "modifiers": ["private"], "format": ["camelCase"], "leadingUnderscore": "require" },
-      { "selector": "typeLike", "format": ["PascalCase"] },
-      { "selector": "typeParameter", "format": ["PascalCase"], "prefix": ["T"] },
-      { "selector": "variable", "format": ["camelCase", "UPPER_CASE"], "leadingUnderscore": "allow", "trailingUnderscore": "allow" },
-      { "selector": "variable", "format": ["camelCase"], "leadingUnderscore": "allow", "trailingUnderscore": "allow" },
-      { "selector": "variable", "modifiers": ["destructured"], "format": null },
-      { "selector": "variable", "types": ["boolean"], "format": ["PascalCase"], "prefix": ["is", "should", "has", "can", "did", "will", "does"] },
-      { "selector": "variableLike", "format": ["camelCase"] },
-      { "selector": ["function", "variable"], "format": ["camelCase"] }
+      {
+        "selector": "interface",
+        "format": ["PascalCase"],
+        "custom": {
+          "regex": "^I[A-Z]",
+          "match": false
+        }
+      },
+      {
+        "selector": "memberLike",
+        "modifiers": ["private"],
+        "format": ["camelCase"],
+        "leadingUnderscore": "require"
+      },
+      {
+        "selector": "typeLike",
+        "format": ["PascalCase"]
+      },
+      {
+        "selector": "typeParameter",
+        "format": ["PascalCase"],
+        "prefix": ["T"]
+      },
+      {
+        "selector": "variable",
+        "format": ["camelCase", "UPPER_CASE"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
+      },
+      {
+        "selector": "variable",
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
+      },
+      {
+        "selector": "variable",
+        "modifiers": ["destructured"],
+        "format": null
+      },
+      {
+        "selector": "variable",
+        "types": ["boolean"],
+        "format": ["PascalCase"],
+        "prefix": ["is", "should", "has", "can", "did", "will", "does"]
+      },
+      {
+        "selector": "variableLike",
+        "format": ["camelCase"]
+      },
+      {
+        "selector": ["function", "variable"],
+        "format": ["camelCase"]
+      }
     ]
   }
 }
