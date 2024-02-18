@@ -7,7 +7,7 @@ dotenv.config();
 
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // same on all chains
 
-generate().catch(error => {
+generate().catch((error) => {
   console.error(error);
   verifyEnvironmentVariables();
   process.exitCode = 1;
@@ -34,7 +34,7 @@ async function generate() {
   const { domain, types, values } = SignatureTransfer.getPermitData(
     permitTransferFromData,
     PERMIT2_ADDRESS,
-    process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1,
+    process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
   );
   const signature = await myWallet._signTypedData(domain, types, values);
   const txData = [

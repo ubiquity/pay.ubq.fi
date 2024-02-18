@@ -20,7 +20,6 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
         toaster.create("info", "Please connect your wallet to collect this reward.");
         claimButton.element.disabled = true;
       }
-      return null;
     }
     return null;
   }
@@ -34,7 +33,8 @@ export async function handleNetwork(desiredNetworkId: number) {
     invalidateButton.disabled = true;
   }
 
-  const currentNetworkId = parseInt(String(web3provider.network.chainId), 16);
+  const chainIdHex = String(web3provider.network.chainId);
+  const currentNetworkId = parseInt(chainIdHex, 16);
 
   // watch for network changes
   window.ethereum.on("chainChanged", <T>(newNetworkId: T | string) => handleIfOnCorrectNetwork(parseInt(newNetworkId as string, 16), desiredNetworkId));

@@ -1,4 +1,4 @@
-export async function queryGraph(endpoint, query) {
+export async function queryGraph(endpoint: string | URL | Request, query: string) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {

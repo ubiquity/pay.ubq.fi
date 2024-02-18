@@ -26,8 +26,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
       return;
     }
 
-    const isReedemed = await isNonceRedeemed(permit);
-    if (isReedemed) {
+    const isRedeemed = await isNonceRedeemed(permit);
+    if (isRedeemed) {
       toaster.create("error", `This NFT has already been redeemed.`);
       resetClaimButton();
       return;

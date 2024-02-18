@@ -2,22 +2,11 @@
   "root": true,
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": [
-      "./tsconfig.json"
-    ]
+    "project": ["./tsconfig.json"]
   },
-  "plugins": [
-    "@typescript-eslint",
-    "sonarjs"
-  ],
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:sonarjs/recommended"
-  ],
-  "ignorePatterns": [
-    "**/*.js"
-  ],
+  "plugins": ["@typescript-eslint", "sonarjs"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:sonarjs/recommended"],
+  "ignorePatterns": ["**/*.js"],
   "rules": {
     "prefer-arrow-callback": [
       "warn",
@@ -36,13 +25,8 @@
     "@typescript-eslint/no-non-null-assertion": "error",
     "constructor-super": "error",
     "no-invalid-this": "off",
-    "@typescript-eslint/no-invalid-this": [
-      "error"
-    ],
-    "no-restricted-syntax": [
-      "error",
-      "ForInStatement"
-    ],
+    "@typescript-eslint/no-invalid-this": ["error"],
+    "no-restricted-syntax": ["error", "ForInStatement"],
     "use-isnan": "error",
     "@typescript-eslint/no-unused-vars": [
       "error",
@@ -67,9 +51,7 @@
       "error",
       {
         "selector": "interface",
-        "format": [
-          "PascalCase"
-        ],
+        "format": ["PascalCase"],
         "custom": {
           "regex": "^I[A-Z]",
           "match": false
@@ -77,85 +59,49 @@
       },
       {
         "selector": "memberLike",
-        "modifiers": [
-          "private"
-        ],
-        "format": [
-          "camelCase"
-        ],
+        "modifiers": ["private"],
+        "format": ["camelCase"],
         "leadingUnderscore": "require"
       },
       {
         "selector": "typeLike",
-        "format": [
-          "PascalCase"
-        ]
+        "format": ["PascalCase"]
       },
       {
         "selector": "typeParameter",
-        "format": [
-          "PascalCase"
-        ],
-        "prefix": [
-          "T"
-        ]
+        "format": ["PascalCase"],
+        "prefix": ["T"]
       },
       {
         "selector": "variable",
-        "format": [
-          "camelCase",
-          "UPPER_CASE"
-        ],
+        "format": ["camelCase", "UPPER_CASE"],
         "leadingUnderscore": "allow",
         "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
-        "format": [
-          "camelCase"
-        ],
+        "format": ["camelCase"],
         "leadingUnderscore": "allow",
         "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
-        "modifiers": [
-          "destructured"
-        ],
+        "modifiers": ["destructured"],
         "format": null
       },
       {
         "selector": "variable",
-        "types": [
-          "boolean"
-        ],
-        "format": [
-          "PascalCase"
-        ],
-        "prefix": [
-          "is",
-          "should",
-          "has",
-          "can",
-          "did",
-          "will",
-          "does"
-        ]
+        "types": ["boolean"],
+        "format": ["PascalCase"],
+        "prefix": ["is", "should", "has", "can", "did", "will", "does"]
       },
       {
         "selector": "variableLike",
-        "format": [
-          "camelCase"
-        ]
+        "format": ["camelCase"]
       },
       {
-        "selector": [
-          "function",
-          "variable"
-        ],
-        "format": [
-          "camelCase"
-        ]
+        "selector": ["function", "variable"],
+        "format": ["camelCase"]
       }
     ]
   }
