@@ -42,7 +42,7 @@ jobs:
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           repository: ${{ github.repository }}
           production_branch: ${{ github.event.repository.default_branch }}
-          output_directory: "dist"
+          output_directory: "static"
           current_branch: ${{ github.ref_name }}
           pull_request_number: ${{ github.event.pull_request.number }}
           commit_sha: ${{ github.sha }}
