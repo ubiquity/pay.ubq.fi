@@ -6,8 +6,7 @@ import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import _sodium from "libsodium-wrappers";
 import YAML from "yaml";
-import { DefaultConfig } from "../../../lib/ubiquibot/src/configs/ubiquibot-config-default";
-import { MergedConfig } from "../../../lib/ubiquibot/src/types";
+import { BotConfig } from "../../../lib/ubiquibot/src/types/configuration-types";
 import { erc20Abi } from "../rewards/abis/erc20Abi";
 import { getNetworkName, NetworkIds, Tokens } from "../rewards/constants";
 
@@ -26,7 +25,7 @@ const loader = document.querySelector(".loader-wrap") as HTMLElement;
 const APP_ID = 236521;
 const REPO_NAME = "ubiquibot-config";
 const KEY_PATH = ".github/ubiquibot-config.yml";
-const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
+const PRIVATE_ENCRYPTED_KEY_NAME = "evmPrivateEncrypted";
 const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
 // cspell:disable-next-line
@@ -35,7 +34,7 @@ const STATUS_LOG = ".status-log";
 
 let encryptedValue = "";
 
-const defaultConf = DefaultConfig;
+const defaultConf = {} as BotConfig;
 
 export async function parseYAML<T>(data: string | undefined) {
   if (!data) return undefined;
@@ -60,7 +59,7 @@ export async function parseJSON<T>(data: string) {
   }
 }
 
-export function stringifyYAML(value: MergedConfig): string {
+export function stringifyYAML(value: BotConfig): string {
   return YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
 }
 
@@ -148,8 +147,8 @@ async function sodiumEncryptedSeal(publicKey: string, secret: string) {
     const binsec = sodium.from_string(secret);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
-    defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
-    defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
+    defaultConf.keys[PRIVATE_ENCRYPTED_KEY_NAME] = output;
+    defaultConf.payments[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
     outKey.value = stringifyYAML(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -220,9 +219,9 @@ async function handleInstall(
     const conf = await getConf();
 
     const updatedConf = defaultConf;
-    const parsedConf = await parseYAML<MergedConfig>(conf);
-    updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
-    updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
+    const parsedConf = await parseYAML<BotConfig>(conf);
+    updatedConf.keys[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
+    updatedConf.payments[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
 
     // combine configs (default + remote org wide)
     const combinedConf = Object.assign(updatedConf, parsedConf);
@@ -491,7 +490,7 @@ async function step2Handler() {
 async function init() {
   if (defaultConf !== undefined) {
     try {
-      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
+      defaultConf.keys[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
