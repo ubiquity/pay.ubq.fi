@@ -1,13 +1,15 @@
-import _sodium from "libsodium-wrappers";
-import { Octokit } from "@octokit/rest";
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { createOrUpdateTextFile } from "@octokit/plugin-create-or-update-text-file";
-import YAML from "yaml";
-import { ethers } from "ethers";
+import { Octokit } from "@octokit/rest";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
-import { JsonRpcSigner, Network } from "@ethersproject/providers";
+import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
-import { NetworkIds, Tokens, getNetworkName, networkNames } from "../rewards/constants";
+import _sodium from "libsodium-wrappers";
+import YAML from "yaml";
+import { DefaultConfig } from "../../../lib/ubiquibot/src/configs/ubiquibot-config-default";
+import { MergedConfig } from "../../../lib/ubiquibot/src/types";
 import { erc20Abi } from "../rewards/abis/erc20Abi";
+import { getNetworkName, NetworkIds, Tokens } from "../rewards/constants";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -22,107 +24,23 @@ const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
-const DEFAULT_ORG = "ubiquity";
 const REPO_NAME = "ubiquibot-config";
-const DEFAULT_REPO = "ubiquibot";
 const KEY_PATH = ".github/ubiquibot-config.yml";
-const DEFAULT_PATH = "ubiquibot-config-default.json";
-const KEY_NAME = "private-key-encrypted";
+const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
+const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
 
 let encryptedValue = "";
 
-interface ConfLabel {
-  name: string;
-}
+let defaultConf = DefaultConfig;
 
-interface CommandLabel {
-  name: string;
-  enabled: boolean;
-}
-
-interface IIncentive {
-  comment: {
-    elements: Record<string, unknown>;
-    totals: {
-      word: number;
-    };
-  };
-}
-
-interface IControl {
-  label: boolean;
-  organization: boolean;
-}
-
-interface IConf {
-  "private-key-encrypted"?: string;
-  "safe-address"?: string;
-  "base-multiplier"?: number;
-  "auto-pay-mode"?: boolean;
-  "analytics-mode"?: boolean;
-  "max-concurrent-bounties"?: number;
-  "incentive-mode"?: boolean;
-  "evm-network-id"?: number;
-  "price-multiplier"?: number;
-  "issue-creator-multiplier"?: number;
-  "payment-permit-max-price"?: number;
-  "max-concurrent-assigns"?: number;
-  "assistive-pricing"?: boolean;
-  "disable-analytics"?: boolean;
-  "comment-incentives"?: boolean;
-  "register-wallet-with-verification"?: boolean;
-  "promotion-comment"?: string;
-  "default-labels"?: string[];
-  "time-labels"?: ConfLabel[];
-  "priority-labels"?: ConfLabel[];
-  "command-settings"?: CommandLabel[];
-  incentives?: IIncentive;
-  "enable-access-control"?: IControl;
-}
-
-let defaultConf: IConf = {
-  "private-key-encrypted": "",
-  "safe-address": "",
-  "base-multiplier": 1,
-  "auto-pay-mode": false,
-  "analytics-mode": false,
-  "max-concurrent-bounties": 1,
-  "incentive-mode": false,
-  "evm-network-id": 1,
-  "price-multiplier": 1,
-  "issue-creator-multiplier": 1,
-  "payment-permit-max-price": 1,
-  "max-concurrent-assigns": 1,
-  "assistive-pricing": false,
-  "disable-analytics": false,
-  "comment-incentives": false,
-  "register-wallet-with-verification": false,
-  "promotion-comment": "",
-  "default-labels": [],
-  "time-labels": [],
-  "priority-labels": [],
-  "command-settings": [],
-  incentives: {
-    comment: {
-      elements: {},
-      totals: {
-        word: 0,
-      },
-    },
-  },
-  "enable-access-control": {
-    label: false,
-    organization: true,
-  },
-};
-
-export const parseYAML = async (data: any): Promise<any | undefined> => {
+export const parseYAML = async <T>(data: string | undefined) => {
+  if (!data) return undefined;
   try {
     const parsedData = await YAML.parse(data);
     if (parsedData !== null) {
-      return parsedData;
+      return parsedData as T;
     } else {
       return undefined;
     }
@@ -131,10 +49,10 @@ export const parseYAML = async (data: any): Promise<any | undefined> => {
   }
 };
 
-export const parseJSON = async (data: any): Promise<any | undefined> => {
+export const parseJSON = async <T>(data: string) => {
   try {
     const parsedData = await JSON.parse(data);
-    return parsedData;
+    return parsedData as T;
   } catch (error) {
     return undefined;
   }
@@ -142,13 +60,13 @@ export const parseJSON = async (data: any): Promise<any | undefined> => {
 
 export const YAMLStringify = (value: any) => YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
 
-export const getConf = async (initial: boolean = false): Promise<string | undefined> => {
+export const getConf = async (): Promise<string | undefined> => {
   try {
     const octokit = new Octokit({ auth: githubPAT.value });
     const { data } = await octokit.rest.repos.getContent({
-      owner: initial ? DEFAULT_ORG : orgName.value,
-      repo: initial ? DEFAULT_REPO : REPO_NAME,
-      path: initial ? DEFAULT_PATH : KEY_PATH,
+      owner: orgName.value,
+      repo: REPO_NAME,
+      path: KEY_PATH,
       mediaType: {
         format: "raw",
       },
@@ -227,9 +145,8 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const binsec = sodium.from_string(secret);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
-    defaultConf[KEY_NAME] = output;
-    defaultConf["evm-network-id"] = Number(chainIdSelect.value);
-    defaultConf["safe-address"] = safeAddressInput.value;
+    defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
+    defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
     outKey.value = YAMLStringify(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -304,10 +221,9 @@ const setConfig = async () => {
         const conf = await getConf();
 
         const updatedConf = defaultConf;
-        const parsedConf: IConf | undefined = await parseYAML(conf);
-        updatedConf[KEY_NAME] = encryptedValue;
-        updatedConf["evm-network-id"] = Number(chainIdSelect.value);
-        updatedConf["safe-address"] = safeAddressInput.value;
+        const parsedConf = await parseYAML<MergedConfig>(conf);
+        updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
+        updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
 
         // combine configs (default + remote org wide)
         const combinedConf = Object.assign(updatedConf, parsedConf);
@@ -472,18 +388,6 @@ const step1Handler = async () => {
     singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
     return;
   }
-  if (!safeAddressInput.value.startsWith("0x")) {
-    singleToggle("warn", `Warn: Safe Address must start with 0x.`, safeAddressInput);
-    return;
-  }
-  if (!isHex(safeAddressInput.value.substring(2))) {
-    singleToggle("warn", `Warn: Safe Address is not a valid hex string.`, safeAddressInput);
-    return;
-  }
-  if (safeAddressInput.value.length !== 42) {
-    singleToggle("warn", `Warn: Safe Address must be 20 bytes long.`, safeAddressInput);
-    return;
-  }
 
   await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
   setConfig();
@@ -550,12 +454,9 @@ const step2Handler = async () => {
 };
 
 const init = async () => {
-  let conf = await getConf(true);
-  if (conf !== undefined) {
+  if (defaultConf !== undefined) {
     try {
-      conf = JSON.parse(conf);
-      defaultConf = conf as IConf;
-      defaultConf["private-key-encrypted"] = "";
+      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
