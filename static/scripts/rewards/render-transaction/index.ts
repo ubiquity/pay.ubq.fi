@@ -1,5 +1,5 @@
-import { networkRpcs, networkExplorers } from "../constants";
-import { getOptimalRPC } from "../helpers";
+import { networkExplorers } from "../constants";
+import { getOptimalProvider } from "../helpers";
 import { ClaimTx } from "./tx-type";
 
 class AppState {
@@ -16,9 +16,9 @@ class AppState {
 
   async currentNetworkRpc(): Promise<string> {
     if (!this.currentTx) {
-      return getOptimalRPC(1);
+      return (await getOptimalProvider(1)).connection.url;
     }
-    return getOptimalRPC(this.currentTx.networkId);
+    return (await getOptimalProvider(this.currentTx.networkId)).connection.url;
   }
 
   get currentExplorerUrl(): string {

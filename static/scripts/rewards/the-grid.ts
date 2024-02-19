@@ -21,6 +21,7 @@ export function grid(node = document.body) {
     }
 `;
 
+  // cspell:ignore mediump
   const fragmentShaderSource = `
     precision mediump float;
 
@@ -53,6 +54,10 @@ export function grid(node = document.body) {
   // Define shader creation function
   function createShader(gl: WebGLRenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);
+    if (!shader) {
+      console.error("An error occurred creating the shaders");
+      return null;
+    }
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -65,10 +70,23 @@ export function grid(node = document.body) {
 
   // Create vertex and fragment shaders
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  if (!vertexShader) {
+    console.error("An error occurred creating the vertex shader");
+    return;
+  }
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+  if (!fragmentShader) {
+    console.error("An error occurred creating the fragment shader");
+    return;
+  }
 
   // Create program, attach shaders, and link
   const program = gl.createProgram();
+  if (!program) {
+    console.error("An error occurred creating the program");
+    return;
+  }
+
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
@@ -98,8 +116,8 @@ export function grid(node = document.body) {
   // Resize function
   function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
     // Lookup the size the browser is displaying the canvas.
-    var displayWidth = window.innerWidth;
-    var displayHeight = window.innerHeight;
+    const displayWidth = window.innerWidth;
+    const displayHeight = window.innerHeight;
 
     // Check if the canvas is not the same size.
     if (canvas.width != displayWidth || canvas.height != displayHeight) {

@@ -1,8 +1,8 @@
+import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
 import invalidateButton from "../invalidate-component";
-import { JsonRpcSigner } from "@ethersproject/providers";
+import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -11,13 +11,15 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const signer = provider.getSigner();
     resetClaimButton();
     return signer;
-  } catch (error: any) {
-    if (error?.message?.includes("missing provider")) {
-      toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
-      claimButton.element.disabled = true;
-    } else {
-      toaster.create("info", "Please connect your wallet to collect this reward.");
-      claimButton.element.disabled = true;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error?.message?.includes("missing provider")) {
+        toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
+        claimButton.element.disabled = true;
+      } else {
+        toaster.create("info", "Please connect your wallet to collect this reward.");
+        claimButton.element.disabled = true;
+      }
     }
     return null;
   }
@@ -31,10 +33,11 @@ export async function handleNetwork(desiredNetworkId: number) {
     invalidateButton.disabled = true;
   }
 
-  const currentNetworkId = parseInt(await web3provider.provider.request!({ method: "eth_chainId" }), 16);
+  const chainIdHex = String(web3provider.network.chainId);
+  const currentNetworkId = parseInt(chainIdHex, 16);
 
   // watch for network changes
-  window.ethereum.on("chainChanged", newNetworkId => handleIfOnCorrectNetwork(parseInt(newNetworkId, 16), desiredNetworkId));
+  window.ethereum.on("chainChanged", <T>(newNetworkId: T | string) => handleIfOnCorrectNetwork(parseInt(newNetworkId as string, 16), desiredNetworkId));
 
   // if its not on ethereum mainnet, gnosis, or goerli, display error
   notOnCorrectNetwork(currentNetworkId, desiredNetworkId, web3provider);
@@ -51,7 +54,10 @@ function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number,
     }
     loadingClaimButton(false);
     invalidateButton.disabled = true;
-    switchNetwork(web3provider, desiredNetworkId);
+    switchNetwork(web3provider, desiredNetworkId).catch((error) => {
+      console.error(error);
+      toaster.create("error", `Please switch to the ${networkName} network to claim this reward.`);
+    });
   }
 }
 
@@ -70,9 +76,10 @@ export async function switchNetwork(provider: ethers.providers.Web3Provider, net
   try {
     await provider.send("wallet_switchEthereumChain", [{ chainId: "0x" + networkId.toString(16) }]);
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Add network if it doesn't exist.
-    if (error.code == 4902) {
+    const code = (error as { code: number }).code;
+    if (code == 4902) {
       return await addNetwork(provider, networkId);
     }
     return false;
@@ -91,7 +98,7 @@ export async function addNetwork(provider: ethers.providers.Web3Provider, networ
       },
     ]);
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return false;
   }
 }

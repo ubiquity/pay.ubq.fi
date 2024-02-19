@@ -1,12 +1,10 @@
 {
-  "useTabs": false,
-  "semi": true,
-  "trailingComma": "all",
-  "bracketSpacing": true,
-  "arrowParens": "avoid",
-  "printWidth": 160,
-  "proseWrap": "preserve",
+  "trailingComma": "es5",
   "tabWidth": 2,
+  "semi": true,
+  "singleQuote": false,
+  "printWidth": 160,
   "htmlWhitespaceSensitivity": "strict",
-  "singleQuote": false
+  "plugins": [],
+  "useTabs": false
 }
