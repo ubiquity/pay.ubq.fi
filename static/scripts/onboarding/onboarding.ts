@@ -17,7 +17,7 @@ const outKey = document.getElementById("outKey") as HTMLInputElement;
 const githubPAT = document.getElementById("githubPat") as HTMLInputElement;
 const orgName = document.getElementById("orgName") as HTMLInputElement;
 const walletPrivateKey = document.getElementById("walletPrivateKey") as HTMLInputElement;
-const safeAddressInput = document.getElementById("safeAddress") as HTMLInputElement;
+// cspell: word ress // weird cspell bug seperating add and ress
 const setBtn = document.getElementById("setBtn") as HTMLButtonElement;
 const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
 const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
@@ -29,13 +29,15 @@ const KEY_PATH = ".github/ubiquibot-config.yml";
 const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
 const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
+// cspell:disable-next-line
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
+const STATUS_LOG = ".status-log";
 
 let encryptedValue = "";
 
-let defaultConf = DefaultConfig;
+const defaultConf = DefaultConfig;
 
-export const parseYAML = async <T>(data: string | undefined) => {
+export async function parseYAML<T>(data: string | undefined) {
   if (!data) return undefined;
   try {
     const parsedData = await YAML.parse(data);
@@ -47,20 +49,22 @@ export const parseYAML = async <T>(data: string | undefined) => {
   } catch (error) {
     return undefined;
   }
-};
+}
 
-export const parseJSON = async <T>(data: string) => {
+export async function parseJSON<T>(data: string) {
   try {
     const parsedData = await JSON.parse(data);
     return parsedData as T;
   } catch (error) {
     return undefined;
   }
-};
+}
 
-export const YAMLStringify = (value: any) => YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
+export function stringifyYAML(value: MergedConfig): string {
+  return YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
+}
 
-export const getConf = async (): Promise<string | undefined> => {
+export async function getConf(): Promise<string | undefined> {
   try {
     const octokit = new Octokit({ auth: githubPAT.value });
     const { data } = await octokit.rest.repos.getContent({
@@ -72,49 +76,48 @@ export const getConf = async (): Promise<string | undefined> => {
       },
     });
     return data as unknown as string;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return undefined;
   }
-};
+}
 
-const getTextBox = (text: string) => {
+function getTextBox(text: string) {
   const strLen = text.split("\n").length * 22;
-  const strPx = `${strLen > 140 ? strLen : 140}px`;
-  return strPx;
-};
+  return `${strLen > 140 ? strLen : 140}px`;
+}
 
-const resetToggle = () => {
-  (walletPrivateKey.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-  (githubPAT.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-  (orgName.parentNode?.querySelector(".status-log") as HTMLElement).innerHTML = "";
-};
+function resetToggle() {
+  (walletPrivateKey.parentNode?.querySelector(STATUS_LOG) as HTMLElement).innerHTML = "";
+  (githubPAT.parentNode?.querySelector(STATUS_LOG) as HTMLElement).innerHTML = "";
+  (orgName.parentNode?.querySelector(STATUS_LOG) as HTMLElement).innerHTML = "";
+}
 
-const classListToggle = (targetElem: HTMLElement, target: "error" | "warn" | "success", inputElem?: HTMLInputElement | HTMLTextAreaElement) => {
-  classes.forEach(className => targetElem.classList.remove(className));
+function classListToggle(targetElem: HTMLElement, target: "error" | "warn" | "success", inputElem?: HTMLInputElement | HTMLTextAreaElement) {
+  classes.forEach((className) => targetElem.classList.remove(className));
   targetElem.classList.add(target);
 
   if (inputElem) {
-    inputClasses.forEach(className => inputElem.classList.remove(className));
+    inputClasses.forEach((className) => inputElem.classList.remove(className));
     inputElem.classList.add(`input-${target}`);
   }
-};
+}
 
-const statusToggle = (type: "error" | "warn" | "success", message: string) => {
+function statusToggle(type: "error" | "warn" | "success", message: string) {
   resetToggle();
   const statusKey = document.getElementById("statusKey") as HTMLInputElement;
   classListToggle(statusKey, type);
   statusKey.value = message;
-};
+}
 
-const focusToggle = (targetElem: HTMLInputElement | HTMLTextAreaElement, type: "error" | "warn" | "success", message: string) => {
+function focusToggle(targetElem: HTMLInputElement | HTMLTextAreaElement, type: "error" | "warn" | "success", message: string) {
   resetToggle();
-  const infoElem = targetElem.parentNode?.querySelector(".status-log") as HTMLElement;
+  const infoElem = targetElem.parentNode?.querySelector(STATUS_LOG) as HTMLElement;
   infoElem.innerHTML = message;
   classListToggle(infoElem, type, targetElem);
   targetElem.focus();
-};
+}
 
-const toggleLoader = (state: "start" | "end") => {
+function toggleLoader(state: "start" | "end") {
   if (state === "start") {
     setBtn.disabled = true;
     loader.style.display = "flex";
@@ -122,9 +125,9 @@ const toggleLoader = (state: "start" | "end") => {
     setBtn.disabled = false;
     loader.style.display = "none";
   }
-};
+}
 
-const singleToggle = (type: "error" | "warn" | "success", message: string, focusElem?: HTMLInputElement | HTMLTextAreaElement) => {
+function singleToggle(type: "error" | "warn" | "success", message: string, focusElem?: HTMLInputElement | HTMLTextAreaElement) {
   statusToggle(type, message);
 
   if (focusElem) {
@@ -132,9 +135,9 @@ const singleToggle = (type: "error" | "warn" | "success", message: string, focus
   }
 
   toggleLoader("end");
-};
+}
 
-const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
+async function sodiumEncryptedSeal(publicKey: string, secret: string) {
   outKey.value = "";
   encryptedValue = "";
   try {
@@ -147,16 +150,19 @@ const sodiumEncryptedSeal = async (publicKey: string, secret: string) => {
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
     defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
     defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
-    outKey.value = YAMLStringify(defaultConf);
+    outKey.value = stringifyYAML(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
     singleToggle("success", `Success: Key Encryption is ok.`);
-  } catch (error: any) {
-    singleToggle("error", `Error: ${error.message}`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error);
+      singleToggle("error", `Error: ${error.message}`);
+    }
   }
-};
+}
 
-const setConfig = async () => {
+async function setConfig() {
   try {
     toggleLoader("start");
     const pluginKit = Octokit.plugin(createOrUpdateTextFile);
@@ -165,89 +171,15 @@ const setConfig = async () => {
       username: orgName.value,
     });
     if (userInfo.type === "Organization") {
-      let repository_id: number | null = null;
-      try {
-        const { data: repository_info } = await octokit.rest.repos.get({
-          owner: orgName.value,
-          repo: REPO_NAME,
-        });
-        repository_id = repository_info.id;
-      } catch (error) {
-        if (!(error instanceof Error)) {
-          return console.error(error);
-        }
-
-        console.error(error.message);
-        try {
-          const { data: repo_res } = await octokit.rest.repos.createInOrg({
-            org: orgName.value,
-            name: REPO_NAME,
-            auto_init: true,
-            private: true,
-            visibility: "private",
-            has_downloads: true,
-          });
-          repository_id = repo_res.id;
-        } catch (error) {
-          if (!(error instanceof Error)) {
-            return console.error(error);
-          }
-          console.error(error.message);
-          singleToggle("error", `Error: Repo initialization failed, try again later.`);
-          return;
-        }
-      }
+      const repositoryId = await getRepoID(octokit, orgName.value, REPO_NAME);
 
       const { data: appInstallations } = await octokit.rest.orgs.listAppInstallations({
         org: orgName.value,
         per_page: 100,
       });
-      const ins = appInstallations.installations.filter(installation => installation.app_id === APP_ID);
+      const ins = appInstallations.installations.filter((installation) => installation.app_id === APP_ID);
 
-      if (ins.length > 0) {
-        const installation_id = ins[0].id;
-        const { data: installed_repos } = await octokit.rest.apps.listInstallationReposForAuthenticatedUser({
-          installation_id: installation_id,
-        });
-        const irs = installed_repos.repositories.filter(installed_repo => installed_repo.id === repository_id);
-
-        if (irs.length === 0) {
-          await octokit.rest.apps.addRepoToInstallationForAuthenticatedUser({
-            installation_id: installation_id,
-            repository_id: repository_id,
-          });
-        }
-
-        const conf = await getConf();
-
-        const updatedConf = defaultConf;
-        const parsedConf = await parseYAML<MergedConfig>(conf);
-        updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
-        updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
-
-        // combine configs (default + remote org wide)
-        const combinedConf = Object.assign(updatedConf, parsedConf);
-
-        const stringified = YAMLStringify(combinedConf);
-        outKey.value = stringified;
-        const { updated } = await octokit.createOrUpdateTextFile({
-          owner: orgName.value,
-          repo: REPO_NAME,
-          path: KEY_PATH,
-          content: stringified,
-          message: `${crypto.randomUUID()}`,
-        });
-
-        if (updated) {
-          singleToggle("success", `Success: private key is updated.`);
-        } else {
-          singleToggle("success", `Success: private key is upto date.`);
-        }
-
-        await nextStep();
-      } else {
-        singleToggle("warn", `Warn: Please install the app first.`);
-      }
+      await handleInstall(octokit, orgName, repositoryId, ins, chainIdSelect);
     } else {
       singleToggle("error", `Error: Not an organization.`, orgName);
     }
@@ -258,31 +190,126 @@ const setConfig = async () => {
     console.error(error);
     singleToggle("error", `Error: ${error.message}`);
   }
-};
+}
 
-const setInputListeners = () => {
+async function handleInstall(
+  octokit: Octokit,
+  orgName: HTMLInputElement,
+  repositoryId: number | null,
+  ins: { id: number }[],
+  chainIdSelect: HTMLSelectElement
+) {
+  if (ins.length > 0) {
+    const installationId = ins[0].id;
+    const { data: installedRepos } = await octokit.rest.apps.listInstallationReposForAuthenticatedUser({
+      installation_id: installationId,
+    });
+    const irs = installedRepos.repositories.filter((installedRepo) => installedRepo.id === repositoryId);
+
+    if (irs.length === 0) {
+      if (!repositoryId) {
+        singleToggle("error", `Error: Repo initialization failed, try again later.`);
+        return;
+      }
+      await octokit.rest.apps.addRepoToInstallationForAuthenticatedUser({
+        installation_id: installationId,
+        repository_id: repositoryId,
+      });
+    }
+
+    const conf = await getConf();
+
+    const updatedConf = defaultConf;
+    const parsedConf = await parseYAML<MergedConfig>(conf);
+    updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
+    updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
+
+    // combine configs (default + remote org wide)
+    const combinedConf = Object.assign(updatedConf, parsedConf);
+
+    const stringified = stringifyYAML(combinedConf);
+    outKey.value = stringified;
+    const { status } = await octokit.repos.createOrUpdateFileContents({
+      owner: orgName.value,
+      repo: REPO_NAME,
+      path: KEY_PATH,
+      content: stringified,
+      message: `${crypto.randomUUID()}`,
+    });
+
+    if (status === 201 || status === 200) {
+      singleToggle("success", `Success: private key is updated.`);
+    } else {
+      singleToggle("success", `Success: private key is upto date.`);
+    }
+
+    await nextStep();
+  } else {
+    singleToggle("warn", `Warn: Please install the app first.`);
+  }
+}
+
+async function getRepoID(octokit: Octokit, orgName: string, repoName: string): Promise<number | null> {
+  let repositoryId: number | null = null;
+
+  try {
+    const { data: repositoryInfo } = await octokit.rest.repos.get({
+      owner: orgName,
+      repo: repoName,
+    });
+    repositoryId = repositoryInfo.id;
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      console.error(error);
+      return null;
+    }
+
+    console.error(error.message);
+    try {
+      const { data: repoRes } = await octokit.rest.repos.createInOrg({
+        org: orgName,
+        name: repoName,
+        auto_init: true,
+        private: true,
+        visibility: "private",
+        has_downloads: true,
+      });
+      repositoryId = repoRes.id;
+    } catch (error) {
+      if (!(error instanceof Error)) {
+        console.error(error);
+        return null;
+      }
+      console.error(error.message);
+      singleToggle("error", `Error: Repo initialization failed, try again later.`);
+      return null;
+    }
+  }
+  return repositoryId;
+}
+
+function setInputListeners() {
   const inputs = document.querySelectorAll("input") as NodeListOf<HTMLInputElement>;
 
-  inputs.forEach(input => {
-    input.addEventListener("input", e => {
-      inputClasses.forEach(className => (e.target as HTMLInputElement).classList.remove(className));
-      (((e.target as HTMLInputElement).parentNode as HTMLElement).querySelector(".status-log") as HTMLElement).innerHTML = "";
+  inputs.forEach((input) => {
+    input.addEventListener("input", (e) => {
+      inputClasses.forEach((className) => (e.target as HTMLInputElement).classList.remove(className));
+      (((e.target as HTMLInputElement).parentNode as HTMLElement).querySelector(STATUS_LOG) as HTMLElement).innerHTML = "";
     });
   });
-};
+}
 
 let currentStep = 1;
 let signer: JsonRpcSigner | undefined = undefined;
 
-const nextStep = async () => {
+async function nextStep() {
   const configChainId = Number(chainIdSelect.value);
-  const configChainIdHex = `0x${configChainId.toString(16)}`;
 
   const tokenNameSpan = document.getElementById("allowance + span");
   if (tokenNameSpan) {
-    if (configChainIdHex === NetworkIds.Mainnet) {
+    if (configChainId === NetworkIds.Mainnet) {
       tokenNameSpan.innerHTML = "DAI";
-    } else if (configChainIdHex === NetworkIds.Gnosis) {
+    } else if (configChainId === NetworkIds.Gnosis) {
       tokenNameSpan.innerHTML = "WXDAI";
     }
   }
@@ -313,40 +340,43 @@ const nextStep = async () => {
   const currentChainId = await signer.getChainId();
 
   if (configChainId !== currentChainId) {
-    singleToggle("error", `Error: Please connect to ${getNetworkName(configChainIdHex)}.`);
+    singleToggle("error", `Error: Please connect to ${getNetworkName(configChainId)}.`);
     if (await switchNetwork(provider, configChainId)) {
       singleToggle("success", ``);
     }
   }
 
-  // watch for chain changes
-  window.ethereum.on("chainChanged", async (currentChainId: string) => {
-    if (configChainIdHex === currentChainId) {
+  // watch for chain changes             making this generic suppresses the unknown comparison
+  window.ethereum.on("chainChanged", async <T>(currentChainId: T | string) => {
+    if (configChainId === parseInt(currentChainId as string, 16)) {
       singleToggle("success", ``);
     } else {
-      singleToggle("error", `Error: Please connect to ${getNetworkName(configChainIdHex)}.`);
-      switchNetwork(provider, configChainId);
+      singleToggle("error", `Error: Please connect to ${getNetworkName(configChainId)}.`);
+      switchNetwork(provider, configChainId).catch((error) => {
+        console.error(error);
+      });
     }
   });
-};
+}
 
-const connectWallet = async (): Promise<JsonRpcSigner | undefined> => {
+async function connectWallet(): Promise<JsonRpcSigner | undefined> {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    return signer;
-  } catch (error: any) {
-    if (error?.message?.includes("missing provider")) {
-      singleToggle("error", "Error: Please install MetaMask.");
-    } else {
-      singleToggle("error", "Error: Please connect your wallet.");
+    return provider.getSigner();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error?.message?.includes("missing provider")) {
+        singleToggle("error", "Error: Please install MetaMask.");
+      } else {
+        singleToggle("error", "Error: Please connect your wallet.");
+      }
+      return undefined;
     }
-    return undefined;
   }
-};
+}
 
-const switchNetwork = async (provider: ethers.providers.Web3Provider, chainId: string | number): Promise<boolean> => {
+async function switchNetwork(provider: ethers.providers.Web3Provider, chainId: string | number): Promise<boolean> {
   try {
     // if chainId is a number then convert it to hex
     if (typeof chainId === "number") {
@@ -358,17 +388,17 @@ const switchNetwork = async (provider: ethers.providers.Web3Provider, chainId: s
     }
     await provider.send("wallet_switchEthereumChain", [{ chainId: chainId }]);
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return false;
   }
-};
+}
 
-const isHex = (str: string): boolean => {
+function isHex(str: string): boolean {
   const regexp = /^[0-9a-fA-F]+$/;
   return regexp.test(str);
-};
+}
 
-const step1Handler = async () => {
+async function step1Handler() {
   if (walletPrivateKey.value === "") {
     singleToggle("warn", `Warn: Private_Key is not set.`, walletPrivateKey);
     return;
@@ -391,10 +421,12 @@ const step1Handler = async () => {
   }
 
   await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
-  setConfig();
-};
+  setConfig().catch((error) => {
+    console.error(error);
+  });
+}
 
-const step2Handler = async () => {
+async function step2Handler() {
   try {
     if (!window.ethereum) {
       singleToggle("error", `Error: Please install MetaMask or any other Ethereum wallet.`);
@@ -414,29 +446,28 @@ const step2Handler = async () => {
 
     const walletChainId = await signer.getChainId();
     const configChainId = Number(chainIdSelect.value);
-    const configChainIdHex = `0x${configChainId.toString(16)}`;
 
-    window.ethereum.on("chainChanged", async (currentChainId: string) => {
-      if (configChainIdHex === currentChainId) {
+    window.ethereum.on("chainChanged", async <T>(currentChainId: T | string) => {
+      if (configChainId === parseInt(currentChainId as string, 16)) {
         singleToggle("success", ``);
       } else {
         singleToggle("error", `Error: Please connect to ${chainIdSelect.value}.`);
-        switchNetwork(provider, configChainId);
+        switchNetwork(provider, configChainId).catch((error) => {
+          console.error(error);
+        });
       }
     });
 
-    if (walletChainId !== configChainId) {
-      if (!(await switchNetwork(provider, configChainId))) {
-        singleToggle("error", `Error: Switch to the correct chain.`);
-        return;
-      }
+    if (walletChainId !== configChainId && !(await switchNetwork(provider, configChainId))) {
+      singleToggle("error", `Error: Switch to the correct chain.`);
+      return;
     }
 
     // load token contract
     let token = "";
-    if (configChainIdHex === NetworkIds.Mainnet) {
+    if (configChainId === NetworkIds.Mainnet) {
       token = Tokens.DAI;
-    } else if (configChainIdHex === NetworkIds.Gnosis) {
+    } else if (configChainId === NetworkIds.Gnosis) {
       token = Tokens.WXDAI;
     }
     const erc20 = new ethers.Contract(token, erc20Abi, signer);
@@ -449,13 +480,15 @@ const step2Handler = async () => {
 
     await erc20.approve(PERMIT2_ADDRESS, parseUnits(allowance.toString(), decimals));
     singleToggle("success", `Success`);
-  } catch (error: any) {
-    console.error(error);
-    singleToggle("error", `Error: ${error.reason}`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error);
+      singleToggle("error", `Error: ${error.message}`);
+    }
   }
-};
+}
 
-const init = async () => {
+async function init() {
   if (defaultConf !== undefined) {
     try {
       defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
@@ -474,6 +507,8 @@ const init = async () => {
   } else {
     throw new Error("Default config fetch failed");
   }
-};
+}
 
-init();
+init().catch((error) => {
+  console.error(error);
+});
