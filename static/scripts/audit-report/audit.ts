@@ -1,7 +1,5 @@
 import { throttling } from "@octokit/plugin-throttling";
 import { Octokit } from "@octokit/rest";
-import { throttling } from "@octokit/plugin-throttling";
-import { Octokit } from "@octokit/rest";
 import { createClient } from "@supabase/supabase-js";
 import axios from "axios";
 import { ethers } from "ethers";
@@ -9,17 +7,13 @@ import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { Chain, ChainScan, DATABASE_NAME, NULL_HASH, NULL_ID } from "./constants";
 import {
-  RateLimitOptions,
   getCurrency,
   getGitHubUrlPartsArray,
   getOptimalRPC,
   getRandomAPIKey,
-  getRandomRpcUrl,
-  getOptimalRPC,
-  isValidUrl,
-  parseRepoUrl,
   populateTable,
   primaryRateLimitHandler,
+  RateLimitOptions,
   secondaryRateLimitHandler,
 } from "./helpers";
 import {
@@ -35,10 +29,13 @@ import {
   StandardInterface,
   TxData,
 } from "./types";
-import { ChainScanResult, ElemInterface, GitHubUrlParts, GoDBSchema, ObserverKeys, QuickImport, SavedData, StandardInterface, TxData } from "./types";
 import { getTxInfo } from "./utils/getTransaction";
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  throw new Error("Missing Supabase env variables.");
+}
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const rateOctokit = Octokit.plugin(throttling);
 
@@ -50,8 +47,6 @@ let GITHUB_PAT = "";
 
 const repoArray: string[] = [];
 
-const urlRegex = /\((.*?)\)/;
-const botNodeId = "BOT_kgDOBr8EgA";
 const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
 const getReportElem = document.querySelector("#getReport") as HTMLButtonElement;
@@ -60,17 +55,63 @@ const tgBtnInput = document.querySelector("#cb4") as HTMLInputElement;
 
 let isCache = true;
 
-let isComment = true;
-let commentPageNumber = 1;
+// TODO: should be generated directly from the Supabase db schema
+interface Permit {
+  id: number;
+  created: Date;
+  updated: Date;
+  amount: string;
+  nonce: string;
+  deadline: string;
+  signature: string;
+  token_id: number;
+  partner_id: null | number;
+  beneficiary_id: number;
+  transaction: string;
+  location_id: number;
+  locations: {
+    id: number;
+    node_id: string;
+    node_type: string;
+    updated: Date;
+    created: Date;
+    node_url: string;
+    user_id: number;
+    repository_id: number;
+    organization_id: number;
+    comment_id: number;
+    issue_id: number;
+  };
+  users: {
+    id: number;
+    created: string;
+    updated: string;
+    wallet_id: number;
+    location_id: number;
+    wallets: {
+      id: number;
+      created: string;
+      updated: Date | null;
+      address: string;
+      location_id: number | null;
+    };
+  };
+  tokens: {
+    id: 1;
+    created: string;
+    updated: string;
+    network: number;
+    address: string;
+    location_id: null | number;
+  };
+  owner: string;
+  repo: string;
+  network_id: number;
+}
 
-type ListForRepoDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listForRepo>>["data"][0];
-type ListCommentsDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listComments>>["data"][0];
+const permitList: Permit[] = [];
 
-const issueList: ListForRepoDataItem[] = [];
-
-const GIT_INTERVAL = 100;
 let isGit = true;
-let gitPageNumber = 1;
 const offset = 100;
 
 let isEther = true;
@@ -323,302 +364,68 @@ class QueueSet {
 const updateQueue = new SmartQueue();
 const rpcQueue = new QueueSet();
 
-const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
-async function commentFetcher() {
-  if (isComment) {
-    const commentIntervalID = setInterval(async () => {
-      clearInterval(commentIntervalID);
-      try {
-        if (issueList.length !== 0) {
-          const octokit = new Octokit({
-            auth: GITHUB_PAT,
-            throttle: {
-              onRateLimit: (retryAfter, options) => {
-                return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-              },
-              onSecondaryRateLimit: (retryAfter, options) => {
-                return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-              },
-            },
-          });
-
-          const [owner, repo] = parseRepoUrl(issueList[0].html_url);
-
-          const { data } = await octokit.rest.issues.listComments({
-            owner,
-            repo,
-            issue_number: issueList[0].number,
-            per_page: offset,
-            page: commentPageNumber,
-          });
-
-          await fetchComment(owner, repo, data);
-        } else {
-          isComment = false;
-          finishedQueue.mutate("isComment", true);
-        }
-      } catch (error) {
-        console.error(error);
-        finishedQueue.raise();
-        issueList.shift();
-        if (issueList.length > 0) {
-          await commentFetcher();
-        } else {
-          isComment = false;
-          finishedQueue.mutate("isComment", true);
-        }
-      }
-    }, GIT_INTERVAL);
-  }
-}
-
-async function fetchComment(owner: string, repo: string, data: ListCommentsDataItem[]) {
-  let isFound = false;
-  if (data.length === 0) {
-    commentPageNumber = 1;
-    issueList.shift();
-    if (issueList.length > 0) {
-      await commentFetcher();
+async function getPermitsForRepo(owner: string, repo: string) {
+  const permitList: Permit[] = [];
+  try {
+    const { data: gitData } = await octokit.rest.repos.get({
+      owner,
+      repo,
+    });
+    if (!gitData.organization) {
+      console.warn(`${owner}/${repo} is not an organization, skipping.`);
     } else {
-      isComment = false;
-      finishedQueue.mutate("isComment", true);
-    }
-  } else {
-    isFound = await processComments(owner, repo, data);
-
-    if (isFound) {
-      commentPageNumber = 1;
-      issueList.shift();
-    } else {
-      commentPageNumber++;
-    }
-
-    if (issueList.length > 0) {
-      commentFetcher().catch((error) => console.error(error));
-    } else {
-      isComment = false;
-      finishedQueue.mutate("isComment", true);
-    }
-  }
-}
-
-async function processComments(owner: string, repo: string, comments: ListCommentsDataItem[]) {
-  let isFound = false;
-
-  for (const comment of comments) {
-    if (comment.user && comment.user.node_id === botNodeId && comment.body) {
-      isFound = await processComment(owner, repo, comment);
-      if (isFound) {
-        break;
+      const { data } = await supabase
+        .from("permits")
+        .select("*, locations(*), users(*, wallets(*)), tokens(*)")
+        .eq("locations.organization_id", gitData.organization?.id)
+        .not("locations", "is", null);
+      if (data) {
+        permitList.push(...data.map((d) => ({ ...d, owner, repo })));
       }
     }
-  }
-  return isFound;
-}
-
-async function processComment(owner: string, repo: string, comment: ListCommentsDataItem) {
-  let isFound = false;
-
-  if (!comment.body) return isFound;
-
-  const match = comment.body.match(urlRegex);
-  if (match && isValidUrl(match[1])) {
-    const params = new URLSearchParams(new URL(match[1]).search);
-    const base64Payload = params.get("claim");
-    const network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
-    if (base64Payload) {
-      const {
-        owner: ownerAddress,
-        signature,
-        permit: {
-          deadline,
-          nonce,
-          permitted: { amount, token },
-        },
-        transferDetails: { to },
-      } = JSON.parse(window.atob(base64Payload)) as TxData;
-      updateQueue.add(signature, {
-        k: signature,
-        t: "git",
-        c: {
-          nonce,
-          owner: ownerAddress,
-          token,
-          amount,
-          to,
-          deadline,
-          signature,
-        },
-        s: {
-          git: {
-            issue_title: issueList[0].title,
-            issue_number: issueList[0].number,
-            owner,
-            repo,
-            bounty_hunter: {
-              name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees?.[0].login || "",
-              url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees?.[0].html_url || "",
-            },
-          },
-          ether: undefined,
-          network: network as string,
-        },
-      });
-      isFound = true;
-    }
-  } else {
-    console.log("URL not found, skipping");
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 
-  return isFound;
+  return permitList;
 }
 
 async function gitFetcher(repoUrls: GitHubUrlParts[]) {
   if (isGit) {
     try {
-      const issuesPromises = repoUrls.map((repoUrl) => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
-      const allIssues = await Promise.all(issuesPromises);
+      const permitsPromises = repoUrls.map((repoUrl) => getPermitsForRepo(repoUrl.owner, repoUrl.repo));
+      const allPermits = await Promise.all(permitsPromises);
 
-      for (let i = 0; i < allIssues.length; i++) {
-        const issues = allIssues[i];
-        issueList.push(...issues);
-        console.log(`Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
-      }
-
-      isGit = false;
-      finishedQueue.mutate("isGit", true);
-      await commentFetcher();
-    } catch (error: unknown) {
-      console.error("Error fetching issues:", error);
-    }
-  }
-}
-
-async function getIssuesForRepo(owner: string, repo: string) {
-  const issueList: ListForRepoDataItem[] = [];
-
-  const octokit = new rateOctokit({
-    auth: GITHUB_PAT,
-    throttle: {
-      onRateLimit: (retryAfter, options) => {
-        return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-      },
-      onSecondaryRateLimit: (retryAfter, options) => {
-        return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-      },
-    },
-  });
-
-  const isIEF = true;
-
-      try {
-        const { data: gitData } = await octokit.rest.repos.get({
-          owner,
-          repo,
-        });
-        if (!gitData.organization) {
-          console.warn(`${owner}/${repo} is not an organization, skipping.`);
-        } else {
-          const { data } = await supabase
-            .from("permits")
-            .select("*, locations(*), users(*, wallets(*)), tokens(*)")
-            .eq("locations.organization_id", gitData.organization?.id)
-            .not("locations", "is", null);
-          if (data) {
-            issueList.push(...data.map(d => ({ ...d, owner, repo })));
-          }
-        }
-      } catch (error: any) {
-        console.error(error);
-        throw error;
-      }
-
-      return issueList;
-    };
-
-    try {
-      const issuesPromises = repoUrls.map(repoUrl => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
-      const allIssues = await Promise.all(issuesPromises);
-
-      for (let i = 0; i < allIssues.length; i++) {
-        const issues = allIssues[i];
-        issueList.push(...issues);
+      for (let i = 0; i < allPermits.length; i++) {
+        const issues = allPermits[i];
+        permitList.push(...issues);
         console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
       }
-  while (isIEF) {
-    try {
-      const { data } = await octokit.rest.issues.listForRepo({
-        owner,
-        repo,
-        state: "closed",
-        per_page: offset,
-        page: gitPageNumber,
-      });
-
-      if (data.length === 0) break;
-
-      const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
-      const { isIEF: isIEF2, issueList: processed } = await processIssues(isIEF, issueList, issues);
-
-      issueList.push(...processed);
-
-      if (!isIEF2) {
-        break;
-      }
-    } catch (error: unknown) {
-      console.error(error);
-      throw error;
-    }
-  }
-
-  return issueList;
-}
-
-async function processIssues(isIEF: boolean, issueList: ListForRepoDataItem[], issues: ListForRepoDataItem[]) {
-  if (issues.length > 0) {
-    if (!lastGitID) {
-      lastGitID = issues[0].number;
-    }
-    for (const i of issues) {
-      if (i.number !== gitID) {
-        issueList.push(i);
-      } else {
-        isIEF = false;
-        break;
-      }
-    }
-
-    if (isIEF) {
-      gitPageNumber++;
-    } else {
-      isIEF = false;
-    }
-  }
-
       isGit = false;
       finishedQueue.mutate("isGit", true);
-      for (const issue of issueList) {
-        const { data: userData } = await octokit.request("GET /user/:id", { id: issue.locations.user_id });
-        const { data } = await supabase.from("locations").select("*").eq("issue_id", issue.locations.issue_id).single();
+      for (const permit of permitList) {
+        const { data: userData } = await octokit.request("GET /user/:id", { id: permit.locations.user_id });
+        const { data } = await supabase.from("locations").select("*").eq("issue_id", permit.locations.issue_id).single();
         const lastSlashIndex = data.node_url.lastIndexOf("/");
         const hashIndex = data.node_url.lastIndexOf("#") || data.node_url.length;
         const issueNumber = Number(data.node_url.substring(lastSlashIndex + 1, hashIndex));
         const { data: issueData } = await octokit.rest.issues.get({
           issue_number: issueNumber,
-          owner: issue.owner,
-          repo: issue.repo,
+          owner: permit.owner,
+          repo: permit.repo,
         });
-        updateQueue.add(issue.signature, {
+        updateQueue.add(permit.signature, {
           c: {
-            amount: issue.amount,
-            deadline: issue.deadline,
-            nonce: issue.nonce,
-            owner: issue.owner,
-            signature: issue.signature,
-            to: issue.users.wallets.address,
-            token: issue.tokens.address,
+            amount: permit.amount,
+            deadline: permit.deadline,
+            nonce: permit.nonce,
+            owner: permit.owner,
+            signature: permit.signature,
+            to: permit.users.wallets.address,
+            token: permit.tokens.address,
           },
-          k: issue.signature,
+          k: permit.signature,
           s: {
             ether: undefined,
             git: {
@@ -628,24 +435,22 @@ async function processIssues(isIEF: boolean, issueList: ListForRepoDataItem[], i
               },
               issue_number: issueData.number,
               issue_title: issueData.title,
-              owner: issue.owner,
-              repo: issue.repo,
+              owner: permit.owner,
+              repo: permit.repo,
             },
-            network: getCurrency(issue.network_id)!,
+            network: getCurrency(permit.network_id) || Chain.Ethereum,
           },
           t: "git",
         });
       }
-      isComment = false;
       finishedQueue.mutate("isComment", true);
-    } catch (error: any) {
-      console.error("Error fetching issues:", error);
-      isComment = false;
+    } catch (error) {
+      console.error(`Error fetching issues: ${error}`);
       finishedQueue.mutate("isComment", true);
     }
+
+    return permitList;
   }
-};
-  return { isIEF, issueList };
 }
 
 async function fetchDataFromChainScanAPI(url: string, chain: string) {
@@ -748,7 +553,7 @@ async function rpcFetcher() {
 async function handleRPCData(data: ChainScanResult) {
   if (data) {
     const { hash, chain } = data as { hash: string; chain: string };
-          const providerUrl = await getOptimalRPC(chainas Chain);
+    const providerUrl = await getOptimalRPC(chain as Chain);
     const txInfo = await getTxInfo(hash, providerUrl, chain as Chain);
 
     if (txInfo.input.startsWith(permitTransferFromSelector)) {
@@ -823,11 +628,8 @@ async function dbInit() {
 }
 
 async function resetInit() {
-  isComment = true;
-  commentPageNumber = 1;
-  issueList.splice(0, issueList.length);
+  permitList.splice(0, permitList.length);
   isGit = true;
-  gitPageNumber = 1;
   isEther = true;
   etherPageNumber = 1;
   isRPC = true;
@@ -876,6 +678,17 @@ function auditInit() {
 
     if (BOT_WALLET_ADDRESS !== "" && REPOSITORY_URL !== "" && GITHUB_PAT !== "" && REPOS.length > 0) {
       await asyncInit();
+      octokit = new rateOctokit({
+        auth: GITHUB_PAT,
+        throttle: {
+          onRateLimit: (retryAfter, options) => {
+            return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+          },
+          onSecondaryRateLimit: (retryAfter, options) => {
+            return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+          },
+        },
+      });
       tabInit(REPOS);
     } else {
       toggleLoader("none");

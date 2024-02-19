@@ -1,4 +1,5 @@
 import esbuild from "esbuild";
+import * as dotenv from "dotenv";
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -22,6 +23,7 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_KEY"]),
 };
 
 esbuild
@@ -33,3 +35,17 @@ esbuild
     console.error(err);
     process.exit(1);
   });
+
+function createEnvDefines(variableNames: string[]): Record<string, string> {
+  const defines: Record<string, string> = {};
+  dotenv.config();
+  for (const name of variableNames) {
+    const envVar = process.env[name];
+    if (envVar !== undefined) {
+      defines[`process.env.${name}`] = JSON.stringify(envVar);
+    } else {
+      throw new Error(`Missing environment variable: ${name}`);
+    }
+  }
+  return defines;
+}
