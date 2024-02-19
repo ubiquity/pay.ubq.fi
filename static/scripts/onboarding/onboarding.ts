@@ -6,8 +6,10 @@ import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import _sodium from "libsodium-wrappers";
 import YAML from "yaml";
+import { DefaultConfig } from "../../../lib/ubiquibot/src/configs/ubiquibot-config-default";
+import { MergedConfig } from "../../../lib/ubiquibot/src/types";
 import { erc20Abi } from "../rewards/abis/erc20Abi";
-import { NetworkIds, Tokens, getNetworkName } from "../rewards/constants";
+import { getNetworkName, NetworkIds, Tokens } from "../rewards/constants";
 
 const classes = ["error", "warn", "success"];
 const inputClasses = ["input-warn", "input-error", "input-success"];
@@ -16,119 +18,31 @@ const githubPAT = document.getElementById("githubPat") as HTMLInputElement;
 const orgName = document.getElementById("orgName") as HTMLInputElement;
 const walletPrivateKey = document.getElementById("walletPrivateKey") as HTMLInputElement;
 // cspell: word ress // weird cspell bug seperating add and ress
-const safeAddressInput = document.getElementById("safeAddress") as HTMLInputElement;
 const setBtn = document.getElementById("setBtn") as HTMLButtonElement;
 const allowanceInput = document.getElementById("allowance") as HTMLInputElement;
 const chainIdSelect = document.getElementById("chainId") as HTMLSelectElement;
 const loader = document.querySelector(".loader-wrap") as HTMLElement;
 
 const APP_ID = 236521;
-const DEFAULT_ORG = "ubiquity";
 const REPO_NAME = "ubiquibot-config";
-const DEFAULT_REPO = "ubiquibot";
 const KEY_PATH = ".github/ubiquibot-config.yml";
-const DEFAULT_PATH = "ubiquibot-config-default.json";
-const KEY_NAME = "private-key-encrypted";
+const PRIVATE_ENCRYPTED_KEY_NAME = "privateKeyEncrypted";
+const EVM_NETWORK_KEY_NAME = "evmNetworkId";
 const KEY_PREFIX = "HSK_";
 // cspell:disable-next-line
 const X25519_KEY = "5ghIlfGjz_ChcYlBDOG7dzmgAgBPuTahpvTMBipSH00";
-const SAFE_ADDRESS = "safe-address";
-const EVM_NETWORK_ID = "evm-network-id";
 const STATUS_LOG = ".status-log";
 
 let encryptedValue = "";
 
-interface ConfLabel {
-  name: string;
-}
+const defaultConf = DefaultConfig;
 
-interface CommandLabel {
-  name: string;
-  enabled: boolean;
-}
-
-interface Incentive {
-  comment: {
-    elements: Record<string, unknown>;
-    totals: {
-      word: number;
-    };
-  };
-}
-
-interface Control {
-  label: boolean;
-  organization: boolean;
-}
-
-interface Configuration {
-  "private-key-encrypted"?: string;
-  "safe-address"?: string;
-  "base-multiplier"?: number;
-  "auto-pay-mode"?: boolean;
-  "analytics-mode"?: boolean;
-  "max-concurrent-bounties"?: number;
-  "incentive-mode"?: boolean;
-  "evm-network-id"?: number;
-  "price-multiplier"?: number;
-  "issue-creator-multiplier"?: number;
-  "payment-permit-max-price"?: number;
-  "max-concurrent-assigns"?: number;
-  "assistive-pricing"?: boolean;
-  "disable-analytics"?: boolean;
-  "comment-incentives"?: boolean;
-  "register-wallet-with-verification"?: boolean;
-  "promotion-comment"?: string;
-  "default-labels"?: string[];
-  "time-labels"?: ConfLabel[];
-  "priority-labels"?: ConfLabel[];
-  "command-settings"?: CommandLabel[];
-  incentives?: Incentive;
-  "enable-access-control"?: Control;
-}
-
-let defaultConf: Configuration = {
-  "private-key-encrypted": "",
-  "safe-address": "",
-  "base-multiplier": 1,
-  "auto-pay-mode": false,
-  "analytics-mode": false,
-  "max-concurrent-bounties": 1,
-  "incentive-mode": false,
-  "evm-network-id": 1,
-  "price-multiplier": 1,
-  "issue-creator-multiplier": 1,
-  "payment-permit-max-price": 1,
-  "max-concurrent-assigns": 1,
-  "assistive-pricing": false,
-  "disable-analytics": false,
-  "comment-incentives": false,
-  "register-wallet-with-verification": false,
-  "promotion-comment": "",
-  "default-labels": [],
-  "time-labels": [],
-  "priority-labels": [],
-  "command-settings": [],
-  incentives: {
-    comment: {
-      elements: {},
-      totals: {
-        word: 0,
-      },
-    },
-  },
-  "enable-access-control": {
-    label: false,
-    organization: true,
-  },
-};
-//                                            // a cheeky way to get around the any type that parse returns
-export async function parseYAML(data: string | undefined): Promise<ReturnType<typeof YAML.parse> | undefined> {
+export async function parseYAML<T>(data: string | undefined) {
   if (!data) return undefined;
   try {
     const parsedData = await YAML.parse(data);
     if (parsedData !== null) {
-      return parsedData;
+      return parsedData as T;
     } else {
       return undefined;
     }
@@ -137,25 +51,26 @@ export async function parseYAML(data: string | undefined): Promise<ReturnType<ty
   }
 }
 
-export async function parseJSON(data: NonNullable<string>): Promise<ReturnType<typeof JSON.parse> | undefined> {
+export async function parseJSON<T>(data: string) {
   try {
-    return await JSON.parse(data);
+    const parsedData = await JSON.parse(data);
+    return parsedData as T;
   } catch (error) {
     return undefined;
   }
 }
 
-export function stringifyYAML(value: Configuration): string {
+export function stringifyYAML(value: MergedConfig): string {
   return YAML.stringify(value, { defaultKeyType: "PLAIN", defaultStringType: "QUOTE_DOUBLE", lineWidth: 0 });
 }
 
-export async function getConf(initial: boolean = false): Promise<string | undefined> {
+export async function getConf(): Promise<string | undefined> {
   try {
     const octokit = new Octokit({ auth: githubPAT.value });
     const { data } = await octokit.rest.repos.getContent({
-      owner: initial ? DEFAULT_ORG : orgName.value,
-      repo: initial ? DEFAULT_REPO : REPO_NAME,
-      path: initial ? DEFAULT_PATH : KEY_PATH,
+      owner: orgName.value,
+      repo: REPO_NAME,
+      path: KEY_PATH,
       mediaType: {
         format: "raw",
       },
@@ -233,9 +148,8 @@ async function sodiumEncryptedSeal(publicKey: string, secret: string) {
     const binsec = sodium.from_string(secret);
     const encBytes = sodium.crypto_box_seal(binsec, binkey);
     const output = sodium.to_base64(encBytes, sodium.base64_variants.URLSAFE_NO_PADDING);
-    defaultConf[KEY_NAME] = output;
-    defaultConf[EVM_NETWORK_ID] = Number(chainIdSelect.value);
-    defaultConf[SAFE_ADDRESS] = safeAddressInput.value;
+    defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = output;
+    defaultConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
     outKey.value = stringifyYAML(defaultConf);
     outKey.style.height = getTextBox(outKey.value);
     encryptedValue = output;
@@ -265,7 +179,7 @@ async function setConfig() {
       });
       const ins = appInstallations.installations.filter((installation) => installation.app_id === APP_ID);
 
-      await handleInstall(octokit, orgName, repositoryId, ins, chainIdSelect, safeAddressInput);
+      await handleInstall(octokit, orgName, repositoryId, ins, chainIdSelect);
     } else {
       singleToggle("error", `Error: Not an organization.`, orgName);
     }
@@ -283,8 +197,7 @@ async function handleInstall(
   orgName: HTMLInputElement,
   repositoryId: number | null,
   ins: { id: number }[],
-  chainIdSelect: HTMLSelectElement,
-  safeAddressInput: HTMLInputElement
+  chainIdSelect: HTMLSelectElement
 ) {
   if (ins.length > 0) {
     const installationId = ins[0].id;
@@ -307,10 +220,9 @@ async function handleInstall(
     const conf = await getConf();
 
     const updatedConf = defaultConf;
-    const parsedConf: Configuration | undefined = await parseYAML(conf);
-    updatedConf[KEY_NAME] = encryptedValue;
-    updatedConf[EVM_NETWORK_ID] = Number(chainIdSelect.value);
-    updatedConf[SAFE_ADDRESS] = safeAddressInput.value;
+    const parsedConf = await parseYAML<MergedConfig>(conf);
+    updatedConf[PRIVATE_ENCRYPTED_KEY_NAME] = encryptedValue;
+    updatedConf[EVM_NETWORK_KEY_NAME] = Number(chainIdSelect.value);
 
     // combine configs (default + remote org wide)
     const combinedConf = Object.assign(updatedConf, parsedConf);
@@ -507,18 +419,6 @@ async function step1Handler() {
     singleToggle("warn", `Warn: GitHub PAT is not set.`, githubPAT);
     return;
   }
-  if (!safeAddressInput.value.startsWith("0x")) {
-    singleToggle("warn", `Warn: Safe Address must start with 0x.`, safeAddressInput);
-    return;
-  }
-  if (!isHex(safeAddressInput.value.substring(2))) {
-    singleToggle("warn", `Warn: Safe Address is not a valid hex string.`, safeAddressInput);
-    return;
-  }
-  if (safeAddressInput.value.length !== 42) {
-    singleToggle("warn", `Warn: Safe Address must be 20 bytes long.`, safeAddressInput);
-    return;
-  }
 
   await sodiumEncryptedSeal(X25519_KEY, `${KEY_PREFIX}${walletPrivateKey.value}`);
   setConfig().catch((error) => {
@@ -589,12 +489,9 @@ async function step2Handler() {
 }
 
 async function init() {
-  let conf = await getConf(true);
-  if (conf !== undefined) {
+  if (defaultConf !== undefined) {
     try {
-      conf = JSON.parse(conf);
-      defaultConf = conf as Configuration;
-      defaultConf[KEY_NAME] = "";
+      defaultConf[PRIVATE_ENCRYPTED_KEY_NAME] = undefined;
       setInputListeners();
 
       setBtn.addEventListener("click", async () => {
