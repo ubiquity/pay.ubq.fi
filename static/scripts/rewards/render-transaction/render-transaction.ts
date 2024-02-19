@@ -1,6 +1,8 @@
+import { JsonRpcProvider } from "@ethersproject/providers";
 import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { networkExplorers } from "../constants";
+import { getOptimalProvider } from "../helpers";
 import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
 import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
@@ -12,6 +14,8 @@ import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
 import { claimTxT } from "./tx-type";
 import { removeAllEventListeners } from "./utils";
+
+let optimalRPC: JsonRpcProvider;
 
 export async function init() {
   const table = document.getElementsByTagName(`table`)[0];
@@ -29,6 +33,9 @@ export async function init() {
   try {
     const claimTxs = Value.Decode(Type.Array(claimTxT), JSON.parse(atob(base64encodedTxData)));
     app.claimTxs = claimTxs;
+    optimalRPC = await getOptimalProvider(app.currentTx?.networkId ?? app.claimTxs[0].networkId);
+
+    handleNetwork(app.currentTx?.networkId ?? app.claimTxs[0].networkId).catch(console.error);
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
@@ -60,7 +67,7 @@ export async function init() {
           app.nextTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction().catch(console.error);
+          renderTransaction(optimalRPC, true).catch(console.error);
         });
       }
 
@@ -71,7 +78,7 @@ export async function init() {
           app.previousTx();
           rewardsCount.innerHTML = `${app.currentIndex + 1}/${app.claimTxs.length} reward`;
           table.setAttribute(`data-claim`, "none");
-          renderTransaction().catch(console.error);
+          renderTransaction(optimalRPC, true).catch(console.error);
         });
       }
 
@@ -79,7 +86,7 @@ export async function init() {
     }
   }
 
-  renderTransaction().catch(console.error);
+  renderTransaction(optimalRPC, true).catch(console.error);
 }
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
@@ -94,7 +101,7 @@ function setPagination(nextTxButton: Element | null, prevTxButton: Element | nul
 }
 
 type Success = boolean;
-export async function renderTransaction(nextTx?: boolean): Promise<Success> {
+export async function renderTransaction(provider: JsonRpcProvider, nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
   resetClaimButton();
 
@@ -119,7 +126,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   handleNetwork(app.currentTx.networkId).catch(console.error);
 
   if (app.currentTx.type === "erc20-permit") {
-    const treasury = await fetchTreasury(app.currentTx);
+    const treasury = await fetchTreasury(app.currentTx, provider);
 
     // insert tx data into table
     const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
@@ -128,11 +135,11 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     renderTokenSymbol({
       tokenAddress: app.currentTx.permit.permitted.token,
       ownerAddress: app.currentTx.owner,
-      networkId: app.currentTx.networkId,
       amount: app.currentTx.transferDetails.requestedAmount,
       explorerUrl: networkExplorers[app.currentTx.networkId],
       table,
       requestedAmountElement,
+      provider,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
@@ -140,23 +147,23 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.currentTx).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx));
+    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx, optimalRPC));
   } else if (app.currentTx.type === "erc721-permit") {
     const requestedAmountElement = insertErc721PermitTableData(app.currentTx, table);
     table.setAttribute(`data-claim`, "ok");
 
     renderNftSymbol({
       tokenAddress: app.currentTx.nftAddress,
-      networkId: app.currentTx.networkId,
       explorerUrl: networkExplorers[app.currentTx.networkId],
       table,
       requestedAmountElement,
+      provider,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary }).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx));
+    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx, provider));
   }
 
   return true;
