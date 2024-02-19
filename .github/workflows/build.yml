@@ -1,51 +1,53 @@
-name: Build
+name: Build & Deploy
 
 on:
   push:
-    branches:
-      - development
-  pull_request:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-22.04
     permissions:
       contents: read
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "20.10.0"
-
-      - name: Yarn Install
-        run: yarn install
+          node-version: 20.10.0
 
       - name: Build
-        run: yarn utils:build
-
-      - name: Add commit SHA file to build folder
-        run: echo -n $(echo "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" | cut -c1-7) > static/commit.txt
-
-      - name: Prepare Deployment Artifact
-        env:
-          EVENT_NAME: ${{github.event_name}}
-          PR_NUMBER: ${{ github.event.number }}
-          SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
-          echo "event_name=$EVENT_NAME,pr_number=$PR_NUMBER,sha=$SHA"
-          mkdir -p ./pr
-          echo "event_name=$EVENT_NAME,pr_number=$PR_NUMBER,sha=$SHA," > ./pr/pr_number
-          cd ./static && zip -r ../pr/pull-request.zip ./*
+          yarn
+          yarn build
 
-      - uses: actions/upload-artifact@v3
+      - name: Check Cloudflare API Token
+        id: check_token
+        run: |
+          if [[ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]]; then
+            echo "Cloudflare API token is not set. Skipping deployment."
+            echo "skip=true" >> $GITHUB_ENV
+          else
+            echo "skip=false" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Deploy to Cloudflare
+        if: env.skip != 'true'
+        uses: ubiquity/cloudflare-deploy-action@main
         with:
-          name: pr
-          path: pr/
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          repository: ${{ github.repository }}
+          production_branch: ${{ github.event.repository.default_branch }}
+          output_directory: "dist"
+          current_branch: ${{ github.ref_name }}
+          pull_request_number: ${{ github.event.pull_request.number }}
+          commit_sha: ${{ github.sha }}
+          app_private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app_id: ${{ secrets.APP_ID }}
+          app_installation_id: ${{ secrets.APP_INSTALLATION_ID }}
+        # Add any environment variables you need to pass along here
+        #   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        #   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
