@@ -1,14 +1,18 @@
 import { throttling } from "@octokit/plugin-throttling";
 import { Octokit } from "@octokit/rest";
+import { throttling } from "@octokit/plugin-throttling";
+import { Octokit } from "@octokit/rest";
 import { createClient } from "@supabase/supabase-js";
 import axios from "axios";
 import { ethers } from "ethers";
 import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
-import { Chain, ChainScan, DatabaseName, NULL_HASH, NULL_ID } from "./constants";
+import { Chain, ChainScan, DATABASE_NAME, NULL_HASH, NULL_ID } from "./constants";
 import {
+  RateLimitOptions,
   getCurrency,
   getGitHubUrlPartsArray,
+  getOptimalRPC,
   getRandomAPIKey,
   getRandomRpcUrl,
   getOptimalRPC,
@@ -16,9 +20,21 @@ import {
   parseRepoUrl,
   populateTable,
   primaryRateLimitHandler,
-  RateLimitOptions,
   secondaryRateLimitHandler,
 } from "./helpers";
+import {
+  ChainScanResult,
+  ElemInterface,
+  EtherInterface,
+  GitHubUrlParts,
+  GitInterface,
+  GoDBSchema,
+  ObserverKeys,
+  QuickImport,
+  SavedData,
+  StandardInterface,
+  TxData,
+} from "./types";
 import { ChainScanResult, ElemInterface, GitHubUrlParts, GoDBSchema, ObserverKeys, QuickImport, SavedData, StandardInterface, TxData } from "./types";
 import { getTxInfo } from "./utils/getTransaction";
 
@@ -26,11 +42,13 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KE
 
 const rateOctokit = Octokit.plugin(throttling);
 
+let octokit: Octokit;
+
 let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 let GITHUB_PAT = "";
 
-let repoArray: string[] = [];
+const repoArray: string[] = [];
 
 const urlRegex = /\((.*?)\)/;
 const botNodeId = "BOT_kgDOBr8EgA";
@@ -44,7 +62,11 @@ let isCache = true;
 
 let isComment = true;
 let commentPageNumber = 1;
-const issueList: any[] = [];
+
+type ListForRepoDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listForRepo>>["data"][0];
+type ListCommentsDataItem = Awaited<ReturnType<typeof octokit.rest.issues.listComments>>["data"][0];
+
+const issueList: ListForRepoDataItem[] = [];
 
 const GIT_INTERVAL = 100;
 let isGit = true;
@@ -68,7 +90,7 @@ let etherHash = NULL_HASH;
 let lastGitID: number | boolean = false;
 let lastEtherHash: string | boolean = false;
 
-const getDataSchema = (storeHash: string) => {
+function getDataSchema(storeHash: string) {
   const schema: GoDBSchema = {
     [NULL_HASH]: {
       id: {
@@ -105,28 +127,32 @@ const getDataSchema = (storeHash: string) => {
   };
 
   return schema;
-};
+}
 
-const parseAndAddUrls = (input: string): void => {
-  const urls = input.split(",").map(url => url.trim());
+function parseAndAddUrls(input: string): void {
+  const urls = input.split(",").map((url) => url.trim());
   repoArray.push(...urls);
-};
+}
 
-const updateDB = async (storeHash: string) => {
+async function updateDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const metaTable = cacheDB.table(NULL_HASH);
   const storeTable = cacheDB.table(storeHash);
 
   const metaData = {
-    id: storeHash as any,
+    // unknown as number because the only time it receives a string is initiating the db
+    // and it is always a number after that according to the schema definition
+    // [NULL_HASH]: id: storeHash<string>
+    // [STORE_HASH]: id: storeHash<number>
+    id: storeHash as unknown as number,
     hash: lastEtherHash !== etherHash ? (lastEtherHash as string) : (etherHash as string),
     issue: lastGitID !== gitID ? (lastGitID as number) : (gitID as number),
   };
 
   await metaTable.put(metaData);
   if (elemList.length > 0) {
-    for (let elem of elemList) {
+    for (const elem of elemList) {
       const { id, tx, amount, title, bounty_hunter, network, owner, repo } = elem;
       await storeTable.put({
         id,
@@ -140,98 +166,97 @@ const updateDB = async (storeHash: string) => {
       });
     }
   }
-  await cacheDB.close();
-  return;
-};
+  return cacheDB.close();
+}
 
-const readDB = async (storeHash: string) => {
+async function readDB(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const storeTable = cacheDB.table(storeHash);
   const tableData = await storeTable.getAll();
-  await cacheDB.close();
+  cacheDB.close();
   return tableData;
-};
+}
 
-const readMeta = async (storeHash: string) => {
+async function readMeta(storeHash: string) {
   const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DatabaseName, schema);
+  const cacheDB = new GoDB(DATABASE_NAME, schema);
   const metaTable = cacheDB.table(NULL_HASH);
   const metaData = await metaTable.get({ id: storeHash });
-  await cacheDB.close();
+  cacheDB.close();
   return metaData;
-};
+}
 
-const toggleLoader = (type: "none" | "block") => {
+function toggleLoader(type: "none" | "block") {
   getReportElem.disabled = type === "block" ? true : false;
   reportLoader.style.display = type;
-};
+}
 
 class QueueObserver {
-  private readonly queueObject: {
+  private readonly _queueObject: {
     isRPC: boolean;
     isComment: boolean;
     isGit: boolean;
     isEther: boolean;
   };
-  private isException;
+  private _isException;
 
   constructor() {
-    this.queueObject = {
+    this._queueObject = {
       isRPC: false,
       isComment: false,
       isGit: false,
       isEther: false,
     };
-    this.isException = false;
+    this._isException = false;
   }
 
-  private databaseCallback() {
+  private _databaseCallback() {
     const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
-    updateDB(storeHash);
+    updateDB(storeHash).catch((error) => console.error(error));
   }
 
-  private callback() {
+  private _callback() {
     toggleLoader("none");
-    if (!this.isException) {
-      this.databaseCallback();
+    if (!this._isException) {
+      this._databaseCallback();
     }
   }
 
   mutate(key: ObserverKeys, value: boolean) {
-    this.queueObject[key] = value;
-    const { isRPC: _isRPC, isComment: _isComment, isGit: _isGit, isEther: _isEther } = this.queueObject;
-    const isUpdateFinished = _isRPC && _isComment && _isGit && _isEther;
+    this._queueObject[key] = value;
+    const { isRPC, isComment, isGit, isEther } = this._queueObject;
+    const isUpdateFinished = isRPC && isComment && isGit && isEther;
     if (isUpdateFinished) {
-      this.callback();
+      this._callback();
     }
   }
 
   clearQueue() {
-    this.queueObject.isComment = false;
-    this.queueObject.isEther = false;
-    this.queueObject.isGit = false;
-    this.queueObject.isRPC = false;
+    this._queueObject.isComment = false;
+    this._queueObject.isEther = false;
+    this._queueObject.isGit = false;
+    this._queueObject.isRPC = false;
   }
 
   raise() {
-    this.isException = true;
+    this._isException = true;
   }
 }
 
 const finishedQueue = new QueueObserver();
 
-class smartQueue {
-  private readonly queue: Map<string, StandardInterface>;
+class SmartQueue {
+  private readonly _queue: Map<string, StandardInterface>;
 
   constructor() {
-    this.queue = new Map();
+    this._queue = new Map();
   }
 
   add(key: string, value: StandardInterface) {
-    if (this.queue.has(key)) {
-      const queueValue = this.queue.get(key) as StandardInterface;
-      queueValue.s[value.t] = value.s[value.t] as any;
+    if (this._queue.has(key)) {
+      const queueValue = this._queue.get(key) as StandardInterface;
+      queueValue.s[value.t] = value.s[value.t] as object extends GitInterface ? GitInterface : object extends EtherInterface ? EtherInterface : never;
       const {
         s: { ether, git, network },
         c: { amount },
@@ -240,78 +265,251 @@ class smartQueue {
       // check for undefined
       if (git?.issue_number) {
         elemList.push({
-          id: git?.issue_number!,
-          tx: ether?.txHash!,
-          amount: ethers.utils.formatEther(amount)!,
-          title: git?.issue_title!,
-          bounty_hunter: git?.bounty_hunter,
-          owner: git?.owner,
-          repo: git?.repo,
+          id: git.issue_number,
+          tx: ether?.txHash || "N/A", // @TODO - handle this better
+          amount: ethers.utils.formatEther(amount),
+          title: git.issue_title,
+          bounty_hunter: git.bounty_hunter,
+          owner: git.owner,
+          repo: git.repo,
           network,
         });
         if (elemList.length > 0) {
           resultTableTbodyElem.innerHTML = "";
-          for (let data of elemList) {
+          for (const data of elemList) {
             populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
           }
         }
       }
-      this.queue.delete(key);
+      this._queue.delete(key);
     } else {
-      this.queue.set(key, value);
+      this._queue.set(key, value);
     }
   }
 }
+type QueueItem = ChainScanResult;
+type Queue = QueueItem extends string ? string[] : QueueItem[];
 
 class QueueSet {
-  private readonly queue: any[];
-  private readonly set: Set<any>;
+  private readonly _queue: Queue;
+  private readonly _set: Set<NonNullable<unknown>>;
 
   constructor() {
-    this.queue = [];
-    this.set = new Set();
+    this._queue = [];
+    this._set = new Set();
   }
 
-  add(item: any) {
-    if (!this.set.has(item)) {
-      this.set.add(item);
-      this.queue.push(item);
+  add(item: NonNullable<unknown>) {
+    if (!this._set.has(item)) {
+      this._set.add(item);
+      this._queue.push(item as QueueItem);
     }
   }
 
   remove() {
-    const v = this.queue.shift();
-    this.set.delete(v);
+    const v = this._queue.shift();
+    if (v) this._set.delete(v);
   }
 
-  read() {
-    return this.queue[0];
+  read(): ChainScanResult {
+    return this._queue[0];
   }
 
   isEmpty() {
-    return this.queue.length === 0;
+    return this._queue.length === 0;
   }
 }
 
-const updateQueue = new smartQueue();
+const updateQueue = new SmartQueue();
 const rpcQueue = new QueueSet();
 
 const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
-  if (isGit) {
-    const octokit = new rateOctokit({
-      auth: GITHUB_PAT,
-      throttle: {
-        onRateLimit: (retryAfter, options) => {
-          return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-        },
-        onSecondaryRateLimit: (retryAfter, options) => {
-          return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
-        },
-      },
-    });
+async function commentFetcher() {
+  if (isComment) {
+    const commentIntervalID = setInterval(async () => {
+      clearInterval(commentIntervalID);
+      try {
+        if (issueList.length !== 0) {
+          const octokit = new Octokit({
+            auth: GITHUB_PAT,
+            throttle: {
+              onRateLimit: (retryAfter, options) => {
+                return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+              },
+              onSecondaryRateLimit: (retryAfter, options) => {
+                return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+              },
+            },
+          });
 
-    const getIssuesForRepo = async (owner: string, repo: string) => {
-      const issueList: any[] = [];
+          const [owner, repo] = parseRepoUrl(issueList[0].html_url);
+
+          const { data } = await octokit.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: issueList[0].number,
+            per_page: offset,
+            page: commentPageNumber,
+          });
+
+          await fetchComment(owner, repo, data);
+        } else {
+          isComment = false;
+          finishedQueue.mutate("isComment", true);
+        }
+      } catch (error) {
+        console.error(error);
+        finishedQueue.raise();
+        issueList.shift();
+        if (issueList.length > 0) {
+          await commentFetcher();
+        } else {
+          isComment = false;
+          finishedQueue.mutate("isComment", true);
+        }
+      }
+    }, GIT_INTERVAL);
+  }
+}
+
+async function fetchComment(owner: string, repo: string, data: ListCommentsDataItem[]) {
+  let isFound = false;
+  if (data.length === 0) {
+    commentPageNumber = 1;
+    issueList.shift();
+    if (issueList.length > 0) {
+      await commentFetcher();
+    } else {
+      isComment = false;
+      finishedQueue.mutate("isComment", true);
+    }
+  } else {
+    isFound = await processComments(owner, repo, data);
+
+    if (isFound) {
+      commentPageNumber = 1;
+      issueList.shift();
+    } else {
+      commentPageNumber++;
+    }
+
+    if (issueList.length > 0) {
+      commentFetcher().catch((error) => console.error(error));
+    } else {
+      isComment = false;
+      finishedQueue.mutate("isComment", true);
+    }
+  }
+}
+
+async function processComments(owner: string, repo: string, comments: ListCommentsDataItem[]) {
+  let isFound = false;
+
+  for (const comment of comments) {
+    if (comment.user && comment.user.node_id === botNodeId && comment.body) {
+      isFound = await processComment(owner, repo, comment);
+      if (isFound) {
+        break;
+      }
+    }
+  }
+  return isFound;
+}
+
+async function processComment(owner: string, repo: string, comment: ListCommentsDataItem) {
+  let isFound = false;
+
+  if (!comment.body) return isFound;
+
+  const match = comment.body.match(urlRegex);
+  if (match && isValidUrl(match[1])) {
+    const params = new URLSearchParams(new URL(match[1]).search);
+    const base64Payload = params.get("claim");
+    const network = getCurrency(comment.body); // Might change it to `const claimNetwork = params.get("network");` later because previous permits are missing network query
+    if (base64Payload) {
+      const {
+        owner: ownerAddress,
+        signature,
+        permit: {
+          deadline,
+          nonce,
+          permitted: { amount, token },
+        },
+        transferDetails: { to },
+      } = JSON.parse(window.atob(base64Payload)) as TxData;
+      updateQueue.add(signature, {
+        k: signature,
+        t: "git",
+        c: {
+          nonce,
+          owner: ownerAddress,
+          token,
+          amount,
+          to,
+          deadline,
+          signature,
+        },
+        s: {
+          git: {
+            issue_title: issueList[0].title,
+            issue_number: issueList[0].number,
+            owner,
+            repo,
+            bounty_hunter: {
+              name: issueList[0].assignee ? issueList[0].assignee.login : issueList[0].assignees?.[0].login || "",
+              url: issueList[0].assignee ? issueList[0].assignee.html_url : issueList[0].assignees?.[0].html_url || "",
+            },
+          },
+          ether: undefined,
+          network: network as string,
+        },
+      });
+      isFound = true;
+    }
+  } else {
+    console.log("URL not found, skipping");
+  }
+
+  return isFound;
+}
+
+async function gitFetcher(repoUrls: GitHubUrlParts[]) {
+  if (isGit) {
+    try {
+      const issuesPromises = repoUrls.map((repoUrl) => getIssuesForRepo(repoUrl.owner, repoUrl.repo));
+      const allIssues = await Promise.all(issuesPromises);
+
+      for (let i = 0; i < allIssues.length; i++) {
+        const issues = allIssues[i];
+        issueList.push(...issues);
+        console.log(`Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
+      }
+
+      isGit = false;
+      finishedQueue.mutate("isGit", true);
+      await commentFetcher();
+    } catch (error: unknown) {
+      console.error("Error fetching issues:", error);
+    }
+  }
+}
+
+async function getIssuesForRepo(owner: string, repo: string) {
+  const issueList: ListForRepoDataItem[] = [];
+
+  const octokit = new rateOctokit({
+    auth: GITHUB_PAT,
+    throttle: {
+      onRateLimit: (retryAfter, options) => {
+        return primaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+      },
+      onSecondaryRateLimit: (retryAfter, options) => {
+        return secondaryRateLimitHandler(retryAfter, options as RateLimitOptions);
+      },
+    },
+  });
+
+  const isIEF = true;
 
       try {
         const { data: gitData } = await octokit.rest.repos.get({
@@ -347,6 +545,55 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
         issueList.push(...issues);
         console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
       }
+  while (isIEF) {
+    try {
+      const { data } = await octokit.rest.issues.listForRepo({
+        owner,
+        repo,
+        state: "closed",
+        per_page: offset,
+        page: gitPageNumber,
+      });
+
+      if (data.length === 0) break;
+
+      const issues = data.filter((issue) => !issue.pull_request && issue.comments > 0);
+      const { isIEF: isIEF2, issueList: processed } = await processIssues(isIEF, issueList, issues);
+
+      issueList.push(...processed);
+
+      if (!isIEF2) {
+        break;
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  return issueList;
+}
+
+async function processIssues(isIEF: boolean, issueList: ListForRepoDataItem[], issues: ListForRepoDataItem[]) {
+  if (issues.length > 0) {
+    if (!lastGitID) {
+      lastGitID = issues[0].number;
+    }
+    for (const i of issues) {
+      if (i.number !== gitID) {
+        issueList.push(i);
+      } else {
+        isIEF = false;
+        break;
+      }
+    }
+
+    if (isIEF) {
+      gitPageNumber++;
+    } else {
+      isIEF = false;
+    }
+  }
 
       isGit = false;
       finishedQueue.mutate("isGit", true);
@@ -398,24 +645,26 @@ const gitFetcher = async (repoUrls: GitHubUrlParts[]) => {
     }
   }
 };
+  return { isIEF, issueList };
+}
 
-const fetchDataFromChainScanAPI = async (url: string, chain: string) => {
+async function fetchDataFromChainScanAPI(url: string, chain: string) {
   try {
     const { data } = await axios.get(url);
-    return data.result.map((item: any) => ({ ...item, chain }));
-  } catch (error: any) {
+    return data.result.map((item: NonNullable<unknown>) => ({ ...item, chain }));
+  } catch (error: unknown) {
     console.error(error);
     throw error;
   }
-};
+}
 
-const etherFetcher = async () => {
+async function etherFetcher() {
   const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Ethereum,
+    Chain.Ethereum
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   const gnosisURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Gnosis,
+    Chain.Gnosis
   )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
 
   if (isEther) {
@@ -428,32 +677,8 @@ const etherFetcher = async () => {
         ]);
 
         const combinedData: ChainScanResult[] = [...ethereumData, ...gnosisData];
-        if (combinedData.length > 0) {
-          if (!lastEtherHash) {
-            lastEtherHash = combinedData[0].hash;
-          }
-          let iEF = true;
-          for (let e of combinedData) {
-            if (e.hash !== etherHash) {
-              await rpcQueue.add({ hash: e.hash, chain: e.chain });
-            } else {
-              iEF = false;
-              break;
-            }
-          }
-
-          if (iEF) {
-            etherPageNumber++;
-            etherFetcher();
-          } else {
-            isEther = false;
-            finishedQueue.mutate("isEther", true);
-          }
-        } else {
-          isEther = false;
-          finishedQueue.mutate("isEther", true);
-        }
-      } catch (error: any) {
+        await handleCombinedData(combinedData);
+      } catch (error: unknown) {
         console.error(error);
         finishedQueue.raise();
         isEther = false;
@@ -461,68 +686,56 @@ const etherFetcher = async () => {
       }
     }, ETHER_INTERVAL);
   }
-};
+}
 
-const rpcFetcher = async () => {
+async function handleCombinedData(combinedData: ChainScanResult[]) {
+  if (combinedData.length > 0) {
+    if (!lastEtherHash) {
+      lastEtherHash = combinedData[0].hash;
+    }
+    let isIEF = true;
+    for (const e of combinedData) {
+      if (e.hash !== etherHash) {
+        rpcQueue.add({ hash: e.hash, chain: e.chain });
+      } else {
+        isIEF = false;
+        break;
+      }
+    }
+
+    if (isIEF) {
+      etherPageNumber++;
+      await etherFetcher();
+    } else {
+      isEther = false;
+      finishedQueue.mutate("isEther", true);
+    }
+  } else {
+    isEther = false;
+    finishedQueue.mutate("isEther", true);
+  }
+}
+
+async function rpcFetcher() {
   if (isRPC) {
     const rpcIntervalID = setInterval(async () => {
       clearInterval(rpcIntervalID);
       try {
-        const data = await rpcQueue.read();
-        if (data) {
-          const { hash, chain } = data;
-          const providerUrl = await getOptimalRPC(chain);
-          const txInfo = await getTxInfo(hash, providerUrl, chain);
-
-          if (txInfo.input.startsWith(permitTransferFromSelector)) {
-            const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
-            const {
-              permit: {
-                permitted: { token, amount },
-                nonce,
-                deadline,
-              },
-              transferDetails: { to },
-              owner,
-              signature,
-            } = decodedFunctionData as unknown as TxData;
-            updateQueue.add(signature, {
-              k: signature,
-              t: "ether",
-              c: {
-                nonce,
-                owner,
-                token,
-                amount,
-                to,
-                deadline,
-                signature,
-              },
-              s: {
-                ether: {
-                  txHash: txInfo.hash,
-                  timestamp: parseInt(txInfo.timestamp, 16),
-                  block_number: parseInt(txInfo.blockNumber, 16),
-                },
-                git: undefined,
-                network: chain as string,
-              },
-            });
-          }
-        }
-        await rpcQueue.remove();
+        const data = rpcQueue.read();
+        await handleRPCData(data);
+        rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher();
+          await rpcFetcher();
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(error);
         finishedQueue.raise();
-        await rpcQueue.remove();
+        rpcQueue.remove();
         if (isEther || !rpcQueue.isEmpty()) {
-          rpcFetcher();
+          await rpcFetcher();
         } else {
           isRPC = false;
           finishedQueue.mutate("isRPC", true);
@@ -530,9 +743,53 @@ const rpcFetcher = async () => {
       }
     }, RPC_INTERVAL);
   }
-};
+}
 
-const dbInit = async () => {
+async function handleRPCData(data: ChainScanResult) {
+  if (data) {
+    const { hash, chain } = data as { hash: string; chain: string };
+          const providerUrl = await getOptimalRPC(chainas Chain);
+    const txInfo = await getTxInfo(hash, providerUrl, chain as Chain);
+
+    if (txInfo.input.startsWith(permitTransferFromSelector)) {
+      const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
+      const {
+        permit: {
+          permitted: { token, amount },
+          nonce,
+          deadline,
+        },
+        transferDetails: { to },
+        owner,
+        signature,
+      } = decodedFunctionData as unknown as TxData;
+      updateQueue.add(signature, {
+        k: signature,
+        t: "ether",
+        c: {
+          nonce,
+          owner,
+          token,
+          amount,
+          to,
+          deadline,
+          signature,
+        },
+        s: {
+          ether: {
+            txHash: txInfo.hash,
+            timestamp: parseInt(txInfo.timestamp, 16),
+            block_number: parseInt(txInfo.blockNumber, 16),
+          },
+          git: undefined,
+          network: chain as string,
+        },
+      });
+    }
+  }
+}
+
+async function dbInit() {
   if (isCache) {
     const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
     const metaData = await readMeta(storeHash);
@@ -545,7 +802,7 @@ const dbInit = async () => {
       const tableData = await readDB(storeHash);
 
       if (tableData.length > 0) {
-        for (let data of tableData) {
+        for (const data of tableData) {
           const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
           populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
           // for filtering
@@ -563,9 +820,9 @@ const dbInit = async () => {
       }
     }
   }
-};
+}
 
-const resetInit = () => {
+async function resetInit() {
   isComment = true;
   commentPageNumber = 1;
   issueList.splice(0, issueList.length);
@@ -581,20 +838,20 @@ const resetInit = () => {
   lastEtherHash = false;
   repoArray.splice(0, repoArray.length);
   finishedQueue.clearQueue();
-};
+}
 
-const asyncInit = async () => {
+async function asyncInit() {
   await resetInit();
   await dbInit();
-};
+}
 
-const tabInit = (repoUrls: GitHubUrlParts[]) => {
-  etherFetcher();
-  gitFetcher(repoUrls);
-  rpcFetcher();
-};
+function tabInit(repoUrls: GitHubUrlParts[]) {
+  etherFetcher().catch((error) => console.error(error));
+  gitFetcher(repoUrls).catch((error) => console.error(error));
+  rpcFetcher().catch((error) => console.error(error));
+}
 
-const auditInit = () => {
+function auditInit() {
   tgBtnInput.checked = true;
   getReportElem.addEventListener("click", async () => {
     isCache = tgBtnInput.checked;
@@ -619,12 +876,12 @@ const auditInit = () => {
 
     if (BOT_WALLET_ADDRESS !== "" && REPOSITORY_URL !== "" && GITHUB_PAT !== "" && REPOS.length > 0) {
       await asyncInit();
-      await tabInit(REPOS);
+      tabInit(REPOS);
     } else {
       toggleLoader("none");
     }
   });
-};
+}
 
 /**
  *
@@ -634,20 +891,20 @@ const auditInit = () => {
 
 // Function to filter the table based on search input
 function filterTable() {
-  const input = document.getElementById("searchInput")! as HTMLInputElement;
-  let value = input.value.toLowerCase();
+  const input = document.getElementById("searchInput") as HTMLInputElement;
+  const value = input.value.toLowerCase();
   const filteredData = elemList.filter(
-    row =>
+    (row) =>
       row.owner.toLowerCase().includes(value) ||
       row.repo.toLowerCase().includes(value) ||
       row.amount.toLowerCase().includes(value) ||
       row.tx.toLowerCase().includes(value) ||
       row.title.toLowerCase().includes(value) ||
       row.network.toLowerCase().includes(value) ||
-      row.bounty_hunter.name.toLowerCase().includes(value),
+      row.bounty_hunter.name.toLowerCase().includes(value)
   );
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
-  for (let data of filteredData) {
+  for (const data of filteredData) {
     const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
     populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }
@@ -662,7 +919,7 @@ function sortTableByAmount() {
   sortDirection *= -1;
   updateSortArrow();
   resultTableTbodyElem.innerHTML = ""; // Clear the existing rows
-  for (let data of elemList) {
+  for (const data of elemList) {
     const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
     populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
   }
@@ -674,10 +931,12 @@ function updateSortArrow() {
   sortArrow.textContent = sortDirection === 1 ? "\u2191" : "\u2193";
 }
 
-// Add event listener for the search button
-document.getElementById("searchInput")!.addEventListener("keyup", filterTable);
+const searchInput = document.getElementById("searchInput") as HTMLInputElement;
+const amountHeader = document.getElementById("amountHeader") as HTMLTableCellElement;
 
+// Add event listener for the search button
+searchInput.addEventListener("keyup", filterTable);
 // Add event listener for the "Amount" column header
-document.getElementById("amountHeader")!.addEventListener("click", sortTableByAmount);
+amountHeader.addEventListener("click", sortTableByAmount);
 
 auditInit();

@@ -1,9 +1,9 @@
 import axios from "axios";
-import { ITransaction } from "../types/transaction";
-import { getBlockInfo, updateBlockInfo } from "./blockInfo";
 import { Chain } from "../constants";
+import { Transaction } from "../types/transaction";
+import { getBlockInfo, updateBlockInfo } from "./blockInfo";
 
-export const getTxInfo = async (hash: string, url: string, chain: Chain): Promise<ITransaction> => {
+export async function getTxInfo(hash: string, url: string, chain: Chain): Promise<Transaction> {
   try {
     const transactionResponse = await axios.post(url, {
       jsonrpc: "2.0",
@@ -11,9 +11,9 @@ export const getTxInfo = async (hash: string, url: string, chain: Chain): Promis
       method: "eth_getTransactionByHash",
       params: [hash],
     });
-    const transaction = transactionResponse.data.result as ITransaction;
+    const transaction = transactionResponse.data.result as Transaction;
 
-    let timestamp = await getBlockInfo(transaction.blockNumber, chain);
+    const timestamp = await getBlockInfo(transaction.blockNumber, chain);
     if (timestamp !== null) {
       transaction.timestamp = timestamp;
     } else {
@@ -24,7 +24,7 @@ export const getTxInfo = async (hash: string, url: string, chain: Chain): Promis
         params: [transaction.blockNumber, false],
       });
       transaction.timestamp = blockResponse.data.result.timestamp;
-      updateBlockInfo(transaction.blockNumber, transaction.timestamp, chain);
+      await updateBlockInfo(transaction.blockNumber, transaction.timestamp, chain);
     }
 
     return transaction;
@@ -32,4 +32,4 @@ export const getTxInfo = async (hash: string, url: string, chain: Chain): Promis
     console.error(error);
     throw error;
   }
-};
+}

@@ -24,7 +24,7 @@ export async function renderTokenSymbol({
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
     amount,
-    decimals,
+    decimals
   )} ${symbol}</a>`;
 }
 

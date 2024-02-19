@@ -1,7 +1,7 @@
+import axios from "axios";
 import { ethers } from "ethers";
 import { API_KEYS, Chain, ChainScan, RPC_URLS } from "./constants";
 import { BountyHunter, GitHubUrlParts } from "./types";
-import axios from "axios";
 
 export interface RateLimitOptions {
   method: string;
@@ -31,7 +31,7 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
-export const shortenTransactionHash = (hash: string | undefined, length = 8): string => {
+export function shortenTransactionHash(hash: string | undefined, length = 8): string {
   if (!hash) return "";
   const prefixLength = Math.floor(length / 2);
   const suffixLength = length - prefixLength;
@@ -40,40 +40,40 @@ export const shortenTransactionHash = (hash: string | undefined, length = 8): st
   const suffix = hash.slice(-suffixLength);
 
   return prefix + "..." + suffix;
-};
+}
 
-export const populateTable = (
+export function populateTable(
   owner: string,
   repo: string,
-  issue_number: number,
+  issueNumber: number,
   network: string,
   txHash: string,
-  issue_title: string,
+  issueTitle: string,
   amount: string,
-  bounty_hunter: BountyHunter,
-) => {
+  bountyHunter: BountyHunter
+) {
   if (!txHash) return; // permit not claimed
-  const issue_url = `https://github.com/${owner}/${repo}/issues/${issue_number}`;
-  const tx_url = `https://${getChainScan(network)}/tx/${txHash}`;
+  const issueUrl = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
+  const txUrl = `https://${getChainScan(network)}/tx/${txHash}`;
   const rows = `
     <tr>
         <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
-        <td><a href="${issue_url}" target="_blank">#${issue_number} - ${issue_title}</a></td>
-        <td><a href="${bounty_hunter?.url}" target="_blank">${bounty_hunter?.name}</a></td>
-        <td><a href="${tx_url}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
-    network === Chain.Ethereum ? "DAI" : "WXDAI"
-  }</a></td>
-        <td><a href="${tx_url}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
+        <td><a href="${issueUrl}" target="_blank">#${issueNumber} - ${issueTitle}</a></td>
+        <td><a href="${bountyHunter?.url}" target="_blank">${bountyHunter?.name}</a></td>
+        <td><a href="${txUrl}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
+          network === Chain.Ethereum ? "DAI" : "WXDAI"
+        }</a></td>
+        <td><a href="${txUrl}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
     </tr>`;
 
   resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
-};
+}
 
-export const getChainScan = (chain: string) => {
+export function getChainScan(chain: string) {
   return chain === Chain.Ethereum ? ChainScan.Ethereum : ChainScan.Gnosis;
-};
+}
 
-export const getRandomAPIKey = (chain: Chain): string => {
+export function getRandomAPIKey(chain: Chain): string {
   const keys = API_KEYS[chain];
   if (!keys || keys.length === 0) {
     throw new Error(`No API Keys found for chain: ${chain}`);
@@ -81,9 +81,9 @@ export const getRandomAPIKey = (chain: Chain): string => {
 
   const randomIndex = Math.floor(Math.random() * keys.length);
   return keys[randomIndex];
-};
+}
 
-export const getRandomRpcUrl = (chain: Chain): string => {
+export function getRandomRpcUrl(chain: Chain): string {
   const urls = RPC_URLS[chain];
   if (!urls || urls.length === 0) {
     throw new Error(`No RPC URLs found for chain: ${chain}`);
@@ -91,9 +91,9 @@ export const getRandomRpcUrl = (chain: Chain): string => {
 
   const randomIndex = Math.floor(Math.random() * urls.length);
   return urls[randomIndex];
-};
+}
 
-const verifyBlock = (data: DataType) => {
+function verifyBlock(data: DataType) {
   try {
     const { jsonrpc, id, result } = data;
     const { number, timestamp, hash } = result;
@@ -101,9 +101,9 @@ const verifyBlock = (data: DataType) => {
   } catch (error) {
     return false;
   }
-};
+}
 
-export const getOptimalRPC = async (chain: Chain): Promise<string> => {
+export async function getOptimalRPC(chain: Chain): Promise<string> {
   const promises = RPC_URLS[chain].map(async (baseURL: string) => {
     try {
       const startTime = performance.now();
@@ -115,7 +115,7 @@ export const getOptimalRPC = async (chain: Chain): Promise<string> => {
       const { data } = await API.post("", RPC_BODY);
       const endTime = performance.now();
       const latency = endTime - startTime;
-      if (await verifyBlock(data)) {
+      if (verifyBlock(data)) {
         return Promise.resolve({
           latency,
           baseURL,
@@ -130,9 +130,9 @@ export const getOptimalRPC = async (chain: Chain): Promise<string> => {
 
   const { baseURL: optimalRPC } = await Promise.any(promises);
   return optimalRPC;
-};
+}
 
-export const parseRepoUrl = (issueUrl: string): [string, string] => {
+export function parseRepoUrl(issueUrl: string): [string, string] {
   const match = issueUrl.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/\d+/i);
   if (match) {
     const owner = match[1];
@@ -141,9 +141,9 @@ export const parseRepoUrl = (issueUrl: string): [string, string] => {
   } else {
     throw new Error("Invalid GitHub issue URL format");
   }
-};
+}
 
-export const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
+export function getGitHubUrlPartsArray(urls: string[]): GitHubUrlParts[] {
   const githubUrlPartsArray: GitHubUrlParts[] = [];
 
   for (const url of urls) {
@@ -157,31 +157,31 @@ export const getGitHubUrlPartsArray = (urls: string[]): GitHubUrlParts[] => {
   }
 
   return githubUrlPartsArray;
-};
+}
 
-export const primaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
+export function primaryRateLimitHandler(retryAfter: number, options: RateLimitOptions) {
   console.warn(`Request quota exhausted for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
-};
+}
 
-export const secondaryRateLimitHandler = (retryAfter: number, options: RateLimitOptions) => {
+export function secondaryRateLimitHandler(retryAfter: number, options: RateLimitOptions) {
   console.warn(`Secondary quota detected for request ${options.method} ${options.url}\nRetrying after ${retryAfter} seconds!`);
   return true;
-};
+}
 
-export const isValidUrl = (urlString: string) => {
+export function isValidUrl(urlString: string) {
   try {
     return Boolean(new URL(urlString));
   } catch (e) {
     return false;
   }
-};
+}
 
-export const getCurrency = (id: number) => {
+export function getCurrency(id: number) {
   if (id === 100) {
     return Chain.Gnosis;
   } else if (id === 1) {
     return Chain.Ethereum;
   }
   return null;
-};
+}

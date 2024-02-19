@@ -1,9 +1,7 @@
 import axios from "axios";
-import { NetworkIds, networkRpcs } from "./constants";
 import { Contract, ethers } from "ethers";
 import { erc20Abi } from "./abis";
-import { Type as T, StaticDecode } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { networkRpcs } from "./constants";
 
 type DataType = {
   jsonrpc: string;
@@ -15,7 +13,7 @@ type DataType = {
   };
 };
 
-const verifyBlock = (data: DataType) => {
+function verifyBlock(data: DataType) {
   try {
     const { jsonrpc, id, result } = data;
     const { number, timestamp, hash } = result;
@@ -23,7 +21,7 @@ const verifyBlock = (data: DataType) => {
   } catch (error) {
     return false;
   }
-};
+}
 
 const RPC_BODY = JSON.stringify({
   jsonrpc: "2.0",
@@ -36,14 +34,13 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
-export const getErc20Contract = async (contractAddress: string, networkId: number): Promise<Contract> => {
+export async function getErc20Contract(contractAddress: string, networkId: number): Promise<Contract> {
   const providerUrl = await getOptimalRPC(networkId);
   const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-  const contractInstance = new ethers.Contract(contractAddress, erc20Abi, provider);
-  return contractInstance;
-};
+  return new ethers.Contract(contractAddress, erc20Abi, provider);
+}
 
-export const getOptimalRPC = async (networkId: number): Promise<string> => {
+export async function getOptimalRPC(networkId: number): Promise<string> {
   const promises = networkRpcs[networkId].map(async (baseURL: string) => {
     try {
       const startTime = performance.now();
@@ -55,7 +52,7 @@ export const getOptimalRPC = async (networkId: number): Promise<string> => {
       const { data } = await API.post("", RPC_BODY);
       const endTime = performance.now();
       const latency = endTime - startTime;
-      if (await verifyBlock(data)) {
+      if (verifyBlock(data)) {
         return Promise.resolve({
           latency,
           baseURL,
@@ -70,4 +67,4 @@ export const getOptimalRPC = async (networkId: number): Promise<string> => {
 
   const { baseURL: optimalRPC } = await Promise.any(promises);
   return optimalRPC;
-};
+}

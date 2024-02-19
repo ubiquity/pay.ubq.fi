@@ -1,40 +1,89 @@
 {
+  "name": "pay.ubq.fi",
+  "version": "1.0.0",
+  "description": "Claim your DevPool rewards.",
+  "main": "build/index.ts",
+  "author": "Ubiquity DAO",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.10.0"
+  },
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
-    "format": "prettier --write .",
+    "format": "run-s format:lint format:prettier format:cspell",
     "build": "run-s utils:hash utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx build/esbuild-build.ts",
     "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
-    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol"
+    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol",
+    "format:lint": "eslint --fix .",
+    "format:prettier": "prettier --write .",
+    "format:cspell": "cspell **/*",
+    "prepare": "husky install"
   },
+  "keywords": [
+    "typescript",
+    "template",
+    "dao",
+    "ubiquity",
+    "open-source"
+  ],
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
-    "@octokit/core": "^4.2.0",
-    "@octokit/plugin-create-or-update-text-file": "^2.0.4",
-    "@octokit/plugin-throttling": "^5.1.0",
-    "@octokit/rest": "^19.0.7",
-    "@sinclair/typebox": "^0.31.28",
-    "@supabase/supabase-js": "2.39.6",
-    "@types/libsodium-wrappers": "^0.7.10",
-    "@types/node": "^18.15.11",
+    "@octokit/core": "^5.1.0",
+    "@octokit/plugin-create-or-update-text-file": "^4.0.1",
+    "@octokit/plugin-throttling": "^8.1.3",
+    "@octokit/rest": "^20.0.2",
+    "@sinclair/typebox": "^0.32.14",
+    "@types/libsodium-wrappers": "^0.7.13",
     "@uniswap/permit2-sdk": "^1.2.0",
-    "axios": "^1.3.5",
-    "dotenv": "^16.0.3",
-    "esbuild": "^0.17.15",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.4",
     "ethers": "^5.7.2",
     "godb": "^0.6.2",
-    "libsodium-wrappers": "^0.7.11",
+    "libsodium-wrappers": "^0.7.13",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.8.7",
-    "retry-axios": "^3.0.0",
-    "tsx": "^3.12.6",
-    "typescript": "^5.1.6",
-    "yaml": "^2.2.2"
+    "retry-axios": "^3.1.3",
+    "yaml": "^2.3.4"
   },
-  "engines": {
-    "node": ">=20.10.0"
+  "devDependencies": {
+    "@commitlint/cli": "^18.6.1",
+    "@commitlint/config-conventional": "^18.6.2",
+    "@cspell/dict-node": "^4.0.3",
+    "@cspell/dict-software-terms": "^3.3.18",
+    "@cspell/dict-typescript": "^3.1.2",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "cspell": "^8.3.2",
+    "cspell-dict-html": "^1.2.5",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-sonarjs": "^0.24.0",
+    "husky": "^9.0.11",
+    "knip": "^5.0.1",
+    "lint-staged": "^15.2.2",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.2.5",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "yarn-upgrade-all": "^0.7.2"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "yarn prettier --write",
+      "eslint --fix"
+    ],
+    "src/**.{ts,json}": [
+      "cspell"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   }
 }
