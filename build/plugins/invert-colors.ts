@@ -5,10 +5,10 @@ import path, { basename, dirname } from "path";
 export const invertColors: esbuild.Plugin = {
   name: "invert-colors",
   setup(build) {
-    build.onEnd(async result => {
+    build.onEnd(async (result) => {
       console.log(result);
     });
-    build.onLoad({ filter: /\.css$/ }, async args => {
+    build.onLoad({ filter: /\.css$/ }, async (args) => {
       const contents = await fs.promises.readFile(args.path, "utf8");
 
       const updatedContents = contents.replace(/prefers-color-scheme: dark/g, "prefers-color-scheme: light");

@@ -1,6 +1,5 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
-import { networkExplorers } from "../constants";
 import { getOptimalProvider } from "../helpers";
+import { networkExplorers } from "../constants";
 import { ClaimTx } from "./tx-type";
 
 class AppState {

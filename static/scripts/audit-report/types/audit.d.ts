@@ -119,7 +119,7 @@ interface TableIndex {
   type: TableIndexTypes;
   multiEntry?: boolean;
   unique?: boolean;
-  default?: any;
+  default?: NonNullable<unknown>;
   ref?: string;
 }
 interface GoDBTableSchema {

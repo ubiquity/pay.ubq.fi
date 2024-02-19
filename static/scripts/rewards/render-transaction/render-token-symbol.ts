@@ -1,4 +1,4 @@
-import { BigNumberish, Contract, providers, utils } from "ethers";
+import { BigNumberish, Contract, utils } from "ethers";
 import { getErc20Contract } from "../helpers";
 import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { JsonRpcProvider } from "@ethersproject/providers";
@@ -43,7 +43,7 @@ export async function renderTokenSymbol({
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
     amount,
-    decimals,
+    decimals
   )} ${symbol}</a>`;
 }
 

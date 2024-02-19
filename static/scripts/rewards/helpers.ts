@@ -1,8 +1,8 @@
 import axios from "axios";
-import { NetworkIds, networkRpcs } from "./constants";
 import { Contract, ethers } from "ethers";
 import { erc20Abi } from "./abis";
 import { JsonRpcProvider } from "@ethersproject/providers";
+import { networkRpcs } from "./constants";
 
 type DataType = {
   jsonrpc: string;
@@ -14,7 +14,7 @@ type DataType = {
   };
 };
 
-const verifyBlock = (data: DataType) => {
+function verifyBlock(data: DataType) {
   try {
     const { jsonrpc, id, result } = data;
     const { number, timestamp, hash } = result;
@@ -22,7 +22,7 @@ const verifyBlock = (data: DataType) => {
   } catch (error) {
     return false;
   }
-};
+}
 
 const RPC_BODY = JSON.stringify({
   jsonrpc: "2.0",
@@ -35,12 +35,11 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
-export const getErc20Contract = async (contractAddress: string, provider: JsonRpcProvider): Promise<Contract> => {
-  const contractInstance = new ethers.Contract(contractAddress, erc20Abi, provider);
-  return contractInstance;
-};
+export async function getErc20Contract(contractAddress: string, provider: JsonRpcProvider): Promise<Contract> {
+  return new ethers.Contract(contractAddress, erc20Abi, provider);
+}
 
-export const getOptimalProvider = async (networkId: number) => {
+export async function getOptimalProvider(networkId: number) {
   const promises = networkRpcs[networkId].map(async (baseURL: string) => {
     try {
       const startTime = performance.now();
@@ -52,7 +51,7 @@ export const getOptimalProvider = async (networkId: number) => {
       const { data } = await API.post("", RPC_BODY);
       const endTime = performance.now();
       const latency = endTime - startTime;
-      if (await verifyBlock(data)) {
+      if (verifyBlock(data)) {
         return Promise.resolve({
           latency,
           baseURL,
@@ -67,8 +66,8 @@ export const getOptimalProvider = async (networkId: number) => {
 
   const { baseURL: optimalRPC } = await Promise.any(promises);
   return new ethers.providers.JsonRpcProvider(optimalRPC, {
-    name: NetworkIds[networkId],
+    name: optimalRPC,
     chainId: networkId,
     ensAddress: "",
   });
-};
+}

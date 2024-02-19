@@ -1,15 +1,15 @@
 import { BigNumber, ethers } from "ethers";
 import { app } from ".";
-import { Erc721Permit, Erc20Permit } from "./tx-type";
+import { Erc20Permit, Erc721Permit } from "./tx-type";
 
-export const shortenAddress = (address: string): string => {
+export function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
-};
+}
 
 export function insertErc20PermitTableData(
   permit: Erc20Permit,
   table: Element,
-  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string },
+  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
   renderToFields(permit.transferDetails.to, app.currentExplorerUrl);

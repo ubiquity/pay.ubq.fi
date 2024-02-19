@@ -25,8 +25,8 @@ export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpc
       return;
     }
 
-    const reedemed = await isNonceRedeemed(permit, provider);
-    if (reedemed) {
+    const isRedeemed = await isNonceRedeemed(permit, provider);
+    if (isRedeemed) {
       toaster.create("error", `This NFT has already been redeemed.`);
       resetClaimButton();
       return;
@@ -44,11 +44,16 @@ export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpc
 
       claimButton.element.removeEventListener("click", claimButtonHandler);
 
-      renderTransaction(provider, true);
-    } catch (error: any) {
-      console.error(error);
-      errorToast(error, error.message ?? error);
-      resetClaimButton();
+      renderTransaction(provider, true).catch((error) => {
+        console.error(error);
+        toaster.create("error", `Error rendering transaction: ${error.message}`);
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(error);
+        errorToast(error, error.message ?? error);
+        resetClaimButton();
+      }
     }
   };
 }

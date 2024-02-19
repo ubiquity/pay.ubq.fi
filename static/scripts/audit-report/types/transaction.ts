@@ -1,4 +1,4 @@
-export interface ITransaction {
+export interface Transaction {
   input: string;
   hash: string;
   blockNumber: string;
