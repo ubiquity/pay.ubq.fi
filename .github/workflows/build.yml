@@ -31,7 +31,7 @@ jobs:
         if: env.skip != 'true'
         uses: ubiquity/cloudflare-deploy-action@main
         with:
-          cloudflare_api_token: zYVd13Ye44OU_g4LR5YMX47CKKqPwnZJTHgJc2sl # Specifically scoped for public contributors to automatically deploy to our team Cloudflare account
+          cloudflare_api_token: 5aC7R_sIsaBFI3w0Fy8CIdS-uVfFHvnF2XrUBA-y # Specifically scoped for public contributors to automatically deploy to our team Cloudflare account
           repository: ${{ github.repository }}
           production_branch: ${{ github.event.repository.default_branch }}
           output_directory: "static"
