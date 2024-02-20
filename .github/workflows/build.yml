@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          submodules: "recursive" # Ensures submodules are checked out
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
