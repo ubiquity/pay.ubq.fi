@@ -20,7 +20,8 @@
     "format:lint": "eslint --fix .",
     "format:prettier": "prettier --write .",
     "format:cspell": "cspell **/*",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "postinstall": "git submodule update --init --recursive"
   },
   "keywords": [
     "typescript",
