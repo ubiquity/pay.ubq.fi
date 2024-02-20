@@ -1,3 +1,4 @@
 build/esbuild-build.ts
 static/scripts/rewards/constants.ts
 static/scripts/rewards/render-transaction/render-transaction.ts
+**/lib/**
