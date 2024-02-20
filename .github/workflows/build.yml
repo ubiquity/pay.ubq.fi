@@ -38,37 +38,6 @@ jobs:
           current_branch: ${{ github.ref_name }}
           pull_request_number: ${{ github.event.pull_request.number }}
           commit_sha: ${{ github.sha }}
-          app_private_key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEAxNDneOy5A1F9crVynGKvzms3EIJRXOV+V183IhBZvySjKTY6
-            ckTQntGVqEqJDrHSCRWciHoe7kNG26wDP23VPpWVl8VVoj3EsmElilSDBPwxa8Q9
-            h3f0D9UKLgTqnBk3KvzmhJH/sePF1tD7S0pKNm7s0adx9EE0HRUh3pwdhKHqCCAL
-            d1TynC9DBeTiDXeGt+tE5IBytnR1fRp8gcfBkuxMrwdWNZsWrMo6VxCa6IDePyo0
-            EwgyE20xoWWDdgFcOeMoDy50QqUr0Mpx1fmLyZq2AwhUc4NB39I6KMfRlgT/G3XZ
-            8h6mqrnAxHpeAqK1UH2AAJ79/n0X3nb0TAVfPwIDAQABAoIBAGnldQYNaKaua+8S
-            Te5y8uD/swsA80ImgMoGAyYi4gcEcX21HdFp0U4CuqFoKUJszvPwWt7bxlSwgimj
-            7cNtFzWrSmf011SKI5FOz+IUAsLl5rlzRx/inMEAAZAtOQZwUsygcm+WFpviUAp7
-            OxqRiEitemJ708Z2ZtHXEvgxy3gWq8Q89JSobGQnhmfVCYDf2E8ocjLQz2Ed7a2I
-            O1M5AWtePgTqKWW2VxGxcdV2D5wcN9qf0EEfj89dydj7COVCedJ9Ics6U5GdJvMU
-            cIOYXC159OHYMtDBYNvcBxsso9UX20eID8g+mOMJGY1otO4GGenp0FfhO0uxQWnb
-            5H59uIECgYEA9fEWuetZCrVE8ZF2WKPuei20YDuA8HlNLIBqJR5uSaAJXay6wy1e
-            NeomYa5646w0QkJeSwClwqLbQygS6OeCzBMtUes5KYDi26IUS9gcpAOVk8sOGKrj
-            cTcjoEi+LtrIj0Pr11DX8C3IwDp9SIv1AdOLm90NshxjmrGeLS84QCECgYEAzN19
-            JvZ6451M1N1IrHp4Yta6jLQ+YN9rCypTUh8PYiqO4esNLaQJu7hIm1lZwWI590+4
-            0y79cVmAORYDym0wuorRZKaFInqqGr9kXGIDwyBkDCoWsA1NSXDYvspcfknWjFWb
-            AOZfoqClWWlYle4gRye3FXNfNXUyS6ARK6F/M18CgYEAuCRbvLZ+w6q3RRuBfZq4
-            GpiP3iGPR/26j6BSWRpwvwVpHc8PQsV8LWf0dty5vC+aLSYeDZAdjB59hsnBZsq4
-            Pu3418YD1ZRfxsyS37qerxrT6oV1N3jztDfxn7f3VYOP+NyE/4DTPUw6a9sfJKtN
-            taFbfUbEU2A4H4Hvias6NaECgYAICwYX2oN2nj1e+hUZWHGTh9SpI4ZzbTIZrR66
-            Uafb9cnISt8olJEhQpnvJ3HjqsSV1hZujCC9K4NiOmAJuYG5QSv5ZKRDd0doZ208
-            R0jYh1QGOjzLyqnnITwROYaqGqIGvnGodmL40o/LU9x7fm7b/E4u1Gm/gotn9q/V
-            47BHxwKBgD1IJQKjNvSXMVpAOVSjCE3Axlvn4KjJ/OMg4KsRU3jW+WRg+D9dRXs6
-            66EOqZaJ3NjuZDsNGziIm/JogkN4basxUk3j2PZpDUCV66LLTPhz6rT9AHhuGYeS
-            MMsmBHGVGJRs+4T+o6qgS6myAFi58OT7qRe27b2pHO1+cthRiuz/
-            -----END RSA PRIVATE KEY-----
-
-          app_id: 834196
-          app_installation_id: 47527382
         # Add any environment variables you need to pass along here
         #   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         #   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
