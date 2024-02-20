@@ -1,6 +1,5 @@
-import { BigNumberish, Contract, utils } from "ethers";
+import { BigNumberish, utils } from "ethers";
 import { getErc20Contract } from "../helpers";
-import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
 export const tokens = [
@@ -14,37 +13,27 @@ export const tokens = [
   },
 ];
 
-export async function renderTokenSymbol({
-  table,
+export function renderTokenSymbol({
   requestedAmountElement,
   tokenAddress,
   ownerAddress,
   amount,
   explorerUrl,
-  provider,
+  symbol,
+  decimals,
 }: {
-  table: Element;
   requestedAmountElement: Element;
   tokenAddress: string;
   ownerAddress: string;
   amount: BigNumberish;
   explorerUrl: string;
-  provider: JsonRpcProvider;
-}): Promise<void> {
-  let symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : false;
-  let decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : MaxUint256;
-
-  if (!symbol || decimals === MaxUint256) {
-    const contract: Contract = await getErc20Contract(tokenAddress, provider);
-    symbol = await contract.symbol();
-    decimals = await contract.decimals();
-  }
-
-  table.setAttribute(`data-contract-loaded`, "true");
-  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
+  symbol: string;
+  decimals: number;
+}) {
+  return (requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
     amount,
     decimals
-  )} ${symbol}</a>`;
+  )} ${symbol}</a>`);
 }
 
 export async function renderNftSymbol({
