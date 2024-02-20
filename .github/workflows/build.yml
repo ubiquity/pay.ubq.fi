@@ -1,9 +1,8 @@
 name: Build & Deploy
 
 on:
-  # push:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  push:
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -31,7 +30,7 @@ jobs:
       - name: Check Cloudflare API Token
         id: check_token
         run: |
-          if [[ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]]; then
+          if [[ -z "${{ vars.CLOUDFLARE_API_TOKEN_CD }}" ]]; then
             echo "Cloudflare API token is not set. Skipping deployment."
             echo "skip=true" >> $GITHUB_ENV
           else
@@ -43,7 +42,7 @@ jobs:
         if: env.skip != 'true'
         uses: ubiquity/cloudflare-deploy-action@main
         with:
-          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_api_token: ${{ vars.CLOUDFLARE_API_TOKEN_CD }}
           repository: ${{ github.repository }}
           production_branch: ${{ github.event.repository.default_branch }}
           output_directory: "static"
