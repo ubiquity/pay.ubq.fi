@@ -1,8 +1,15 @@
+// type RPC = { url: string; tracking?: string; trackingDetails?: string };
+// type Network = { name?: string; rpcs: RPC[]; websiteDead?: boolean; rpcWorking?: boolean };
+// type Networks = { [key: string]: Network };
+
+declare const extraRpcs: Record<string, string[]>; // @DEV: passed in at build time check build/esbuild-build.ts
+
 export enum NetworkIds {
   Mainnet = 1,
   Goerli = 5,
   Gnosis = 100,
 }
+console.trace({ extraRpcs });
 
 export enum Tokens {
   DAI = "0x6b175474e89094c44da98b954eedeac495271d0f",
@@ -36,9 +43,9 @@ export const networkExplorers: Record<number, string> = {
 };
 
 export const networkRpcs: Record<number, string[]> = {
-  [NetworkIds.Mainnet]: ["https://rpc-pay.ubq.fi/v1/mainnet"],
-  [NetworkIds.Goerli]: ["https://rpc-pay.ubq.fi/v1/goerli"],
-  [NetworkIds.Gnosis]: ["https://rpc.gnosischain.com"],
+  [NetworkIds.Mainnet]: ["https://rpc-pay.ubq.fi/v1/mainnet", ...(extraRpcs[NetworkIds.Mainnet] || [])],
+  [NetworkIds.Goerli]: ["https://rpc-pay.ubq.fi/v1/goerli", ...(extraRpcs[NetworkIds.Goerli] || [])],
+  [NetworkIds.Gnosis]: [...(extraRpcs[NetworkIds.Gnosis] || [])],
 };
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";

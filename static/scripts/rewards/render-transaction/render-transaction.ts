@@ -13,6 +13,7 @@ import { renderNftSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
 import { claimTxT } from "./tx-type";
 import { removeAllEventListeners } from "./utils";
+import { handleNetwork } from "../web3/wallet";
 
 let optimalRPC: JsonRpcProvider;
 
@@ -34,7 +35,7 @@ export async function init() {
     app.claimTxs = claimTxs;
     optimalRPC = await getOptimalProvider(app.currentTx?.networkId ?? app.claimTxs[0].networkId);
 
-    // handleNetwork(app.currentTx?.networkId ?? app.claimTxs[0].networkId).catch(console.error);
+    handleNetwork(app.currentTx?.networkId ?? app.claimTxs[0].networkId).catch(console.error);
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
