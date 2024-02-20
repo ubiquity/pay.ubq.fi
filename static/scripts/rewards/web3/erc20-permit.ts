@@ -14,10 +14,10 @@ import { insertErc20PermitTableData } from "../render-transaction/insert-table-d
 export async function processERC20(tokenAddress: string, provider: JsonRpcProvider, permit: Erc20Permit, table: Element) {
   let symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
   let decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
-  const contract = await getErc20Contract(tokenAddress, provider);
 
   if (!symbol || decimals === -1) {
     try {
+      const contract = await getErc20Contract(tokenAddress, provider);
       symbol = contract.symbol();
       decimals = contract.decimals();
     } catch (err) {
@@ -29,16 +29,15 @@ export async function processERC20(tokenAddress: string, provider: JsonRpcProvid
 }
 
 export async function fetchTreasury(contractAddr: string, owner: string, provider: JsonRpcProvider) {
-  const contract = await getErc20Contract(contractAddr, provider);
-
   try {
+    const contract = await getErc20Contract(contractAddr, provider);
     const [balance, allowance] = await Promise.all([contract.balanceOf(owner), contract.allowance(owner, permit2Address)]);
     return { balance, allowance } as { balance: BigNumber; allowance: BigNumber };
   } catch (err) {
     console.log(err);
-    console.log(contractAddr);
-    throw new Error(`Error fetching treasury data for token address: ${contractAddr}`);
   }
+
+  return { balance: BigNumber.from(0), allowance: BigNumber.from(0) };
 }
 
 export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcProvider) {
