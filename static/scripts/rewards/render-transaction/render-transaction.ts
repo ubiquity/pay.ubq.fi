@@ -126,45 +126,53 @@ export async function renderTransaction(provider: JsonRpcProvider, nextTx?: bool
   handleNetwork(app.currentTx.networkId).catch(console.error);
 
   if (app.currentTx.type === "erc20-permit") {
-    const treasury = await fetchTreasury(app.currentTx, provider);
-
-    // insert tx data into table
-    const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
-    table.setAttribute(`data-claim`, "ok");
-
-    renderTokenSymbol({
-      tokenAddress: app.currentTx.permit.permitted.token,
-      ownerAddress: app.currentTx.owner,
-      amount: app.currentTx.transferDetails.requestedAmount,
-      explorerUrl: networkExplorers[app.currentTx.networkId],
-      table,
-      requestedAmountElement,
-      provider,
-    }).catch(console.error);
-
-    const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to }).catch(console.error);
-
-    generateInvalidatePermitAdminControl(app.currentTx).catch(console.error);
-
-    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx, optimalRPC));
+    await handleErc20Permit(provider, table);
   } else if (app.currentTx.type === "erc721-permit") {
-    const requestedAmountElement = insertErc721PermitTableData(app.currentTx, table);
-    table.setAttribute(`data-claim`, "ok");
-
-    renderNftSymbol({
-      tokenAddress: app.currentTx.nftAddress,
-      explorerUrl: networkExplorers[app.currentTx.networkId],
-      table,
-      requestedAmountElement,
-      provider,
-    }).catch(console.error);
-
-    const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary }).catch(console.error);
-
-    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx, provider));
+    handleErc721Permit(table, provider);
   }
 
   return true;
+}
+
+function handleErc721Permit(table: HTMLTableElement, provider: JsonRpcProvider) {
+  const requestedAmountElement = insertErc721PermitTableData(app.currentTx, table);
+  table.setAttribute(`data-claim`, "ok");
+
+  renderNftSymbol({
+    tokenAddress: app.currentTx.nftAddress,
+    explorerUrl: networkExplorers[app.currentTx.networkId],
+    table,
+    requestedAmountElement,
+    provider,
+  }).catch(console.error);
+
+  const toElement = document.getElementById(`rewardRecipient`) as Element;
+  renderEnsName({ element: toElement, address: app.currentTx.request.beneficiary }).catch(console.error);
+
+  claimButton.element.addEventListener("click", claimErc721PermitHandler(app.currentTx, provider));
+}
+
+async function handleErc20Permit(provider: JsonRpcProvider, table: HTMLTableElement) {
+  const treasury = await fetchTreasury(app.currentTx, provider);
+
+  // insert tx data into table
+  const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
+  table.setAttribute(`data-claim`, "ok");
+
+  renderTokenSymbol({
+    tokenAddress: app.currentTx.permit.permitted.token,
+    ownerAddress: app.currentTx.owner,
+    amount: app.currentTx.transferDetails.requestedAmount,
+    explorerUrl: networkExplorers[app.currentTx.networkId],
+    table,
+    requestedAmountElement,
+    provider,
+  }).catch(console.error);
+
+  const toElement = document.getElementById(`rewardRecipient`) as Element;
+  renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to }).catch(console.error);
+
+  generateInvalidatePermitAdminControl(app.currentTx).catch(console.error);
+
+  claimButton.element.addEventListener("click", claimErc20PermitHandler(app.currentTx, optimalRPC));
 }
