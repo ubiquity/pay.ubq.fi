@@ -371,17 +371,13 @@ async function getPermitsForRepo(owner: string, repo: string) {
       owner,
       repo,
     });
-    if (!gitData.organization) {
-      console.warn(`${owner}/${repo} is not an organization, skipping.`);
-    } else {
-      const { data } = await supabase
-        .from("permits")
-        .select("*, locations(*), users(*, wallets(*)), tokens(*)")
-        .eq("locations.organization_id", gitData.organization?.id)
-        .not("locations", "is", null);
-      if (data) {
-        permitList.push(...data.map((d) => ({ ...d, owner, repo })));
-      }
+    const { data } = await supabase
+      .from("permits")
+      .select("*, locations(*), users(*, wallets(*)), tokens(*)")
+      .eq("locations.repository_id", gitData?.id)
+      .not("locations", "is", null);
+    if (data) {
+      permitList.push(...data.map((d) => ({ ...d, owner, repo })));
     }
   } catch (error) {
     console.error(error);
