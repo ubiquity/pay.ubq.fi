@@ -9,15 +9,14 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "start": "run-s utils:hash start:sign start:ui",
+    "start": "run-s start:sign start:ui",
     "watch": "nodemon -e ts,tsx --exec yarn start",
     "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
     "format": "run-s format:lint format:prettier format:cspell",
-    "build": "run-s utils:hash utils:build",
+    "build": "run-s utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx build/esbuild-build.ts",
-    "utils:hash": "git rev-parse --short HEAD > static/commit.txt",
     "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol",
     "format:lint": "eslint --fix .",
     "format:prettier": "prettier --write .",

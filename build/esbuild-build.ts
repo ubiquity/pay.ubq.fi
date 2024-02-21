@@ -1,6 +1,8 @@
 import * as dotenv from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
+import { execSync } from "child_process";
+
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -33,7 +35,10 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], { extraRpcs: allNetworkUrls }),
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
+    extraRpcs: allNetworkUrls,
+    commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
+  }),
 };
 
 esbuild
