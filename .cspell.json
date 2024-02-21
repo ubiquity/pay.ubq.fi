@@ -5,9 +5,9 @@
   "useGitignore": true,
   "language": "en",
   "words": [
-    "solmate",
     "binkey",
     "binsec",
+    "chainlist",
     "cirip",
     "dataurl",
     "devpool",
@@ -25,6 +25,7 @@
     "Rpcs",
     "scalarmult",
     "servedir",
+    "solmate",
     "sonarjs",
     "typebox",
     "TYPEHASH",
