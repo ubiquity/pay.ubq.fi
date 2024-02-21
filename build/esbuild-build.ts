@@ -62,6 +62,6 @@ function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>
       defines[key] = JSON.stringify(extras[key]);
     }
   }
-  defines["extraRpcs"] = JSON.stringify(extraRpcs);
+  defines["extraRpcs"] = JSON.stringify(allNetworkUrls);
   return defines;
 }
