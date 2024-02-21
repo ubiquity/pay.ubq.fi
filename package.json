@@ -10,6 +10,8 @@
   },
   "scripts": {
     "start": "run-s utils:hash start:sign start:ui",
+    "watch": "nodemon -e ts,tsx --exec yarn start",
+    "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
     "format": "run-s format:lint format:prettier format:cspell",
     "build": "run-s utils:hash utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
@@ -68,6 +70,7 @@
     "husky": "^9.0.11",
     "knip": "^5.0.1",
     "lint-staged": "^15.2.2",
+    "nodemon": "^3.0.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.2.5",
     "tsx": "^4.7.1",
