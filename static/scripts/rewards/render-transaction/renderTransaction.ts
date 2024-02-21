@@ -1,9 +1,9 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
 import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
-import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
+import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
-import { verifyCurrentNetwork } from "../web3/wallet";
+import { verifyCurrentNetwork } from "../web3/verifyCurrentNetwork";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
@@ -57,7 +57,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.transaction).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc20PermitHandler(app.transaction));
+    claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app.transaction));
   } else if (app.transaction.type === "erc721-permit") {
     const requestedAmountElement = insertErc721PermitTableData(app.transaction, table);
     table.setAttribute(`data-claim`, "ok");
@@ -73,7 +73,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.transaction.request.beneficiary }).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.transaction, provider));
+    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.transaction));
   }
 
   return true;

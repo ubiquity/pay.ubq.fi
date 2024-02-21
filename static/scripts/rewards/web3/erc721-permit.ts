@@ -1,11 +1,11 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nftRewardAbi";
+import { app } from "../app-state";
 import { renderTransaction } from "../render-transaction/renderTransaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
-import { connectWallet } from "./wallet";
-import { app } from "../app-state";
+import { connectWallet } from "./connectWallet";
 
 export function claimErc721PermitHandler(permit: Erc721Permit) {
   return async function claimButtonHandler() {

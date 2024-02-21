@@ -9,20 +9,19 @@ let isTestCompleted = false;
 
 export async function getOptimalProvider(app: AppState): Promise<JsonRpcProvider> {
   const networkId = app.transactionNetworkId;
-  console.trace({ app });
   if (!networkId) throw new Error("Network ID not found");
 
   if (!isTestCompleted && !isTestStarted) {
     isTestStarted = true;
-    await testRpcPerformance(networkId);
-    isTestCompleted = true;
+    testRpcPerformance(networkId)
+      .then(() => (isTestCompleted = true))
+      .catch(console.error);
   }
 
   if (!optimalProvider) {
     optimalProvider = getFastestRpcProvider(networkId);
   }
 
-  console.trace({ optimalProvider });
-
-  return (app.provider = optimalProvider);
+  app.provider = optimalProvider;
+  return optimalProvider;
 }

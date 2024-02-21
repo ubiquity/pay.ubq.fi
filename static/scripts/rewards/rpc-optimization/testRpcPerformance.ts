@@ -43,19 +43,19 @@ export async function testRpcPerformance(networkId: number) {
         headers: RPC_HEADER,
       });
 
-      const { data } = await API.post("", RPC_BODY);
+      const { data } = await API.post("", RPC_BODY).catch(() => ({ data: null }));
       const endTime = performance.now();
       const latency = endTime - startTime;
       if (verifyBlock(data)) {
         // Save the latency in localStorage
-        latencies[`${networkId}_${baseURL}`] = latency;
+        latencies[`${baseURL}_${networkId}`] = latency;
       } else {
         // Save -1 in localStorage to indicate an error
-        latencies[`${networkId}_${baseURL}`] = -1;
+        latencies[`${baseURL}_${networkId}`] = -1;
       }
     } catch (error) {
       // Save -1 in localStorage to indicate an error
-      latencies[`${networkId}_${baseURL}`] = -1;
+      latencies[`${baseURL}_${networkId}`] = -1;
     }
   });
 

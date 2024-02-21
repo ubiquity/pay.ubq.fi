@@ -9,7 +9,7 @@ import { renderTransaction } from "../render-transaction/renderTransaction";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
-import { connectWallet } from "./wallet";
+import { connectWallet } from "./connectWallet";
 
 export async function fetchTreasury(
   permit: Erc20Permit,
@@ -42,14 +42,14 @@ export async function fetchTreasury(
   }
 }
 
-export function claimErc20PermitHandler(permit: Erc20Permit) {
-  return async function handler() {
-    try {
-      const signer = await connectWallet();
-      if (!signer) {
-        return;
-      }
+export function claimErc20PermitHandlerWrapper(permit: Erc20Permit) {
+  return async function claimErc20PermitHandler() {
+    const signer = await connectWallet();
+    if (!signer) {
+      return;
+    }
 
+    try {
       if (!(await checkPermitClaimable(permit, signer, app.provider))) {
         return;
       }
@@ -62,7 +62,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit) {
       toaster.create("success", `Claim Complete.`);
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      claimButton.element.removeEventListener("click", handler);
+      claimButton.element.removeEventListener("click", claimErc20PermitHandler);
       renderTransaction().catch(console.error);
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -115,13 +115,20 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcS
 export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) {
   const signer = await connectWallet();
   if (!signer) {
+    console.log("Wallet not connected");
     return;
   }
 
-  const user = (await signer.getAddress()).toLowerCase();
-  const owner = permit.owner.toLowerCase();
-  if (owner !== user) {
-    return;
+  try {
+    const address = await signer.getAddress();
+    const user = address.toLowerCase();
+    const owner = permit.owner.toLowerCase();
+    if (owner !== user) {
+      return;
+    }
+  } catch (error) {
+    console.error("Error getting address from signer");
+    console.error(error);
   }
 
   const controls = document.getElementById("controls") as HTMLDivElement;

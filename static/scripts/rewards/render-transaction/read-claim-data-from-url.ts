@@ -11,7 +11,7 @@ export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
 
-export function readClaimDataFromUrl() {
+export async function readClaimDataFromUrl() {
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
@@ -20,7 +20,8 @@ export function readClaimDataFromUrl() {
   }
 
   decodeClaimData(base64encodedTxData);
-  getOptimalProvider(app).catch(console.error);
+
+  await getOptimalProvider(app);
 
   displayRewardDetails();
   displayRewardPagination();
