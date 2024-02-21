@@ -1,10 +1,10 @@
+import { execSync } from "child_process";
 import * as dotenv from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
-import { execSync } from "child_process";
 
 const typescriptEntries = [
-  "static/scripts/rewards/index.ts",
+  "static/scripts/rewards/init.ts",
   "static/scripts/audit-report/audit.ts",
   "static/scripts/onboarding/onboarding.ts",
   "static/scripts/key-generator/keygen.ts",
@@ -51,10 +51,10 @@ esbuild
     process.exit(1);
   });
 
-function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>): Record<string, string> {
+function createEnvDefines(environmentVariables: string[], generatedAtBuild: Record<string, unknown>): Record<string, string> {
   const defines: Record<string, string> = {};
   dotenv.config();
-  for (const name of envVarNames) {
+  for (const name of environmentVariables) {
     const envVar = process.env[name];
     if (envVar !== undefined) {
       defines[name] = JSON.stringify(envVar);
@@ -62,9 +62,9 @@ function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>
       throw new Error(`Missing environment variable: ${name}`);
     }
   }
-  for (const key in extras) {
-    if (Object.prototype.hasOwnProperty.call(extras, key)) {
-      defines[key] = JSON.stringify(extras[key]);
+  for (const key in generatedAtBuild) {
+    if (Object.prototype.hasOwnProperty.call(generatedAtBuild, key)) {
+      defines[key] = JSON.stringify(generatedAtBuild[key]);
     }
   }
   return defines;

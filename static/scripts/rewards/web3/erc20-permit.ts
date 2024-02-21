@@ -1,14 +1,15 @@
+import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { permit2Abi } from "../abis";
+import { app } from "../app-state";
 import { permit2Address } from "../constants";
-import { getErc20Contract, getOptimalProvider } from "../helpers";
-import { Erc20Permit } from "../render-transaction/tx-type";
-import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
-import { renderTransaction } from "../render-transaction/render-transaction";
-import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
-import { JsonRpcProvider } from "@ethersproject/providers";
 import { tokens } from "../render-transaction/render-token-symbol";
+import { renderTransaction } from "../render-transaction/renderTransaction";
+import { Erc20Permit } from "../render-transaction/tx-type";
+import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
+import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
+import { connectWallet } from "./wallet";
 
 export async function fetchTreasury(
   permit: Erc20Permit,
@@ -41,7 +42,7 @@ export async function fetchTreasury(
   }
 }
 
-export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcProvider) {
+export function claimErc20PermitHandler(permit: Erc20Permit) {
   return async function handler() {
     try {
       const signer = await connectWallet();
@@ -49,7 +50,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
         return;
       }
 
-      if (!(await checkPermitClaimable(permit, signer, provider))) {
+      if (!(await checkPermitClaimable(permit, signer, app.provider))) {
         return;
       }
 
@@ -62,10 +63,10 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
       console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
-      renderTransaction(provider).catch(console.error);
+      renderTransaction().catch(console.error);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.log(error);
+        console.error(error);
         errorToast(error, error.message);
         resetClaimButton();
       }
@@ -73,7 +74,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
   };
 }
 
-export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
+export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcSigner | null, provider: JsonRpcProvider) {
   const isClaimed = await isNonceClaimed(permit);
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
@@ -140,7 +141,7 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
       await invalidateNonce(signer, permit.permit.nonce);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.log(error);
+        console.error(error);
         errorToast(error, error.message);
         return;
       }
@@ -151,7 +152,7 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const provider = await getOptimalProvider(permit.networkId);
+  const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
@@ -164,7 +165,7 @@ export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
   return bit.and(flipped).eq(0);
 }
 
-export async function invalidateNonce(signer: ethers.providers.JsonRpcSigner, nonce: BigNumberish): Promise<void> {
+export async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428

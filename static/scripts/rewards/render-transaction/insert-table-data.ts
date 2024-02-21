@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { app } from ".";
+import { app } from "../app-state";
 import { Erc20Permit, Erc721Permit } from "./tx-type";
 
 export function shortenAddress(address: string): string {

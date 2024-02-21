@@ -1,12 +1,14 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
+import { app } from "../app-state";
 import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { claimButton, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    // const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = app.provider;
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
     resetClaimButton();
@@ -25,7 +27,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   }
 }
 
-export async function handleNetwork(desiredNetworkId: number) {
+// verifyCurrentNetwork checks if the user is on the correct network and displays an error if not
+export async function verifyCurrentNetwork(desiredNetworkId: number) {
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
     toaster.create("info", "Please connect to MetaMask.");
