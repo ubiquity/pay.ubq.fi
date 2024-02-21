@@ -57,7 +57,13 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.transaction).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app.transaction));
+    const wrapped = claimErc20PermitHandlerWrapper(app.transaction);
+
+    claimButton.element.addEventListener("click", function () {
+      this.classList.add("clicked");
+      wrapped();
+      this.classList.remove("clicked");
+    });
   } else if (app.transaction.type === "erc721-permit") {
     const requestedAmountElement = insertErc721PermitTableData(app.transaction, table);
     table.setAttribute(`data-claim`, "ok");

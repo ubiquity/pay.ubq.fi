@@ -7,7 +7,7 @@ import invalidateButton from "../invalidate-component";
 import { tokens } from "../render-transaction/render-token-symbol";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
-import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
+import { MetaMaskError, claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { connectWallet } from "./connect-wallet";
 
@@ -51,8 +51,9 @@ async function connectToWallet() {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in connectWallet: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      console.error("Error in connectWallet: ", e);
+      errorToast(e, e.reason);
       resetClaimButton();
     }
   }
@@ -65,8 +66,9 @@ async function checkPermitClaimability(permit: Erc20Permit, signer: JsonRpcSigne
     isPermitClaimable = await checkPermitClaimable(permit, signer, app.provider);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in checkPermitClaimable: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      console.error("Error in checkPermitClaimable: ", e);
+      errorToast(e, e.reason);
       resetClaimButton();
     }
   }
@@ -79,8 +81,9 @@ async function createEthersContract(signer: JsonRpcSigner) {
     permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in creating ethers.Contract: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      console.error("Error in creating ethers.Contract: ", e);
+      errorToast(e, e.reason);
       resetClaimButton();
     }
   }
@@ -88,18 +91,26 @@ async function createEthersContract(signer: JsonRpcSigner) {
 }
 
 async function transferFromPermit(permit2Contract: Contract, permit: Erc20Permit) {
-  let tx;
   try {
-    tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
+    const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
     toaster.create("info", `Transaction sent`);
+    return tx;
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in permitTransferFrom: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      // Check if the error message indicates a user rejection
+      if (e.code == "ACTION_REJECTED") {
+        // Handle the user rejection case
+        toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
+      } else {
+        // Handle other errors
+        console.error("Error in permitTransferFrom: ", e);
+        errorToast(e, e.reason);
+      }
       resetClaimButton();
     }
+    return null;
   }
-  return tx;
 }
 
 async function waitForTransaction(tx: TransactionResponse) {
@@ -110,8 +121,9 @@ async function waitForTransaction(tx: TransactionResponse) {
     console.log(receipt.transactionHash); // @TODO: post to database
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in tx.wait: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      console.error("Error in tx.wait: ", e);
+      errorToast(e, e.reason);
       resetClaimButton();
     }
   }
@@ -123,8 +135,9 @@ async function renderTx() {
     await renderTransaction();
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error in renderTransaction: ", error);
-      errorToast(error, error.message);
+      const e = error as unknown as MetaMaskError;
+      console.error("Error in renderTransaction: ", e);
+      errorToast(e, e.reason);
       resetClaimButton();
     }
   }
@@ -251,8 +264,9 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
       await invalidateNonce(signer, permit.permit.nonce);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error(error);
-        errorToast(error, error.message);
+        const e = error as unknown as MetaMaskError;
+        console.error(e);
+        errorToast(e, e.reason);
         return;
       }
     }
@@ -268,7 +282,7 @@ export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos).catch((error) => {
+  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });
