@@ -42,7 +42,7 @@ function createEnvDefines(variableNames: string[]): Record<string, string> {
   for (const name of variableNames) {
     const envVar = process.env[name];
     if (envVar !== undefined) {
-      defines[`process.env.${name}`] = JSON.stringify(envVar);
+      defines[name] = JSON.stringify(envVar);
     } else {
       throw new Error(`Missing environment variable: ${name}`);
     }
