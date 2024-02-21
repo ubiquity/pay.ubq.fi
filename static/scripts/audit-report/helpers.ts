@@ -177,10 +177,10 @@ export function isValidUrl(urlString: string) {
   }
 }
 
-export function getCurrency(comment: string) {
-  if (comment.includes("WXDAI")) {
+export function getCurrency(id: number) {
+  if (id === 100) {
     return Chain.Gnosis;
-  } else if (comment.includes("DAI")) {
+  } else if (id === 1) {
     return Chain.Ethereum;
   }
   return null;

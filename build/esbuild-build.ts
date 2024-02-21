@@ -1,5 +1,6 @@
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
 import esbuild from "esbuild";
+import * as dotenv from "dotenv";
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -32,9 +33,7 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: {
-    extraRpcs: JSON.stringify(allNetworkUrls),
-  },
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], { allNetworkUrls }),
 };
 
 esbuild
@@ -46,3 +45,23 @@ esbuild
     console.error(err);
     process.exit(1);
   });
+
+function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>): Record<string, string> {
+  const defines: Record<string, string> = {};
+  dotenv.config();
+  for (const name of envVarNames) {
+    const envVar = process.env[name];
+    if (envVar !== undefined) {
+      defines[name] = JSON.stringify(envVar);
+    } else {
+      throw new Error(`Missing environment variable: ${name}`);
+    }
+  }
+  for (const key in extras) {
+    if (Object.prototype.hasOwnProperty.call(extras, key)) {
+      defines[key] = JSON.stringify(extras[key]);
+    }
+  }
+  defines["extraRpcs"] = JSON.stringify(extraRpcs);
+  return defines;
+}
