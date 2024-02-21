@@ -88,8 +88,8 @@ function renderTokenFields(tokenAddress: string, explorerUrl: string) {
 }
 
 function renderToFields(receiverAddress: string, explorerUrl: string) {
-  const toFull = document.querySelector("#To .full") as Element;
-  const toShort = document.querySelector("#To .short") as Element;
+  const toFull = document.querySelector("#rewardRecipient .full") as Element;
+  const toShort = document.querySelector("#rewardRecipient .short") as Element;
   toFull.innerHTML = `<div>${receiverAddress}</div>`;
   toShort.innerHTML = `<div>${shortenAddress(receiverAddress)}</div>`;
 
