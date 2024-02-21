@@ -18,9 +18,12 @@ if $ignoreFile; then
 elif ! echo "$basefile" | grep -q -E "^([a-z0-9]+-)*[a-z0-9]+(\.[a-zA-Z0-9]+)?$|^([a-z0-9]+_)*[a-z0-9]+(\.[a-zA-Z0-9]+)?$"; then
     non_compliant_files+=("$file")
     echo "::warning file=$file::This file is not in kebab-case or snake_case"
-    # Dry run: print the rename command without executing it
-    newfile=$(dirname "$file")/$(echo "$basefile" | sed -r 's/([a-z0-9])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+    # Rename the file
+    newbasefile=$(echo "$basefile" | sed -r 's/([a-z0-9])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+    newfile=$(dirname "$file")/$newbasefile
     mv "$file" "$newfile"
+    # Update import statements in all TypeScript files
+    find . -name '*.ts' -exec sed -i "s|$basefile|$newbasefile|g" {} \;
 fi
 done < <(find . -type f -name '*.ts' -print | grep -E '/[a-z]+[a-zA-Z]*\.ts$')
 if [ ${#non_compliant_files[@]} -ne 0 ]; then
