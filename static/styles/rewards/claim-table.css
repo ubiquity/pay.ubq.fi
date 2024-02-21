@@ -152,9 +152,29 @@ table[data-claim-rendered] button:hover > div {
   display: unset;
   color: #fff;
 }
+
 table[data-claim-rendered] button:hover > svg {
   display: none !important;
 }
+
+.show-cl {
+  display: block;
+}
+
+table[data-claim-rendered] button.hide-cl > svg.claim-loader {
+  display: none;
+}
+table[data-claim-rendered] button.show-cl > svg.claim-icon {
+  display: none;
+}
+
+table[data-claim-rendered] button.show-cl > svg.claim-loader {
+  display: unset;
+}
+table[data-claim-rendered] button.hide-cl > svg.claim-icon {
+  display: unset;
+}
+
 table[data-claim-rendered] button#additionalDetails {
   width: 100%;
   color: #fff;
@@ -270,23 +290,6 @@ table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"
 }
 #rewardRecipient div {
   color: #fff;
-}
-
-.show-cl {
-  display: block;
-}
-
-.hide-cl > svg.claim-loader {
-  display: none;
-}
-.show-cl > svg.claim-loader {
-  display: unset;
-}
-.hide-cl > svg.claim-icon {
-  display: unset;
-}
-.show-cl > svg.claim-icon {
-  display: none;
 }
 
 .show-pagination {

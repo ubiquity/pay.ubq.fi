@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
-import { loadingClaimButton, toaster } from "../toaster";
+import { showLoader, toaster } from "../toaster";
 import { switchNetwork } from "./switch-network";
 
 export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number, web3provider: ethers.providers.Web3Provider) {
@@ -13,7 +13,7 @@ export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: 
     if (!networkName) {
       toaster.create("error", `This dApp currently does not support payouts for network ID ${desiredNetworkId}`);
     }
-    loadingClaimButton(false);
+    showLoader();
     invalidateButton.disabled = true;
     switchNetwork(web3provider, desiredNetworkId).catch((error) => {
       console.error(error);

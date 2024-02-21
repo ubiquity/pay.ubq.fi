@@ -1,13 +1,12 @@
 import invalidateButton from "../invalidate-component";
-import { loadingClaimButton, resetClaimButton } from "../toaster";
+import { showLoader } from "../toaster";
 
 export function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number) {
   if (desiredNetworkId === currentNetworkId) {
     // enable the button once on the correct network
-    resetClaimButton();
     invalidateButton.disabled = false;
   } else {
-    loadingClaimButton(false);
+    showLoader();
     invalidateButton.disabled = true;
   }
 }

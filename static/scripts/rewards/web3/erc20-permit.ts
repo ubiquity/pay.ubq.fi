@@ -5,10 +5,10 @@ import { app } from "../app-state";
 import { permit2Address } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { tokens } from "../render-transaction/render-token-symbol";
+import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
-import { MetaMaskError, claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
-import { renderTransaction } from "../render-transaction/render-transaction";
+import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(
@@ -54,7 +54,6 @@ async function connectToWallet() {
       const e = error as unknown as MetaMaskError;
       console.error("Error in connectWallet: ", e);
       errorToast(e, e.reason);
-      resetClaimButton();
     }
   }
   return signer;
@@ -69,7 +68,6 @@ async function checkPermitClaimability(permit: Erc20Permit, signer: JsonRpcSigne
       const e = error as unknown as MetaMaskError;
       console.error("Error in checkPermitClaimable: ", e);
       errorToast(e, e.reason);
-      resetClaimButton();
     }
   }
   return isPermitClaimable;
@@ -84,7 +82,6 @@ async function createEthersContract(signer: JsonRpcSigner) {
       const e = error as unknown as MetaMaskError;
       console.error("Error in creating ethers.Contract: ", e);
       errorToast(e, e.reason);
-      resetClaimButton();
     }
   }
   return permit2Contract;
@@ -107,7 +104,6 @@ async function transferFromPermit(permit2Contract: Contract, permit: Erc20Permit
         console.error("Error in permitTransferFrom: ", e);
         errorToast(e, e.reason);
       }
-      resetClaimButton();
     }
     return null;
   }
@@ -124,7 +120,6 @@ async function waitForTransaction(tx: TransactionResponse) {
       const e = error as unknown as MetaMaskError;
       console.error("Error in tx.wait: ", e);
       errorToast(e, e.reason);
-      resetClaimButton();
     }
   }
   return receipt;
@@ -138,20 +133,19 @@ async function renderTx() {
       const e = error as unknown as MetaMaskError;
       console.error("Error in renderTransaction: ", e);
       errorToast(e, e.reason);
-      resetClaimButton();
     }
   }
 }
 
 export function claimErc20PermitHandlerWrapper(permit: Erc20Permit) {
   return async function claimErc20PermitHandler() {
+    showLoader();
+
     const signer = await connectToWallet();
     if (!signer) return;
 
     const isPermitClaimable = await checkPermitClaimability(permit, signer);
     if (!isPermitClaimable) return;
-
-    loadingClaimButton();
 
     const permit2Contract = await createEthersContract(signer);
     if (!permit2Contract) return;

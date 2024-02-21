@@ -1,10 +1,10 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { app } from "../app-state";
-import { Erc721Permit } from "../render-transaction/tx-type";
-import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
+import { app } from "../app-state";
 import { renderTransaction } from "../render-transaction/render-transaction";
+import { Erc721Permit } from "../render-transaction/tx-type";
+import { claimButton, errorToast, showLoader, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export function claimErc721PermitHandler(permit: Erc721Permit) {
@@ -16,24 +16,21 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
 
     if ((await signer.getAddress()).toLowerCase() !== permit.request.beneficiary) {
       toaster.create("warning", `This NFT is not for you.`);
-      resetClaimButton();
       return;
     }
 
     if (permit.request.deadline.lt(Math.floor(Date.now() / 1000))) {
       toaster.create("error", `This NFT has expired.`);
-      resetClaimButton();
       return;
     }
 
     const isRedeemed = await isNonceRedeemed(permit, app.provider);
     if (isRedeemed) {
       toaster.create("error", `This NFT has already been redeemed.`);
-      resetClaimButton();
       return;
     }
 
-    loadingClaimButton();
+    showLoader();
     try {
       const nftContract = new ethers.Contract(permit.nftAddress, nftRewardAbi, signer);
 
@@ -53,7 +50,6 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
       if (error instanceof Error) {
         console.error(error);
         errorToast(error, error.message ?? error);
-        resetClaimButton();
       }
     }
   };

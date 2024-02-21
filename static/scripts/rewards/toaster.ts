@@ -10,14 +10,15 @@ export const toaster = {
 };
 
 export const claimButton = {
-  loading: loadingClaimButton,
-  reset: resetClaimButton,
+  // loading: loadingClaimButton,
+  // reset: resetClaimButton,
   element: document.getElementById("claimButton") as HTMLButtonElement,
 };
 
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
 
 export function createToast(meaning: keyof typeof toaster.icons, text: string) {
+  hideLoader();
   const toastDetails = {
     timer: 5000,
   } as {
@@ -52,25 +53,14 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
   setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
 }
 
-export function loadingClaimButton(triggerLoader = true) {
+export function showLoader() {
   claimButton.element.disabled = true;
-  // Adding this because not all disabling should trigger loading spinner
-  if (triggerLoader) {
-    claimButton.element.classList.add("show-cl");
-    claimButton.element.classList.remove("hide-cl");
-  }
+  claimButton.element.className = "show-cl";
 }
 
-export function resetClaimButton() {
+export function hideLoader() {
   claimButton.element.disabled = false;
-  claimButton.element.classList.add("hide-cl");
-  claimButton.element.classList.remove("show-cl");
-}
-
-export function hideClaimButton() {
-  claimButton.element.disabled = true;
-  claimButton.element.classList.add("hide-cl");
-  claimButton.element.classList.remove("show-cl");
+  claimButton.element.className = "hide-cl";
 }
 
 export function errorToast(error: MetaMaskError, errorMessage?: string) {

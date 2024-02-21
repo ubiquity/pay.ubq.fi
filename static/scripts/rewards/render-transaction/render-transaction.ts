@@ -1,6 +1,6 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
-import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
+import { claimButton, hideLoader } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -13,7 +13,6 @@ type Success = boolean;
 
 export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
-  resetClaimButton();
 
   if (nextTx) {
     app.nextTx();
@@ -29,7 +28,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   }
 
   if (!app.transaction) {
-    hideClaimButton();
+    hideLoader();
     return false;
   }
 
@@ -57,13 +56,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app.transaction).catch(console.error);
 
-    const wrapped = claimErc20PermitHandlerWrapper(app.transaction);
-
-    claimButton.element.addEventListener("click", function () {
-      this.classList.add("clicked");
-      wrapped();
-      this.classList.remove("clicked");
-    });
+    claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app.transaction));
   } else if (app.transaction.type === "erc721-permit") {
     const requestedAmountElement = insertErc721PermitTableData(app.transaction, table);
     table.setAttribute(`data-claim`, "ok");

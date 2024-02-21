@@ -1,6 +1,6 @@
-import { claimButton, resetClaimButton, toaster } from "../toaster";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
+import { claimButton, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -17,7 +17,6 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
       return null;
     }
 
-    resetClaimButton();
     return signer;
   } catch (error: unknown) {
     if (error instanceof Error) {
