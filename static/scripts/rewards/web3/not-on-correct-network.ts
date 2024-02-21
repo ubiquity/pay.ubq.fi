@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { getNetworkName } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { loadingClaimButton, toaster } from "../toaster";
-import { switchNetwork } from "./switchNetwork";
+import { switchNetwork } from "./switch-network";
 
 export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number, web3provider: ethers.providers.Web3Provider) {
   if (currentNetworkId !== desiredNetworkId) {

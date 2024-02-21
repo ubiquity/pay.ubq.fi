@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import invalidateButton from "../invalidate-component";
 import { loadingClaimButton, toaster } from "../toaster";
+import { handleIfOnCorrectNetwork } from "./handle-if-on-correct-network";
+import { notOnCorrectNetwork } from "./not-on-correct-network";
 
 // verifyCurrentNetwork checks if the user is on the correct network and displays an error if not
 

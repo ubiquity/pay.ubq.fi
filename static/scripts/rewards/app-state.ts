@@ -5,16 +5,10 @@ import { ClaimTx } from "./render-transaction/tx-type";
 export class AppState {
   public claims: ClaimTx[] = [];
   private _provider!: JsonRpcProvider;
-  private _networkId: number | null = null;
   private _currentIndex = 0;
-  // private _networkRpc: string;
 
   get networkId(): number | null {
-    return this.transaction.networkId;
-  }
-
-  set networkId(value: number) {
-    this._networkId = value;
+    return this.transaction?.networkId || null;
   }
 
   get provider(): JsonRpcProvider {
@@ -35,10 +29,6 @@ export class AppState {
 
   get transactionNetworkId() {
     return this.transaction?.networkId;
-  }
-
-  get networkRpc(): string {
-    return this._networkRpc;
   }
 
   get currentExplorerUrl(): string {

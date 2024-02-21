@@ -1,5 +1,5 @@
-import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
-import { BigNumber, BigNumberish, ethers } from "ethers";
+import { JsonRpcProvider, JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
+import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { permit2Abi } from "../abis";
 import { app } from "../app-state";
 import { permit2Address } from "../constants";
@@ -42,40 +42,128 @@ export async function fetchTreasury(
   }
 }
 
+async function connectToWallet() {
+  let signer: JsonRpcSigner | null = null;
+  try {
+    signer = await connectWallet();
+    if (!signer) {
+      return null;
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in connectWallet: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+  return signer;
+}
+
+async function checkPermitClaimability(permit: Erc20Permit, signer: JsonRpcSigner | null) {
+  let isPermitClaimable = false;
+  try {
+    isPermitClaimable = await checkPermitClaimable(permit, signer, app.provider);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in checkPermitClaimable: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+  return isPermitClaimable;
+}
+
+async function createEthersContract(signer: JsonRpcSigner) {
+  let permit2Contract;
+  try {
+    permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in creating ethers.Contract: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+  return permit2Contract;
+}
+
+async function transferFromPermit(permit2Contract: Contract, permit: Erc20Permit) {
+  let tx;
+  try {
+    tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
+    toaster.create("info", `Transaction sent`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in permitTransferFrom: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+  return tx;
+}
+
+async function waitForTransaction(tx: TransactionResponse) {
+  let receipt;
+  try {
+    receipt = await tx.wait();
+    toaster.create("success", `Claim Complete.`);
+    console.log(receipt.transactionHash); // @TODO: post to database
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in tx.wait: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+  return receipt;
+}
+
+async function renderTx() {
+  try {
+    await renderTransaction();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error in renderTransaction: ", error);
+      errorToast(error, error.message);
+      resetClaimButton();
+    }
+  }
+}
+
 export function claimErc20PermitHandlerWrapper(permit: Erc20Permit) {
   return async function claimErc20PermitHandler() {
-    const signer = await connectWallet();
-    if (!signer) {
-      return;
-    }
+    const signer = await connectToWallet();
+    if (!signer) return;
 
-    try {
-      if (!(await checkPermitClaimable(permit, signer, app.provider))) {
-        return;
-      }
+    const isPermitClaimable = await checkPermitClaimability(permit, signer);
+    if (!isPermitClaimable) return;
 
-      loadingClaimButton();
-      const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-      const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
-      toaster.create("info", `Transaction sent`);
-      const receipt = await tx.wait();
-      toaster.create("success", `Claim Complete.`);
-      console.log(receipt.transactionHash); // @TODO: post to database
+    loadingClaimButton();
 
-      claimButton.element.removeEventListener("click", claimErc20PermitHandler);
-      renderTransaction().catch(console.error);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error);
-        errorToast(error, error.message);
-        resetClaimButton();
-      }
-    }
+    const permit2Contract = await createEthersContract(signer);
+    if (!permit2Contract) return;
+
+    const tx = await transferFromPermit(permit2Contract, permit);
+    if (!tx) return;
+
+    const receipt = await waitForTransaction(tx);
+    if (!receipt) return;
+
+    claimButton.element.removeEventListener("click", claimErc20PermitHandler);
+
+    await renderTx();
   };
 }
 
 export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcSigner | null, provider: JsonRpcProvider) {
-  const isClaimed = await isNonceClaimed(permit);
+  let isClaimed;
+  try {
+    isClaimed = await isNonceClaimed(permit);
+  } catch (error: unknown) {
+    console.error("Error in isNonceClaimed: ", error);
+    return false;
+  }
+
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
     return false;
@@ -86,7 +174,15 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcS
     return false;
   }
 
-  const { balance, allowance } = await fetchTreasury(permit, provider);
+  let treasury;
+  try {
+    treasury = await fetchTreasury(permit, provider);
+  } catch (error: unknown) {
+    console.error("Error in fetchTreasury: ", error);
+    return false;
+  }
+
+  const { balance, allowance } = treasury;
   const permitted = BigNumber.from(permit.permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
@@ -101,7 +197,14 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcS
   }
 
   if (signer) {
-    const user = (await signer.getAddress()).toLowerCase();
+    let user;
+    try {
+      user = (await signer.getAddress()).toLowerCase();
+    } catch (error: unknown) {
+      console.error("Error in signer.getAddress: ", error);
+      return false;
+    }
+
     const beneficiary = permit.transferDetails.to.toLowerCase();
     if (beneficiary !== user) {
       toaster.create("warning", `This reward is not for you.`);
@@ -164,7 +267,11 @@ export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));
-  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos);
+
+  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos).catch((error) => {
+    console.error("Error in nonceBitmap method: ", error);
+    throw error;
+  });
 
   const bit = BigNumber.from(1).shl(bitPos);
   const flipped = BigNumber.from(bitmap).xor(bit);

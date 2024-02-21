@@ -3,9 +3,9 @@ import { Value } from "@sinclair/typebox/value";
 import { app } from "../app-state";
 import { setClaimMessage } from "./set-claim-message";
 import { claimTxT } from "./tx-type";
-import { getOptimalProvider } from "../helpers";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
+import { getOptimalProvider } from "../rpc-optimization/get-optimal-provider";
 
 export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
@@ -35,7 +35,6 @@ function decodeClaimData(base64encodedTxData: string) {
   try {
     const claimTxs = Value.Decode(Type.Array(claimTxT), JSON.parse(atob(base64encodedTxData)));
     app.claims = claimTxs;
-    app.networkId = app.claims[0].networkId;
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });

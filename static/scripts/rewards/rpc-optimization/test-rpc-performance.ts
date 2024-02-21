@@ -59,6 +59,6 @@ export async function testRpcPerformance(networkId: number) {
     }
   });
 
-  await Promise.all(promises);
+  await Promise.race(promises);
   localStorage.setItem("rpcLatencies", JSON.stringify(latencies));
 }

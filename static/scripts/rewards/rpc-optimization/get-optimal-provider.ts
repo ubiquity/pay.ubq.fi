@@ -1,8 +1,9 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { AppState } from "../app-state";
-import { testRpcPerformance, getFastestRpcProvider } from "../helpers";
+import { getFastestRpcProvider } from "./get-fastest-rpc-provider";
+import { testRpcPerformance } from "./test-rpc-performance";
 
-let optimalProvider: JsonRpcProvider | null = null;
+let optimalProvider: JsonRpcProvider;
 let isTestStarted = false;
 let isTestCompleted = false;
 
@@ -20,7 +21,6 @@ export async function getOptimalProvider(app: AppState): Promise<JsonRpcProvider
   if (!optimalProvider) {
     optimalProvider = getFastestRpcProvider(networkId);
   }
-
   app.provider = optimalProvider;
   return optimalProvider;
 }

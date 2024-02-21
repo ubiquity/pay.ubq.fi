@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { addNetwork } from "./addNetwork";
+import { addNetwork } from "./add-network";
 
 export async function switchNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   try {
