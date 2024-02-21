@@ -23,7 +23,7 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_KEY"]),
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_PUBLIC_ANON_KEY"]),
 };
 
 esbuild

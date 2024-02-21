@@ -31,11 +31,11 @@ import {
 } from "./types";
 import { getTxInfo } from "./utils/getTransaction";
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLIC_ANON_KEY) {
   throw new Error("Missing Supabase env variables.");
 }
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLIC_ANON_KEY);
 
 const rateOctokit = Octokit.plugin(throttling);
 
