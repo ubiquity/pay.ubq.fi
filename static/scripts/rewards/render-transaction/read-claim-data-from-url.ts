@@ -1,11 +1,11 @@
 import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { app } from "../app-state";
-import { getOptimalProvider } from "../rpc-optimization/getOptimalProvider";
-import { claimRewardsPagination } from "./claimRewardsPagination";
-import { renderTransaction } from "./renderTransaction";
 import { setClaimMessage } from "./set-claim-message";
 import { claimTxT } from "./tx-type";
+import { getOptimalProvider } from "../helpers";
+import { claimRewardsPagination } from "./claim-rewards-pagination";
+import { renderTransaction } from "./render-transaction";
 
 export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);

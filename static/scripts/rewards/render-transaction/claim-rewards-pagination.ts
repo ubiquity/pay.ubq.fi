@@ -1,8 +1,8 @@
 import { app } from "../app-state";
 import { claimButton } from "../toaster";
 import { table } from "./read-claim-data-from-url";
-import { renderTransaction } from "./renderTransaction";
-import { setPagination } from "./setPagination";
+import { renderTransaction } from "./render-transaction";
+import { setPagination } from "./set-pagination";
 import { removeAllEventListeners } from "./utils";
 
 export function claimRewardsPagination(rewardsCount: HTMLElement) {

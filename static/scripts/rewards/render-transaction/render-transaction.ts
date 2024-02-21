@@ -3,11 +3,11 @@ import { networkExplorers } from "../constants";
 import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
-import { verifyCurrentNetwork } from "../web3/verifyCurrentNetwork";
+import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-import { setPagination } from "./setPagination";
+import { setPagination } from "./set-pagination";
 
 type Success = boolean;
 

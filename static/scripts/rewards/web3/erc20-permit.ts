@@ -5,11 +5,11 @@ import { app } from "../app-state";
 import { permit2Address } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { tokens } from "../render-transaction/render-token-symbol";
-import { renderTransaction } from "../render-transaction/renderTransaction";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
-import { connectWallet } from "./connectWallet";
+import { renderTransaction } from "../render-transaction/render-transaction";
+import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(
   permit: Erc20Permit,

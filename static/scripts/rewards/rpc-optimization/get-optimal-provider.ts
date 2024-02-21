@@ -1,7 +1,6 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { AppState } from "../app-state";
-import { getFastestRpcProvider } from "./getFastestRpcProvider";
-import { testRpcPerformance } from "./testRpcPerformance";
+import { testRpcPerformance, getFastestRpcProvider } from "../helpers";
 
 let optimalProvider: JsonRpcProvider | null = null;
 let isTestStarted = false;

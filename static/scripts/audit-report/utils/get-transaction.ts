@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Chain } from "../constants";
 import { Transaction } from "../types/transaction";
-import { getBlockInfo, updateBlockInfo } from "./blockInfo";
+import { getBlockInfo, updateBlockInfo } from "./block-info";
 
 export async function getTxInfo(hash: string, url: string, chain: Chain): Promise<Transaction> {
   try {
