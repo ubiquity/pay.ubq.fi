@@ -9,6 +9,13 @@ import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { tokens } from "../render-transaction/render-token-symbol";
+import { createClient } from "@supabase/supabase-js";
+import { networkExplorers } from "../constants";
+
+declare const SUPABASE_URL: string;
+declare const SUPABASE_ANON_KEY: string;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export async function fetchTreasury(
   permit: Erc20Permit,
@@ -74,6 +81,13 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
 }
 
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
+  const permitHash = await doesPermitHasTx(permit);
+  if (permitHash !== null) {
+    const explorerLink = `<a href="${networkExplorers[permit.networkId]}/tx/${permitHash}" target=_blank >${permitHash.slice(0, 5)}...${permitHash.slice(-5)}</a>`;
+    toaster.create("error", `This reward has already been claimed. Transaction hash: ${explorerLink}`);
+    return false;
+  }
+  
   const isClaimed = await isNonceClaimed(permit);
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
@@ -181,4 +195,22 @@ export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: 
   // bitPos is the last 8 bits of the nonce
   const bitPos = BigNumber.from(nonce).and(255).toNumber();
   return { wordPos, bitPos };
+}
+
+export async function doesPermitHasTx(permit: Erc20Permit): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from("permits")
+      .select("transaction")
+      // using only nonce in the condition as it's defined unique on db
+      .eq("nonce", permit.permit.nonce.toString());
+    if (data?.length == 1 && data[0].transaction !== null) {
+      return data[0].transaction;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
