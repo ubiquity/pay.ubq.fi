@@ -34,7 +34,7 @@ const RPC_HEADER = {
 export const TX_EMPTY_VALUE = "N/A";
 
 export function shortenTransactionHash(hash: string | undefined, length = 8): string {
-  if (!hash || hash === TX_EMPTY_VALUE) return "UNCLAIMED";
+  if (!hash || hash === TX_EMPTY_VALUE) return "";
   const prefixLength = Math.floor(length / 2);
   const suffixLength = length - prefixLength;
 

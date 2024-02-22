@@ -298,34 +298,17 @@ class SmartQueue {
     if (this._queue.has(key)) {
       const queueValue = this._queue.get(key) as StandardInterface;
       queueValue.s[value.t] = value.s[value.t] as object extends GitInterface ? GitInterface : object extends EtherInterface ? EtherInterface : never;
-      const {
-        s: { ether, git, network },
-        c: { amount },
-      } = queueValue;
-
-      // check for undefined
-      if (git?.issue_number) {
-        elemList.push({
-          id: git.issue_number,
-          tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
-          amount: ethers.utils.formatEther(amount),
-          title: git.issue_title,
-          bounty_hunter: git.bounty_hunter,
-          owner: git.owner,
-          repo: git.repo,
-          network,
-        });
-        if (elemList.length > 0) {
-          resultTableTbodyElem.innerHTML = "";
-          for (const data of elemList) {
-            populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
-          }
-        }
-      }
-      this._queue.delete(key);
     } else {
       this._queue.set(key, value);
     }
+  }
+
+  get() {
+    return this._queue.values() as Readonly<IterableIterator<StandardInterface>>;
+  }
+
+  clear() {
+    this._queue.clear();
   }
 }
 type QueueItem = ChainScanResult;
@@ -636,6 +619,7 @@ async function resetInit() {
   lastEtherHash = false;
   repoArray.splice(0, repoArray.length);
   finishedQueue.clearQueue();
+  updateQueue.clear();
 }
 
 async function asyncInit() {
@@ -644,9 +628,35 @@ async function asyncInit() {
 }
 
 function tabInit(repoUrls: GitHubUrlParts[]) {
-  etherFetcher().catch((error) => console.error(error));
-  gitFetcher(repoUrls).catch((error) => console.error(error));
-  rpcFetcher().catch((error) => console.error(error));
+  Promise.all([etherFetcher(), gitFetcher(repoUrls), rpcFetcher()])
+    .then(() => {
+      for (const item of updateQueue.get()) {
+        const {
+          s: { ether, git, network },
+          c: { amount },
+        } = item;
+        // check for undefined
+        if (git?.issue_number) {
+          elemList.push({
+            id: git.issue_number,
+            tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
+            amount: ethers.utils.formatEther(amount),
+            title: git.issue_title,
+            bounty_hunter: git.bounty_hunter,
+            owner: git.owner,
+            repo: git.repo,
+            network,
+          });
+        }
+      }
+      if (elemList.length > 0) {
+        resultTableTbodyElem.innerHTML = "";
+        for (const data of elemList) {
+          populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
+        }
+      }
+    })
+    .catch((error) => console.error(error));
 }
 
 function auditInit() {
