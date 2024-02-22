@@ -1,23 +1,19 @@
-import { JsonRpcProvider, JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
+import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { permit2Abi } from "../abis";
-import { app } from "../app-state";
+import { AppState } from "../app-state";
 import { permit2Address } from "../constants";
 import invalidateButton from "../invalidate-component";
 import { tokens } from "../render-transaction/render-token-symbol";
 import { renderTransaction } from "../render-transaction/render-transaction";
-import { Erc20Permit } from "../render-transaction/tx-type";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
-import { connectWallet } from "./connect-wallet";
 
-export async function fetchTreasury(
-  permit: Erc20Permit,
-  provider: JsonRpcProvider
-): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+export async function fetchFundingWallet(app: AppState): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+  const permit = app.permit;
   try {
     const tokenAddress = permit.permit.permitted.token.toLowerCase();
-    const tokenContract = await getErc20Contract(tokenAddress, provider);
+    const tokenContract = await getErc20Contract(tokenAddress, app.provider);
 
     if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
       const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
@@ -42,27 +38,10 @@ export async function fetchTreasury(
   }
 }
 
-async function connectToWallet() {
-  let signer: JsonRpcSigner | null = null;
-  try {
-    signer = await connectWallet();
-    if (!signer) {
-      return null;
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error("Error in connectWallet: ", e);
-      errorToast(e, e.reason);
-    }
-  }
-  return signer;
-}
-
-async function checkPermitClaimability(permit: Erc20Permit, signer: JsonRpcSigner | null) {
+async function checkPermitClaimability(app: AppState): Promise<boolean> {
   let isPermitClaimable = false;
   try {
-    isPermitClaimable = await checkPermitClaimable(permit, signer, app.provider);
+    isPermitClaimable = await checkPermitClaimable(app);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -87,9 +66,10 @@ async function createEthersContract(signer: JsonRpcSigner) {
   return permit2Contract;
 }
 
-async function transferFromPermit(permit2Contract: Contract, permit: Erc20Permit) {
+async function transferFromPermit(permit2Contract: Contract, app: AppState) {
+  const permit = app.permit;
   try {
-    const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
+    const tx = await permit2Contract.permitTransferFrom(permit, permit.transferDetails, permit.owner, permit.signature);
     toaster.create("info", `Transaction sent`);
     return tx;
   } catch (error: unknown) {
@@ -137,20 +117,17 @@ async function renderTx() {
   }
 }
 
-export function claimErc20PermitHandlerWrapper(permit: Erc20Permit) {
+export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
     showLoader();
 
-    const signer = await connectToWallet();
-    if (!signer) return;
-
-    const isPermitClaimable = await checkPermitClaimability(permit, signer);
+    const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    const permit2Contract = await createEthersContract(signer);
+    const permit2Contract = await createEthersContract(app.signer);
     if (!permit2Contract) return;
 
-    const tx = await transferFromPermit(permit2Contract, permit);
+    const tx = await transferFromPermit(permit2Contract, app);
     if (!tx) return;
 
     const receipt = await waitForTransaction(tx);
@@ -162,10 +139,10 @@ export function claimErc20PermitHandlerWrapper(permit: Erc20Permit) {
   };
 }
 
-export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcSigner | null, provider: JsonRpcProvider) {
+export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed;
   try {
-    isClaimed = await isNonceClaimed(permit);
+    isClaimed = await isNonceClaimed(app);
   } catch (error: unknown) {
     console.error("Error in isNonceClaimed: ", error);
     return false;
@@ -176,21 +153,23 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcS
     return false;
   }
 
-  if (permit.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
+  const permit = app.permit.permit;
+
+  if (permit.deadline.lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
     return false;
   }
 
   let treasury;
   try {
-    treasury = await fetchTreasury(permit, provider);
+    treasury = await fetchFundingWallet(app);
   } catch (error: unknown) {
     console.error("Error in fetchTreasury: ", error);
     return false;
   }
 
   const { balance, allowance } = treasury;
-  const permitted = BigNumber.from(permit.permit.permitted.amount);
+  const permitted = BigNumber.from(permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
@@ -203,38 +182,33 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: JsonRpcS
     return false;
   }
 
-  if (signer) {
-    let user;
-    try {
-      user = (await signer.getAddress()).toLowerCase();
-    } catch (error: unknown) {
-      console.error("Error in signer.getAddress: ", error);
-      return false;
-    }
+  let user;
+  try {
+    user = (await app.signer.getAddress()).toLowerCase();
+  } catch (error: unknown) {
+    console.error("Error in signer.getAddress: ", error);
+    return false;
+  }
 
-    const beneficiary = permit.transferDetails.to.toLowerCase();
-    if (beneficiary !== user) {
-      toaster.create("warning", `This reward is not for you.`);
-      return false;
-    }
+  const beneficiary = permit.transferDetails.to.toLowerCase();
+  if (beneficiary !== user) {
+    toaster.create("warning", `This reward is not for you.`);
+    return false;
   }
 
   return true;
 }
 
-export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) {
-  const signer = await connectWallet();
-  if (!signer) {
-    console.log("Wallet not connected");
-    return;
-  }
-
+export async function generateInvalidatePermitAdminControl(app: AppState) {
   try {
-    const address = await signer.getAddress();
+    const address = await app.signer.getAddress();
     const user = address.toLowerCase();
-    const owner = permit.owner.toLowerCase();
-    if (owner !== user) {
-      return;
+
+    if (app.permit) {
+      const owner = app.permit.owner.toLowerCase();
+      if (owner !== user) {
+        return;
+      }
     }
   } catch (error) {
     console.error("Error getting address from signer");
@@ -246,16 +220,12 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
   invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
     try {
-      const signer = await connectWallet();
-      if (!signer) {
-        return;
-      }
-      const isClaimed = await isNonceClaimed(permit);
+      const isClaimed = await isNonceClaimed(app);
       if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
         return;
       }
-      await invalidateNonce(signer, permit.permit.nonce);
+      await invalidateNonce(app.signer, app.permit.permit.nonce);
     } catch (error: unknown) {
       if (error instanceof Error) {
         const e = error as unknown as MetaMaskError;
@@ -269,14 +239,14 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 }
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
+export async function isNonceClaimed(app: AppState): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.permit.permit.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos).catch((error: MetaMaskError) => {
+  const bitmap = await permit2Contract.nonceBitmap(app.permit.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });

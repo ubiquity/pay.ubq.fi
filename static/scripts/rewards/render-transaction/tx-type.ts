@@ -23,19 +23,19 @@ const erc20PermitT = T.Object({
   type: T.Literal("erc20-permit"),
   permit: T.Object({
     permitted: T.Object({
-      token: addressT,
-      amount: bigNumberT,
+      token: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
+      amount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
     }),
-    nonce: bigNumberT,
-    deadline: bigNumberT,
+    nonce: T.Union([T.RegExp(/^\d+$/), T.Number()]),
+    deadline: T.Union([T.RegExp(/^\d+$/), T.Number()]),
   }),
   transferDetails: T.Object({
-    to: addressT,
-    requestedAmount: bigNumberT,
+    to: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
+    requestedAmount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
   }),
-  owner: addressT,
-  signature: signatureT,
-  networkId: networkIdT,
+  owner: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
+  signature: T.RegExp(/^0x[a-fA-F0-9]+$/),
+  networkId: T.Number(),
 });
 
 export type Erc20Permit = StaticDecode<typeof erc20PermitT>;
@@ -59,10 +59,24 @@ const erc721Permit = T.Object({
   nftAddress: addressT,
   networkId: networkIdT,
   signature: signatureT,
+  // @whilefoo: they should have matching key names.
+  owner: addressT,
+  permit: T.Object({
+    permitted: T.Object({
+      token: addressT,
+      amount: bigNumberT,
+    }),
+    nonce: bigNumberT,
+    deadline: bigNumberT,
+  }),
+  transferDetails: T.Object({
+    to: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
+    requestedAmount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
+  }),
 });
 
 export type Erc721Permit = StaticDecode<typeof erc721Permit>;
 
 export const claimTxT = T.Union([erc20PermitT, erc721Permit]);
 
-export type ClaimTx = StaticDecode<typeof claimTxT>;
+export type RewardPermit = StaticDecode<typeof claimTxT>;

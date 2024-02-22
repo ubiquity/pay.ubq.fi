@@ -1,14 +1,23 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { networkExplorers } from "./constants";
-import { ClaimTx } from "./render-transaction/tx-type";
+import { RewardPermit } from "./render-transaction/tx-type";
 
 export class AppState {
-  public claims: ClaimTx[] = [];
+  public claims: RewardPermit[] = [];
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
+  private _signer;
+
+  get signer() {
+    return this._signer;
+  }
+
+  set signer(value) {
+    this._signer = value;
+  }
 
   get networkId(): number | null {
-    return this.transaction?.networkId || null;
+    return this.permit?.networkId || null;
   }
 
   get provider(): JsonRpcProvider {
@@ -19,33 +28,33 @@ export class AppState {
     this._provider = value;
   }
 
-  get transactionIndex(): number {
+  get permitIndex(): number {
     return this._currentIndex;
   }
 
-  get transaction(): ClaimTx | null {
-    return this.transactionIndex < this.claims.length ? this.claims[this.transactionIndex] : null;
+  get permit(): RewardPermit {
+    return this.permitIndex < this.claims.length ? this.claims[this.permitIndex] : this.claims[0];
   }
 
-  get transactionNetworkId() {
-    return this.transaction?.networkId;
+  get permitNetworkId() {
+    return this.permit?.networkId;
   }
 
   get currentExplorerUrl(): string {
-    if (!this.transaction) {
+    if (!this.permit) {
       return "https://etherscan.io";
     }
-    return networkExplorers[this.transaction.networkId] || "https://etherscan.io";
+    return networkExplorers[this.permit.networkId] || "https://etherscan.io";
   }
 
-  nextTx(): ClaimTx | null {
+  nextPermit(): RewardPermit | null {
     this._currentIndex = Math.min(this.claims.length - 1, this._currentIndex + 1);
-    return this.transaction;
+    return this.permit;
   }
 
-  previousTx(): ClaimTx | null {
+  previousPermit(): RewardPermit | null {
     this._currentIndex = Math.max(0, this._currentIndex - 1);
-    return this.transaction;
+    return this.permit;
   }
 }
 

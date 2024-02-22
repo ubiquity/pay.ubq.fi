@@ -4,11 +4,6 @@ import { claimButton, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
-    if (!window.ethereum) {
-      console.error("Ethereum provider not found");
-      return null;
-    }
-
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
     const signer = wallet.getSigner();
     const address = await signer.getAddress();

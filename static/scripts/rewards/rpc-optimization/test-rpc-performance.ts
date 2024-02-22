@@ -32,33 +32,36 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
+function raceUntilSuccess(promises: Promise<unknown>[]) {
+  return new Promise((resolve) => {
+    promises.forEach((promise: Promise<unknown>) => {
+      promise.then(resolve).catch(() => {});
+    });
+  });
+}
+
 export async function testRpcPerformance(networkId: number) {
   const latencies: Record<string, number> = JSON.parse(localStorage.getItem("rpcLatencies") || "{}");
 
   const promises = networkRpcs[networkId].map(async (baseURL: string) => {
-    try {
-      const startTime = performance.now();
-      const API = axios.create({
-        baseURL,
-        headers: RPC_HEADER,
-      });
+    const startTime = performance.now();
+    const API = axios.create({
+      baseURL,
+      headers: RPC_HEADER,
+    });
 
-      const { data } = await API.post("", RPC_BODY).catch(() => ({ data: null }));
-      const endTime = performance.now();
-      const latency = endTime - startTime;
-      if (verifyBlock(data)) {
-        // Save the latency in localStorage
-        latencies[`${baseURL}_${networkId}`] = latency;
-      } else {
-        // Save -1 in localStorage to indicate an error
-        latencies[`${baseURL}_${networkId}`] = -1;
-      }
-    } catch (error) {
-      // Save -1 in localStorage to indicate an error
-      latencies[`${baseURL}_${networkId}`] = -1;
+    const { data } = await API.post("", RPC_BODY);
+    const endTime = performance.now();
+    const latency = endTime - startTime;
+    if (verifyBlock(data)) {
+      // Save the latency in localStorage
+      latencies[`${baseURL}_${networkId}`] = latency;
+      localStorage.setItem("rpcLatencies", JSON.stringify(latencies));
+    } else {
+      // Throw an error to indicate an invalid block data
+      throw new Error(`Invalid block data from ${baseURL}`);
     }
   });
 
-  await Promise.race(promises);
-  localStorage.setItem("rpcLatencies", JSON.stringify(latencies));
+  await raceUntilSuccess(promises);
 }

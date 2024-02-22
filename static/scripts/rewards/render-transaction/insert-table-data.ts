@@ -1,16 +1,17 @@
 import { BigNumber, ethers } from "ethers";
-import { app } from "../app-state";
-import { Erc20Permit, Erc721Permit } from "./tx-type";
+import { AppState, app } from "../app-state";
+import { Erc721Permit } from "./tx-type";
 
 export function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
 }
 
 export function insertErc20PermitTableData(
-  permit: Erc20Permit,
+  app: AppState,
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
+  const permit = app.permit;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
   renderToFields(permit.transferDetails.to, app.currentExplorerUrl);
   renderTokenFields(permit.permit.permitted.token, app.currentExplorerUrl);
@@ -18,7 +19,10 @@ export function insertErc20PermitTableData(
     { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.owner}">${permit.owner}</a>` },
     {
       name: "Expiry",
-      value: permit.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.permit.deadline.toNumber()).toLocaleString() : undefined,
+      value: (() => {
+        const deadline = BigNumber.isBigNumber(permit.permit.deadline) ? permit.permit.deadline : BigNumber.from(permit.permit.deadline);
+        return deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(deadline.toNumber()).toLocaleString() : undefined;
+      })(),
     },
     { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
     { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },

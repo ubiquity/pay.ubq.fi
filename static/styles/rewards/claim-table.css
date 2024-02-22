@@ -260,16 +260,10 @@ table thead {
 table tbody {
   display: none;
 }
-table[data-claim="none"] thead {
-  display: table-row-group;
-}
 table[data-claim="error"] thead {
   display: table-row-group;
 }
 table[data-claim="ok"] thead {
-  display: none;
-}
-table[data-claim="none"] tbody {
   display: none;
 }
 table[data-claim="error"] tbody {
@@ -278,10 +272,7 @@ table[data-claim="error"] tbody {
 table[data-claim="ok"] tbody {
   display: table-row-group;
 }
-/*
-table[data-claim-rendered="true"][data-claim="none"][data-contract-loaded="true"][data-details-visible="false"] {
-  border: none;
-} */
+
 #rewardRecipient a div {
   opacity: 0.66;
 }
