@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
-import { getErc20Contract, getOptimalProvider } from "../helpers";
+import { getErc20Contract, getOptimalProvider, getExplorerLinkForTx, shortenTxHash } from "../helpers";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
 import { renderTransaction } from "../render-transaction/render-transaction";
@@ -10,7 +10,6 @@ import invalidateButton from "../invalidate-component";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { tokens } from "../render-transaction/render-token-symbol";
 import { createClient } from "@supabase/supabase-js";
-import { networkExplorers } from "../constants";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -83,11 +82,11 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
   const permitHash = await doesPermitHasTx(permit);
   if (permitHash !== null) {
-    const explorerLink = `<a href="${networkExplorers[permit.networkId]}/tx/${permitHash}" target=_blank >${permitHash.slice(0, 5)}...${permitHash.slice(-5)}</a>`;
+    const explorerLink = `<a href="${getExplorerLinkForTx(permit.networkId, permitHash)}" target=_blank >${shortenTxHash(permitHash)}</a>`;
     toaster.create("error", `This reward has already been claimed. Transaction hash: ${explorerLink}`);
     return false;
   }
-  
+
   const isClaimed = await isNonceClaimed(permit);
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);

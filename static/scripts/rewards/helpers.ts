@@ -2,7 +2,7 @@ import axios from "axios";
 import { Contract, ethers } from "ethers";
 import { erc20Abi } from "./abis";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { networkRpcs } from "./constants";
+import { networkRpcs, networkExplorers } from "./constants";
 
 type DataType = {
   jsonrpc: string;
@@ -70,4 +70,21 @@ export async function getOptimalProvider(networkId: number) {
     chainId: networkId,
     ensAddress: "",
   });
+}
+
+export function getExplorerLinkForTx(networkId: number, hash: string): string {
+  if (!hash) return "#";
+  return `${networkExplorers[networkId]}/tx/${hash}`;
+}
+
+export function shortenTxHash(hash: string | undefined, length = 10): string {
+  if (!hash) return "";
+
+  const prefixLength = Math.floor(length / 2);
+  const suffixLength = length - prefixLength;
+
+  const prefix = hash.slice(0, prefixLength);
+  const suffix = hash.slice(-suffixLength);
+
+  return prefix + "..." + suffix;
 }
