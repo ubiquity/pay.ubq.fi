@@ -15,6 +15,7 @@ import {
   primaryRateLimitHandler,
   RateLimitOptions,
   secondaryRateLimitHandler,
+  TX_EMPTY_VALUE,
 } from "./helpers";
 import {
   ChainScanResult,
@@ -306,7 +307,7 @@ class SmartQueue {
       if (git?.issue_number) {
         elemList.push({
           id: git.issue_number,
-          tx: ether?.txHash || "N/A", // @TODO - handle this better
+          tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
           amount: ethers.utils.formatEther(amount),
           title: git.issue_title,
           bounty_hunter: git.bounty_hunter,

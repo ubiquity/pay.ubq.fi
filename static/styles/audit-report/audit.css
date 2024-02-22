@@ -95,6 +95,10 @@ a:hover {
   color: black;
 }
 
+a[disabled] {
+  pointer-events: none;
+}
+
 #searchInput {
   margin-bottom: 20px;
   width: 100%;

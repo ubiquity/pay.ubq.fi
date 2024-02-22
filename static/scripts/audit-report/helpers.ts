@@ -31,8 +31,10 @@ const RPC_HEADER = {
   "Content-Type": "application/json",
 };
 
+export const TX_EMPTY_VALUE = "N/A";
+
 export function shortenTransactionHash(hash: string | undefined, length = 8): string {
-  if (!hash) return "";
+  if (!hash || hash === TX_EMPTY_VALUE) return "UNCLAIMED";
   const prefixLength = Math.floor(length / 2);
   const suffixLength = length - prefixLength;
 
@@ -52,18 +54,18 @@ export function populateTable(
   amount: string,
   bountyHunter: BountyHunter
 ) {
-  if (!txHash) return; // permit not claimed
   const issueUrl = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
   const txUrl = `https://${getChainScan(network)}/tx/${txHash}`;
+  const disableLinkStyle = txHash === TX_EMPTY_VALUE ? 'disabled tabIndex="-1"' : "";
   const rows = `
     <tr>
         <td><a href="https://github.com/${owner}/${repo}" target="_blank">${owner}/${repo}</a></td>
         <td><a href="${issueUrl}" target="_blank">#${issueNumber} - ${issueTitle}</a></td>
         <td><a href="${bountyHunter?.url}" target="_blank">${bountyHunter?.name}</a></td>
-        <td><a href="${txUrl}" target="_blank">${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
+        <td><a href="${txUrl}" target="_blank" ${disableLinkStyle}>${ethers.BigNumber.isBigNumber(amount) ? ethers.utils.formatEther(amount) : amount} ${
           network === Chain.Ethereum ? "DAI" : "WXDAI"
         }</a></td>
-        <td><a href="${txUrl}" target="_blank">${shortenTransactionHash(txHash)}</a></td>
+        <td><a href="${txUrl}" target="_blank" ${disableLinkStyle}>${shortenTransactionHash(txHash)}</a></td>
     </tr>`;
 
   resultTableTbodyElem.insertAdjacentHTML("beforeend", rows);
