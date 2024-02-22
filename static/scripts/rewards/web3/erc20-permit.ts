@@ -67,6 +67,8 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
       toaster.create("success", `Claim Complete.`);
       console.log(receipt.transactionHash); // @TODO: post to database
 
+      await updatePermitTxHash(permit, receipt.transactionHash);
+
       claimButton.element.removeEventListener("click", handler);
       renderTransaction(provider).catch(console.error);
     } catch (error: unknown) {
@@ -80,7 +82,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
 }
 
 export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
-  const permitHash = await doesPermitHasTx(permit);
+  const permitHash = await doesPermitHaveTxHash(permit);
   if (permitHash !== null) {
     const explorerLink = `<a href="${getExplorerLinkForTx(permit.networkId, permitHash)}" target=_blank >${shortenTxHash(permitHash)}</a>`;
     toaster.create("error", `This reward has already been claimed. Transaction hash: ${explorerLink}`);
@@ -196,20 +198,36 @@ export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: 
   return { wordPos, bitPos };
 }
 
-export async function doesPermitHasTx(permit: Erc20Permit): Promise<string | null> {
-  try {
-    const { data } = await supabase
-      .from("permits")
-      .select("transaction")
-      // using only nonce in the condition as it's defined unique on db
-      .eq("nonce", permit.permit.nonce.toString());
-    if (data?.length == 1 && data[0].transaction !== null) {
-      return data[0].transaction;
-    }
+export async function doesPermitHaveTxHash(permit: Erc20Permit): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("permits")
+    .select("transaction")
+    // using only nonce in the condition as it's defined unique on db
+    .eq("nonce", permit.permit.nonce.toString());
 
-    return null;
-  } catch (error) {
+  if (data?.length == 1 && data[0].transaction !== null) {
+    return data[0].transaction;
+  }
+
+  if (error !== null) {
     console.error(error);
     throw error;
+  }
+
+  return null;
+}
+
+export async function updatePermitTxHash(permit: Erc20Permit, hash: string): Promise<void> {
+  const { error } = await supabase
+    .from("permits")
+    .update({ transaction: hash })
+    // using only nonce in the condition as it's defined unique on db
+    .eq("nonce", permit.permit.nonce.toString());
+
+  if (error !== null) {
+    console.error(error);
+    throw error;
+  } else {
+    return;
   }
 }
