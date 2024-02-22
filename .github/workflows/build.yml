@@ -40,4 +40,4 @@ jobs:
           commit_sha: ${{ github.sha }}
         # Add any environment variables you need to pass along here
         #   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        #   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        #   SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
