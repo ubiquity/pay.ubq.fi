@@ -13,7 +13,7 @@ generate().catch((error) => {
   process.exitCode = 1;
 });
 
-async function generate() {
+async function generate(multi = false) {
   const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
   const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY || "", provider);
 
@@ -59,9 +59,22 @@ async function generate() {
   ];
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
-  log.ok("Testing URL:");
-  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
-  log.ok("Public URL:");
-  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
-  console.log();
+
+  if (multi) {
+    return `${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`;
+  } else {
+    log.ok("Testing URL:");
+    console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
+    log.ok("Public URL:");
+    console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
+    console.log();
+  }
+}
+
+export async function generateMultiERC20Permits() {
+  for (let i = 0; i < 5; i++) {
+    const url = await generate(true);
+    log.ok("Testing URL:");
+    console.log(url);
+  }
 }
