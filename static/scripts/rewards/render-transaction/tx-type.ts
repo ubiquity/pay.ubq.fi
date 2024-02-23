@@ -23,46 +23,6 @@ const erc20PermitT = T.Object({
   type: T.Literal("erc20-permit"),
   permit: T.Object({
     permitted: T.Object({
-      token: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
-      amount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
-    }),
-    nonce: T.Union([T.RegExp(/^\d+$/), T.Number()]),
-    deadline: T.Union([T.RegExp(/^\d+$/), T.Number()]),
-  }),
-  transferDetails: T.Object({
-    to: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
-    requestedAmount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
-  }),
-  owner: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
-  signature: T.RegExp(/^0x[a-fA-F0-9]+$/),
-  networkId: T.Number(),
-});
-
-export type Erc20Permit = StaticDecode<typeof erc20PermitT>;
-
-const erc721Permit = T.Object({
-  type: T.Literal("erc721-permit"),
-  request: T.Object({
-    beneficiary: addressT,
-    deadline: bigNumberT,
-    keys: T.Array(T.String()),
-    nonce: bigNumberT,
-    values: T.Array(T.String()),
-  }),
-  nftMetadata: T.Object({
-    GITHUB_ORGANIZATION_NAME: T.String(),
-    GITHUB_REPOSITORY_NAME: T.String(),
-    GITHUB_ISSUE_ID: T.String(),
-    GITHUB_USERNAME: T.String(),
-    GITHUB_CONTRIBUTION_TYPE: T.String(),
-  }),
-  nftAddress: addressT,
-  networkId: networkIdT,
-  signature: signatureT,
-  // @whilefoo: they should have matching key names.
-  owner: addressT,
-  permit: T.Object({
-    permitted: T.Object({
       token: addressT,
       amount: bigNumberT,
     }),
@@ -70,8 +30,47 @@ const erc721Permit = T.Object({
     deadline: bigNumberT,
   }),
   transferDetails: T.Object({
-    to: T.RegExp(/^0x[a-fA-F0-9]{40}$/),
-    requestedAmount: T.Union([T.RegExp(/^\d+$/), T.Number()]),
+    to: addressT,
+    requestedAmount: bigNumberT,
+  }),
+  owner: addressT,
+  signature: signatureT,
+  networkId: T.Number(),
+});
+
+export type Erc20Permit = StaticDecode<typeof erc20PermitT>;
+
+const erc721Permit = T.Object({
+  type: T.Literal("erc721-permit"),
+  permit: T.Object({
+    permitted: T.Object({
+      token: addressT,
+      // explicitly state tokenId or keep as "amount" but pass in the tokenId anyway? I'm passing amount in test case
+      amount: bigNumberT, 
+    }),
+    nonce: bigNumberT,
+    deadline: bigNumberT,
+  }),
+  transferDetails: T.Object({
+    to: addressT,
+    requestedAmount: bigNumberT,
+  }),
+  owner: addressT,
+  signature: signatureT,
+  networkId: networkIdT,
+  nftMetadata: T.Object({
+    GITHUB_ORGANIZATION_NAME: T.String(),
+    GITHUB_REPOSITORY_NAME: T.String(),
+    GITHUB_ISSUE_ID: T.String(),
+    GITHUB_USERNAME: T.String(),
+    GITHUB_CONTRIBUTION_TYPE: T.String(),
+  }),
+  request: T.Object({
+    beneficiary: addressT,
+    deadline: bigNumberT,
+    keys: T.Array(T.String()),
+    nonce: bigNumberT,
+    values: T.Array(T.String()),
   }),
 });
 

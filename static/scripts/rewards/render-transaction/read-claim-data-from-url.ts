@@ -24,12 +24,12 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claims = decodeClaimData(base64encodedTxData);
   app.provider = await useFastestRpc(app);
   const networkId = app.permit?.networkId || app.networkId;
-  app.signer = await connectWallet(networkId).catch(console.error);
+  app.signer = await connectWallet().catch(console.error);
   displayRewardDetails();
   displayRewardPagination();
 
   renderTransaction(true)
-    .then(() => verifyCurrentNetwork(networkId))
+    .then(() => verifyCurrentNetwork(networkId as number))
     .catch(console.error);
 }
 

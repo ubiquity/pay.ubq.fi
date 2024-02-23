@@ -6,7 +6,6 @@ import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, showLoader, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
-
 export function claimErc721PermitHandler(permit: Erc721Permit) {
   return async function claimButtonHandler() {
     const signer = await connectWallet();
@@ -19,7 +18,7 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
       return;
     }
 
-    if (permit.request.deadline.lt(Math.floor(Date.now() / 1000))) {
+    if (permit.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
       toaster.create("error", `This NFT has expired.`);
       return;
     }
@@ -32,7 +31,7 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
 
     showLoader();
     try {
-      const nftContract = new ethers.Contract(permit.nftAddress, nftRewardAbi, signer);
+      const nftContract = new ethers.Contract(permit.permit.permitted.token, nftRewardAbi, signer);
 
       const tx: TransactionResponse = await nftContract.safeMint(permit.request, permit.signature);
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
@@ -47,7 +46,7 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
         toaster.create("error", `Error rendering transaction: ${error.message}`);
       });
     } catch (error: unknown) {
-      if (error instanceof Error) {
+      if (error instanceof MetaMaskError) {
         console.error(error);
         errorToast(error, error.message ?? error);
       }
@@ -56,6 +55,6 @@ export function claimErc721PermitHandler(permit: Erc721Permit) {
 }
 
 export async function isNonceRedeemed(nftMint: Erc721Permit, provider: JsonRpcProvider): Promise<boolean> {
-  const nftContract = new ethers.Contract(nftMint.nftAddress, nftRewardAbi, provider);
+  const nftContract = new ethers.Contract(nftMint.permit.permitted.token, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(nftMint.request.nonce);
 }

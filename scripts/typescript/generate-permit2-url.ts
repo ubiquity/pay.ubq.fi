@@ -17,6 +17,72 @@ async function generate() {
   const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
   const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY || "", provider);
 
+  const erc721TransferFromData: PermitTransferFrom = {
+    permitted: {
+      token: process.env.NFT_TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3", // anvil no salt first acc NFT deployment
+      amount: 1, // this could be the tokenId if the permit is identified as an NFT via permitType
+    },
+    spender: process.env.BENEFICIARY_ADDRESS || "",
+    nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),
+    deadline: MaxUint256,
+  };
+
+  const { domain: domain721, types: types721, values: values721 } = SignatureTransfer.getPermitData(
+    erc721TransferFromData,
+    PERMIT2_ADDRESS,
+    process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
+  );
+
+  const signature721 = await myWallet._signTypedData(domain721, types721, values721);
+
+  const GITHUB_CONTRIBUTION_TYPE = process.env.GITHUB_CONTRIBUTION_TYPE || "issue";
+  const GITHUB_ISSUE_ID = process.env.GITHUB_ISSUE_ID || "1";
+  const GITHUB_ORGANIZATION_NAME = process.env.GITHUB_ORGANIZATION_NAME || "ubiquity";
+  const GITHUB_REPOSITORY_NAME = process.env.GITHUB_REPOSITORY_NAME || "pay.ubq.fi";
+  const GITHUB_USERNAME = process.env.GITHUB_USERNAME || "keyrxng";
+
+  const txData721 = [
+    {
+      type: "erc721-permit",
+      permit: {
+        permitted: {
+          token: erc721TransferFromData.permitted.token,
+          amount: erc721TransferFromData.permitted.amount.toString(),
+        },
+        nonce: erc721TransferFromData.nonce.toString(),
+        deadline: erc721TransferFromData.deadline.toString(),
+      },
+      transferDetails: {
+        to: erc721TransferFromData.spender,
+        requestedAmount: erc721TransferFromData.permitted.amount.toString(),
+      },
+      owner: myWallet.address,
+      signature: signature721,
+      networkId: Number(process.env.CHAIN_ID),
+      nftMetadata: {
+        GITHUB_ORGANIZATION_NAME,
+        GITHUB_REPOSITORY_NAME,
+        GITHUB_ISSUE_ID,
+        GITHUB_USERNAME,
+        GITHUB_CONTRIBUTION_TYPE
+      },
+      request: {
+        beneficiary: process.env.BENEFICIARY_ADDRESS ?? "",
+        deadline: erc721TransferFromData.deadline.toString(),
+        keys: ["GITHUB_ORGANIZATION_NAME", "GITHUB_REPOSITORY_NAME", "GITHUB_ISSUE_ID", "GITHUB_USERNAME", "GITHUB_CONTRIBUTION_TYPE"],
+        nonce: erc721TransferFromData.nonce.toString(),
+        values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
+      },
+    },
+  ];
+
+  const base64encodedTxData721 = Buffer.from(JSON.stringify(txData721)).toString("base64");
+  log.ok("Testing URL:");
+  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData721}`);
+  log.ok("Public URL:");
+  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData721}`);
+  console.log();
+
   const permitTransferFromData: PermitTransferFrom = {
     permitted: {
       // token we are permitting to be transferred
@@ -37,6 +103,7 @@ async function generate() {
     process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
   );
   const signature = await myWallet._signTypedData(domain, types, values);
+
   const txData = [
     {
       type: "erc20-permit",

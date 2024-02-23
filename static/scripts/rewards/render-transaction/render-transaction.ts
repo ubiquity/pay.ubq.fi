@@ -62,7 +62,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     table.setAttribute(`data-claim`, "ok");
 
     renderNftSymbol({
-      tokenAddress: app.permit.nftAddress,
+      tokenAddress: app.permit.permit.permitted.token,
       explorerUrl: networkExplorers[app.permit.networkId],
       table,
       requestedAmountElement,
@@ -70,7 +70,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.permit.request.beneficiary }).catch(console.error);
+    renderEnsName({ element: toElement, address: app.permit.transferDetails.to }).catch(console.error);
 
     claimButton.element.addEventListener("click", claimErc721PermitHandler(app.permit));
   }

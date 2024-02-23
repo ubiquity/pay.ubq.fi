@@ -33,17 +33,17 @@ export function insertErc20PermitTableData(
 
 export function insertErc721PermitTableData(permit: Erc721Permit, table: Element): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(permit.request.beneficiary, app.currentExplorerUrl);
-  renderTokenFields(permit.nftAddress, app.currentExplorerUrl);
+  renderToFields(permit.transferDetails.to, app.currentExplorerUrl);
+  renderTokenFields(permit.permit.permitted.token, app.currentExplorerUrl);
   const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = permit.nftMetadata;
   renderDetailsFields([
     {
       name: "NFT address",
-      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.nftAddress}">${permit.nftAddress}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.permit.permitted.token}">${permit.permit.permitted.token}</a>`,
     },
     {
       name: "Expiry",
-      value: permit.request.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.request.deadline.toNumber()).toLocaleString() : undefined,
+      value: permit.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.permit.deadline.toNumber()).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",

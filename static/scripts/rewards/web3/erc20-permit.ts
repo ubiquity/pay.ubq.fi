@@ -153,9 +153,9 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  const permit = app.permit.permit;
+  const permit = app.permit;
 
-  if (permit.deadline.lt(Math.floor(Date.now() / 1000))) {
+  if (permit.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
     return false;
   }
@@ -169,7 +169,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   }
 
   const { balance, allowance } = treasury;
-  const permitted = BigNumber.from(permit.permitted.amount);
+  const permitted = BigNumber.from(permit.permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
