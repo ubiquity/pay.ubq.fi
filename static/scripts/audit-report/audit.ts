@@ -259,6 +259,31 @@ class QueueObserver {
 
   private _callback() {
     toggleLoader("none");
+    for (const item of updateQueue.get()) {
+      const {
+        s: { ether, git, network },
+        c: { amount },
+      } = item;
+      // check for undefined
+      if (git?.issue_number) {
+        elemList.push({
+          id: git.issue_number,
+          tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
+          amount: ethers.utils.formatEther(amount),
+          title: git.issue_title,
+          bounty_hunter: git.bounty_hunter,
+          owner: git.owner,
+          repo: git.repo,
+          network,
+        });
+      }
+    }
+    if (elemList.length > 0) {
+      resultTableTbodyElem.innerHTML = "";
+      for (const data of elemList) {
+        populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
+      }
+    }
     if (!this._isException) {
       this._databaseCallback();
     }
@@ -628,35 +653,9 @@ async function asyncInit() {
 }
 
 function tabInit(repoUrls: GitHubUrlParts[]) {
-  Promise.all([etherFetcher(), gitFetcher(repoUrls), rpcFetcher()])
-    .then(() => {
-      for (const item of updateQueue.get()) {
-        const {
-          s: { ether, git, network },
-          c: { amount },
-        } = item;
-        // check for undefined
-        if (git?.issue_number) {
-          elemList.push({
-            id: git.issue_number,
-            tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
-            amount: ethers.utils.formatEther(amount),
-            title: git.issue_title,
-            bounty_hunter: git.bounty_hunter,
-            owner: git.owner,
-            repo: git.repo,
-            network,
-          });
-        }
-      }
-      if (elemList.length > 0) {
-        resultTableTbodyElem.innerHTML = "";
-        for (const data of elemList) {
-          populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
-        }
-      }
-    })
-    .catch((error) => console.error(error));
+  etherFetcher().catch((error) => console.error(error));
+  gitFetcher(repoUrls).catch((error) => console.error(error));
+  rpcFetcher().catch((error) => console.error(error));
 }
 
 function auditInit() {
