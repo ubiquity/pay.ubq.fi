@@ -17,7 +17,7 @@ export class AppState {
   }
 
   get networkId(): number | null {
-    return this.permit?.networkId || null;
+    return this.reward?.networkId || null;
   }
 
   get provider(): JsonRpcProvider {
@@ -28,33 +28,33 @@ export class AppState {
     this._provider = value;
   }
 
-  get permitIndex(): number {
+  get rewardIndex(): number {
     return this._currentIndex;
   }
 
-  get permit(): RewardPermit {
-    return this.permitIndex < this.claims.length ? this.claims[this.permitIndex] : this.claims[0];
+  get reward(): RewardPermit {
+    return this.rewardIndex < this.claims.length ? this.claims[this.rewardIndex] : this.claims[0];
   }
 
   get permitNetworkId() {
-    return this.permit?.networkId;
+    return this.reward?.networkId;
   }
 
   get currentExplorerUrl(): string {
-    if (!this.permit) {
+    if (!this.reward) {
       return "https://etherscan.io";
     }
-    return networkExplorers[this.permit.networkId] || "https://etherscan.io";
+    return networkExplorers[this.reward.networkId] || "https://etherscan.io";
   }
 
   nextPermit(): RewardPermit | null {
-    this._currentIndex = Math.min(this.claims.length - 1, this._currentIndex + 1);
-    return this.permit;
+    this._currentIndex = Math.min(this.claims.length - 1, this.rewardIndex + 1);
+    return this.reward;
   }
 
   previousPermit(): RewardPermit | null {
     this._currentIndex = Math.max(0, this._currentIndex - 1);
-    return this.permit;
+    return this.reward;
   }
 }
 

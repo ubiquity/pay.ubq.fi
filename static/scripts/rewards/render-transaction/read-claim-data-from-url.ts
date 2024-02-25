@@ -6,7 +6,8 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
-import { claimTxT } from "./tx-type";
+import { RewardPermit, claimTxT } from "./tx-type";
+import { Type } from "@sinclair/typebox";
 
 export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
@@ -20,19 +21,19 @@ export async function readClaimDataFromUrl(app: AppState) {
     return;
   }
 
-  app.claims = decodeClaimData(base64encodedTxData);
+  app.claims = decodeClaimData(base64encodedTxData).flat();
   app.provider = await useFastestRpc(app);
-  const networkId = app.permit?.networkId || app.networkId;
+  const networkId = app.reward?.networkId || app.networkId;
   app.signer = await connectWallet().catch(console.error);
   displayRewardDetails();
   displayRewardPagination();
 
-  renderTransaction(true)
+  renderTransaction(app)
     .then(() => verifyCurrentNetwork(networkId as number))
     .catch(console.error);
 }
 
-function decodeClaimData(base64encodedTxData: string) {
+function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
   let permit;
 
   try {
@@ -43,9 +44,8 @@ function decodeClaimData(base64encodedTxData: string) {
     table.setAttribute(`data-claim`, "error");
     throw error;
   }
-
   try {
-    return [Value.Decode(claimTxT, permit[0])];
+    return [Value.Decode(Type.Array(claimTxT), permit)];
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `2. Invalid claim data passed in URL` });

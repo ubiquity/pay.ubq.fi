@@ -7,8 +7,7 @@ let isTestStarted = false;
 let isTestCompleted = false;
 
 export async function useFastestRpc(app: AppState): Promise<JsonRpcProvider> {
-  const networkId = app.permitNetworkId;
-
+  const networkId = app.reward.networkId || app.networkId || app.claims[0].networkId;
   if (!networkId) throw new Error("Network ID not found");
 
   if (!isTestCompleted && !isTestStarted) {

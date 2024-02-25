@@ -20,7 +20,7 @@ export const networkNames = {
   [NetworkIds.Mainnet]: "Ethereum Mainnet",
   [NetworkIds.Goerli]: "Goerli Testnet",
   [NetworkIds.Gnosis]: "Gnosis Chain",
-  [NetworkIds.Anvil]: "Anvil Development",
+  [NetworkIds.Anvil]: "http://127.0.0.1:8545",
 };
 
 export const networkCurrencies: Record<number, object> = {
@@ -49,7 +49,7 @@ export const networkRpcs: Record<number, string[]> = {
   [NetworkIds.Mainnet]: ["https://rpc-pay.ubq.fi/v1/mainnet", ...(extraRpcs[NetworkIds.Mainnet] || [])],
   [NetworkIds.Goerli]: ["https://rpc-pay.ubq.fi/v1/goerli", ...(extraRpcs[NetworkIds.Goerli] || [])],
   [NetworkIds.Gnosis]: [...(extraRpcs[NetworkIds.Gnosis] || [])],
-  [NetworkIds.Anvil]: ["http://localhost:8545"],
+  [NetworkIds.Anvil]: ["http://127.0.0.1:8545"],
 };
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";

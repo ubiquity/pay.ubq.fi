@@ -6,16 +6,16 @@ import { setPagination } from "./set-pagination";
 import { removeAllEventListeners } from "./utils";
 
 export function claimRewardsPagination(rewardsCount: HTMLElement) {
-  rewardsCount.innerHTML = `${app.permitIndex + 1}/${app.claims.length} reward`;
+  rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
 
   const nextTxButton = document.getElementById("nextTx");
   if (nextTxButton) {
     nextTxButton.addEventListener("click", () => {
       claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
       app.nextPermit();
-      rewardsCount.innerHTML = `${app.permitIndex + 1}/${app.claims.length} reward`;
+      rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");
-      renderTransaction(true).catch(console.error);
+      renderTransaction(app).catch(console.error);
     });
   }
 
@@ -24,9 +24,9 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
     prevTxButton.addEventListener("click", () => {
       claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
       app.previousPermit();
-      rewardsCount.innerHTML = `${app.permitIndex + 1}/${app.claims.length} reward`;
+      rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");
-      renderTransaction(true).catch(console.error);
+      renderTransaction(app, true).catch(console.error);
     });
   }
 

@@ -10,23 +10,23 @@ import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
 
 export async function fetchFundingWallet(app: AppState): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
-  const permit = app.permit;
+  const reward = app.reward;
   try {
-    const tokenAddress = permit.permit.permitted.token.toLowerCase();
+    const tokenAddress = reward.permit.permitted.token.toLowerCase();
     const tokenContract = await getErc20Contract(tokenAddress, app.provider);
 
     if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
       const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
       const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
 
-      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
+      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(reward.owner), tokenContract.allowance(reward.owner, permit2Address)]);
 
       return { balance, allowance, decimals, symbol };
     } else {
       console.log(`Hardcode this token in render-token-symbol.ts and save two calls: ${tokenAddress}`);
       const [balance, allowance, decimals, symbol] = await Promise.all([
-        tokenContract.balanceOf(permit.owner),
-        tokenContract.allowance(permit.owner, permit2Address),
+        tokenContract.balanceOf(reward.owner),
+        tokenContract.allowance(reward.owner, permit2Address),
         tokenContract.decimals(),
         tokenContract.symbol(),
       ]);
@@ -67,9 +67,9 @@ async function createEthersContract(signer: JsonRpcSigner) {
 }
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
-  const permit = app.permit;
+  const reward = app.reward;
   try {
-    const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
+    const tx = await permit2Contract.permitTransferFrom(reward.permit, reward.transferDetails, reward.owner, reward.signature);
     toaster.create("info", `Transaction sent`);
     return tx;
   } catch (error: unknown) {
@@ -105,9 +105,10 @@ async function waitForTransaction(tx: TransactionResponse) {
   return receipt;
 }
 
-async function renderTx() {
+async function renderTx(app: AppState) {
   try {
-    await renderTransaction();
+    app.claims.slice(0, 1);
+    await renderTransaction(app, true);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -135,7 +136,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 
     claimButton.element.removeEventListener("click", claimErc20PermitHandler);
 
-    await renderTx();
+    await renderTx(app);
   };
 }
 
@@ -153,9 +154,9 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  const permit = app.permit;
+  const reward = app.reward;
 
-  if (permit.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
+  if (reward.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
     return false;
   }
@@ -169,7 +170,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   }
 
   const { balance, allowance } = treasury;
-  const permitted = BigNumber.from(permit.permit.permitted.amount);
+  const permitted = BigNumber.from(reward.permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
@@ -190,7 +191,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  const beneficiary = permit.transferDetails.to.toLowerCase();
+  const beneficiary = reward.transferDetails.to.toLowerCase();
   if (beneficiary !== user) {
     toaster.create("warning", `This reward is not for you.`);
     return false;
@@ -204,8 +205,8 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
     const address = await app.signer.getAddress();
     const user = address.toLowerCase();
 
-    if (app.permit) {
-      const owner = app.permit.owner.toLowerCase();
+    if (app.reward) {
+      const owner = app.reward.owner.toLowerCase();
       if (owner !== user) {
         return;
       }
@@ -225,7 +226,7 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
         return;
       }
-      await invalidateNonce(app.signer, app.permit.permit.nonce);
+      await invalidateNonce(app.signer, app.reward.permit.nonce);
     } catch (error: unknown) {
       if (error instanceof Error) {
         const e = error as unknown as MetaMaskError;
@@ -244,9 +245,9 @@ export async function isNonceClaimed(app: AppState): Promise<boolean> {
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.permit.permit.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.permit.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(app.permit.owner, wordPos).catch((error: MetaMaskError) => {
+  const bitmap = await permit2Contract.nonceBitmap(app.reward.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });

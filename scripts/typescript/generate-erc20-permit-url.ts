@@ -31,6 +31,28 @@ export async function generateERC20Permit() {
     process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
   );
   const signature = await myWallet._signTypedData(domain, types, values);
+
+  const permitTransferFromData2: PermitTransferFrom = {
+    permitted: {
+      // token we are permitting to be transferred
+      token: process.env.PAYMENT_TOKEN_ADDRESS || "",
+      // amount we are permitting to be transferred
+      amount: ethers.utils.parseUnits("9" || "", 18),
+    },
+    // who can transfer the tokens
+    spender: process.env.BENEFICIARY_ADDRESS || "",
+    nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),
+    // signature deadline
+    deadline: MaxUint256,
+  };
+
+  const {
+    domain: d,
+    types: t,
+    values: v,
+  } = SignatureTransfer.getPermitData(permitTransferFromData2, PERMIT2_ADDRESS, process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1);
+  const sig = await myWallet._signTypedData(d, t, v);
+
   const txData = [
     {
       type: "erc20-permit",
@@ -48,6 +70,24 @@ export async function generateERC20Permit() {
       },
       owner: myWallet.address,
       signature: signature,
+      networkId: Number(process.env.CHAIN_ID),
+    },
+    {
+      type: "erc20-permit",
+      permit: {
+        permitted: {
+          token: permitTransferFromData2.permitted.token,
+          amount: permitTransferFromData2.permitted.amount.toString(),
+        },
+        nonce: permitTransferFromData2.nonce.toString(),
+        deadline: permitTransferFromData2.deadline.toString(),
+      },
+      transferDetails: {
+        to: permitTransferFromData2.spender,
+        requestedAmount: permitTransferFromData2.permitted.amount.toString(),
+      },
+      owner: myWallet.address,
+      signature: sig,
       networkId: Number(process.env.CHAIN_ID),
     },
   ];

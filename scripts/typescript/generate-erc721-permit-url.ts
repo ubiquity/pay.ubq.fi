@@ -36,6 +36,16 @@ export async function generateERC721Permit() {
     deadline: MaxUint256,
   };
 
+  const erc721TransferFromData2: PermitTransferFrom = {
+    permitted: {
+      token: network == "localhost" ? NFT_REWARDS_ANVIL_DEPLOYMENT : NFT_ADDRESS,
+      amount: 1,
+    },
+    spender: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
+    nonce: 3137,
+    deadline: MaxUint256,
+  };
+
   const domain = {
     name: SIGNING_DOMAIN_NAME,
     version: SIGNING_DOMAIN_VERSION,
@@ -69,6 +79,16 @@ export async function generateERC721Permit() {
     values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
   };
 
+  const mintRequest2 = {
+    beneficiary: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
+    deadline: MaxUint256,
+    keys: valueBytes,
+    nonce: 3137,
+    values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
+  };
+
+  const sig = await myWallet._signTypedData(domain, types, mintRequest2);
+
   const signature = await myWallet._signTypedData(domain, types, mintRequest);
 
   const txData721 = [
@@ -101,6 +121,38 @@ export async function generateERC721Permit() {
         deadline: erc721TransferFromData.deadline.toString(),
         keys: valueBytes,
         nonce: erc721TransferFromData.nonce.toString(),
+        values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
+      },
+    },
+    {
+      type: "erc721-permit",
+      permit: {
+        permitted: {
+          token: erc721TransferFromData2.permitted.token,
+          amount: erc721TransferFromData2.permitted.amount.toString(),
+        },
+        nonce: erc721TransferFromData2.nonce.toString(),
+        deadline: erc721TransferFromData2.deadline.toString(),
+      },
+      transferDetails: {
+        to: erc721TransferFromData2.spender,
+        requestedAmount: erc721TransferFromData2.permitted.amount.toString(),
+      },
+      owner: myWallet.address,
+      signature: sig,
+      networkId: CHAIN_ID,
+      nftMetadata: {
+        GITHUB_ORGANIZATION_NAME,
+        GITHUB_REPOSITORY_NAME,
+        GITHUB_ISSUE_ID,
+        GITHUB_USERNAME,
+        GITHUB_CONTRIBUTION_TYPE,
+      },
+      request: {
+        beneficiary: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
+        deadline: erc721TransferFromData2.deadline.toString(),
+        keys: valueBytes,
+        nonce: erc721TransferFromData2.nonce.toString(),
         values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
       },
     },
