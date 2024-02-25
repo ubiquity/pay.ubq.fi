@@ -12,10 +12,6 @@
       <h1 class="audit-tag">Audit report</h1>
       <!-- params -->
       <div class="mb-3">
-        <label for="botWalletAddress" class="form-label">Bot wallet address</label>
-        <input type="text" class="form-control" id="botWalletAddress" />
-      </div>
-      <div class="mb-3">
         <label for="repoURLs" class="form-label">Repository URLs</label>
         <input type="text" class="form-control" id="repoURLs" />
       </div>
@@ -31,7 +27,6 @@
           id="quickName"
           placeholder='
 {
-  "WALLET": "",
   "REPO": "",
   "PAT": ""
 }'
@@ -42,11 +37,6 @@
           <span class="btn-loader" id="report-loader"></span>
           <span>Get report</span>
         </button>
-        <div class="tg-list-item">
-          <input class="tgl tgl-flat" id="cb4" type="checkbox" />
-          <label class="tgl-btn" for="cb4"></label>
-          <div class="cache-title">⚡Cache</div>
-        </div>
       </div>
       <!-- result table -->
       <div class="resultContainer">

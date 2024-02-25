@@ -1,36 +1,18 @@
 import { throttling } from "@octokit/plugin-throttling";
 import { Octokit } from "@octokit/rest";
 import { createClient } from "@supabase/supabase-js";
-import axios from "axios";
 import { ethers } from "ethers";
-import GoDB from "godb";
-import { permit2Abi } from "../rewards/abis";
-import { Chain, ChainScan, DATABASE_NAME, NULL_HASH, NULL_ID } from "./constants";
+import { Chain } from "./constants";
 import {
   getCurrency,
   getGitHubUrlPartsArray,
-  getOptimalRPC,
-  getRandomAPIKey,
   populateTable,
   primaryRateLimitHandler,
   RateLimitOptions,
   secondaryRateLimitHandler,
   TX_EMPTY_VALUE,
 } from "./helpers";
-import {
-  ChainScanResult,
-  ElemInterface,
-  EtherInterface,
-  GitHubUrlParts,
-  GitInterface,
-  GoDBSchema,
-  ObserverKeys,
-  QuickImport,
-  SavedData,
-  StandardInterface,
-  TxData,
-} from "./types";
-import { getTxInfo } from "./utils/getTransaction";
+import { ElemInterface, EtherInterface, GitHubUrlParts, GitInterface, QuickImport, SavedData, StandardInterface } from "./types";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -41,7 +23,6 @@ const rateOctokit = Octokit.plugin(throttling);
 
 let octokit: Octokit;
 
-let BOT_WALLET_ADDRESS = "";
 let REPOSITORY_URL = "";
 let GITHUB_PAT = "";
 
@@ -51,9 +32,6 @@ const resultTableElem = document.querySelector("#resultTable") as HTMLElement;
 const resultTableTbodyElem = document.querySelector("#resultTable tbody") as HTMLTableCellElement;
 const getReportElem = document.querySelector("#getReport") as HTMLButtonElement;
 const reportLoader = document.querySelector("#report-loader") as HTMLElement;
-const tgBtnInput = document.querySelector("#cb4") as HTMLInputElement;
-
-let isCache = true;
 
 // TODO: should be generated directly from the Supabase db schema
 interface Permit {
@@ -111,206 +89,17 @@ interface Permit {
 
 const permitList: Permit[] = [];
 
-let isGit = true;
-const offset = 100;
-
-let isEther = true;
-const ETHER_INTERVAL = 250;
-let etherPageNumber = 1;
-
-let isRPC = true;
-const RPC_INTERVAL = 50;
-const permit2Interface = new ethers.utils.Interface(permit2Abi);
-const permitTransferFromSelector = "0x30f28b7a";
-const permitFunctionName = "permitTransferFrom";
 const elemList: ElemInterface[] = [];
-
-let gitID = NULL_ID;
-let etherHash = NULL_HASH;
-
-let lastGitID: number | boolean = false;
-let lastEtherHash: string | boolean = false;
-
-function getDataSchema(storeHash: string) {
-  const schema: GoDBSchema = {
-    [NULL_HASH]: {
-      id: {
-        type: String,
-        unique: true,
-      },
-      hash: {
-        type: String,
-        unique: false,
-      },
-      issue: {
-        type: Number,
-        unique: false,
-      },
-    },
-    [storeHash]: {
-      id: {
-        type: Number,
-        unique: true,
-      },
-      tx: {
-        type: String,
-        unique: false,
-      },
-      amount: {
-        type: String,
-        unique: false,
-      },
-      title: {
-        type: String,
-        unique: false,
-      },
-    },
-  };
-
-  return schema;
-}
 
 function parseAndAddUrls(input: string): void {
   const urls = input.split(",").map((url) => url.trim());
   repoArray.push(...urls);
 }
 
-async function updateDB(storeHash: string) {
-  const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DATABASE_NAME, schema);
-  const metaTable = cacheDB.table(NULL_HASH);
-  const storeTable = cacheDB.table(storeHash);
-
-  const metaData = {
-    // unknown as number because the only time it receives a string is initiating the db
-    // and it is always a number after that according to the schema definition
-    // [NULL_HASH]: id: storeHash<string>
-    // [STORE_HASH]: id: storeHash<number>
-    id: storeHash as unknown as number,
-    hash: lastEtherHash !== etherHash ? (lastEtherHash as string) : (etherHash as string),
-    issue: lastGitID !== gitID ? (lastGitID as number) : (gitID as number),
-  };
-
-  await metaTable.put(metaData);
-  if (elemList.length > 0) {
-    for (const elem of elemList) {
-      const { id, tx, amount, title, bounty_hunter, network, owner, repo } = elem;
-      await storeTable.put({
-        id,
-        tx,
-        amount,
-        title,
-        bounty_hunter,
-        network,
-        owner,
-        repo,
-      });
-    }
-  }
-  return cacheDB.close();
-}
-
-async function readDB(storeHash: string) {
-  const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DATABASE_NAME, schema);
-  const storeTable = cacheDB.table(storeHash);
-  const tableData = await storeTable.getAll();
-  cacheDB.close();
-  return tableData;
-}
-
-async function readMeta(storeHash: string) {
-  const schema = getDataSchema(storeHash);
-  const cacheDB = new GoDB(DATABASE_NAME, schema);
-  const metaTable = cacheDB.table(NULL_HASH);
-  const metaData = await metaTable.get({ id: storeHash });
-  cacheDB.close();
-  return metaData;
-}
-
 function toggleLoader(type: "none" | "block") {
-  getReportElem.disabled = type === "block" ? true : false;
+  getReportElem.disabled = type === "block";
   reportLoader.style.display = type;
 }
-
-class QueueObserver {
-  private readonly _queueObject: {
-    isRPC: boolean;
-    isComment: boolean;
-    isGit: boolean;
-    isEther: boolean;
-  };
-  private _isException;
-
-  constructor() {
-    this._queueObject = {
-      isRPC: false,
-      isComment: false,
-      isGit: false,
-      isEther: false,
-    };
-    this._isException = false;
-  }
-
-  private _databaseCallback() {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
-    updateDB(storeHash).catch((error) => console.error(error));
-  }
-
-  private _callback() {
-    toggleLoader("none");
-    for (const item of updateQueue.get()) {
-      const {
-        s: { ether, git, network },
-        c: { amount },
-      } = item;
-      // check for undefined
-      if (git?.issue_number) {
-        elemList.push({
-          id: git.issue_number,
-          tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
-          amount: ethers.utils.formatEther(amount),
-          title: git.issue_title,
-          bounty_hunter: git.bounty_hunter,
-          owner: git.owner,
-          repo: git.repo,
-          network,
-        });
-      }
-    }
-    if (elemList.length > 0) {
-      resultTableTbodyElem.innerHTML = "";
-      for (const data of elemList) {
-        populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
-      }
-    }
-    if (!this._isException) {
-      this._databaseCallback();
-    }
-  }
-
-  mutate(key: ObserverKeys, value: boolean) {
-    this._queueObject[key] = value;
-    const { isRPC, isComment, isGit, isEther } = this._queueObject;
-    const isUpdateFinished = isRPC && isComment && isGit && isEther;
-    if (isUpdateFinished) {
-      this._callback();
-    }
-  }
-
-  clearQueue() {
-    this._queueObject.isComment = false;
-    this._queueObject.isEther = false;
-    this._queueObject.isGit = false;
-    this._queueObject.isRPC = false;
-  }
-
-  raise() {
-    this._isException = true;
-  }
-}
-
-const finishedQueue = new QueueObserver();
 
 class SmartQueue {
   private readonly _queue: Map<string, StandardInterface>;
@@ -326,6 +115,30 @@ class SmartQueue {
     } else {
       this._queue.set(key, value);
     }
+    const {
+      s: { ether, git, network },
+      c: { amount },
+    } = this._queue.get(key) as StandardInterface;
+    // check for undefined
+    if (git?.issue_number) {
+      elemList.push({
+        id: git.issue_number,
+        tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
+        amount: ethers.utils.formatEther(amount),
+        title: git.issue_title,
+        bounty_hunter: git.bounty_hunter,
+        owner: git.owner,
+        repo: git.repo,
+        network,
+      });
+    }
+
+    if (elemList.length > 0) {
+      resultTableTbodyElem.innerHTML = "";
+      for (const data of elemList) {
+        populateTable(data?.owner, data?.repo, data?.id, data?.network, data?.tx, data?.title, data?.amount, data?.bounty_hunter);
+      }
+    }
   }
 
   get() {
@@ -336,41 +149,8 @@ class SmartQueue {
     this._queue.clear();
   }
 }
-type QueueItem = ChainScanResult;
-type Queue = QueueItem extends string ? string[] : QueueItem[];
-
-class QueueSet {
-  private readonly _queue: Queue;
-  private readonly _set: Set<NonNullable<unknown>>;
-
-  constructor() {
-    this._queue = [];
-    this._set = new Set();
-  }
-
-  add(item: NonNullable<unknown>) {
-    if (!this._set.has(item)) {
-      this._set.add(item);
-      this._queue.push(item as QueueItem);
-    }
-  }
-
-  remove() {
-    const v = this._queue.shift();
-    if (v) this._set.delete(v);
-  }
-
-  read(): ChainScanResult {
-    return this._queue[0];
-  }
-
-  isEmpty() {
-    return this._queue.length === 0;
-  }
-}
 
 const updateQueue = new SmartQueue();
-const rpcQueue = new QueueSet();
 
 async function getPermitsForRepo(owner: string, repo: string) {
   const permitList: Permit[] = [];
@@ -395,285 +175,91 @@ async function getPermitsForRepo(owner: string, repo: string) {
   return permitList;
 }
 
-async function gitFetcher(repoUrls: GitHubUrlParts[]) {
-  if (isGit) {
-    try {
-      const permitsPromises = repoUrls.map((repoUrl) => getPermitsForRepo(repoUrl.owner, repoUrl.repo));
-      const allPermits = await Promise.all(permitsPromises);
-
-      for (let i = 0; i < allPermits.length; i++) {
-        const issues = allPermits[i];
-        permitList.push(...issues);
-        console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
-      }
-      isGit = false;
-      finishedQueue.mutate("isGit", true);
-      for (const permit of permitList) {
-        const { data: userData } = await octokit.request("GET /user/:id", { id: permit.locations.user_id });
-        const { data } = await supabase.from("locations").select("*").eq("issue_id", permit.locations.issue_id).single();
-        const lastSlashIndex = data.node_url.lastIndexOf("/");
-        const hashIndex = data.node_url.lastIndexOf("#") || data.node_url.length;
-        const issueNumber = Number(data.node_url.substring(lastSlashIndex + 1, hashIndex));
-        const { data: issueData } = await octokit.rest.issues.get({
-          issue_number: issueNumber,
-          owner: permit.owner,
-          repo: permit.repo,
-        });
-        updateQueue.add(permit.signature, {
-          c: {
-            amount: permit.amount,
-            deadline: permit.deadline,
-            nonce: permit.nonce,
-            owner: permit.owner,
-            signature: permit.signature,
-            to: permit.users.wallets.address,
-            token: permit.tokens.address,
-          },
-          k: permit.signature,
-          s: {
-            ether: undefined,
-            git: {
-              bounty_hunter: {
-                name: userData.login,
-                url: userData.html_url,
-              },
-              issue_number: issueData.number,
-              issue_title: issueData.title,
-              owner: permit.owner,
-              repo: permit.repo,
-            },
-            network: getCurrency(permit.network_id) || Chain.Ethereum,
-          },
-          t: "git",
-        });
-      }
-      finishedQueue.mutate("isComment", true);
-    } catch (error) {
-      console.error(`Error fetching issues: ${error}`);
-      finishedQueue.mutate("isComment", true);
-    }
-
-    return permitList;
-  }
-}
-
-async function fetchDataFromChainScanAPI(url: string, chain: string) {
+async function fetchPermits(repoUrls: GitHubUrlParts[]) {
   try {
-    const { data } = await axios.get(url);
-    return data.result.map((item: NonNullable<unknown>) => ({ ...item, chain }));
-  } catch (error: unknown) {
-    console.error(error);
-    throw error;
-  }
-}
+    const permitsPromises = repoUrls.map((repoUrl) => getPermitsForRepo(repoUrl.owner, repoUrl.repo));
+    const allPermits = await Promise.all(permitsPromises);
 
-async function etherFetcher() {
-  const ethereumURL = `https://api.${ChainScan.Ethereum}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Ethereum
-  )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
-
-  const gnosisURL = `https://api.${ChainScan.Gnosis}/api?module=account&action=tokentx&address=${BOT_WALLET_ADDRESS}&apikey=${getRandomAPIKey(
-    Chain.Gnosis
-  )}&page=${etherPageNumber}&offset=${offset}&sort=desc`;
-
-  if (isEther) {
-    const etherIntervalID = setInterval(async () => {
-      clearInterval(etherIntervalID);
-      try {
-        const [ethereumData, gnosisData] = await Promise.all([
-          fetchDataFromChainScanAPI(ethereumURL, Chain.Ethereum),
-          fetchDataFromChainScanAPI(gnosisURL, Chain.Gnosis),
-        ]);
-
-        const combinedData: ChainScanResult[] = [...ethereumData, ...gnosisData];
-        await handleCombinedData(combinedData);
-      } catch (error: unknown) {
-        console.error(error);
-        finishedQueue.raise();
-        isEther = false;
-        finishedQueue.mutate("isEther", true);
-      }
-    }, ETHER_INTERVAL);
-  }
-}
-
-async function handleCombinedData(combinedData: ChainScanResult[]) {
-  if (combinedData.length > 0) {
-    if (!lastEtherHash) {
-      lastEtherHash = combinedData[0].hash;
+    for (let i = 0; i < allPermits.length; i++) {
+      const issues = allPermits[i];
+      permitList.push(...issues);
+      console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
     }
-    let isIEF = true;
-    for (const e of combinedData) {
-      if (e.hash !== etherHash) {
-        rpcQueue.add({ hash: e.hash, chain: e.chain });
-      } else {
-        isIEF = false;
-        break;
-      }
-    }
-
-    if (isIEF) {
-      etherPageNumber++;
-      await etherFetcher();
-    } else {
-      isEther = false;
-      finishedQueue.mutate("isEther", true);
-    }
-  } else {
-    isEther = false;
-    finishedQueue.mutate("isEther", true);
-  }
-}
-
-async function rpcFetcher() {
-  if (isRPC) {
-    const rpcIntervalID = setInterval(async () => {
-      clearInterval(rpcIntervalID);
-      try {
-        const data = rpcQueue.read();
-        await handleRPCData(data);
-        rpcQueue.remove();
-        if (isEther || !rpcQueue.isEmpty()) {
-          await rpcFetcher();
-        } else {
-          isRPC = false;
-          finishedQueue.mutate("isRPC", true);
-        }
-      } catch (error: unknown) {
-        console.error(error);
-        finishedQueue.raise();
-        rpcQueue.remove();
-        if (isEther || !rpcQueue.isEmpty()) {
-          await rpcFetcher();
-        } else {
-          isRPC = false;
-          finishedQueue.mutate("isRPC", true);
-        }
-      }
-    }, RPC_INTERVAL);
-  }
-}
-
-async function handleRPCData(data: ChainScanResult) {
-  if (data) {
-    const { hash, chain } = data as { hash: string; chain: string };
-    const providerUrl = await getOptimalRPC(chain as Chain);
-    const txInfo = await getTxInfo(hash, providerUrl, chain as Chain);
-
-    if (txInfo.input.startsWith(permitTransferFromSelector)) {
-      const decodedFunctionData = permit2Interface.decodeFunctionData(permitFunctionName, txInfo.input);
-      const {
-        permit: {
-          permitted: { token, amount },
-          nonce,
-          deadline,
-        },
-        transferDetails: { to },
-        owner,
-        signature,
-      } = decodedFunctionData as unknown as TxData;
-      updateQueue.add(signature, {
-        k: signature,
-        t: "ether",
+    for (const permit of permitList) {
+      const { data: userData } = await octokit.request("GET /user/:id", { id: permit.locations.user_id });
+      const { node_url } = permit.locations;
+      const lastSlashIndex = node_url.lastIndexOf("/");
+      const hashIndex = node_url.lastIndexOf("#") || node_url.length;
+      const issueNumber = Number(node_url.substring(lastSlashIndex + 1, hashIndex));
+      const { data: issueData } = await octokit.rest.issues.get({
+        issue_number: issueNumber,
+        owner: permit.owner,
+        repo: permit.repo,
+      });
+      updateQueue.add(permit.signature, {
         c: {
-          nonce,
-          owner,
-          token,
-          amount,
-          to,
-          deadline,
-          signature,
+          amount: permit.amount,
+          deadline: permit.deadline,
+          nonce: permit.nonce,
+          owner: permit.owner,
+          signature: permit.signature,
+          to: permit.users.wallets.address,
+          token: permit.tokens.address,
         },
+        k: permit.signature,
         s: {
-          ether: {
-            txHash: txInfo.hash,
-            timestamp: parseInt(txInfo.timestamp, 16),
-            block_number: parseInt(txInfo.blockNumber, 16),
+          ether: undefined,
+          git: {
+            bounty_hunter: {
+              name: userData.login,
+              url: userData.html_url,
+            },
+            issue_number: issueData.number,
+            issue_title: issueData.title,
+            owner: permit.owner,
+            repo: permit.repo,
           },
-          git: undefined,
-          network: chain as string,
+          network: getCurrency(permit.network_id) || Chain.Ethereum,
         },
+        t: "git",
       });
     }
+  } catch (error) {
+    console.error(`Error fetching issues: ${error}`);
   }
-}
 
-async function dbInit() {
-  if (isCache) {
-    const storeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${REPOSITORY_URL}_${BOT_WALLET_ADDRESS}`));
-    const metaData = await readMeta(storeHash);
-
-    if (metaData !== undefined) {
-      const { hash, issue } = metaData;
-      gitID = issue as number;
-      etherHash = hash as string;
-
-      const tableData = await readDB(storeHash);
-
-      if (tableData.length > 0) {
-        for (const data of tableData) {
-          const { owner, repo, id, network, tx, bounty_hunter, amount, title } = data as unknown as SavedData;
-          populateTable(owner, repo, id, network, tx, title, amount, bounty_hunter);
-          // for filtering
-          elemList.push({
-            id,
-            tx,
-            amount,
-            title,
-            bounty_hunter,
-            owner,
-            repo,
-            network,
-          });
-        }
-      }
-    }
-  }
+  return permitList;
 }
 
 async function resetInit() {
   permitList.splice(0, permitList.length);
-  isGit = true;
-  isEther = true;
-  etherPageNumber = 1;
-  isRPC = true;
   elemList.splice(0, elemList.length);
-  gitID = NULL_ID;
-  etherHash = NULL_HASH;
-  lastGitID = false;
-  lastEtherHash = false;
   repoArray.splice(0, repoArray.length);
-  finishedQueue.clearQueue();
   updateQueue.clear();
 }
 
 async function asyncInit() {
   await resetInit();
-  await dbInit();
 }
 
 function tabInit(repoUrls: GitHubUrlParts[]) {
-  etherFetcher().catch((error) => console.error(error));
-  gitFetcher(repoUrls).catch((error) => console.error(error));
-  rpcFetcher().catch((error) => console.error(error));
+  fetchPermits(repoUrls)
+    .finally(() => toggleLoader("none"))
+    .catch((error) => console.error(error));
 }
 
 function auditInit() {
-  tgBtnInput.checked = true;
   getReportElem.addEventListener("click", async () => {
-    isCache = tgBtnInput.checked;
     toggleLoader("block");
     resultTableElem.style.display = "table";
     resultTableTbodyElem.innerHTML = "";
     const quickImportValue = (document.querySelector("#quickName") as HTMLTextAreaElement).value;
     if (quickImportValue !== "") {
-      const { WALLET, REPO, PAT }: QuickImport = JSON.parse(quickImportValue);
-      BOT_WALLET_ADDRESS = WALLET.toLocaleLowerCase();
+      const { REPO, PAT }: QuickImport = JSON.parse(quickImportValue);
       REPOSITORY_URL = REPO.toLocaleLowerCase();
       GITHUB_PAT = PAT;
       parseAndAddUrls(REPOSITORY_URL);
     } else {
-      BOT_WALLET_ADDRESS = (document.querySelector("#botWalletAddress") as HTMLInputElement).value.toLocaleLowerCase();
       REPOSITORY_URL = (document.querySelector("#repoURLs") as HTMLInputElement).value.toLocaleLowerCase();
       GITHUB_PAT = (document.querySelector("#githubPAT") as HTMLInputElement).value;
       parseAndAddUrls(REPOSITORY_URL);
@@ -681,7 +267,7 @@ function auditInit() {
 
     const REPOS = getGitHubUrlPartsArray(repoArray);
 
-    if (BOT_WALLET_ADDRESS !== "" && REPOSITORY_URL !== "" && GITHUB_PAT !== "" && REPOS.length > 0) {
+    if (REPOSITORY_URL !== "" && GITHUB_PAT !== "" && REPOS.length > 0) {
       await asyncInit();
       octokit = new rateOctokit({
         auth: GITHUB_PAT,
