@@ -1,6 +1,7 @@
 #!/bin/bash
 non_compliant_files=()
 ignoreList=("^\.\/.git" "^\.\/\..*" "^\.\/[^\/]*$")
+ignoreList+=("^\.\/node_modules")
 while IFS= read -r line; do
 ignoreList+=(".*$line")
 done < .gitignore
