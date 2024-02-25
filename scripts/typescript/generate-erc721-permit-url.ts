@@ -31,8 +31,8 @@ export async function generateERC721Permit() {
       token: network == "localhost" ? NFT_REWARDS_ANVIL_DEPLOYMENT : NFT_ADDRESS,
       amount: 1,
     },
-    spender: network == "localhost" ? NFT_REWARDS_ANVIL_DEPLOYMENT : NFT_ADDRESS,
-    nonce: 3133748,
+    spender: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
+    nonce: 313327,
     deadline: MaxUint256,
   };
 
@@ -65,7 +65,7 @@ export async function generateERC721Permit() {
     beneficiary: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
     deadline: MaxUint256,
     keys: valueBytes,
-    nonce: 3133748,
+    nonce: 313327,
     values: [GITHUB_ORGANIZATION_NAME, GITHUB_REPOSITORY_NAME, GITHUB_ISSUE_ID, GITHUB_USERNAME, GITHUB_CONTRIBUTION_TYPE],
   };
 
@@ -97,7 +97,7 @@ export async function generateERC721Permit() {
         GITHUB_CONTRIBUTION_TYPE,
       },
       request: {
-        beneficiary: ANVIL_ACC_1_ADDRESS,
+        beneficiary: network == "localhost" ? ANVIL_ACC_1_ADDRESS : myWallet.address,
         deadline: erc721TransferFromData.deadline.toString(),
         keys: valueBytes,
         nonce: erc721TransferFromData.nonce.toString(),

@@ -40,13 +40,12 @@ const erc20PermitT = T.Object({
 
 export type Erc20Permit = StaticDecode<typeof erc20PermitT>;
 
-const erc721Permit = T.Object({
+const erc721PermitT = T.Object({
   type: T.Literal("erc721-permit"),
   permit: T.Object({
     permitted: T.Object({
       token: addressT,
-      // explicitly state tokenId or keep as "amount" but pass in the tokenId anyway? I'm passing amount in test case
-      amount: bigNumberT, 
+      amount: bigNumberT,
     }),
     nonce: bigNumberT,
     deadline: bigNumberT,
@@ -74,8 +73,8 @@ const erc721Permit = T.Object({
   }),
 });
 
-export type Erc721Permit = StaticDecode<typeof erc721Permit>;
+export type Erc721Permit = StaticDecode<typeof erc721PermitT>;
 
-export const claimTxT = T.Union([erc20PermitT, erc721Permit]);
+export const claimTxT = T.Union([erc20PermitT, erc721PermitT]);
 
 export type RewardPermit = StaticDecode<typeof claimTxT>;

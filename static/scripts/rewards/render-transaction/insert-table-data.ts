@@ -96,7 +96,7 @@ function renderToFields(receiverAddress: string, explorerUrl: string) {
   const toShort = document.querySelector("#rewardRecipient .short") as Element;
 
   // after a single claim toFull returns null as creates a toaster error
-  if(!toFull || !toShort) return console.error("Could not find toFull or toShort");
+  if (!toFull || !toShort) return;
 
   toFull.innerHTML = `<div>${receiverAddress}</div>`;
   toShort.innerHTML = `<div>${shortenAddress(receiverAddress)}</div>`;

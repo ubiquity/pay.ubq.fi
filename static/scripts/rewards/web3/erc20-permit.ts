@@ -69,7 +69,7 @@ async function createEthersContract(signer: JsonRpcSigner) {
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   const permit = app.permit;
   try {
-    const tx = await permit2Contract.permitTransferFrom(permit, permit.transferDetails, permit.owner, permit.signature);
+    const tx = await permit2Contract.permitTransferFrom(permit.permit, permit.transferDetails, permit.owner, permit.signature);
     toaster.create("info", `Transaction sent`);
     return tx;
   } catch (error: unknown) {

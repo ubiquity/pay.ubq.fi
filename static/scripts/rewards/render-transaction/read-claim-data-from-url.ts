@@ -1,4 +1,3 @@
-import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { AppState, app } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
@@ -34,11 +33,22 @@ export async function readClaimDataFromUrl(app: AppState) {
 }
 
 function decodeClaimData(base64encodedTxData: string) {
+  let permit;
+
   try {
-    return Value.Decode(Type.Array(claimTxT), JSON.parse(atob(base64encodedTxData)));
+    permit = JSON.parse(atob(base64encodedTxData));
   } catch (error) {
     console.error(error);
-    setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
+    setClaimMessage({ type: "Error", message: `1. Invalid claim data passed in URL` });
+    table.setAttribute(`data-claim`, "error");
+    throw error;
+  }
+
+  try {
+    return [Value.Decode(claimTxT, permit[0])];
+  } catch (error) {
+    console.error(error);
+    setClaimMessage({ type: "Error", message: `2. Invalid claim data passed in URL` });
     table.setAttribute(`data-claim`, "error");
     throw error;
   }
