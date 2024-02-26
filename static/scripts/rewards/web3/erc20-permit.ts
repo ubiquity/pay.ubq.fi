@@ -9,36 +9,35 @@ import { connectWallet } from "./wallet";
 import invalidateButton from "../invalidate-component";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { tokens } from "../render-transaction/render-token-symbol";
+import { insertErc20PermitTableData } from "../render-transaction/insert-table-data";
 
-export async function fetchTreasury(
-  permit: Erc20Permit,
-  provider: JsonRpcProvider
-): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
-  try {
-    const tokenAddress = permit.permit.permitted.token.toLowerCase();
-    const tokenContract = await getErc20Contract(tokenAddress, provider);
+export async function processERC20(tokenAddress: string, provider: JsonRpcProvider, permit: Erc20Permit, table: Element) {
+  let symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
+  let decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
 
-    if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
-      const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
-      const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
-
-      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
-
-      return { balance, allowance, decimals, symbol };
-    } else {
-      console.log(`Hardcode this token in render-token-symbol.ts and save two calls: ${tokenAddress}`);
-      const [balance, allowance, decimals, symbol] = await Promise.all([
-        tokenContract.balanceOf(permit.owner),
-        tokenContract.allowance(permit.owner, permit2Address),
-        tokenContract.decimals(),
-        tokenContract.symbol(),
-      ]);
-
-      return { balance, allowance, decimals, symbol };
+  if (!symbol || decimals === -1) {
+    try {
+      const contract = await getErc20Contract(tokenAddress, provider);
+      symbol = contract.symbol();
+      decimals = contract.decimals();
+    } catch (err) {
+      throw new Error(`Error fetching symbol and decimals for token address: ${tokenAddress}`);
     }
-  } catch (error: unknown) {
-    return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
+
+  await insertErc20PermitTableData(permit, provider, symbol, decimals, table);
+}
+
+export async function fetchTreasury(contractAddr: string, owner: string, provider: JsonRpcProvider) {
+  try {
+    const contract = await getErc20Contract(contractAddr, provider);
+    const [balance, allowance] = await Promise.all([contract.balanceOf(owner), contract.allowance(owner, permit2Address)]);
+    return { balance, allowance } as { balance: BigNumber; allowance: BigNumber };
+  } catch (err) {
+    console.log(err);
+  }
+
+  return { balance: BigNumber.from(0), allowance: BigNumber.from(0) };
 }
 
 export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcProvider) {
@@ -85,7 +84,7 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
     return false;
   }
 
-  const { balance, allowance } = await fetchTreasury(permit, provider);
+  const { balance, allowance } = await fetchTreasury(permit.permit.permitted.token, permit.owner, provider);
   const permitted = BigNumber.from(permit.permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);

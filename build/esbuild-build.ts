@@ -1,5 +1,7 @@
+// @ts-expect-error - Could not find a declaration file for module
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
 import esbuild from "esbuild";
+import * as dotenv from "dotenv";
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -12,9 +14,35 @@ export const entries = [...typescriptEntries, ...cssEntries];
 const allNetworkUrls: Record<string, string[]> = {};
 // this flattens all the rpcs into a single object, with key names that match the networkIds. The arrays are just of URLs per network ID.
 
+const blacklist = ["https://xdai-archive.blockscout.com", "https://gnosis.api.onfinality.io/public"];
+
 Object.keys(extraRpcs).forEach((networkId) => {
-  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => typeof rpc === "string");
-  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined).map((rpc) => rpc.url);
+  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => {
+    if (typeof rpc === "string") {
+      if (blacklist.includes(rpc)) {
+        return null;
+      } else {
+        return rpc;
+      }
+    }
+  });
+  const extraUrls: string[] = extraRpcs[networkId].rpcs
+    .filter((rpc) => rpc.url !== undefined)
+    .map((rpc) => {
+      if (typeof rpc === "string") {
+        if (blacklist.includes(rpc)) {
+          return "";
+        } else {
+          return rpc;
+        }
+      } else {
+        if (blacklist.includes(rpc.url)) {
+          return "";
+        } else {
+          return rpc.url;
+        }
+      }
+    });
   allNetworkUrls[networkId] = [...officialUrls, ...extraUrls];
 });
 
@@ -32,9 +60,7 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: {
-    extraRpcs: JSON.stringify(allNetworkUrls),
-  },
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], { allNetworkUrls }),
 };
 
 esbuild
@@ -46,3 +72,23 @@ esbuild
     console.error(err);
     process.exit(1);
   });
+
+function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>): Record<string, string> {
+  const defines: Record<string, string> = {};
+  dotenv.config();
+  for (const name of envVarNames) {
+    const envVar = process.env[name];
+    if (envVar !== undefined) {
+      defines[name] = JSON.stringify(envVar);
+    } else {
+      throw new Error(`Missing environment variable: ${name}`);
+    }
+  }
+  for (const key in extras) {
+    if (Object.prototype.hasOwnProperty.call(extras, key)) {
+      defines[key] = JSON.stringify(extras[key]);
+    }
+  }
+  defines["extraRpcs"] = JSON.stringify(allNetworkUrls);
+  return defines;
+}
