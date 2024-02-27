@@ -14,35 +14,9 @@ export const entries = [...typescriptEntries, ...cssEntries];
 const allNetworkUrls: Record<string, string[]> = {};
 // this flattens all the rpcs into a single object, with key names that match the networkIds. The arrays are just of URLs per network ID.
 
-const blacklist = ["https://xdai-archive.blockscout.com", "https://gnosis.api.onfinality.io/public"];
-
 Object.keys(extraRpcs).forEach((networkId) => {
-  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => {
-    if (typeof rpc === "string") {
-      if (blacklist.includes(rpc)) {
-        return null;
-      } else {
-        return rpc;
-      }
-    }
-  });
-  const extraUrls: string[] = extraRpcs[networkId].rpcs
-    .filter((rpc) => rpc.url !== undefined)
-    .map((rpc) => {
-      if (typeof rpc === "string") {
-        if (blacklist.includes(rpc)) {
-          return "";
-        } else {
-          return rpc;
-        }
-      } else {
-        if (blacklist.includes(rpc.url)) {
-          return "";
-        } else {
-          return rpc.url;
-        }
-      }
-    });
+  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => typeof rpc === "string");
+  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined).map((rpc) => rpc.url);
   allNetworkUrls[networkId] = [...officialUrls, ...extraUrls];
 });
 
