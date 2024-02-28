@@ -7,13 +7,13 @@ dotenv.config();
 
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // same on all chains
 
-generate().catch((error) => {
+generateERC20Permit().catch((error) => {
   console.error(error);
   verifyEnvironmentVariables();
   process.exitCode = 1;
 });
 
-async function generate() {
+export async function generateERC20Permit(multi = false) {
   const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
   const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY || "", provider);
 
@@ -59,9 +59,14 @@ async function generate() {
   ];
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
-  log.ok("Testing URL:");
-  console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
-  log.ok("Public URL:");
-  console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
-  console.log();
+
+  if (multi) {
+    return `${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`;
+  } else {
+    log.ok("Testing URL:");
+    console.log(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
+    log.ok("Public URL:");
+    console.log(`https://pay.ubq.fi?claim=${base64encodedTxData}`);
+    console.log();
+  }
 }

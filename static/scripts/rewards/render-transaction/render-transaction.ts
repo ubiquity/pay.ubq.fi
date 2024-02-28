@@ -4,16 +4,16 @@ import { Value } from "@sinclair/typebox/value";
 import { networkExplorers } from "../constants";
 import { getOptimalProvider } from "../helpers";
 import { claimButton, hideClaimButton, resetClaimButton } from "../toaster";
-import { claimErc20PermitHandler, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
+import { claimErc20PermitHandler, generateInvalidatePermitAdminControl, processERC20 } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
-import { handleNetwork } from "../web3/wallet";
 import { app } from "./index";
-import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
+import { insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
-import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
+import { renderNftSymbol } from "./render-token-symbol";
 import { setClaimMessage } from "./set-claim-message";
 import { claimTxT } from "./tx-type";
 import { removeAllEventListeners } from "./utils";
+import { handleNetwork } from "../web3/wallet";
 
 let optimalRPC: JsonRpcProvider;
 
@@ -86,7 +86,7 @@ export async function init() {
     }
   }
 
-  renderTransaction(optimalRPC, true).catch(console.error);
+  renderTransaction(optimalRPC).catch(console.error);
 }
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
@@ -123,25 +123,10 @@ export async function renderTransaction(provider: JsonRpcProvider, nextTx?: bool
     return false;
   }
 
-  handleNetwork(app.currentTx.networkId).catch(console.error);
-
   if (app.currentTx.type === "erc20-permit") {
-    const treasury = await fetchTreasury(app.currentTx, provider);
+    await processERC20(app.currentTx.permit.permitted.token, provider, app.currentTx, table);
 
     // insert tx data into table
-    const requestedAmountElement = insertErc20PermitTableData(app.currentTx, table, treasury);
-    table.setAttribute(`data-claim`, "ok");
-
-    renderTokenSymbol({
-      tokenAddress: app.currentTx.permit.permitted.token,
-      ownerAddress: app.currentTx.owner,
-      amount: app.currentTx.transferDetails.requestedAmount,
-      explorerUrl: networkExplorers[app.currentTx.networkId],
-      table,
-      requestedAmountElement,
-      provider,
-    }).catch(console.error);
-
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.currentTx.transferDetails.to }).catch(console.error);
 
