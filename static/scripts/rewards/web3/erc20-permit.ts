@@ -65,7 +65,6 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
       toaster.create("info", `Transaction sent`);
       const receipt = await tx.wait();
       toaster.create("success", `Claim Complete.`);
-      console.log(receipt.transactionHash); // @TODO: post to database
 
       await updatePermitTxHash(permit, receipt.transactionHash);
 
