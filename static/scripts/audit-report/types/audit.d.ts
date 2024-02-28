@@ -83,7 +83,7 @@ export interface StandardInterface {
     to: string;
     deadline: string;
     signature: string;
-  };
+  } | null;
   s: {
     ether: EtherInterface | undefined;
     git: GitInterface | undefined;

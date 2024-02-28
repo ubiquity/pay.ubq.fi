@@ -34,60 +34,71 @@ const getReportElem = document.querySelector("#getReport") as HTMLButtonElement;
 const reportLoader = document.querySelector("#report-loader") as HTMLElement;
 
 // TODO: should be generated directly from the Supabase db schema
-interface Permit {
+interface Issue {
   id: number;
-  created: Date;
-  updated: Date;
-  amount: string;
-  nonce: string;
-  deadline: string;
-  signature: string;
-  token_id: number;
-  partner_id: null | number;
-  beneficiary_id: number;
-  transaction: string;
-  location_id: number;
-  locations: {
-    id: number;
-    node_id: string;
-    node_type: string;
-    updated: Date;
-    created: Date;
-    node_url: string;
-    user_id: number;
-    repository_id: number;
-    organization_id: number;
-    comment_id: number;
-    issue_id: number;
-  };
-  users: {
+  node_id: string;
+  node_type: string;
+  updated: string;
+  created: string;
+  node_url: string;
+  user_id: number;
+  repository_id: number;
+  organization_id: number;
+  comment_id: number;
+  issue_id: number;
+  permit: {
     id: number;
     created: string;
     updated: string;
-    wallet_id: number;
+    amount: string;
+    nonce: string;
+    deadline: string;
+    signature: string;
+    token_id: number;
+    partner_id: null;
+    beneficiary_id: number;
+    transaction: string;
     location_id: number;
-    wallets: {
+    locations: {
+      id: number;
+      node_id: string;
+      node_type: string;
+      updated: string;
+      created: string;
+      node_url: string;
+      user_id: number;
+      repository_id: number;
+      organization_id: number;
+      comment_id: number;
+      issue_id: number;
+    };
+    users: {
       id: number;
       created: string;
-      updated: Date | null;
-      address: string;
-      location_id: number | null;
+      updated: string;
+      wallet_id: number;
+      location_id: number;
+      wallets: {
+        id: number;
+        created: string;
+        updated: null;
+        address: string;
+        location_id: null;
+      };
     };
-  };
-  tokens: {
-    id: 1;
-    created: string;
-    updated: string;
-    network: number;
-    address: string;
-    location_id: null | number;
-  };
+    tokens: {
+      id: number;
+      created: string;
+      updated: string;
+      network: number;
+      address: string;
+      location_id: null;
+    };
+  } | null;
   owner: string;
   repo: string;
-  network_id: number;
 }
-
-const permitList: Permit[] = [];
+const issueList: Issue[] = [];
 
 const elemList: ElemInterface[] = [];
 
@@ -117,14 +128,14 @@ class SmartQueue {
     }
     const {
       s: { ether, git, network },
-      c: { amount },
+      c,
     } = this._queue.get(key) as StandardInterface;
     // check for undefined
     if (git?.issue_number) {
       elemList.push({
         id: git.issue_number,
         tx: ether?.txHash || TX_EMPTY_VALUE, // @TODO - handle this better
-        amount: ethers.utils.formatEther(amount),
+        amount: ethers.utils.formatEther(c?.amount || 0),
         title: git.issue_title,
         bounty_hunter: git.bounty_hunter,
         owner: git.owner,
@@ -153,60 +164,74 @@ class SmartQueue {
 const updateQueue = new SmartQueue();
 
 async function getPermitsForRepo(owner: string, repo: string) {
-  const permitList: Permit[] = [];
   try {
     const { data: gitData } = await octokit.rest.repos.get({
       owner,
       repo,
     });
-    const { data } = await supabase
+
+    // Gets all the available issues for a given repository
+    const { data: issues, error: locationError } = await supabase.from("issues_view").select("*").eq("repository_id", gitData?.id).not("issue_id", "is", null);
+    if (locationError) {
+      throw locationError;
+    }
+    const issueIds = issues?.map((o) => o.issue_id);
+
+    // Gets all the permits that are referenced by that list of issues
+    const { data: permits } = await supabase
       .from("permits")
       .select("*, locations(*), users(*, wallets(*)), tokens(*)")
-      .eq("locations.repository_id", gitData?.id)
+      .in("locations.issue_id", issueIds)
       .not("locations", "is", null);
-    if (data) {
-      permitList.push(...data.map((d) => ({ ...d, owner, repo })));
-    }
+
+    // Eventually links the permit to the matching issue
+    issues?.forEach((issue) => {
+      issue.permit = permits?.find((o) => issue.issue_id === o.locations.issue_id) || null;
+      issue.owner = owner;
+      issue.repo = repo;
+    });
+
+    return issues as Issue[];
   } catch (error) {
     console.error(error);
     throw error;
   }
-
-  return permitList;
 }
 
 async function fetchPermits(repoUrls: GitHubUrlParts[]) {
   try {
-    const permitsPromises = repoUrls.map((repoUrl) => getPermitsForRepo(repoUrl.owner, repoUrl.repo));
-    const allPermits = await Promise.all(permitsPromises);
+    const issuePromises = repoUrls.map((repoUrl) => getPermitsForRepo(repoUrl.owner, repoUrl.repo));
+    const allIssues = await Promise.all(issuePromises);
 
-    for (let i = 0; i < allPermits.length; i++) {
-      const issues = allPermits[i];
-      permitList.push(...issues);
-      console.log(`Fetched ${issues.length} permits for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
+    for (let i = 0; i < allIssues.length; i++) {
+      const issues = allIssues[i];
+      issueList.push(...issues);
+      console.log(`Fetched ${issues.length} issues for repository ${repoUrls[i].owner}/${repoUrls[i].repo}`);
     }
-    for (const permit of permitList) {
-      const { data: userData } = await octokit.request("GET /user/:id", { id: permit.locations.user_id });
-      const { node_url } = permit.locations;
+    for (const issue of issueList) {
+      const { data: userData } = await octokit.request("GET /user/:id", { id: issue.user_id });
+      const { node_url } = issue;
       const lastSlashIndex = node_url.lastIndexOf("/");
-      const hashIndex = node_url.lastIndexOf("#") || node_url.length;
+      const hashIndex = node_url.lastIndexOf("#") > 0 ? node_url.lastIndexOf("#") : node_url.length;
       const issueNumber = Number(node_url.substring(lastSlashIndex + 1, hashIndex));
       const { data: issueData } = await octokit.rest.issues.get({
         issue_number: issueNumber,
-        owner: permit.owner,
-        repo: permit.repo,
+        owner: issue.owner,
+        repo: issue.repo,
       });
-      updateQueue.add(permit.signature, {
-        c: {
-          amount: permit.amount,
-          deadline: permit.deadline,
-          nonce: permit.nonce,
-          owner: permit.owner,
-          signature: permit.signature,
-          to: permit.users.wallets.address,
-          token: permit.tokens.address,
-        },
-        k: permit.signature,
+      updateQueue.add(`${issue.id}`, {
+        c: issue.permit
+          ? {
+              amount: issue.permit.amount,
+              deadline: issue.permit.deadline,
+              nonce: issue.permit.nonce,
+              owner: issue.owner,
+              signature: issue.permit.signature,
+              to: issue.permit.users.wallets.address,
+              token: issue.permit.tokens.address,
+            }
+          : null,
+        k: issue.permit?.signature || "",
         s: {
           ether: undefined,
           git: {
@@ -216,10 +241,10 @@ async function fetchPermits(repoUrls: GitHubUrlParts[]) {
             },
             issue_number: issueData.number,
             issue_title: issueData.title,
-            owner: permit.owner,
-            repo: permit.repo,
+            owner: issue.owner,
+            repo: issue.repo,
           },
-          network: getCurrency(permit.network_id) || Chain.Ethereum,
+          network: issue.permit ? getCurrency(issue.permit.tokens.network) || Chain.Ethereum : Chain.Ethereum,
         },
         t: "git",
       });
@@ -228,11 +253,11 @@ async function fetchPermits(repoUrls: GitHubUrlParts[]) {
     console.error(`Error fetching issues: ${error}`);
   }
 
-  return permitList;
+  return issueList;
 }
 
 async function resetInit() {
-  permitList.splice(0, permitList.length);
+  issueList.splice(0, issueList.length);
   elemList.splice(0, elemList.length);
   repoArray.splice(0, repoArray.length);
   updateQueue.clear();
