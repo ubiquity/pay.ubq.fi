@@ -1,7 +1,6 @@
-// @ts-expect-error - Could not find a declaration file for module
-import extraRpcs from "../lib/chainlist/constants/extraRpcs";
-import esbuild from "esbuild";
 import * as dotenv from "dotenv";
+import esbuild from "esbuild";
+import chainlist from "../lib/chainlist/constants/extraRpcs";
 const typescriptEntries = [
   "static/scripts/rewards/index.ts",
   "static/scripts/audit-report/audit.ts",
@@ -11,13 +10,13 @@ const typescriptEntries = [
 const cssEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
 export const entries = [...typescriptEntries, ...cssEntries];
 
-const allNetworkUrls: Record<string, string[]> = {};
+const extraRpcs: Record<string, string[]> = {};
 // this flattens all the rpcs into a single object, with key names that match the networkIds. The arrays are just of URLs per network ID.
 
-Object.keys(extraRpcs).forEach((networkId) => {
-  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => typeof rpc === "string");
-  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined).map((rpc) => rpc.url);
-  allNetworkUrls[networkId] = [...officialUrls, ...extraUrls];
+Object.keys(chainlist).forEach((networkId) => {
+  const officialUrls = chainlist[networkId].rpcs.filter((rpc) => typeof rpc === "string");
+  const extraUrls: string[] = chainlist[networkId].rpcs.filter((rpc) => rpc.url !== undefined).map((rpc) => rpc.url);
+  extraRpcs[networkId] = [...officialUrls, ...extraUrls];
 });
 
 export const esBuildContext: esbuild.BuildOptions = {
@@ -34,7 +33,7 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], { allNetworkUrls }),
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], { extraRpcs }),
 };
 
 esbuild
@@ -63,6 +62,5 @@ function createEnvDefines(envVarNames: string[], extras: Record<string, unknown>
       defines[key] = JSON.stringify(extras[key]);
     }
   }
-  defines["extraRpcs"] = JSON.stringify(allNetworkUrls);
   return defines;
 }
