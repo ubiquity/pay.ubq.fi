@@ -5,8 +5,13 @@ import { claimButton, toaster } from "../toaster";
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
+
+    await wallet.send("eth_requestAccounts", []);
+
     const signer = wallet.getSigner();
+
     const address = await signer.getAddress();
+
     if (!address) {
       console.error("Wallet not connected");
       return null;
