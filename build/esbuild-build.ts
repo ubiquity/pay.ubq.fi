@@ -17,7 +17,8 @@ const allNetworkUrls: Record<string, string[]> = {};
 
 Object.keys(extraRpcs).forEach((networkId) => {
   const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => typeof rpc === "string");
-  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined).map((rpc) => rpc.url);
+  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined && rpc.tracking === "none").map((rpc) => rpc.url);
+
   allNetworkUrls[networkId] = [...officialUrls, ...extraUrls];
 });
 

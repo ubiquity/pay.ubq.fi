@@ -3,14 +3,16 @@ import { ethers } from "ethers";
 export function getFastestRpcProvider(networkId: number) {
   const latencies: Record<string, number> = JSON.parse(localStorage.getItem("rpcLatencies") || "{}");
 
-  // Filter out latencies with a value of less than 0 because -1 means it failed
-  // Also filter out latencies that do not belong to the desired network
-  const validLatencies = Object.entries(latencies).filter(([key, latency]) => latency >= 0 && key.endsWith(`_${networkId}`));
+  // filter out latencies that do not belong to the desired network
+  const validLatencies = Object.entries(latencies)
+    .filter(([rpc]) => rpc.endsWith(`_${networkId}`))
+    .map(([rpc, latency]) => [rpc.split("_")[0], latency] as [string, number]);
 
-  // Get all valid latencies from localStorage and find the fastest RPC
+  // Sort the latencies and get the fastest RPC
   const sortedLatencies = validLatencies.sort((a, b) => a[1] - b[1]);
-  const optimalRPC = sortedLatencies[0][0].split("_").slice(0, -1).join("_"); // Remove the network ID from the key
+  const optimalRPC = sortedLatencies[0][0];
 
+  console.log(`Fastest RPC for network ${networkId} is ${optimalRPC}`);
   return new ethers.providers.JsonRpcProvider(optimalRPC, {
     name: optimalRPC,
     chainId: networkId,
