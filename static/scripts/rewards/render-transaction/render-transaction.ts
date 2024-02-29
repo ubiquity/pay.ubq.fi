@@ -5,7 +5,6 @@ import { claimErc20PermitHandlerWrapper, fetchFundingWallet, generateInvalidateP
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
-import { displayRewardDetails, displayRewardPagination } from "./read-claim-data-from-url";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { setPagination } from "./set-pagination";

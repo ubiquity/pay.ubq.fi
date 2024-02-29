@@ -12,7 +12,6 @@ export function getFastestRpcProvider(networkId: number) {
   const sortedLatencies = validLatencies.sort((a, b) => a[1] - b[1]);
   const optimalRPC = sortedLatencies[0][0];
 
-  console.log(`Fastest RPC for network ${networkId} is ${optimalRPC}`);
   return new ethers.providers.JsonRpcProvider(optimalRPC, {
     name: optimalRPC,
     chainId: networkId,

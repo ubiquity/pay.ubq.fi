@@ -1,5 +1,12 @@
 {
-  "include": ["src", "lib/chainlist/constants/extraRpcs.js", "static", "build", "scripts/typescript", "globals.d.ts"],
+  "include": [
+    "src",
+    "lib/chainlist/constants/extraRpcs.js",
+    "static",
+    "build",
+    "scripts/typescript",
+    "globals.d.ts"
+  ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */

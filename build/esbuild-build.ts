@@ -3,6 +3,9 @@ import * as dotenv from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
 
+import * as dotenv from "dotenv";
+import esbuild from "esbuild";
+import chainlist from "../lib/chainlist/constants/extraRpcs";
 const typescriptEntries = [
   "static/scripts/rewards/init.ts",
   "static/scripts/audit-report/audit.ts",
@@ -12,14 +15,13 @@ const typescriptEntries = [
 const cssEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
 export const entries = [...typescriptEntries, ...cssEntries];
 
-const allNetworkUrls: Record<string, string[]> = {};
+const extraRpcs: Record<string, string[]> = {};
 // this flattens all the rpcs into a single object, with key names that match the networkIds. The arrays are just of URLs per network ID.
 
-Object.keys(extraRpcs).forEach((networkId) => {
-  const officialUrls = extraRpcs[networkId].rpcs.filter((rpc) => typeof rpc === "string");
-  const extraUrls: string[] = extraRpcs[networkId].rpcs.filter((rpc) => rpc.url !== undefined && rpc.tracking === "none").map((rpc) => rpc.url);
-
-  allNetworkUrls[networkId] = [...officialUrls, ...extraUrls];
+Object.keys(chainlist).forEach((networkId) => {
+  const officialUrls = chainlist[networkId].rpcs.filter((rpc) => typeof rpc === "string");
+  const extraUrls: string[] = chainlist[networkId].rpcs.filter((rpc) => rpc.url !== undefined && rpc.tracking === "none").map((rpc) => rpc.url);
+  extraRpcs[networkId] = [...officialUrls, ...extraUrls];
 });
 
 export const esBuildContext: esbuild.BuildOptions = {
@@ -37,7 +39,7 @@ export const esBuildContext: esbuild.BuildOptions = {
   },
   outdir: "static/out",
   define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
-    extraRpcs: allNetworkUrls,
+    extraRpcs,
     commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
   }),
 };
