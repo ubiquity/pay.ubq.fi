@@ -7,13 +7,13 @@ import GoDB from "godb";
 import { permit2Abi } from "../rewards/abis";
 import { Chain, ChainScan, DATABASE_NAME, NULL_HASH, NULL_ID } from "./constants";
 import {
-  RateLimitOptions,
   getCurrency,
   getGitHubUrlPartsArray,
   getOptimalRPC,
   getRandomAPIKey,
   populateTable,
   primaryRateLimitHandler,
+  RateLimitOptions,
   secondaryRateLimitHandler,
 } from "./helpers";
 import {
@@ -29,7 +29,7 @@ import {
   StandardInterface,
   TxData,
 } from "./types";
-import { getTxInfo } from "./utils/get-transaction";
+import { getTxInfo } from "./utils/getTransaction";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;

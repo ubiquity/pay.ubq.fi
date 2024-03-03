@@ -2,7 +2,7 @@
   "root": true,
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": ["./tsconfig.json"],
+    "project": ["./tsconfig.json"]
   },
   "plugins": ["@typescript-eslint", "sonarjs"],
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:sonarjs/recommended"],
@@ -11,15 +11,15 @@
     "prefer-arrow-callback": [
       "warn",
       {
-        "allowNamedFunctions": true,
-      },
+        "allowNamedFunctions": true
+      }
     ],
     "func-style": [
       "warn",
       "declaration",
       {
-        "allowArrowFunctions": false,
-      },
+        "allowArrowFunctions": false
+      }
     ],
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-non-null-assertion": "error",
@@ -35,8 +35,8 @@
         "ignoreRestSiblings": true,
         "vars": "all",
         "varsIgnorePattern": "^_",
-        "argsIgnorePattern": "^_",
-      },
+        "argsIgnorePattern": "^_"
+      }
     ],
     "@typescript-eslint/await-thenable": "error",
     "@typescript-eslint/no-misused-new": "error",
@@ -54,55 +54,55 @@
         "format": ["PascalCase"],
         "custom": {
           "regex": "^I[A-Z]",
-          "match": false,
-        },
+          "match": false
+        }
       },
       {
         "selector": "memberLike",
         "modifiers": ["private"],
         "format": ["camelCase"],
-        "leadingUnderscore": "require",
+        "leadingUnderscore": "require"
       },
       {
         "selector": "typeLike",
-        "format": ["PascalCase"],
+        "format": ["PascalCase"]
       },
       {
         "selector": "typeParameter",
         "format": ["PascalCase"],
-        "prefix": ["T"],
+        "prefix": ["T"]
       },
       {
         "selector": "variable",
         "format": ["camelCase", "UPPER_CASE"],
         "leadingUnderscore": "allow",
-        "trailingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
         "format": ["camelCase"],
         "leadingUnderscore": "allow",
-        "trailingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
         "modifiers": ["destructured"],
-        "format": null,
+        "format": null
       },
       {
         "selector": "variable",
         "types": ["boolean"],
         "format": ["PascalCase"],
-        "prefix": ["is", "should", "has", "can", "did", "will", "does"],
+        "prefix": ["is", "should", "has", "can", "did", "will", "does"]
       },
       {
         "selector": "variableLike",
-        "format": ["camelCase"],
+        "format": ["camelCase"]
       },
       {
         "selector": ["function", "variable"],
-        "format": ["camelCase"],
-      },
-    ],
-  },
+        "format": ["camelCase"]
+      }
+    ]
+  }
 }

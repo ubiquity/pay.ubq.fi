@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { AppState, app } from "../app-state";
+import { app } from ".";
 import { Erc20Permit, Erc721Permit } from "./tx-type";
 
 export function shortenAddress(address: string): string {
@@ -7,22 +7,18 @@ export function shortenAddress(address: string): string {
 }
 
 export function insertErc20PermitTableData(
-  app: AppState,
+  permit: Erc20Permit,
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
-  const reward = app.reward as Erc20Permit;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(reward.permit.permitted.token, app.currentExplorerUrl);
+  renderToFields(permit.transferDetails.to, app.currentExplorerUrl);
+  renderTokenFields(permit.permit.permitted.token, app.currentExplorerUrl);
   renderDetailsFields([
-    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">${reward.owner}</a>` },
+    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.owner}">${permit.owner}</a>` },
     {
       name: "Expiry",
-      value: (() => {
-        const deadline = BigNumber.isBigNumber(reward.permit.deadline) ? reward.permit.deadline : BigNumber.from(reward.permit.deadline);
-        return deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(deadline.toNumber()).toLocaleString() : undefined;
-      })(),
+      value: permit.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.permit.deadline.toNumber()).toLocaleString() : undefined,
     },
     { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
     { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
@@ -31,19 +27,19 @@ export function insertErc20PermitTableData(
   return requestedAmountElement;
 }
 
-export function insertErc721PermitTableData(reward: Erc721Permit, table: Element): Element {
+export function insertErc721PermitTableData(permit: Erc721Permit, table: Element): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(reward.permit.permitted.token, app.currentExplorerUrl);
-  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.nftMetadata;
+  renderToFields(permit.request.beneficiary, app.currentExplorerUrl);
+  renderTokenFields(permit.nftAddress, app.currentExplorerUrl);
+  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = permit.nftMetadata;
   renderDetailsFields([
     {
       name: "NFT address",
-      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.permit.permitted.token}">${reward.permit.permitted.token}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${permit.nftAddress}">${permit.nftAddress}</a>`,
     },
     {
       name: "Expiry",
-      value: reward.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(reward.permit.deadline.toNumber()).toLocaleString() : undefined,
+      value: permit.request.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(permit.request.deadline.toNumber()).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",
@@ -84,7 +80,6 @@ function renderDetailsFields(additionalDetails: { name: string; value: string | 
 function renderTokenFields(tokenAddress: string, explorerUrl: string) {
   const tokenFull = document.querySelector("#Token .full") as Element;
   const tokenShort = document.querySelector("#Token .short") as Element;
-
   tokenFull.innerHTML = `<div>${tokenAddress}</div>`;
   tokenShort.innerHTML = `<div>${shortenAddress(tokenAddress)}</div>`;
 
@@ -93,12 +88,8 @@ function renderTokenFields(tokenAddress: string, explorerUrl: string) {
 }
 
 function renderToFields(receiverAddress: string, explorerUrl: string) {
-  const toFull = document.querySelector("#rewardRecipient .full") as Element;
-  const toShort = document.querySelector("#rewardRecipient .short") as Element;
-
-  // if the for address is an ENS name neither will be found
-  if (!toFull || !toShort) return;
-
+  const toFull = document.querySelector("#To .full") as Element;
+  const toShort = document.querySelector("#To .short") as Element;
   toFull.innerHTML = `<div>${receiverAddress}</div>`;
   toShort.innerHTML = `<div>${shortenAddress(receiverAddress)}</div>`;
 
