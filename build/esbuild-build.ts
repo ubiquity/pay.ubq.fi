@@ -3,13 +3,8 @@ import * as dotenv from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
 
-const typescriptEntries = [
-  "static/scripts/rewards/init.ts",
-  "static/scripts/audit-report/audit.ts",
-  "static/scripts/onboarding/onboarding.ts",
-  "static/scripts/key-generator/keygen.ts",
-];
-const cssEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
+const typescriptEntries = ["static/scripts/rewards/init.ts"];
+const cssEntries = ["static/styles/rewards/rewards.css"];
 export const entries = [...typescriptEntries, ...cssEntries];
 
 const allNetworkUrls: Record<string, string[]> = {};
