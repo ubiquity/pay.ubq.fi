@@ -1,5 +1,5 @@
+import { app } from "../app-state";
 import { ensLookup } from "../cirip/ens-lookup";
-import { app } from "./index";
 
 type EnsParams =
   | {
