@@ -4,15 +4,28 @@ import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { Chain } from "./constants";
 import {
+  RateLimitOptions,
   getCurrency,
   getGitHubUrlPartsArray,
   populateTable,
   primaryRateLimitHandler,
-  RateLimitOptions,
   secondaryRateLimitHandler,
   TX_EMPTY_VALUE,
 } from "./helpers";
-import { ElemInterface, EtherInterface, GitHubUrlParts, GitInterface, QuickImport, SavedData, StandardInterface } from "./types";
+import {
+  ChainScanResult,
+  ElemInterface,
+  EtherInterface,
+  GitHubUrlParts,
+  GitInterface,
+  GoDBSchema,
+  ObserverKeys,
+  QuickImport,
+  SavedData,
+  StandardInterface,
+  TxData,
+} from "./types";
+import { getTxInfo } from "./utils/get-transaction";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;

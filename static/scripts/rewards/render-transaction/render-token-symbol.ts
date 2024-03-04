@@ -1,7 +1,7 @@
-import { BigNumberish, Contract, utils } from "ethers";
-import { getErc20Contract } from "../helpers";
-import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { JsonRpcProvider } from "@ethersproject/providers";
+import { MaxUint256 } from "@uniswap/permit2-sdk";
+import { BigNumberish, Contract, utils } from "ethers";
+import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 
 export const tokens = [
   {

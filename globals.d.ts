@@ -1,17 +1,7 @@
-export interface EthereumIsh {
-  autoRefreshOnNetworkChange: boolean;
-  chainId: string;
-  isMetaMask?: boolean;
-  isStatus?: boolean;
-  networkVersion: string;
-  selectedAddress: string;
-
-  on(event: "close" | "accountsChanged" | "chainChanged" | "networkChanged", callback: (payload: unknown) => void): void;
-  once(event: "close" | "accountsChanged" | "chainChanged" | "networkChanged", callback: (payload: unknown) => void): void;
-}
+import { Ethereum } from "ethereum-protocol";
 
 declare global {
   interface Window {
-    ethereum: EthereumIsh;
+    ethereum: Ethereum;
   }
 }
