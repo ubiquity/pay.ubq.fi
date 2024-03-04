@@ -33,11 +33,26 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 ## How to test locally
 
 1. Set `.env` variables.
-2. In the project root run `npx http-server`. Set `env.FRONTEND_URL` to `http://localhost:8080`.
-3. Run `npx tsx generate-permit2-url.ts` to generate an offline permit URL.
-4. Open the generated permit URL in the `localhost`.
-5. Connect the bounty hunter's address.
-6. Click the "withdraw" button to get a reward.
+2. Run `anvil --chain-id 31337 --fork-url https://rpc.gnosis.gateway.fm` in a separate terminal.
+3. Run the Anvil commands (uses the Anvil default wallets).
+4. In the project root run `yarn start`.
+5. A permit URL for both ERC20 and ERC721 is generated in the terminal.
+6. Open the generated permit URL defaulting to the variable values in the `.env` file.
+7. Connect the bounty hunter's address.
+8. Click the "withdraw" button to get a reward.
+9. Testing the ERC721 permit is easiest deploying the `nft-rewards` contract from the [repository](https://github.com/ubiquity/nft-rewards)
+
+#### Anvil commands
+
+###### Using any other `--chain-id` will hit real RPC endpoints.
+
+```
+cast rpc anvil_impersonateAccount 0xba12222222228d8ba445958a75a0704d566bf2c8 &
+cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xba12222222228d8ba445958a75a0704d566bf2c8 "transfer(address,uint256)(bool)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8  337888400000000000000000 &
+cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 "approve(address,uint256)(bool)" 0x000000000022D473030F116dDEE9F6B43aC78BA3  9999999999999991111111119999999999999999 &
+cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 "approve(address,uint256)(bool)" 0x000000000022D473030F116dDEE9F6B43aC78BA3  999999999999999111119999999999999999
+
+```
 
 ## CloudFlare Setup (GitHub Secrets)
 
