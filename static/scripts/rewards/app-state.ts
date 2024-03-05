@@ -4,6 +4,7 @@ import { RewardPermit } from "./render-transaction/tx-type";
 
 export class AppState {
   public claims: RewardPermit[] = [];
+  public claimTxs: Record<string, string> = {};
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
   private _signer;

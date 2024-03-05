@@ -15,6 +15,12 @@ export const claimButton = {
   element: document.getElementById("claimButton") as HTMLButtonElement,
 };
 
+export const viewClaimButton = {
+  // loading: loadingClaimButton,
+  // reset: resetClaimButton,
+  element: document.getElementById("viewClaimButton") as HTMLButtonElement,
+};
+
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
 
 export function createToast(meaning: keyof typeof toaster.icons, text: string) {
@@ -61,6 +67,22 @@ export function showLoader() {
 export function hideLoader() {
   claimButton.element.disabled = false;
   claimButton.element.className = "hide-cl";
+}
+
+export function hideClaimButton() {
+  claimButton.element.classList.add("hide");
+}
+
+export function showClaimButton() {
+  claimButton.element.classList.remove("hide");
+}
+
+export function hideViewClaimButton() {
+  viewClaimButton.element.classList.add("hide");
+}
+
+export function showViewClaimButton() {
+  viewClaimButton.element.classList.remove("hide");
 }
 
 export function errorToast(error: MetaMaskError, errorMessage?: string) {
