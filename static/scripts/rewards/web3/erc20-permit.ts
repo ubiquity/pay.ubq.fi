@@ -8,6 +8,12 @@ import { tokens } from "../render-transaction/render-token-symbol";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
 import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
+import { createClient } from "@supabase/supabase-js";
+
+declare const SUPABASE_URL: string;
+declare const SUPABASE_ANON_KEY: string;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export async function fetchFundingWallet(app: AppState): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   const reward = app.reward;
@@ -94,7 +100,7 @@ async function waitForTransaction(tx: TransactionResponse) {
   try {
     receipt = await tx.wait();
     toaster.create("success", `Claim Complete.`);
-    console.log(receipt.transactionHash); // @TODO: post to database
+    console.log(receipt.transactionHash);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -133,6 +139,9 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
+
+    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    if (!isHashUpdated) return;
 
     claimButton.element.removeEventListener("click", claimErc20PermitHandler);
 
@@ -275,4 +284,19 @@ export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: 
   // bitPos is the last 8 bits of the nonce
   const bitPos = BigNumber.from(nonce).and(255).toNumber();
   return { wordPos, bitPos };
+}
+
+export async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("permits")
+    .update({ transaction: hash })
+    // using only nonce in the condition as it's defined unique on db
+    .eq("nonce", app.reward.permit.nonce.toString());
+
+  if (error !== null) {
+    console.error(error);
+    throw error;
+  }
+
+  return true;
 }

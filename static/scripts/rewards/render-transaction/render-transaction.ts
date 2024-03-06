@@ -1,6 +1,5 @@
 import { AppState } from "../app-state";
-import { networkExplorers } from "../constants";
-import { claimButton, hideLoader } from "../toaster";
+import { claimButton, viewClaimButton, hideLoader, hideClaimButton, showClaimButton, hideViewClaimButton, showViewClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchFundingWallet, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -46,7 +45,7 @@ export async function renderTransaction(app: AppState, nextTx?: boolean): Promis
       tokenAddress: app.reward.permit.permitted.token,
       ownerAddress: app.reward.owner,
       amount: app.reward.transferDetails.requestedAmount,
-      explorerUrl: networkExplorers[app.reward.networkId],
+      explorerUrl: app.currentExplorerUrl,
       table,
       requestedAmountElement,
       provider: app.provider,
@@ -56,8 +55,17 @@ export async function renderTransaction(app: AppState, nextTx?: boolean): Promis
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
     generateInvalidatePermitAdminControl(app).catch(console.error);
-
-    claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+    if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
+      hideClaimButton();
+      showViewClaimButton();
+      viewClaimButton.element.addEventListener("click", () => {
+        window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`);
+      });
+    } else {
+      hideViewClaimButton();
+      showClaimButton();
+      claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+    }
     table.setAttribute(`data-claim`, "ok");
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
@@ -65,7 +73,7 @@ export async function renderTransaction(app: AppState, nextTx?: boolean): Promis
 
     renderNftSymbol({
       tokenAddress: app.reward.permit.permitted.token,
-      explorerUrl: networkExplorers[app.reward.networkId],
+      explorerUrl: app.currentExplorerUrl,
       table,
       requestedAmountElement,
       provider: app.provider,

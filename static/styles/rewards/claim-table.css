@@ -134,6 +134,9 @@ table[data-claim-rendered] #controls {
 table[data-claim-rendered] button {
   opacity: 0.5;
 }
+table[data-claim-rendered] button.hide {
+  display:none !important;
+}
 table[data-claim-rendered] button:disabled {
   opacity: 0.5;
   pointer-events: none;
