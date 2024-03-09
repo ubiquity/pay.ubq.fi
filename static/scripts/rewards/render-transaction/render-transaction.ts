@@ -58,10 +58,12 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
       buttonController.showViewClaim();
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
-    } else {
+    } else if (window.ethereum) {
+      // requires wallet connection to claim
       buttonController.showMakeClaim();
       makeClaimButton.addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
+
     table.setAttribute(`data-make-claim`, "ok");
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
