@@ -46,9 +46,9 @@ export const networkExplorers: Record<number, string> = {
 };
 
 export const networkRpcs: Record<number, string[]> = {
-  [NetworkIds.Mainnet]: ["https://rpc-pay.ubq.fi/v1/mainnet", ...(extraRpcs[NetworkIds.Mainnet] || [])],
-  [NetworkIds.Goerli]: ["https://rpc-pay.ubq.fi/v1/goerli", ...(extraRpcs[NetworkIds.Goerli] || [])],
-  [NetworkIds.Gnosis]: [...(extraRpcs[NetworkIds.Gnosis] || [])],
+  [NetworkIds.Mainnet]: extraRpcs[NetworkIds.Mainnet],
+  [NetworkIds.Goerli]: extraRpcs[NetworkIds.Goerli],
+  [NetworkIds.Gnosis]: extraRpcs[NetworkIds.Gnosis],
   [NetworkIds.Anvil]: ["http://127.0.0.1:8545"],
 };
 
