@@ -60,18 +60,6 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return isPermitClaimable;
 }
 
-async function createEthersContract(signer: JsonRpcSigner) {
-  try {
-    return new ethers.Contract(permit2Address, permit2Abi, signer);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error("Error in creating ethers.Contract: ", e);
-      errorToast(e, e.reason);
-    }
-  }
-}
-
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   const reward = app.reward;
   try {
@@ -130,7 +118,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    const permit2Contract = await createEthersContract(app.signer);
+    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
     const tx = await transferFromPermit(permit2Contract, app);

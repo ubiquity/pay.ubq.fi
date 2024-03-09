@@ -1,4 +1,4 @@
-import { BigNumberish, ethers, utils } from "ethers";
+import { BigNumber, BigNumberish, ethers, utils } from "ethers";
 import { erc20Abi } from "../abis/erc20Abi";
 import { app } from "../app-state";
 export async function renderTokenSymbol({
@@ -17,8 +17,25 @@ export async function renderTokenSymbol({
   explorerUrl: string;
 }): Promise<void> {
   const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
-  const symbol = await contract.symbol();
-  const decimals = await contract.decimals();
+
+  let symbol: string, decimals: BigNumber;
+
+  // Try to get the token info from localStorage
+  const tokenInfo = localStorage.getItem(tokenAddress);
+
+  if (tokenInfo) {
+    // If the token info is in localStorage, parse it and use it
+    const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
+    decimals = storedDecimals;
+    symbol = storedSymbol;
+  } else {
+    // If the token info is not in localStorage, fetch it from the blockchain
+    [symbol, decimals] = await Promise.all([contract.symbol(), contract.decimals()]);
+
+    // Store the token info in localStorage for future use
+    localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
+  }
+
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
     amount,
@@ -38,7 +55,24 @@ export async function renderNftSymbol({
   explorerUrl: string;
 }): Promise<void> {
   const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
-  const symbol = await contract.symbol();
+
+  let symbol: string;
+
+  // Try to get the token info from localStorage
+  const tokenInfo = localStorage.getItem(tokenAddress);
+
+  if (tokenInfo) {
+    // If the token info is in localStorage, parse it and use it
+    const { symbol: storedSymbol } = JSON.parse(tokenInfo);
+    symbol = storedSymbol;
+  } else {
+    // If the token info is not in localStorage, fetch it from the blockchain
+    symbol = await contract.symbol();
+
+    // Store the token info in localStorage for future use
+    localStorage.setItem(tokenAddress, JSON.stringify({ symbol }));
+  }
+
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}">1 ${symbol}</a>`;
 }
