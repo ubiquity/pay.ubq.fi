@@ -1,4 +1,3 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
 import { claimButton, hideLoader } from "../toaster";
@@ -8,7 +7,6 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-import { Erc20Permit, RewardPermit } from "./tx-type";
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
   if (!nextTxButton || !prevTxButton) return;
@@ -59,7 +57,6 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
       explorerUrl: networkExplorers[app.reward.networkId],
       table,
       requestedAmountElement,
-      networkId: app.reward.networkId,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
@@ -73,11 +70,10 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     table.setAttribute(`data-claim`, "ok");
 
     renderNftSymbol({
-      tokenAddress: app.reward.nftAddress,
+      tokenAddress: app.reward.permit.permitted.token,
       explorerUrl: networkExplorers[app.reward.networkId],
       table,
       requestedAmountElement,
-      networkId: app.reward.networkId,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
@@ -87,8 +83,4 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   }
 
   return true;
-}
-
-function permitCheck(permit: RewardPermit): permit is Erc20Permit {
-  return permit.type === "erc20-permit";
 }
