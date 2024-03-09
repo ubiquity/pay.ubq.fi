@@ -148,20 +148,22 @@ footer {
   align-self: center;
   margin: 12px auto;
   /* opacity: 0.5; */
-  display: none;
+  /* display: none; */
+  opacity: 0;
+  transition: opacity 1s;
 }
 #carousel > div {
   color: #808080;
+  vertical-align: middle;
 }
 #carousel > div:hover {
   color: #fff;
 }
-#carousel.display-carousel {
-  display: flex;
+#carousel.flex {
+  /* display: flex; */
+  opacity: 1;
 }
-#carousel > #rewardsCount {
-pointer-events: none;
-}
+#carousel > #rewardsCount {pointer-events: none;display: inline-block;/* vertical-align: middle; */}
 #prevTx,
 #nextTx {
   padding: 3px;
@@ -170,6 +172,8 @@ pointer-events: none;
   cursor: pointer;
   transform: rotate(45deg);
   border-radius: 3px;
+  width: 0px;
+  display: inline-block;
 }
 #prevTx {
   /* border-color: transparent transparent #fff #fff; */

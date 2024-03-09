@@ -16,7 +16,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
 
   if (app.claims && app.claims.length > 1) {
-    carousel.className = "display-carousel";
+    carousel.className = "flex";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
     rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
   }
