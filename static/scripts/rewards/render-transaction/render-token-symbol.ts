@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, ethers, utils } from "ethers";
+import { BigNumberish, ethers, utils } from "ethers";
 import { erc20Abi } from "../abis/erc20Abi";
 import { app } from "../app-state";
 export async function renderTokenSymbol({
@@ -18,7 +18,7 @@ export async function renderTokenSymbol({
 }): Promise<void> {
   const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
-  let symbol: string, decimals: BigNumber;
+  let symbol, decimals;
 
   // Try to get the token info from localStorage
   const tokenInfo = localStorage.getItem(tokenAddress);
@@ -36,11 +36,11 @@ export async function renderTokenSymbol({
     localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
   }
 
+  // Format the amount
+  const formattedAmount = parseFloat(utils.formatUnits(amount, decimals)).toFixed(0);
+
   table.setAttribute(`data-contract-loaded`, "true");
-  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${utils.formatUnits(
-    amount,
-    decimals
-  )} ${symbol}</a>`;
+  requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${formattedAmount} ${symbol}</a>`;
 }
 
 export async function renderNftSymbol({

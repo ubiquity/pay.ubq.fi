@@ -15,7 +15,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
       app.nextPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");
-      renderTransaction(app).catch(console.error);
+      renderTransaction(true).catch(console.error);
     });
   }
 
@@ -26,7 +26,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
       app.previousPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");
-      renderTransaction(app, true).catch(console.error);
+      renderTransaction().catch(console.error);
     });
   }
 
