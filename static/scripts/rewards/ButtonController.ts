@@ -1,5 +1,5 @@
 const LOADER = "data-loader";
-const MAKE_CLAIM = "data-claim";
+const MAKE_CLAIM = "data-make-claim";
 const VIEW_CLAIM = "data-view-claim";
 const INVALIDATOR = "data-invalidator";
 export class ButtonController {
@@ -7,6 +7,7 @@ export class ButtonController {
 
   constructor(controls: HTMLDivElement) {
     this._controls = controls;
+    this.hideAll();
   }
 
   public showLoader(): void {

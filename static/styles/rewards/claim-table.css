@@ -125,40 +125,40 @@ table tr#additional-details-border > * {
   padding: 0;
   margin: 0;
 }
-table[data-claim-rendered] {
+table[data-make-claim-rendered] {
   /* border: 1px solid #80808020; */
   /* border-right: 0; */
   /* border-left: 0; */
 }
-table[data-claim-rendered] #controls {
+table[data-make-claim-rendered] #controls {
   display: flex;
 }
-table[data-claim-rendered] button {
+table[data-make-claim-rendered] button {
   opacity: 0.5;
 }
-table[data-claim-rendered] button.hide {
+table[data-make-claim-rendered] button.hide {
   display: none !important;
 }
-table[data-claim-rendered] button:disabled {
+table[data-make-claim-rendered] button:disabled {
   opacity: 0.5;
   pointer-events: none;
 }
-table[data-claim-rendered] button:hover {
+table[data-make-claim-rendered] button:hover {
   background-color: #80808020;
   opacity: 1;
 }
-table[data-claim-rendered] button > div {
+table[data-make-claim-rendered] button > div {
   display: none;
 }
-table[data-claim-rendered] button:disabled > svg#claim-icon {
+table[data-make-claim-rendered] button:disabled > svg#claim-icon {
   display: none;
 }
-table[data-claim-rendered] button:hover > div {
+table[data-make-claim-rendered] button:hover > div {
   display: unset;
   color: #fff;
 }
 
-table[data-claim-rendered] button:hover > svg {
+table[data-make-claim-rendered] button:hover > svg {
   display: none !important;
 }
 
@@ -166,16 +166,16 @@ table[data-claim-rendered] button:hover > svg {
   display: block;
 }
 
-table[data-claim-rendered] button.hide > svg#claim-loader {
+table[data-make-claim-rendered] button.hide > svg#claim-loader {
   display: none;
 }
-table[data-claim-rendered] button.show > svg#claim-icon {
+table[data-make-claim-rendered] button.show > svg#claim-icon {
   display: unset;
 }
-table[data-claim-rendered] button.show > svg#claim-loader {
+table[data-make-claim-rendered] button.show > svg#claim-loader {
   display: unset;
 }
-table[data-claim-rendered] button.hide > svg#claim-icon {
+table[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
 
@@ -184,24 +184,24 @@ table #controls {
   transition: 1s ease-in-out opacity;
   pointer-events: none;
 }
-table[data-claim-rendered="true"][data-contract-loaded="true"][data-claim="ok"] #controls {
+table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
   opacity: 1;
   pointer-events: unset;
 }
 
-table[data-claim-rendered] button#additionalDetails {
+table[data-make-claim-rendered] button#additionalDetails {
   width: 100%;
   color: #fff;
   /* opacity: 0.25; */
 }
-table[data-claim-rendered] button#additionalDetails:hover {
+table[data-make-claim-rendered] button#additionalDetails:hover {
   /* opacity: 1; */
 }
-table[data-claim-rendered] tr {
+table[data-make-claim-rendered] tr {
   background-color: #80808000;
   transition: 125ms ease-in-out opacity;
 }
-table[data-claim-rendered] tr#additional-details-border {
+table[data-make-claim-rendered] tr#additional-details-border {
   /* background-color: #80808010; */
   /* background-color: var(--background-color-light); */
   /* -webkit-backdrop-filter: blur(4px); */
@@ -210,7 +210,7 @@ table[data-claim-rendered] tr#additional-details-border {
   /* border-left: 0; */
   /* border-right: 0; */
 }
-table[data-claim-rendered] tr#additional-details-border + tr > * {
+table[data-make-claim-rendered] tr#additional-details-border + tr > * {
   padding-top: 24px;
 }
 table #additionalDetailsTable tr,
@@ -277,16 +277,16 @@ table tbody {
   /* box-shadow: inset 0 0 96px #00000008; */
   box-shadow: inset 0 0 96px #00bfff10;
 }
-table[data-claim="error"] thead {
+table[data-make-claim="error"] thead {
   display: table-row-group;
 }
-table[data-claim="ok"] thead {
+table[data-make-claim="ok"] thead {
   display: none;
 }
-table[data-claim="error"] tbody {
+table[data-make-claim="error"] tbody {
   display: none;
 }
-table[data-claim="ok"] tbody {
+table[data-make-claim="ok"] tbody {
   display: table-row-group;
 }
 
@@ -334,6 +334,6 @@ table th {
 
 
 [data-loader="false"]  #claim-loader{ display: none;}
-[data-claim="false"]  #claim{ display: none;}
+[data-make-claim="false"]  #make-claim{ display: none;}
 [data-view-claim="false"] #view-claim{ display: none;}
 [data-invalidator="false"] #invalidator{ display: none;}

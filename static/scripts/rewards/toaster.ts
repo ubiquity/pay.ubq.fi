@@ -12,7 +12,7 @@ export const toaster = {
 };
 
 export const controls = document.getElementById("controls") as HTMLDivElement;
-export const claim = document.getElementById("claim") as HTMLButtonElement;
+export const claim = document.getElementById("make-claim") as HTMLButtonElement;
 export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
 export const notifications = document.querySelector(".notifications") as HTMLUListElement;
 export const buttonController = new ButtonController(controls);

@@ -56,18 +56,18 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     }
 
     if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
-      buttonController.onlyShowViewClaim();
+      buttonController.showViewClaim();
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
     } else {
-      buttonController.onlyShowMakeClaim();
+      buttonController.showMakeClaim();
       claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
-    table.setAttribute(`data-claim`, "ok");
+    table.setAttribute(`data-make-claim`, "ok");
 
     claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
-    table.setAttribute(`data-claim`, "ok");
+    table.setAttribute(`data-make-claim`, "ok");
 
     renderNftSymbol({
       tokenAddress: app.reward.permit.permitted.token,

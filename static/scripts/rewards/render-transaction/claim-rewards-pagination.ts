@@ -15,7 +15,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
       removeAllEventListeners(claim) as HTMLButtonElement;
       app.nextPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-      table.setAttribute(`data-claim`, "error");
+      table.setAttribute(`data-make-claim`, "error");
       renderTransaction().catch(console.error);
     });
   }
@@ -25,7 +25,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
       removeAllEventListeners(claim) as HTMLButtonElement;
       app.previousPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-      table.setAttribute(`data-claim`, "error");
+      table.setAttribute(`data-make-claim`, "error");
       renderTransaction().catch(console.error);
     });
   }
