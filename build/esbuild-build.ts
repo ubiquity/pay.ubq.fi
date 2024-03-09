@@ -1,12 +1,9 @@
-import extraRpcs from "../lib/chainlist/constants/extraRpcs";
+import { execSync } from "child_process";
+import { config } from "dotenv";
 import esbuild from "esbuild";
-const typescriptEntries = [
-  "static/scripts/rewards/index.ts",
-  "static/scripts/audit-report/audit.ts",
-  "static/scripts/onboarding/onboarding.ts",
-  "static/scripts/key-generator/keygen.ts",
-];
-const cssEntries = ["static/styles/rewards/rewards.css", "static/styles/audit-report/audit.css", "static/styles/onboarding/onboarding.css"];
+import extraRpcs from "../lib/chainlist/constants/extraRpcs";
+const typescriptEntries = ["static/scripts/rewards/init.ts"];
+const cssEntries = ["static/styles/rewards/rewards.css"];
 export const entries = [...typescriptEntries, ...cssEntries];
 
 const allNetworkUrls: Record<string, string[]> = {};
@@ -32,9 +29,10 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".svg": "dataurl",
   },
   outdir: "static/out",
-  define: {
-    extraRpcs: JSON.stringify(allNetworkUrls),
-  },
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
+    extraRpcs: allNetworkUrls,
+    commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
+  }),
 };
 
 esbuild
@@ -46,3 +44,22 @@ esbuild
     console.error(err);
     process.exit(1);
   });
+
+function createEnvDefines(environmentVariables: string[], generatedAtBuild: Record<string, unknown>): Record<string, string> {
+  const defines: Record<string, string> = {};
+  config();
+  for (const name of environmentVariables) {
+    const envVar = process.env[name];
+    if (envVar !== undefined) {
+      defines[name] = JSON.stringify(envVar);
+    } else {
+      throw new Error(`Missing environment variable: ${name}`);
+    }
+  }
+  for (const key in generatedAtBuild) {
+    if (Object.prototype.hasOwnProperty.call(generatedAtBuild, key)) {
+      defines[key] = JSON.stringify(generatedAtBuild[key]);
+    }
+  }
+  return defines;
+}

@@ -31,6 +31,8 @@
   </head>
   <body>
     <background>
+      <div class="gradient"></div>
+      <div class="gradient"></div>
       <div id="grid"></div>
     </background>
     <main>
@@ -159,8 +161,14 @@
                     <div class="claim-title">Collect</div>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="claim-icon">
                       <path
-                        d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"
-                      />
+                        d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z" />
+                    </svg>
+                  </button>
+                  <button id="viewClaimButton" class="hide-cl">
+                    <div class="claim-title">View Claim</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="link-icon">
+                      <path
+                      d="M212.309-140.001q-30.308 0-51.308-21t-21-51.308v-535.382q0-30.308 21-51.308t51.308-21h252.305V-760H212.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v535.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h535.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-252.305h59.999v252.305q0 30.308-21 51.308t-51.308 21H212.309Zm176.46-206.615-42.153-42.153L717.847-760H560v-59.999h259.999V-560H760v-157.847L388.769-346.616Z" />
                     </svg>
                   </button>
                 </div>
@@ -178,6 +186,6 @@
     </main>
 
     <ul class="notifications"></ul>
-    <script src="out/scripts/rewards/index.js" type="application/javascript"></script>
+    <script src="out/scripts/rewards/init.js" type="application/javascript"></script>
   </body>
 </html>
