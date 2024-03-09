@@ -32,17 +32,19 @@ canvas {
   height: 200vh;
   position: absolute;
   background-image: radial-gradient(#00bfff00 0%, #00bfffff 15%, #00bfff00 34%, #00bfffff 58%, #00bfff00 75%, #00bfffff 100%);
-  /* display: none; */
-  opacity: 0.125;
+  opacity: 0;
+  animation: fadeIn 2s ease-in-out forwards;
 }
 
 background > :nth-child(1) {
-  /* display: unset; */
   transform: translateX(-100vw);
 }
 background > :nth-child(2) {
-  /* display: unset; */
   transform: translateY(-50vh);
 }
-background > canvas {
+
+@keyframes fadeIn {
+  to {
+    opacity: 0.125;
+  }
 }
