@@ -30,7 +30,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     if (!app.claims || app.claims.length <= 1) {
       // already hidden
     } else {
-      setPagination(document.getElementById("nextTx"), document.getElementById("previousTx"));
+      setPagination(document.getElementById("nextTx"), document.getElementById("prevTx"));
 
       const rewardsCount = document.getElementById("rewardsCount") as Element;
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
