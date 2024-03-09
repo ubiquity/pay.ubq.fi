@@ -291,9 +291,6 @@ table[data-claim="ok"] tbody {
   color: #fff;
 }
 
-.hide-pagination {
-  display: none;
-}
 
 #additionalDetails svg {
   /* display: none; */

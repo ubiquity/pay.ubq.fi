@@ -7,34 +7,25 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-import { RewardPermit, Erc20Permit } from "./tx-type";
+import { Erc20Permit, RewardPermit } from "./tx-type";
 
-function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
-  if (!nextTxButton || !prevTxButton) return;
-  if (app.claims.length > 1) {
-    prevTxButton.classList.remove("hide-pagination");
-    nextTxButton.classList.remove("hide-pagination");
-
-    prevTxButton.classList.add("show-pagination");
-    nextTxButton.classList.add("show-pagination");
-  }
-}
+const carousel = document.getElementById("carousel") as Element;
 
 type Success = boolean;
 export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
 
+  if (app.claims && app.claims.length > 1) {
+    console.trace("displaying carousel");
+    carousel.className = "display-carousel";
+    const rewardsCount = document.getElementById("rewardsCount") as Element;
+    rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
+  } else {
+    console.trace("not displaying carousel");
+  }
+
   if (nextTx) {
     app.nextPermit();
-
-    if (!app.claims || app.claims.length <= 1) {
-      // already hidden
-    } else {
-      setPagination(document.getElementById("nextTx"), document.getElementById("prevTx"));
-
-      const rewardsCount = document.getElementById("rewardsCount") as Element;
-      rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-    }
   }
 
   if (!app.reward) {

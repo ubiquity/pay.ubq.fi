@@ -2,7 +2,6 @@ import { app } from "../app-state";
 import { claimButton } from "../toaster";
 import { table } from "./read-claim-data-from-url";
 import { renderTransaction } from "./render-transaction";
-import { setPagination } from "./set-pagination";
 import { removeAllEventListeners } from "./utils";
 
 const nextTxButton = document.getElementById("nextTx");
@@ -30,6 +29,4 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
       renderTransaction().catch(console.error);
     });
   }
-
-  setPagination(nextTxButton, prevTxButton);
 }
