@@ -1,12 +1,13 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
-import { claimButton, hideLoader } from "../toaster";
+import { claimButton, hideClaimButton, hideLoader, hideViewClaimButton, showClaimButton, showViewClaimButton, viewClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
+import { RewardPermit, Erc20Permit } from "./tx-type";
 
 function setPagination(nextTxButton: Element | null, prevTxButton: Element | null) {
   if (!nextTxButton || !prevTxButton) return;
@@ -44,7 +45,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
   verifyCurrentNetwork(app.reward.networkId).catch(console.error);
 
-  if (app.reward.type === "erc20-permit") {
+  if (permitCheck(app.reward)) {
     const treasury = await fetchTreasury(app.reward);
 
     // insert tx data into table
@@ -64,8 +65,19 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
 
     generateInvalidatePermitAdminControl(app).catch(console.error);
 
+    if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
+      hideClaimButton();
+      showViewClaimButton();
+      viewClaimButton.element.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
+    } else {
+      hideViewClaimButton();
+      showClaimButton();
+      claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+    }
+    table.setAttribute(`data-claim`, "ok");
+
     claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
-  } else if (app.reward.type === "erc721-permit") {
+  } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
     table.setAttribute(`data-claim`, "ok");
 
@@ -83,4 +95,8 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   }
 
   return true;
+}
+
+function permitCheck(permit: RewardPermit): permit is Erc20Permit {
+  return permit.type === "erc20-permit";
 }
