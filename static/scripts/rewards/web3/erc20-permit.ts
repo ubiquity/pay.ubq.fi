@@ -4,10 +4,10 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
 import invalidateButton from "../invalidate-component";
+import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
 import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
-import { supabase } from "../render-transaction/read-claim-data-from-url";
 
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
@@ -15,10 +15,31 @@ export async function fetchTreasury(
   try {
     const tokenAddress = permit.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
-    const balance = await tokenContract.balanceOf(permit.owner);
-    const allowance = await tokenContract.allowance(permit.owner, permit2Address);
-    const decimals = await tokenContract.decimals();
-    const symbol = await tokenContract.symbol();
+
+    let balance, allowance, decimals, symbol;
+
+    // Try to get the token info from localStorage
+    const tokenInfo = localStorage.getItem(tokenAddress);
+
+    if (tokenInfo) {
+      // If the token info is in localStorage, parse it and use it
+      const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
+      decimals = storedDecimals;
+      symbol = storedSymbol;
+      [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
+    } else {
+      // If the token info is not in localStorage, fetch it from the blockchain
+      [balance, allowance, decimals, symbol] = await Promise.all([
+        tokenContract.balanceOf(permit.owner),
+        tokenContract.allowance(permit.owner, permit2Address),
+        tokenContract.decimals(),
+        tokenContract.symbol(),
+      ]);
+
+      // Store the token info in localStorage for future use
+      localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
+    }
+
     return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
@@ -154,6 +175,20 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   const { balance, allowance } = await fetchTreasury(reward);
   const permit = reward.permit;
   const permitted = BigNumber.from(permit.permitted.amount);
+
+  // keyxng's
+
+  // let treasury;
+  // try {
+  //   treasury = await fetchFundingWallet(app);
+  // } catch (error: unknown) {
+  //   console.error("Error in fetchTreasury: ", error);
+  //   return false;
+  // }
+
+  // const { balance, allowance } = treasury;
+  // const permitted = BigNumber.from(reward.permit.permitted.amount);
+
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
