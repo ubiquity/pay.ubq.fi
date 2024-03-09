@@ -13,10 +13,14 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive" # Ensures submodules are checked out
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           submodules: recursive
 
@@ -29,23 +33,22 @@ jobs:
         run: yarn install
 
       - name: Build
-        run: yarn utils:build
-
-      - name: Add commit SHA file to build folder
-        run: echo -n $(echo "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" | cut -c1-7) > static/commit.txt
-
-      - name: Prepare Deployment Artifact
-        env:
-          EVENT_NAME: ${{github.event_name}}
-          PR_NUMBER: ${{ github.event.number }}
-          SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
-          echo "event_name=$EVENT_NAME,pr_number=$PR_NUMBER,sha=$SHA"
-          mkdir -p ./pr
-          echo "event_name=$EVENT_NAME,pr_number=$PR_NUMBER,sha=$SHA," > ./pr/pr_number
-          cd ./static && zip -r ../pr/pull-request.zip ./*
+          yarn
+          yarn build
+          echo -n $(echo "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" | cut -c1-7) > static/commit.txt
 
-      - uses: actions/upload-artifact@v3
+      - name: Deploy to Cloudflare
+        if: env.skip != 'true'
+        uses: ubiquity/cloudflare-deploy-action@main
         with:
-          name: pr
-          path: pr/
+          cloudflare_api_token: JWo5dPsoyohH5PRu89-RktjCvRN0-ODC6CC9ZBqF # Specifically scoped for public contributors to automatically deploy to our team Cloudflare account
+          repository: ${{ github.repository }}
+          production_branch: ${{ github.event.repository.default_branch }}
+          output_directory: "static"
+          current_branch: ${{ github.ref_name }}
+          pull_request_number: ${{ github.event.pull_request.number }}
+          commit_sha: ${{ github.sha }}
+        # Add any environment variables you need to pass along here
+        #   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        #   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

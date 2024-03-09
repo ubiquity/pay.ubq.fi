@@ -3,6 +3,7 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
 import { getOptimalRPC } from "../helpers";
 import invalidateButton from "../invalidate-component";
+
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
