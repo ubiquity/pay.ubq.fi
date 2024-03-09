@@ -23,7 +23,6 @@ export class ButtonController {
   }
 
   public showMakeClaim(): void {
-    console.trace();
     this._controls.setAttribute(MAKE_CLAIM, "true");
   }
 

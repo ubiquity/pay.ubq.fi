@@ -6,7 +6,7 @@ import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
-import { MetaMaskError, buttonController, claim, errorToast, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, makeClaimButton, toaster } from "../toaster";
 
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
@@ -46,9 +46,8 @@ export async function fetchTreasury(
 }
 
 async function checkPermitClaimability(app: AppState): Promise<boolean> {
-  let isPermitClaimable = false;
   try {
-    isPermitClaimable = await checkPermitClaimable(app);
+    return await checkPermitClaimable(app);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -56,7 +55,8 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
       errorToast(e, e.reason);
     }
   }
-  return isPermitClaimable;
+  buttonController.hideMakeClaim();
+  return false;
 }
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
@@ -72,6 +72,7 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
       if (e.code == "ACTION_REJECTED") {
         // Handle the user rejection case
         toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
+        buttonController.showMakeClaim();
       } else {
         // Handle other errors
         console.error("Error in permitTransferFrom: ", e);
@@ -112,7 +113,7 @@ async function renderTx(app: AppState) {
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
-    buttonController.showLoader();
+    buttonController.onlyShowLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
@@ -129,7 +130,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) return;
 
-    claim.removeEventListener("click", claimErc20PermitHandler);
+    makeClaimButton.removeEventListener("click", claimErc20PermitHandler);
 
     await renderTx(app);
   };
@@ -146,6 +147,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
+    buttonController.showViewClaim();
     return false;
   }
 
@@ -165,10 +167,12 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
   if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
+    buttonController.hideMakeClaim();
     return false;
   }
   if (!isAllowed) {
     toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
+    buttonController.hideMakeClaim();
     return false;
   }
 
@@ -183,6 +187,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   const beneficiary = reward.transferDetails.to.toLowerCase();
   if (beneficiary !== user) {
     toaster.create("warning", `This reward is not for you.`);
+    buttonController.hideMakeClaim();
     return false;
   }
 

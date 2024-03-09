@@ -1,6 +1,6 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
-import { buttonController, claim, viewClaimButton } from "../toaster";
+import { buttonController, makeClaimButton, viewClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -60,11 +60,9 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
     } else {
       buttonController.showMakeClaim();
-      claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+      makeClaimButton.addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
     table.setAttribute(`data-make-claim`, "ok");
-
-    claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
     table.setAttribute(`data-make-claim`, "ok");
@@ -79,7 +77,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
-    claim.addEventListener("click", claimErc721PermitHandler(app.reward));
+    makeClaimButton.addEventListener("click", claimErc721PermitHandler(app.reward));
   }
 
   return true;

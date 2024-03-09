@@ -332,8 +332,38 @@ table th {
   padding-left: 16px;
 }
 
+[data-loader="false"] #claim-loader {
+  display: none;
+}
+[data-make-claim="false"] #make-claim {
+  display: none;
+}
+[data-view-claim="false"] #view-claim {
+  display: none;
+}
+[data-invalidator="false"] #invalidator {
+  display: none;
+}
+#claiming-message::after {
+  content: "";
+  animation: ellipsis 1s infinite;
+  position: absolute;
+}
 
-[data-loader="false"]  #claim-loader{ display: none;}
-[data-make-claim="false"]  #make-claim{ display: none;}
-[data-view-claim="false"] #view-claim{ display: none;}
-[data-invalidator="false"] #invalidator{ display: none;}
+@keyframes ellipsis {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
+}
