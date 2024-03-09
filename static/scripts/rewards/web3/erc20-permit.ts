@@ -12,11 +12,11 @@ import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
 ): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+  let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
+
   try {
     const tokenAddress = permit.permit.permitted.token;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
-
-    let balance, allowance, decimals, symbol;
 
     // Try to get the token info from localStorage
     const tokenInfo = localStorage.getItem(tokenAddress);
@@ -61,9 +61,8 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
 }
 
 async function createEthersContract(signer: JsonRpcSigner) {
-  let permit2Contract;
   try {
-    permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+    return new ethers.Contract(permit2Address, permit2Abi, signer);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -71,7 +70,6 @@ async function createEthersContract(signer: JsonRpcSigner) {
       errorToast(e, e.reason);
     }
   }
-  return permit2Contract;
 }
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
@@ -98,11 +96,11 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
 }
 
 async function waitForTransaction(tx: TransactionResponse) {
-  let receipt;
   try {
-    receipt = await tx.wait();
+    const receipt = await tx.wait();
     toaster.create("success", `Claim Complete.`);
     console.log(receipt.transactionHash);
+    return receipt;
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -110,7 +108,6 @@ async function waitForTransaction(tx: TransactionResponse) {
       errorToast(e, e.reason);
     }
   }
-  return receipt;
 }
 
 async function renderTx(app: AppState) {
@@ -152,7 +149,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 }
 
 export async function checkPermitClaimable(app: AppState): Promise<boolean> {
-  let isClaimed;
+  let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(app);
   } catch (error: unknown) {
@@ -201,7 +198,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  let user;
+  let user: string;
   try {
     user = (await app.signer.getAddress()).toLowerCase();
   } catch (error: unknown) {
