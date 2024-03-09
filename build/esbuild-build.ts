@@ -3,8 +3,7 @@ import { config } from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
 const typescriptEntries = ["static/scripts/rewards/init.ts"];
-const cssEntries = ["static/styles/rewards/rewards.css"];
-export const entries = [...typescriptEntries, ...cssEntries];
+export const entries = [...typescriptEntries];
 
 const allNetworkUrls: Record<string, string[]> = {};
 // this flattens all the rpcs into a single object, with key names that match the networkIds. The arrays are just of URLs per network ID.
