@@ -33,6 +33,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.provider = await useFastestRpc(app);
   if (window.ethereum) {
     app.signer = await connectWallet().catch(console.error);
+    window.ethereum.on("accountsChanged", () => buttonController.showMakeClaim());
   } else {
     buttonController.hideAll();
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
@@ -40,9 +41,8 @@ export async function readClaimDataFromUrl(app: AppState) {
   displayRewardDetails();
   displayRewardPagination();
 
-  renderTransaction()
-    .then(() => verifyCurrentNetwork(app.networkId))
-    .catch(console.error);
+  await renderTransaction();
+  await verifyCurrentNetwork(app.networkId);
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {

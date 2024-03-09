@@ -2,7 +2,6 @@ import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { buttonController, makeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
@@ -30,23 +29,26 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
       return;
     }
 
-    buttonController.onlyShowLoader();
+    buttonController.showLoader();
     try {
       const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, signer);
 
       const tx: TransactionResponse = await nftContract.safeMint(reward.request, reward.signature);
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
+      buttonController.hideLoader();
       toaster.create("success", `Claim Complete.`);
+      buttonController.showViewClaim();
+      buttonController.hideMakeClaim();
       console.log(receipt.transactionHash); // @TODO: post to database
 
       makeClaimButton.removeEventListener("click", claimHandler);
 
-      app.nextPermit();
-      renderTransaction().catch((error) => {
-        console.error(error);
-        toaster.create("error", `Error rendering transaction: ${error.message}`);
-      });
+      // app.nextPermit();
+      // renderTransaction().catch((error) => {
+      //   console.error(error);
+      //   toaster.create("error", `Error rendering transaction: ${error.message}`);
+      // });
     } catch (error: unknown) {
       console.error(error);
       if (error instanceof Error) {

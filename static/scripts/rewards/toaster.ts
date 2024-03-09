@@ -18,7 +18,7 @@ export const notifications = document.querySelector(".notifications") as HTMLULi
 export const buttonController = new ButtonController(controls);
 
 export function createToast(meaning: keyof typeof toaster.icons, text: string) {
-  buttonController.hideLoader();
+  if (meaning != "info") buttonController.hideLoader();
   const toastDetails = {
     timer: 5000,
   } as {

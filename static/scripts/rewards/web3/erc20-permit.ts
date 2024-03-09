@@ -4,7 +4,6 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
 import { MetaMaskError, buttonController, errorToast, makeClaimButton, toaster } from "../toaster";
 
@@ -87,6 +86,9 @@ async function waitForTransaction(tx: TransactionResponse) {
   try {
     const receipt = await tx.wait();
     toaster.create("success", `Claim Complete.`);
+    buttonController.showViewClaim();
+    buttonController.hideLoader();
+    buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
     return receipt;
   } catch (error: unknown) {
@@ -98,23 +100,10 @@ async function waitForTransaction(tx: TransactionResponse) {
   }
 }
 
-async function renderTx(app: AppState) {
-  try {
-    app.claims.slice(0, 1);
-    app.nextPermit();
-    await renderTransaction();
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error("Error in renderTransaction: ", e);
-      errorToast(e, e.reason);
-    }
-  }
-}
-
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
-    buttonController.onlyShowLoader();
+    buttonController.hideMakeClaim();
+    buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
@@ -125,6 +114,9 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const tx = await transferFromPermit(permit2Contract, app);
     if (!tx) return;
 
+    // buttonController.showLoader();
+    // buttonController.hideMakeClaim();
+
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
 
@@ -132,8 +124,6 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     if (!isHashUpdated) return;
 
     makeClaimButton.removeEventListener("click", claimErc20PermitHandler);
-
-    await renderTx(app);
   };
 }
 
