@@ -4,11 +4,11 @@ import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
-import { claimButton, showLoader, toaster } from "../toaster";
+import { buttonController, claim, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export function claimErc721PermitHandler(reward: Erc721Permit) {
-  return async function claimButtonHandler() {
+  return async function claimHandler() {
     const signer = await connectWallet();
     if (!signer) {
       return;
@@ -30,7 +30,7 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
       return;
     }
 
-    showLoader();
+    buttonController.showLoader();
     try {
       const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, signer);
 
@@ -40,7 +40,7 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
       toaster.create("success", `Claim Complete.`);
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      claimButton.element.removeEventListener("click", claimButtonHandler);
+      claim.removeEventListener("click", claimHandler);
 
       renderTransaction(true).catch((error) => {
         console.error(error);

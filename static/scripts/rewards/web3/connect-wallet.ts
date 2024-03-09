@@ -1,6 +1,6 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { claimButton, toaster } from "../toaster";
+import { buttonController, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -13,6 +13,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const address = await signer.getAddress();
 
     if (!address) {
+      buttonController.hideAll();
       console.error("Wallet not connected");
       return null;
     }
@@ -23,10 +24,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
       console.error(error);
       if (error?.message?.includes("missing provider")) {
         toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
-        claimButton.element.disabled = true;
       } else {
         toaster.create("info", "Please connect your wallet to collect this reward.");
-        claimButton.element.disabled = true;
       }
     }
     return null;

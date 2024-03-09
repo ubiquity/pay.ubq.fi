@@ -1,5 +1,5 @@
 import { app } from "../app-state";
-import { claimButton } from "../toaster";
+import { claim } from "../toaster";
 import { table } from "./read-claim-data-from-url";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
@@ -12,7 +12,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
 
   if (nextTxButton) {
     nextTxButton.addEventListener("click", () => {
-      claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+      removeAllEventListeners(claim) as HTMLButtonElement;
       app.nextPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");
@@ -22,7 +22,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
 
   if (prevTxButton) {
     prevTxButton.addEventListener("click", () => {
-      claimButton.element = removeAllEventListeners(claimButton.element) as HTMLButtonElement;
+      removeAllEventListeners(claim) as HTMLButtonElement;
       app.previousPermit();
       rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
       table.setAttribute(`data-claim`, "error");

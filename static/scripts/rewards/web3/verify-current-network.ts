@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
-import invalidateButton from "../invalidate-component";
-import { showLoader, toaster } from "../toaster";
+import { buttonController, toaster } from "../toaster";
 import { handleIfOnCorrectNetwork } from "./handle-if-on-correct-network";
 import { notOnCorrectNetwork } from "./not-on-correct-network";
 
@@ -8,9 +7,8 @@ import { notOnCorrectNetwork } from "./not-on-correct-network";
 export async function verifyCurrentNetwork(desiredNetworkId: number) {
   const web3provider = new ethers.providers.Web3Provider(window.ethereum);
   if (!web3provider || !web3provider.provider.isMetaMask) {
-    showLoader();
     toaster.create("info", "Please connect to MetaMask.");
-    invalidateButton.disabled = true;
+    buttonController.hideAll();
   }
 
   const network = await web3provider.getNetwork();

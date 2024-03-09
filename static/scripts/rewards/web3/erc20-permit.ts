@@ -3,11 +3,10 @@ import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
-import invalidateButton from "../invalidate-component";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
-import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
+import { MetaMaskError, buttonController, claim, errorToast, toaster } from "../toaster";
 
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
@@ -113,7 +112,7 @@ async function renderTx(app: AppState) {
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
-    showLoader();
+    buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
@@ -130,7 +129,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) return;
 
-    claimButton.element.removeEventListener("click", claimErc20PermitHandler);
+    claim.removeEventListener("click", claimErc20PermitHandler);
 
     await renderTx(app);
   };
@@ -206,8 +205,7 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
     console.error(error);
   }
 
-  const controls = document.getElementById("controls") as HTMLDivElement;
-  controls.appendChild(invalidateButton);
+  const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
 
   invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
     try {

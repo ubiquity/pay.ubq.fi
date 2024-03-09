@@ -9,7 +9,7 @@
   --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
   --border-color: hsl(225 25% var(--border-brightness) / 1);
 }
-#claimButton {
+#claim {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -150,7 +150,7 @@ table[data-claim-rendered] button:hover {
 table[data-claim-rendered] button > div {
   display: none;
 }
-table[data-claim-rendered] button:disabled > svg.claim-icon {
+table[data-claim-rendered] button:disabled > svg#claim-icon {
   display: none;
 }
 table[data-claim-rendered] button:hover > div {
@@ -162,22 +162,31 @@ table[data-claim-rendered] button:hover > svg {
   display: none !important;
 }
 
-.show-cl {
+.show {
   display: block;
 }
 
-table[data-claim-rendered] button.hide-cl > svg.claim-loader {
+table[data-claim-rendered] button.hide > svg#claim-loader {
   display: none;
 }
-table[data-claim-rendered] button.show-cl > svg.claim-icon {
-  display: none;
+table[data-claim-rendered] button.show > svg#claim-icon {
+  display: unset;
+}
+table[data-claim-rendered] button.show > svg#claim-loader {
+  display: unset;
+}
+table[data-claim-rendered] button.hide > svg#claim-icon {
+  display: unset;
 }
 
-table[data-claim-rendered] button.show-cl > svg.claim-loader {
-  display: unset;
+table #controls {
+  opacity: 0;
+  transition: 1s ease-in-out opacity;
+  pointer-events: none;
 }
-table[data-claim-rendered] button.hide-cl > svg.claim-icon {
-  display: unset;
+table[data-claim-rendered="true"][data-contract-loaded="true"][data-claim="ok"] #controls {
+  opacity: 1;
+  pointer-events: unset;
 }
 
 table[data-claim-rendered] button#additionalDetails {
@@ -291,7 +300,6 @@ table[data-claim="ok"] tbody {
   color: #fff;
 }
 
-
 #additionalDetails svg {
   /* display: none; */
 }
@@ -323,3 +331,9 @@ table td {
 table th {
   padding-left: 16px;
 }
+
+
+[data-loader="false"]  #claim-loader{ display: none;}
+[data-claim="false"]  #claim{ display: none;}
+[data-view-claim="false"] #view-claim{ display: none;}
+[data-invalidator="false"] #invalidator{ display: none;}

@@ -1,6 +1,6 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
-import { claimButton, hideClaimButton, hideLoader, hideViewClaimButton, showClaimButton, showViewClaimButton, viewClaimButton } from "../toaster";
+import { buttonController, claim, viewClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -16,12 +16,9 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   const table = document.getElementsByTagName(`table`)[0];
 
   if (app.claims && app.claims.length > 1) {
-    console.trace("displaying carousel");
     carousel.className = "display-carousel";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
     rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-  } else {
-    console.trace("not displaying carousel");
   }
 
   if (nextTx) {
@@ -29,7 +26,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
   }
 
   if (!app.reward) {
-    hideLoader();
+    buttonController.hideAll();
     console.log("No reward found");
     return false;
   }
@@ -54,20 +51,20 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
-    generateInvalidatePermitAdminControl(app).catch(console.error);
+    if (app.provider) {
+      generateInvalidatePermitAdminControl(app).catch(console.error);
+    }
 
     if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
-      hideClaimButton();
-      showViewClaimButton();
-      viewClaimButton.element.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
+      buttonController.onlyShowViewClaim();
+      viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
     } else {
-      hideViewClaimButton();
-      showClaimButton();
-      claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+      buttonController.onlyShowMakeClaim();
+      claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
     table.setAttribute(`data-claim`, "ok");
 
-    claimButton.element.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+    claim.addEventListener("click", claimErc20PermitHandlerWrapper(app));
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
     table.setAttribute(`data-claim`, "ok");
@@ -82,7 +79,7 @@ export async function renderTransaction(nextTx?: boolean): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
-    claimButton.element.addEventListener("click", claimErc721PermitHandler(app.reward));
+    claim.addEventListener("click", claimErc721PermitHandler(app.reward));
   }
 
   return true;
