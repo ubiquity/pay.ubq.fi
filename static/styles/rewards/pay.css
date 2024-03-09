@@ -140,8 +140,3 @@ footer {
   /* width: 100%; */
   /* padding-bottom: env(safe-area-inset-bottom); */
 }
-
-canvas {
-  width: 100vw;
-  height: 100vh;
-}

@@ -72,10 +72,10 @@
   }
 
   table[data-claim-rendered] tr#additional-details-border {
-    background-color: var(--light-mode-background-color-dark);
+    /* background-color: var(--light-mode-background-color-dark); */
   }
   table[data-details-visible="true"] #additional-details-border ~ tr {
-    background-color: var(--light-mode-background-color-dark);
+    /* background-color: var(--light-mode-background-color-dark); */
   }
   .notifications .toast {
     border: 1px solid var(--light-mode-border-color);

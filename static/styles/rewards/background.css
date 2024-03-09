@@ -12,10 +12,37 @@ background {
 }
 
 background #grid {
-  -webkit-mask-image: radial-gradient(#00000020 0, #00000080 100%);
-  mask-image: radial-gradient(#00000020 0, #00000080 100%);
+  /* -webkit-mask-image: radial-gradient(#00000020 0, #00000080 100%); */
+  /* mask-image: radial-gradient(#00000020 0, #00000080 100%); */
   /* opacity: 1; */
   pointer-events: none;
+  opacity: 0.5;
+
   /* background-image: url(../../media/grid-1.png); */
   /* background-repeat: repeat; */
+}
+
+canvas {
+  width: 100vw;
+  height: 100vh;
+}
+
+.gradient {
+  width: 200vw;
+  height: 200vh;
+  position: absolute;
+  background-image: radial-gradient(#00bfff00 0%, #00bfffff 15%, #00bfff00 34%, #00bfffff 58%, #00bfff00 75%, #00bfffff 100%);
+  /* display: none; */
+  opacity: 0.125;
+}
+
+background > :nth-child(1) {
+  /* display: unset; */
+  transform: translateX(-100vw);
+}
+background > :nth-child(2) {
+  /* display: unset; */
+  transform: translateY(-50vh);
+}
+background > canvas {
 }

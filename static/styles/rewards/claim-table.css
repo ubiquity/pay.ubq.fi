@@ -27,8 +27,9 @@ table {
   border-collapse: collapse;
   width: 100vw;
   max-width: 640px;
-  background-color: var(--background-color-default);
+  background-color: #000;
   border: 1px solid var(--border-color);
+  box-shadow: inset 0 0 96px #00bfff18;
 }
 table tr {
   /* width: 100%; */
@@ -192,7 +193,7 @@ table[data-claim-rendered] tr {
 }
 table[data-claim-rendered] tr#additional-details-border {
   /* background-color: #80808010; */
-  background-color: var(--background-color-light);
+  /* background-color: var(--background-color-light); */
   /* -webkit-backdrop-filter: blur(4px); */
   /* backdrop-filter: blur(4px); */
   /* border: 1px solid #80808020; */
