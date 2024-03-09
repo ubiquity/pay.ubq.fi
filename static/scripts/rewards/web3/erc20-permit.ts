@@ -1,47 +1,30 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
-import { permit2Abi } from "../abis";
+import { erc20Abi, permit2Abi } from "../abis";
 import { permit2Address } from "../constants";
-import { getErc20Contract, getOptimalProvider } from "../helpers";
-import { Erc20Permit } from "../render-transaction/tx-type";
-import { toaster, resetClaimButton, errorToast, loadingClaimButton, claimButton } from "../toaster";
-import { renderTransaction } from "../render-transaction/render-transaction";
-import { connectWallet } from "./wallet";
+import { getOptimalRPC } from "../helpers";
 import invalidateButton from "../invalidate-component";
-import { JsonRpcProvider } from "@ethersproject/providers";
-import { tokens } from "../render-transaction/render-token-symbol";
+import { renderTransaction } from "../render-transaction/render-transaction";
+import { Erc20Permit } from "../render-transaction/tx-type";
+import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
+import { connectWallet } from "./wallet";
 
-export async function fetchTreasury(
-  permit: Erc20Permit,
-  provider: JsonRpcProvider
-): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+export async function fetchTreasury(permit: Erc20Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   try {
-    const tokenAddress = permit.permit.permitted.token.toLowerCase();
-    const tokenContract = await getErc20Contract(tokenAddress, provider);
-
-    if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
-      const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
-      const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
-
-      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
-
-      return { balance, allowance, decimals, symbol };
-    } else {
-      console.log(`Hardcode this token in render-token-symbol.ts and save two calls: ${tokenAddress}`);
-      const [balance, allowance, decimals, symbol] = await Promise.all([
-        tokenContract.balanceOf(permit.owner),
-        tokenContract.allowance(permit.owner, permit2Address),
-        tokenContract.decimals(),
-        tokenContract.symbol(),
-      ]);
-
-      return { balance, allowance, decimals, symbol };
-    }
+    const providerUrl = await getOptimalRPC(permit.networkId);
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const tokenAddress = permit.permit.permitted.token;
+    const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
+    const balance = await tokenContract.balanceOf(permit.owner);
+    const allowance = await tokenContract.allowance(permit.owner, permit2Address);
+    const decimals = await tokenContract.decimals();
+    const symbol = await tokenContract.symbol();
+    return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
 }
 
-export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcProvider) {
+export function claimErc20PermitHandler(permit: Erc20Permit) {
   return async function handler() {
     try {
       const signer = await connectWallet();
@@ -49,7 +32,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
         return;
       }
 
-      if (!(await checkPermitClaimable(permit, signer, provider))) {
+      if (!(await checkPermitClaimable(permit, signer))) {
         return;
       }
 
@@ -62,7 +45,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
       console.log(receipt.transactionHash); // @TODO: post to database
 
       claimButton.element.removeEventListener("click", handler);
-      renderTransaction(provider).catch(console.error);
+      renderTransaction(true).catch(console.error);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error);
@@ -73,7 +56,7 @@ export function claimErc20PermitHandler(permit: Erc20Permit, provider: JsonRpcPr
   };
 }
 
-export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null, provider: JsonRpcProvider) {
+export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.providers.JsonRpcSigner | null) {
   const isClaimed = await isNonceClaimed(permit);
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
@@ -85,7 +68,7 @@ export async function checkPermitClaimable(permit: Erc20Permit, signer: ethers.p
     return false;
   }
 
-  const { balance, allowance } = await fetchTreasury(permit, provider);
+  const { balance, allowance } = await fetchTreasury(permit);
   const permitted = BigNumber.from(permit.permit.permitted.amount);
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
@@ -151,8 +134,8 @@ export async function generateInvalidatePermitAdminControl(permit: Erc20Permit) 
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: Erc20Permit): Promise<boolean> {
-  const provider = await getOptimalProvider(permit.networkId);
-
+  const providerUrl = await getOptimalRPC(permit.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.permit.nonce));

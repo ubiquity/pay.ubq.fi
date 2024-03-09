@@ -1,12 +1,13 @@
-import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
+import { TransactionResponse } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nftRewardAbi";
+import { getOptimalRPC } from "../helpers";
 import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, errorToast, loadingClaimButton, resetClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./wallet";
 
-export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpcProvider) {
+export function claimErc721PermitHandler(permit: Erc721Permit) {
   return async function claimButtonHandler() {
     const signer = await connectWallet();
     if (!signer) {
@@ -25,7 +26,7 @@ export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpc
       return;
     }
 
-    const isRedeemed = await isNonceRedeemed(permit, provider);
+    const isRedeemed = await isNonceRedeemed(permit);
     if (isRedeemed) {
       toaster.create("error", `This NFT has already been redeemed.`);
       resetClaimButton();
@@ -44,7 +45,7 @@ export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpc
 
       claimButton.element.removeEventListener("click", claimButtonHandler);
 
-      renderTransaction(provider, true).catch((error) => {
+      renderTransaction(true).catch((error) => {
         console.error(error);
         toaster.create("error", `Error rendering transaction: ${error.message}`);
       });
@@ -58,7 +59,9 @@ export function claimErc721PermitHandler(permit: Erc721Permit, provider: JsonRpc
   };
 }
 
-export async function isNonceRedeemed(nftMint: Erc721Permit, provider: JsonRpcProvider): Promise<boolean> {
+export async function isNonceRedeemed(nftMint: Erc721Permit): Promise<boolean> {
+  const providerUrl = await getOptimalRPC(nftMint.networkId);
+  const provider = new ethers.providers.JsonRpcProvider(providerUrl);
   const nftContract = new ethers.Contract(nftMint.nftAddress, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(nftMint.request.nonce);
 }
