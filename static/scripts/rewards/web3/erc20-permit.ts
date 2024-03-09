@@ -161,19 +161,6 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   const permit = reward.permit;
   const permitted = BigNumber.from(permit.permitted.amount);
 
-  // keyxng's
-
-  // let treasury;
-  // try {
-  //   treasury = await fetchFundingWallet(app);
-  // } catch (error: unknown) {
-  //   console.error("Error in fetchTreasury: ", error);
-  //   return false;
-  // }
-
-  // const { balance, allowance } = treasury;
-  // const permitted = BigNumber.from(reward.permit.permitted.amount);
-
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
