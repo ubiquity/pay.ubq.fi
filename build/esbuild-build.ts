@@ -1,8 +1,7 @@
 import { execSync } from "child_process";
-import * as dotenv from "dotenv";
+import { config } from "dotenv";
 import esbuild from "esbuild";
 import extraRpcs from "../lib/chainlist/constants/extraRpcs";
-
 const typescriptEntries = ["static/scripts/rewards/init.ts"];
 const cssEntries = ["static/styles/rewards/rewards.css"];
 export const entries = [...typescriptEntries, ...cssEntries];
@@ -48,7 +47,7 @@ esbuild
 
 function createEnvDefines(environmentVariables: string[], generatedAtBuild: Record<string, unknown>): Record<string, string> {
   const defines: Record<string, string> = {};
-  dotenv.config();
+  config();
   for (const name of environmentVariables) {
     const envVar = process.env[name];
     if (envVar !== undefined) {

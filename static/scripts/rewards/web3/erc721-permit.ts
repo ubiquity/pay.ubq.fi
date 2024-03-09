@@ -6,6 +6,7 @@ import { renderTransaction } from "../render-transaction/render-transaction";
 import { Erc721Permit } from "../render-transaction/tx-type";
 import { claimButton, showLoader, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+
 export function claimErc721PermitHandler(reward: Erc721Permit) {
   return async function claimButtonHandler() {
     const signer = await connectWallet();
@@ -41,13 +42,19 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
 
       claimButton.element.removeEventListener("click", claimButtonHandler);
 
-      renderTransaction(app, true).catch((error) => {
+      renderTransaction(true).catch((error) => {
         console.error(error);
         toaster.create("error", `Error rendering transaction: ${error.message}`);
       });
     } catch (error: unknown) {
       console.error(error);
-      toaster.create("error", `Error claiming NFT: ${typeof error === "string" ? error : error.message ? error.message : "Unknown error"}`);
+      if (error instanceof Error) {
+        toaster.create("error", `Error claiming NFT: ${error.message}`);
+      } else if (typeof error === "string") {
+        toaster.create("error", `Error claiming NFT: ${error}`);
+      } else {
+        toaster.create("error", `Error claiming NFT: Unknown error`);
+      }
     }
   };
 }

@@ -1,44 +1,46 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
-import { permit2Abi } from "../abis";
-import { AppState } from "../app-state";
+import { erc20Abi, permit2Abi } from "../abis";
+import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
 import invalidateButton from "../invalidate-component";
-import { tokens } from "../render-transaction/render-token-symbol";
+import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { renderTransaction } from "../render-transaction/render-transaction";
-import { getErc20Contract } from "../rpc-optimization/getErc20Contract";
+import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
 import { MetaMaskError, claimButton, errorToast, showLoader, toaster } from "../toaster";
-import { createClient } from "@supabase/supabase-js";
 
-declare const SUPABASE_URL: string;
-declare const SUPABASE_ANON_KEY: string;
+export async function fetchTreasury(
+  permit: Erc20Permit | Erc721Permit
+): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+  let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-export async function fetchFundingWallet(app: AppState): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
-  const reward = app.reward;
   try {
-    const tokenAddress = reward.permit.permitted.token.toLowerCase();
-    const tokenContract = await getErc20Contract(tokenAddress, app.provider);
+    const tokenAddress = permit.permit.permitted.token;
+    const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
-    if (tokenAddress === tokens[0].address || tokenAddress === tokens[1].address) {
-      const decimals = tokenAddress === tokens[0].address ? 18 : tokenAddress === tokens[1].address ? 18 : -1;
-      const symbol = tokenAddress === tokens[0].address ? tokens[0].name : tokenAddress === tokens[1].address ? tokens[1].name : "";
+    // Try to get the token info from localStorage
+    const tokenInfo = localStorage.getItem(tokenAddress);
 
-      const [balance, allowance] = await Promise.all([tokenContract.balanceOf(reward.owner), tokenContract.allowance(reward.owner, permit2Address)]);
-
-      return { balance, allowance, decimals, symbol };
+    if (tokenInfo) {
+      // If the token info is in localStorage, parse it and use it
+      const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
+      decimals = storedDecimals;
+      symbol = storedSymbol;
+      [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
     } else {
-      console.log(`Hardcode this token in render-token-symbol.ts and save two calls: ${tokenAddress}`);
-      const [balance, allowance, decimals, symbol] = await Promise.all([
-        tokenContract.balanceOf(reward.owner),
-        tokenContract.allowance(reward.owner, permit2Address),
+      // If the token info is not in localStorage, fetch it from the blockchain
+      [balance, allowance, decimals, symbol] = await Promise.all([
+        tokenContract.balanceOf(permit.owner),
+        tokenContract.allowance(permit.owner, permit2Address),
         tokenContract.decimals(),
         tokenContract.symbol(),
       ]);
 
-      return { balance, allowance, decimals, symbol };
+      // Store the token info in localStorage for future use
+      localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
     }
+
+    return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
   }
@@ -56,20 +58,6 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
     }
   }
   return isPermitClaimable;
-}
-
-async function createEthersContract(signer: JsonRpcSigner) {
-  let permit2Contract;
-  try {
-    permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error("Error in creating ethers.Contract: ", e);
-      errorToast(e, e.reason);
-    }
-  }
-  return permit2Contract;
 }
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
@@ -96,11 +84,11 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
 }
 
 async function waitForTransaction(tx: TransactionResponse) {
-  let receipt;
   try {
-    receipt = await tx.wait();
+    const receipt = await tx.wait();
     toaster.create("success", `Claim Complete.`);
     console.log(receipt.transactionHash);
+    return receipt;
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -108,13 +96,12 @@ async function waitForTransaction(tx: TransactionResponse) {
       errorToast(e, e.reason);
     }
   }
-  return receipt;
 }
 
 async function renderTx(app: AppState) {
   try {
     app.claims.slice(0, 1);
-    await renderTransaction(app, true);
+    await renderTransaction(true);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -131,7 +118,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    const permit2Contract = await createEthersContract(app.signer);
+    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
     const tx = await transferFromPermit(permit2Contract, app);
@@ -150,7 +137,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 }
 
 export async function checkPermitClaimable(app: AppState): Promise<boolean> {
-  let isClaimed;
+  let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(app);
   } catch (error: unknown) {
@@ -170,16 +157,23 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  let treasury;
-  try {
-    treasury = await fetchFundingWallet(app);
-  } catch (error: unknown) {
-    console.error("Error in fetchTreasury: ", error);
-    return false;
-  }
+  const { balance, allowance } = await fetchTreasury(reward);
+  const permit = reward.permit;
+  const permitted = BigNumber.from(permit.permitted.amount);
 
-  const { balance, allowance } = treasury;
-  const permitted = BigNumber.from(reward.permit.permitted.amount);
+  // keyxng's
+
+  // let treasury;
+  // try {
+  //   treasury = await fetchFundingWallet(app);
+  // } catch (error: unknown) {
+  //   console.error("Error in fetchTreasury: ", error);
+  //   return false;
+  // }
+
+  // const { balance, allowance } = treasury;
+  // const permitted = BigNumber.from(reward.permit.permitted.amount);
+
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
@@ -192,7 +186,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  let user;
+  let user: string;
   try {
     user = (await app.signer.getAddress()).toLowerCase();
   } catch (error: unknown) {
