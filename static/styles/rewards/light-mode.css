@@ -87,6 +87,7 @@
     background-color: var(--light-mode-background-color-default);
   }
   .gradient {
-    opacity: 0;
+    opacity: 0 !important;
+    animation: none;
   }
 }
