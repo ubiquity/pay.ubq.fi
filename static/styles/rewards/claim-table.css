@@ -238,6 +238,7 @@ table[data-contract-loaded] #Token {
 #nextTx,
 #previousTx {
   fill: #fff;
+  border-radius: 3px;
 }
 table[data-details-visible="false"] #rewardToken .full,
 table[data-details-visible="true"] #rewardToken .short {
