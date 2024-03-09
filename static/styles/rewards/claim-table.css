@@ -1,7 +1,7 @@
 :root {
   --left-table-column-width: 120px;
 
-  --background-color-default-brightness: 3%;
+  --background-color-default-brightness: 1%;
   --background-color-light-brightness: 6%;
   --border-brightness: 5%;
 
@@ -27,9 +27,10 @@ table {
   border-collapse: collapse;
   width: 100vw;
   max-width: 640px;
-  background-color: #020202;
+  background-color: var(--background-color-default);
   border: 1px solid var(--border-color);
-  box-shadow: inset 0 0 96px #00bfff10;
+  /* box-shadow: inset 0 0 96px #00bfff10; */
+  box-shadow: 0 12px 64px #00000010;
 }
 table tr {
   /* width: 100%; */
@@ -263,6 +264,7 @@ table thead {
 }
 table tbody {
   display: none;
+  box-shadow: inset 0 0 96px #00000008;
 }
 table[data-claim="error"] thead {
   display: table-row-group;
