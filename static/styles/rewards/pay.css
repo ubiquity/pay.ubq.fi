@@ -147,7 +147,8 @@ footer {
   flex-direction: row;
   align-items: center;
   align-self: center;
-  margin-bottom: 10px;
+  margin: 12px auto;
+  opacity: 0.5;
 }
 
 #prevTx,

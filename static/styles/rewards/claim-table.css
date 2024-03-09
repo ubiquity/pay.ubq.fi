@@ -137,7 +137,7 @@ table[data-claim-rendered] button {
   opacity: 0.5;
 }
 table[data-claim-rendered] button.hide {
-  display:none !important;
+  display: none !important;
 }
 table[data-claim-rendered] button:disabled {
   opacity: 0.5;
@@ -289,12 +289,6 @@ table[data-claim="ok"] tbody {
 }
 #rewardRecipient div {
   color: #fff;
-}
-
-.show-pagination {
-  display: flex;
-  cursor: pointer;
-  padding: 10px;
 }
 
 .hide-pagination {
