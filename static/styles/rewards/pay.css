@@ -87,13 +87,18 @@ a {
   display: inline-block;
   vertical-align: middle;
 }
-
+#logo > div#logo-text > span::after {
+  content: " ";
+  display: inline-block;
+  width: 8px;
+}
 #logo > div#logo-text > span {
   font-size: 20px;
   letter-spacing: 5px;
   text-transform: uppercase;
   text-rendering: geometricPrecision;
   color: #fff;
+  /* margin-right: 8px; */
   /* font-weight: 400; */
 }
 
@@ -163,7 +168,10 @@ footer {
   /* display: flex; */
   opacity: 1;
 }
-#carousel > #rewardsCount {pointer-events: none;display: inline-block;/* vertical-align: middle; */}
+#carousel > #rewardsCount {
+  pointer-events: none;
+  display: inline-block; /* vertical-align: middle; */
+}
 #prevTx,
 #nextTx {
   padding: 3px;
