@@ -3,7 +3,7 @@
 
   --background-color-default-brightness: 3%;
   --background-color-light-brightness: 6%;
-  --border-brightness: 9%;
+  --border-brightness: 5%;
 
   --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1);
   --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);

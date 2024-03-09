@@ -40,7 +40,9 @@
   table[data-claim-rendered] button:hover > div {
     color: #000;
   }
-
+  table[data-claim-rendered] button:hover{
+    background-color: #80808018;
+  }
   table a:hover,
   table a:hover > div {
     color: #000;
@@ -62,13 +64,16 @@
   html {
     background-color: #fff;
   }
-  #grid {
-    opacity: 0.25;
+  background #grid {
+    opacity: 0.33;
+    filter: invert(1);
   }
 
   table {
-    background-color: var(--light-mode-background-color-default);
+    /* background-color: var(--light-mode-background-color-default); */
+    background-color: #fff;
     border: 1px solid var(--light-mode-border-color);
+    box-shadow: inset 0 0 96px #00000010;
   }
 
   table[data-claim-rendered] tr#additional-details-border {
@@ -80,5 +85,8 @@
   .notifications .toast {
     border: 1px solid var(--light-mode-border-color);
     background-color: var(--light-mode-background-color-default);
+  }
+  .gradient {
+    opacity: 0;
   }
 }
