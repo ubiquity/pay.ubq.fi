@@ -264,7 +264,8 @@ table thead {
 }
 table tbody {
   display: none;
-  box-shadow: inset 0 0 96px #00000008;
+  /* box-shadow: inset 0 0 96px #00000008; */
+  box-shadow: inset 0 0 96px #00bfff10;
 }
 table[data-claim="error"] thead {
   display: table-row-group;
