@@ -101,7 +101,8 @@ async function waitForTransaction(tx: TransactionResponse) {
 async function renderTx(app: AppState) {
   try {
     app.claims.slice(0, 1);
-    await renderTransaction(true);
+    app.nextPermit();
+    await renderTransaction();
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -211,12 +212,13 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
   }
 
   const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
-
+  buttonController.showInvalidator();
   invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
     try {
       const isClaimed = await isNonceClaimed(app);
       if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
+        buttonController.hideInvalidator();
         return;
       }
       await invalidateNonce(app.signer, app.reward.permit.nonce);
@@ -229,6 +231,7 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
       }
     }
     toaster.create("info", "Nonce invalidation transaction sent");
+    buttonController.hideInvalidator();
   });
 }
 

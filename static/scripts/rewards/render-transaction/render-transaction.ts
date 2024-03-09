@@ -10,19 +10,14 @@ import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { Erc20Permit, RewardPermit } from "./tx-type";
 
 const carousel = document.getElementById("carousel") as Element;
-
+const table = document.querySelector(`table`) as HTMLTableElement;
 type Success = boolean;
-export async function renderTransaction(nextTx?: boolean): Promise<Success> {
-  const table = document.getElementsByTagName(`table`)[0];
 
+export async function renderTransaction(): Promise<Success> {
   if (app.claims && app.claims.length > 1) {
     carousel.className = "flex";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
     rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-  }
-
-  if (nextTx) {
-    app.nextPermit();
   }
 
   if (!app.reward) {

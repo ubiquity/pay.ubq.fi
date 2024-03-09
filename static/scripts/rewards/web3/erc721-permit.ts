@@ -42,7 +42,8 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
 
       makeClaimButton.removeEventListener("click", claimHandler);
 
-      renderTransaction(true).catch((error) => {
+      app.nextPermit();
+      renderTransaction().catch((error) => {
         console.error(error);
         toaster.create("error", `Error rendering transaction: ${error.message}`);
       });
