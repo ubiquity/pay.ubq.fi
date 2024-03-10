@@ -71,6 +71,7 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
       if (e.code == "ACTION_REJECTED") {
         // Handle the user rejection case
         toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
+        buttonController.hideLoader();
         buttonController.showMakeClaim();
       } else {
         // Handle other errors
