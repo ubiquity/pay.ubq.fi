@@ -37,10 +37,10 @@
   table button div {
     color: #000;
   }
-  table[data-claim-rendered] button:hover > div {
+  table[data-make-claim-rendered] button:hover > div {
     color: #000;
   }
-  table[data-claim-rendered] button:hover{
+  table[data-make-claim-rendered] button:hover {
     background-color: #80808018;
   }
   table a:hover,
@@ -76,11 +76,11 @@
     /* box-shadow: inset 0 0 96px #00000010; */
   }
 
-  table tbody{
+  table tbody {
     box-shadow: inset 0 0 96px #00000008;
   }
 
-  table[data-claim-rendered] tr#additional-details-border {
+  table[data-make-claim-rendered] tr#additional-details-border {
     /* background-color: var(--light-mode-background-color-dark); */
   }
   table[data-details-visible="true"] #additional-details-border ~ tr {
@@ -93,5 +93,8 @@
   .gradient {
     opacity: 0;
     animation: none;
+  }
+  #carousel > div:hover {
+    color: #000;
   }
 }

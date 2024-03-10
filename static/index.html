@@ -7,7 +7,6 @@
     <link href="styles/rewards/claim-table.css" rel="stylesheet" />
     <link href="styles/rewards/media-queries.css" rel="stylesheet" />
     <link href="styles/rewards/light-mode.css" rel="stylesheet" />
-
     <link rel="canonical" href="https://pay.ubq.fi" />
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -28,11 +27,7 @@
     <meta property="twitter:domain" content="dao.ubq.fi" />
     <meta property="twitter:url" content="https://dao.ubq.fi" />
     <title>Ubiquity Rewards | Ubiquity DAO</title>
-    <!--
-      icons from: https://fonts.google.com/icons
-      weight: 300
-      optical-size: 24
-     -->
+    <!-- icons from: https://fonts.google.com/icons weight: 300 optical-size: 24 -->
   </head>
   <body>
     <background>
@@ -62,32 +57,52 @@
         <table>
           <thead>
             <tr>
-              <th><div>Notice</div></th>
-              <td><div>Loading...</div></td>
+              <th>
+                <div>Notice</div>
+              </th>
+              <td>
+                <div>Loading...</div>
+              </td>
             </tr>
           </thead>
           <tbody>
             <tr id="Amount">
-              <th><div>Amount</div></th>
-              <td id="rewardAmount"><div>Loading...</div></td>
+              <th>
+                <div>Amount</div>
+              </th>
+              <td id="rewardAmount">
+                <div>Loading...</div>
+              </td>
             </tr>
             <tr id="Token">
-              <th><div>Token</div></th>
+              <th>
+                <div>Token</div>
+              </th>
               <td id="rewardToken">
-                <span class="full"><div></div></span>
-                <span class="short"><div>Loading...</div></span>
+                <span class="full">
+                  <div></div>
+                </span>
+                <span class="short">
+                  <div>Loading...</div>
+                </span>
               </td>
             </tr>
             <tr id="To">
-              <th><div>For</div></th>
+              <th>
+                <div>For</div>
+              </th>
               <td id="rewardRecipient">
-                <span class="full"><div></div></span>
-                <span class="short"><div>Loading...</div></span>
+                <span class="full">
+                  <div></div>
+                </span>
+                <span class="short">
+                  <div>Loading...</div>
+                </span>
               </td>
             </tr>
             <tr id="additional-details-border">
-              <th
-                ><div>
+              <th>
+                <div>
                   <button id="additionalDetails">
                     <div>Details</div>
                     <svg class="opener" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
@@ -99,13 +114,15 @@
                       <path
                         d="M356-173.847 313.847-216 480-382.153 646.153-216 604-173.847l-124-124-124 124Zm124-404L313.847-744 356-786.153l124 124 124-124L646.153-744 480-577.847Z"
                       />
-                    </svg> </button></div
-              ></th>
+                    </svg>
+                  </button>
+                </div>
+              </th>
               <td>
-                <div id="controls">
-                  <button id="claimButton" class="hide-cl">
+                <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false">
+                  <button id="claim-loader">
                     <svg
-                      class="claim-loader"
+                      id="claim-loader"
                       version="1.1"
                       id="L9"
                       xmlns="http://www.w3.org/2000/svg"
@@ -128,18 +145,31 @@
                         />
                       </path>
                     </svg>
+                    <div id="claiming-message">Claiming</div>
+                  </button>
+                  <button id="make-claim">
                     <div class="claim-title">Collect</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="claim-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="claim-icon">
                       <path
                         d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"
                       />
                     </svg>
                   </button>
-                  <button id="viewClaimButton" class="hide-cl">
+
+                  <button id="view-claim">
                     <div class="claim-title">View Claim</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="link-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="link-icon">
                       <path
                         d="M212.309-140.001q-30.308 0-51.308-21t-21-51.308v-535.382q0-30.308 21-51.308t51.308-21h252.305V-760H212.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v535.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h535.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-252.305h59.999v252.305q0 30.308-21 51.308t-51.308 21H212.309Zm176.46-206.615-42.153-42.153L717.847-760H560v-59.999h259.999V-560H760v-157.847L388.769-346.616Z"
+                      />
+                    </svg>
+                  </button>
+
+                  <button id="invalidator">
+                    <div>Void</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                      <path
+                        d="M256-213.847 213.847-256l224-224-224-224L256-746.153l224 224 224-224L746.153-704l-224 224 224 224L704-213.847l-224-224-224 224Z"
                       />
                     </svg>
                   </button>
@@ -149,7 +179,6 @@
           </tbody>
           <tbody id="additionalDetailsTable"></tbody>
         </table>
-
         <figure id="carousel">
           <div id="prevTx"></div>
           <div id="rewardsCount"></div>
@@ -162,7 +191,6 @@
         </div>
       </footer>
     </main>
-
     <ul class="notifications"></ul>
     <script src="out/init.js" type="application/javascript"></script>
     <link href="styles/proxima.css" rel="stylesheet" />
