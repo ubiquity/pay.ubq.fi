@@ -1,3 +1,5 @@
+import { ButtonController } from "./ButtonController";
+
 export const toaster = {
   create: createToast,
   error: errorToast,
@@ -9,22 +11,14 @@ export const toaster = {
   },
 };
 
-export const claimButton = {
-  // loading: loadingClaimButton,
-  // reset: resetClaimButton,
-  element: document.getElementById("claimButton") as HTMLButtonElement,
-};
-
-export const viewClaimButton = {
-  // loading: loadingClaimButton,
-  // reset: resetClaimButton,
-  element: document.getElementById("viewClaimButton") as HTMLButtonElement,
-};
-
-const notifications = document.querySelector(".notifications") as HTMLUListElement;
+export const controls = document.getElementById("controls") as HTMLDivElement;
+export const makeClaimButton = document.getElementById("make-claim") as HTMLButtonElement;
+export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
+export const notifications = document.querySelector(".notifications") as HTMLUListElement;
+export const buttonController = new ButtonController(controls);
 
 export function createToast(meaning: keyof typeof toaster.icons, text: string) {
-  hideLoader();
+  if (meaning != "info") buttonController.hideLoader();
   const toastDetails = {
     timer: 5000,
   } as {
@@ -57,32 +51,6 @@ function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {
     clearTimeout(timeoutId); // Clearing the timeout for the toast
   }
   setTimeout(() => toast.remove(), 500); // Removing the toast after 500ms
-}
-
-export function showLoader() {
-  claimButton.element.disabled = true;
-  claimButton.element.className = "show-cl";
-}
-
-export function hideLoader() {
-  claimButton.element.disabled = false;
-  claimButton.element.className = "hide-cl";
-}
-
-export function hideClaimButton() {
-  claimButton.element.classList.add("hide");
-}
-
-export function showClaimButton() {
-  claimButton.element.classList.remove("hide");
-}
-
-export function hideViewClaimButton() {
-  viewClaimButton.element.classList.add("hide");
-}
-
-export function showViewClaimButton() {
-  viewClaimButton.element.classList.remove("hide");
 }
 
 export function errorToast(error: MetaMaskError, errorMessage?: string) {

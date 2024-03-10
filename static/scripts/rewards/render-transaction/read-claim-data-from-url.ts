@@ -1,4 +1,6 @@
+import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
+import { createClient } from "@supabase/supabase-js";
 import { AppState, app } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
 import { connectWallet } from "../web3/connect-wallet";
@@ -7,8 +9,7 @@ import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 import { RewardPermit, claimTxT } from "./tx-type";
-import { Type } from "@sinclair/typebox";
-import { createClient } from "@supabase/supabase-js";
+import { buttonController, toaster } from "../toaster";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -23,22 +24,25 @@ export async function readClaimDataFromUrl(app: AppState) {
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-claim`, "error");
+    table.setAttribute(`data-make-claim`, "error");
     return;
   }
 
   app.claims = decodeClaimData(base64encodedTxData).flat();
   app.claimTxs = await getClaimedTxs(app);
   app.provider = await useFastestRpc(app);
-  const networkId = app.reward?.networkId || app.networkId;
-  app.signer = await connectWallet().catch(console.error);
-
+  if (window.ethereum) {
+    app.signer = await connectWallet().catch(console.error);
+    window.ethereum.on("accountsChanged", () => buttonController.showMakeClaim());
+  } else {
+    buttonController.hideAll();
+    toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
+  }
   displayRewardDetails();
   displayRewardPagination();
 
-  renderTransaction()
-    .then(() => verifyCurrentNetwork(networkId as number))
-    .catch(console.error);
+  await renderTransaction();
+  await verifyCurrentNetwork(app.networkId);
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
@@ -61,7 +65,7 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `1. Invalid claim data passed in URL` });
-    table.setAttribute(`data-claim`, "error");
+    table.setAttribute(`data-make-claim`, "error");
     throw error;
   }
   try {
@@ -69,7 +73,7 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `2. Invalid claim data passed in URL` });
-    table.setAttribute(`data-claim`, "error");
+    table.setAttribute(`data-make-claim`, "error");
     throw error;
   }
 }

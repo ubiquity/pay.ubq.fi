@@ -27,7 +27,7 @@ export function insertErc20PermitTableData(
     { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
     { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
   ]);
-  table.setAttribute(`data-claim-rendered`, "true");
+  table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
@@ -63,7 +63,7 @@ export function insertErc721PermitTableData(reward: Erc721Permit, table: Element
     },
     { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE.split(",").join(", ") },
   ]);
-  table.setAttribute(`data-claim-rendered`, "true");
+  table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;
 }
 
