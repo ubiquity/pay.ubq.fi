@@ -31,8 +31,6 @@ table #controls {
 table #controls > button {
   flex: 1;
   padding: 0 24px;
-  justify-content: center;
-  align-items: center;
 }
 table aside {
   text-transform: uppercase;
@@ -310,8 +308,6 @@ thead {
   transition: 0.25s all ease-in-out;
   border: 1px solid var(--border-color);
   transform: translate(-50%, -50%);
-  /* padding: 0 16px; */
-  /* border-radius: 3px; */
   width: 100%;
   max-width: 563px;
   overflow: hidden;
@@ -324,15 +320,9 @@ table * {
 @keyframes thead-fade-in {
   0% {
     opacity: 0;
-    /* transform: translate(-50%, -50%) scale(1.1); */
-    /* filter: blur(16px); */
-    /* background: #fff */
   }
   100% {
     opacity: 1;
-    /* transform: translate(-50%, -50%) scale(1); */
-    /* filter: blur(0px); */
-    /* background: unset */
   }
 }
 

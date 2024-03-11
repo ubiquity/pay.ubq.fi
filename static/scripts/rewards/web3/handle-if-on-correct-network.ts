@@ -2,8 +2,8 @@ import { buttonController } from "../toaster";
 
 export function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number) {
   if (desiredNetworkId === currentNetworkId) {
-    buttonController.showInvalidator();
+    buttonController.showMakeClaim();
   } else {
-    buttonController.hideInvalidator();
+    buttonController.hideMakeClaim();
   }
 }

@@ -1,7 +1,7 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
-import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
+import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
@@ -47,7 +47,7 @@ export async function renderTransaction(): Promise<Success> {
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
     if (app.provider) {
-      generateInvalidatePermitAdminControl(app).catch(console.error);
+      checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     }
 
     if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
