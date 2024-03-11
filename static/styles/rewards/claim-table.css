@@ -9,7 +9,6 @@
 }
 #claim {
   display: flex;
-
 }
 main > div {
   flex-grow: 1;
@@ -319,22 +318,24 @@ thead {
   /* box-shadow: 0 12px 64px #00000010; */
 }
 table * {
-  white-space: nowrap;
+  text-wrap: nowrap;
 }
 
-@keyframes table-fade-in {
+@keyframes thead-fade-in {
   0% {
     opacity: 0;
     /* transform: translate(-50%, -50%) scale(1.1); */
-    filter: blur(16px);
+    /* filter: blur(16px); */
+    /* background: #fff */
   }
   100% {
     opacity: 1;
     /* transform: translate(-50%, -50%) scale(1); */
-    filter: blur(0px);
+    /* filter: blur(0px); */
+    /* background: unset */
   }
 }
 
 thead {
-  animation: table-fade-in 0.5s ease-in-out;
+  animation: thead-fade-in 0.5s ease-in-out;
 }
