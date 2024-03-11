@@ -1,7 +1,5 @@
-body {
+* {
   font-family: "Proxima Nova", "Ubiquity Nova", sans-serif;
-  background-color: #06061aff;
-  color: #fff;
 }
 @font-face {
   font-family: "Ubiquity Nova";
