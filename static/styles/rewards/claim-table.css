@@ -264,6 +264,13 @@ table th {
 [data-invalidator="false"] #invalidator {
   display: none;
 }
+
+.loading-message::after {
+  content: "";
+  animation: ellipsis 1s infinite;
+  position: absolute;
+}
+
 #claiming-message::after {
   content: "";
   animation: ellipsis 1s infinite;
