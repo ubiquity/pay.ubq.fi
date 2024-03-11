@@ -9,8 +9,7 @@
 }
 #claim {
   display: flex;
-  justify-content: center;
-  align-items: center;
+
 }
 main > div {
   flex-grow: 1;
@@ -20,10 +19,6 @@ main > div {
 }
 table {
   border-collapse: collapse;
-  background-color: var(--background-color-default);
-  box-shadow: 0 12px 64px #00000010;
-  /* transform: translate(-100%, -100%); */
-  /* max-width: 640px; */
 }
 table a:hover,
 table a:hover > div {
@@ -32,10 +27,13 @@ table a:hover > div {
 table #controls {
   display: none;
   color: #fff;
+  width: 100%;
 }
 table #controls > button {
   flex: 1;
   padding: 0 24px;
+  justify-content: center;
+  align-items: center;
 }
 table aside {
   text-transform: uppercase;
@@ -110,7 +108,7 @@ table tr#additional-details-border > * {
   margin: 0;
 }
 table[data-make-claim-rendered] #controls {
-  display: flex;
+  display: inline-flex;
 }
 table[data-make-claim-rendered] button {
   opacity: 0.5;
@@ -248,6 +246,7 @@ td#owner > a {
 }
 table td {
   padding-right: 32px;
+  width: 100%;
 }
 table th {
   padding-left: 32px;
@@ -317,6 +316,7 @@ thead {
   width: 100%;
   max-width: 563px;
   overflow: hidden;
+  /* box-shadow: 0 12px 64px #00000010; */
 }
 table * {
   white-space: nowrap;
@@ -325,9 +325,13 @@ table * {
 @keyframes table-fade-in {
   0% {
     opacity: 0;
+    /* transform: translate(-50%, -50%) scale(1.1); */
+    filter: blur(16px);
   }
   100% {
     opacity: 1;
+    /* transform: translate(-50%, -50%) scale(1); */
+    filter: blur(0px);
   }
 }
 
