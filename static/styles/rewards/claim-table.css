@@ -366,3 +366,14 @@ table th {
     content: "";
   }
 }
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+#claim-loader > svg {
+  animation: rotate 1s linear infinite;
+}

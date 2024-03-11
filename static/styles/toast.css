@@ -36,7 +36,7 @@
   padding: 24px;
   margin: 12px;
   justify-content: space-between;
-  animation: show_toast 0.5s ease-in-out;
+  animation: show-toast 0.5s ease-in-out;
   /* border: 1px solid #80808020; */
   border: 1px solid var(--border-color);
   /* backdrop-filter: blur(24px); */
@@ -44,7 +44,7 @@
   background-color: var(--background-color-default);
 }
 
-@keyframes show_toast {
+@keyframes show-toast {
   0% {
     opacity: 0;
   }
