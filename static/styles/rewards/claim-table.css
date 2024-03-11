@@ -177,7 +177,7 @@ table #additionalDetailsTable {
 }
 table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
-  /* transform: translate(-50%, -90px); */
+  pointer-events: all;
 }
 table[data-contract-loaded] #Token {
   display: none;
@@ -308,8 +308,22 @@ thead {
   /* padding: 0 16px; */
   /* border-radius: 3px; */
   width: 100%;
-  max-width: 640px;
+  max-width: 563px;
+  overflow: hidden;
 }
 table * {
   white-space: nowrap;
+}
+
+@keyframes table-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+thead {
+  animation: table-fade-in 0.5s ease-in-out;
 }

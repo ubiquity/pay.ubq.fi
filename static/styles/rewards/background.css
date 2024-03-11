@@ -33,7 +33,7 @@ canvas {
   position: absolute;
   background-image: radial-gradient(#00bfff00 0%, #00bfffff 15%, #00bfff00 34%, #00bfffff 58%, #00bfff00 75%, #00bfffff 100%);
   opacity: 0;
-  animation: fadeIn 2s ease-in-out forwards;
+  animation: background-gradients-fade-in 2s ease-in-out forwards;
 }
 
 background > :nth-child(1) {
@@ -43,7 +43,7 @@ background > :nth-child(2) {
   transform: translateY(-50vh);
 }
 
-@keyframes fadeIn {
+@keyframes background-gradients-fade-in {
   to {
     opacity: 0.125;
   }
