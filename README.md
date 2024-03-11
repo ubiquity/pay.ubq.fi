@@ -46,7 +46,7 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 
 ###### Using any other `--chain-id` will hit real RPC endpoints.
 
-```
+```shell
 cast rpc anvil_impersonateAccount 0xba12222222228d8ba445958a75a0704d566bf2c8 &
 cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xba12222222228d8ba445958a75a0704d566bf2c8 "transfer(address,uint256)(bool)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8  337888400000000000000000 &
 cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 "approve(address,uint256)(bool)" 0x000000000022D473030F116dDEE9F6B43aC78BA3  9999999999999991111111119999999999999999 &
