@@ -172,11 +172,11 @@ table[data-make-claim-rendered] tr#additional-details-border + tr > * {
 table #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -90px);
 }
 table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
-  transform: translate(-50%, 75px);
+  /* transform: translate(-50%, -90px); */
 }
 table[data-contract-loaded] #Token {
   display: none;
@@ -212,10 +212,14 @@ table[data-details-visible="true"] #rewardRecipient .full {
 table[data-make-claim="ok"] thead {
   opacity: 0;
   pointer-events: none;
+  transform: translate(-50%, -50%);
+  /* filter: blur(4px); */
 }
 table[data-make-claim="error"] tbody {
   opacity: 0;
   pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: blur(4px);
 }
 #rewardRecipient a div {
   opacity: 0.66;
@@ -297,10 +301,11 @@ thead {
   background-color: var(--background-color-default);
   position: absolute;
   box-shadow: inset 0 0 96px #00bfff10;
-  transition: 125ms all ease-in-out;
+  transition: 0.25s all ease-in-out;
   border: 1px solid var(--border-color);
   transform: translate(-50%, -50%);
   /* padding: 0 16px; */
+  /* border-radius: 3px; */
 }
 table * {
   white-space: nowrap;
