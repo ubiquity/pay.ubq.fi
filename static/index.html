@@ -55,14 +55,14 @@
         </a>
       </header>
       <div>
-        <table>
+        <table data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
           <thead>
             <tr>
               <th>
                 <div>Notice</div>
               </th>
               <td>
-                <div>Loading...</div>
+                <div class="loading-message">Loading</div>
               </td>
             </tr>
           </thead>
@@ -72,7 +72,7 @@
                 <div>Amount</div>
               </th>
               <td id="rewardAmount">
-                <div>Loading...</div>
+                <div class="loading-message">Loading</div>
               </td>
             </tr>
             <tr id="Token">
@@ -84,7 +84,7 @@
                   <div></div>
                 </span>
                 <span class="short">
-                  <div>Loading...</div>
+                  <div class="loading-message">Loading</div>
                 </span>
               </td>
             </tr>
@@ -97,7 +97,10 @@
                   <div></div>
                 </span>
                 <span class="short">
-                  <div>Loading...</div>
+                  <div class="loading-message">Loading</div>
+                </span>
+                <span class="ens">
+                  <div></div>
                 </span>
               </td>
             </tr>
@@ -159,7 +162,7 @@
                     <div>Void</div>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
                       <path
-                        d="M256-213.847 213.847-256l224-224-224-224L256-746.153l224 224 224-224L746.153-704l-224 224 224 224L704-213.847l-224-224-224 224Z"
+                        d="M256-213.847 213.847-256l224-224-224-224L256-746.153l224 224 224-table46.153-704l-224 224 224 224L704-213.847l-224-224-224 224Z"
                       />
                     </svg>
                   </button>
@@ -169,13 +172,13 @@
           </tbody>
           <tbody id="additionalDetailsTable"></tbody>
         </table>
-        <figure id="carousel">
+      </div>
+      <footer
+        ><figure id="carousel">
           <div id="prevTx"></div>
           <div id="rewardsCount"></div>
           <div id="nextTx"></div>
         </figure>
-      </div>
-      <footer>
         <div id="build">
           <a target="_blank" rel="noopener noreferrer"></a>
         </div>
