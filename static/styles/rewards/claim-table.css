@@ -23,6 +23,7 @@ table {
   background-color: var(--background-color-default);
   box-shadow: 0 12px 64px #00000010;
   /* transform: translate(-100%, -100%); */
+  /* max-width: 640px; */
 }
 table a:hover,
 table a:hover > div {
@@ -306,6 +307,8 @@ thead {
   transform: translate(-50%, -50%);
   /* padding: 0 16px; */
   /* border-radius: 3px; */
+  width: 100%;
+  max-width: 640px;
 }
 table * {
   white-space: nowrap;
