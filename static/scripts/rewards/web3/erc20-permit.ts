@@ -1,11 +1,11 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
-import { AppState, app } from "../app-state";
+import { app, AppState } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
-import { MetaMaskError, buttonController, errorToast, makeClaimButton, toaster } from "../toaster";
+import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
 
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
@@ -124,7 +124,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) return;
 
-    makeClaimButton.removeEventListener("click", claimErc20PermitHandler);
+    getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
   };
 }
 

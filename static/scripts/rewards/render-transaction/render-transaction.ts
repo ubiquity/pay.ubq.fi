@@ -1,6 +1,6 @@
 import { app } from "../app-state";
 import { networkExplorers } from "../constants";
-import { buttonController, makeClaimButton, viewClaimButton } from "../toaster";
+import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
 import { claimErc20PermitHandlerWrapper, fetchTreasury, generateInvalidatePermitAdminControl } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -56,14 +56,13 @@ export async function renderTransaction(): Promise<Success> {
     } else if (window.ethereum) {
       // requires wallet connection to claim
       buttonController.showMakeClaim();
-      makeClaimButton.addEventListener("click", claimErc20PermitHandlerWrapper(app));
+      getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
 
     table.setAttribute(`data-make-claim`, "ok");
   } else {
     const requestedAmountElement = insertErc721PermitTableData(app.reward, table);
     table.setAttribute(`data-make-claim`, "ok");
-
     renderNftSymbol({
       tokenAddress: app.reward.permit.permitted.token,
       explorerUrl: networkExplorers[app.reward.networkId],
@@ -74,7 +73,7 @@ export async function renderTransaction(): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.reward.transferDetails.to }).catch(console.error);
 
-    makeClaimButton.addEventListener("click", claimErc721PermitHandler(app.reward));
+    getMakeClaimButton().addEventListener("click", claimErc721PermitHandler(app.reward));
   }
 
   return true;

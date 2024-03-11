@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
 import { Erc721Permit } from "../render-transaction/tx-type";
-import { buttonController, makeClaimButton, toaster } from "../toaster";
+import { buttonController, getMakeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export function claimErc721PermitHandler(reward: Erc721Permit) {
@@ -42,7 +42,7 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
       buttonController.hideMakeClaim();
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      makeClaimButton.removeEventListener("click", claimHandler);
+      getMakeClaimButton().removeEventListener("click", claimHandler);
 
       // app.nextPermit();
       // renderTransaction().catch((error) => {
