@@ -3,13 +3,14 @@ import { Value } from "@sinclair/typebox/value";
 import { createClient } from "@supabase/supabase-js";
 import { AppState, app } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
+import { buttonController, toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
+import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 import { RewardPermit, claimTxT } from "./tx-type";
-import { buttonController, toaster } from "../toaster";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -33,7 +34,10 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.provider = await useFastestRpc(app);
   if (window.ethereum) {
     app.signer = await connectWallet().catch(console.error);
-    window.ethereum.on("accountsChanged", () => buttonController.showMakeClaim());
+    window.ethereum.on("accountsChanged", () => {
+      checkRenderMakeClaimControl(app).catch(console.error);
+      checkRenderInvalidatePermitAdminControl(app).catch(console.error);
+    });
   } else {
     buttonController.hideAll();
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");

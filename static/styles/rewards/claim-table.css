@@ -9,13 +9,8 @@
 }
 #claim {
   display: flex;
-  justify-content: center;
-  align-items: center;
 }
-
 main > div {
-  /* border-collapse: collapse; */
-  /* width: 100%; */
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -23,18 +18,7 @@ main > div {
 }
 table {
   border-collapse: collapse;
-  width: 100vw;
-  max-width: 640px;
-  background-color: var(--background-color-default);
-  border: 1px solid var(--border-color);
-  /* box-shadow: inset 0 0 96px #00bfff10; */
-  box-shadow: 0 12px 64px #00000010;
 }
-table tr {
-  /* width: 100%; */
-  /* border: 1px solid; */
-}
-
 table a:hover,
 table a:hover > div {
   color: #fff;
@@ -42,6 +26,7 @@ table a:hover > div {
 table #controls {
   display: none;
   color: #fff;
+  width: 100%;
 }
 table #controls > button {
   flex: 1;
@@ -70,7 +55,6 @@ table button {
 }
 table button div {
   text-transform: uppercase;
-  /* white-space: nowrap; */
   word-break: break-all;
   text-rendering: geometricPrecision;
   color: #fff;
@@ -94,13 +78,10 @@ table td,
 table th {
   padding: 8px;
   text-rendering: geometricPrecision;
-  /* max-width: 320px; */
   line-height: 1.25;
-  color: #808080;
+  color: grey;
 }
 table td div {
-  /* width: calc(100vw - var(--left-table-column-width)); */
-  /* white-space: nowrap; */
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,13 +104,8 @@ table tr#additional-details-border > * {
   padding: 0;
   margin: 0;
 }
-table[data-make-claim-rendered] {
-  /* border: 1px solid #80808020; */
-  /* border-right: 0; */
-  /* border-left: 0; */
-}
 table[data-make-claim-rendered] #controls {
-  display: flex;
+  display: inline-flex;
 }
 table[data-make-claim-rendered] button {
   opacity: 0.5;
@@ -155,15 +131,12 @@ table[data-make-claim-rendered] button:hover > div {
   display: unset;
   color: #fff;
 }
-
 table[data-make-claim-rendered] button:hover > svg {
   display: none !important;
 }
-
 .show {
   display: block;
 }
-
 table[data-make-claim-rendered] button.hide > svg#claim-loader {
   display: none;
 }
@@ -176,7 +149,6 @@ table[data-make-claim-rendered] button.show > svg#claim-loader {
 table[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
-
 table #controls {
   opacity: 0;
   transition: 1s ease-in-out opacity;
@@ -186,50 +158,21 @@ table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-cl
   opacity: 1;
   pointer-events: unset;
 }
-
 table[data-make-claim-rendered] button#additionalDetails {
   width: 100%;
   color: #fff;
-  /* opacity: 0.25; */
-}
-table[data-make-claim-rendered] button#additionalDetails:hover {
-  /* opacity: 1; */
-}
-table[data-make-claim-rendered] tr {
-  background-color: #80808000;
-  transition: 125ms ease-in-out opacity;
-}
-table[data-make-claim-rendered] tr#additional-details-border {
-  /* background-color: #80808010; */
-  /* background-color: var(--background-color-light); */
-  /* -webkit-backdrop-filter: blur(4px); */
-  /* backdrop-filter: blur(4px); */
-  /* border: 1px solid #80808020; */
-  /* border-left: 0; */
-  /* border-right: 0; */
 }
 table[data-make-claim-rendered] tr#additional-details-border + tr > * {
   padding-top: 24px;
 }
-table #additionalDetailsTable tr,
-table[data-details-visible="false"] #additionalDetailsTable tr {
+table #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
-  display: none;
+  transform: translate(-50%, -90px);
 }
-table[data-details-visible="false"] {
-  /* border-bottom: 1px solid #80808000; */
-}
-table[data-details-visible="true"] #additionalDetailsTable tr {
+table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
-  pointer-events: unset;
-  display: table-row;
-  background-color: #80808000;
-  /* -webkit-backdrop-filter: blur(4px); */
-  /* backdrop-filter: blur(4px); */
-}
-table[data-details-visible="true"] {
-  /* border-bottom: 1px solid #80808020; */
+  pointer-events: all;
 }
 table[data-contract-loaded] #Token {
   display: none;
@@ -241,12 +184,6 @@ table[data-contract-loaded] #Token {
 #rewardRecipient div,
 #rewardsCount {
   color: #fff;
-}
-#nextTx,
-#previousTx {
-  /* fill: #fff; */
-  /* border-radius: 3px; */
-  /* padding: 8px; */
 }
 table[data-details-visible="false"] #rewardToken .full,
 table[data-details-visible="true"] #rewardToken .short {
@@ -268,27 +205,18 @@ table[data-details-visible="true"] #rewardRecipient .full {
 #To > th {
   padding-bottom: 24px;
 }
-table thead {
-  display: table-row-group;
-}
-table tbody {
-  display: none;
-  /* box-shadow: inset 0 0 96px #00000008; */
-  box-shadow: inset 0 0 96px #00bfff10;
-}
-table[data-make-claim="error"] thead {
-  display: table-row-group;
-}
 table[data-make-claim="ok"] thead {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  /* filter: blur(4px); */
 }
 table[data-make-claim="error"] tbody {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: blur(4px);
 }
-table[data-make-claim="ok"] tbody {
-  display: table-row-group;
-}
-
 #rewardRecipient a div {
   opacity: 0.66;
 }
@@ -298,39 +226,28 @@ table[data-make-claim="ok"] tbody {
 #rewardRecipient div {
   color: #fff;
 }
-
-#additionalDetails svg {
-  /* display: none; */
-}
 table[data-details-visible="true"] #additionalDetails svg.opener {
   display: none;
 }
 table[data-details-visible="false"] #additionalDetails svg.opener {
   display: unset;
 }
-
 table[data-details-visible="true"] #additionalDetails svg.closer {
   display: unset;
 }
 table[data-details-visible="false"] #additionalDetails svg.closer {
   display: none;
 }
-
-table .full {
-  /* word-break: break-all; */
-}
-
 td#owner > a {
   word-break: break-all;
 }
-
 table td {
-  padding-right: 16px;
+  padding-right: 32px;
+  width: 100%;
 }
 table th {
-  padding-left: 16px;
+  padding-left: 32px;
 }
-
 [data-loader="false"] #claim-loader {
   display: none;
 }
@@ -343,12 +260,18 @@ table th {
 [data-invalidator="false"] #invalidator {
   display: none;
 }
-#claiming-message::after {
+
+.loading-message::after {
   content: "";
   animation: ellipsis 1s infinite;
   position: absolute;
 }
 
+#claiming-message::after {
+  content: "";
+  animation: ellipsis 1s infinite;
+  position: absolute;
+}
 @keyframes ellipsis {
   0% {
     content: "";
@@ -368,7 +291,7 @@ table th {
 }
 @keyframes rotate {
   from {
-    transform: rotate(0deg);
+    transform: rotate(0);
   }
   to {
     transform: rotate(360deg);
@@ -376,4 +299,33 @@ table th {
 }
 #claim-loader > svg {
   animation: rotate 1s linear infinite;
+}
+tbody,
+thead {
+  background-color: var(--background-color-default);
+  position: absolute;
+  box-shadow: inset 0 0 96px #00bfff10;
+  transition: 0.25s all ease-in-out;
+  border: 1px solid var(--border-color);
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 563px;
+  overflow: hidden;
+  /* box-shadow: 0 12px 64px #00000010; */
+}
+table * {
+  text-wrap: nowrap;
+}
+
+@keyframes thead-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+thead {
+  animation: thead-fade-in 0.5s ease-in-out;
 }

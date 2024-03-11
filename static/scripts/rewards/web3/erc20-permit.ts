@@ -1,11 +1,11 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
-import { app, AppState } from "../app-state";
+import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
-import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
 
 export async function fetchTreasury(
   permit: Erc20Permit | Erc721Permit
@@ -138,7 +138,7 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   }
 
   if (isClaimed) {
-    toaster.create("error", `Your reward for this task has already been claimed or invalidated.`);
+    toaster.create("error", `Your reward for this task has already been claimed.`);
     buttonController.showViewClaim();
     return false;
   }
@@ -186,14 +186,15 @@ export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   return true;
 }
 
-export async function generateInvalidatePermitAdminControl(app: AppState) {
+export async function checkRenderMakeClaimControl(app: AppState) {
   try {
     const address = await app.signer.getAddress();
     const user = address.toLowerCase();
 
     if (app.reward) {
-      const owner = app.reward.owner.toLowerCase();
-      if (owner !== user) {
+      const beneficiary = app.reward.transferDetails.to.toLowerCase();
+      if (beneficiary !== user) {
+        buttonController.hideMakeClaim();
         return;
       }
     }
@@ -201,30 +202,50 @@ export async function generateInvalidatePermitAdminControl(app: AppState) {
     console.error("Error getting address from signer");
     console.error(error);
   }
+  buttonController.showMakeClaim();
+}
 
-  const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
-  buttonController.showInvalidator();
-  invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
-    try {
-      const isClaimed = await isNonceClaimed(app);
-      if (isClaimed) {
-        toaster.create("error", `This reward has already been claimed or invalidated.`);
+export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
+  try {
+    const address = await app.signer.getAddress();
+    const user = address.toLowerCase();
+
+    if (app.reward) {
+      const owner = app.reward.owner.toLowerCase();
+      if (owner !== user) {
         buttonController.hideInvalidator();
         return;
       }
-      await invalidateNonce(app.signer, app.reward.permit.nonce);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        const e = error as unknown as MetaMaskError;
-        console.error(e);
-        errorToast(e, e.reason);
-        return;
-      }
     }
-    toaster.create("info", "Nonce invalidation transaction sent");
-    buttonController.hideInvalidator();
-  });
+  } catch (error) {
+    console.error("Error getting address from signer");
+    console.error(error);
+  }
+  buttonController.showInvalidator();
 }
+
+const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
+
+invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
+  try {
+    const isClaimed = await isNonceClaimed(app);
+    if (isClaimed) {
+      toaster.create("error", `This reward has already been claimed or invalidated.`);
+      buttonController.hideInvalidator();
+      return;
+    }
+    await invalidateNonce(app.signer, app.reward.permit.nonce);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      const e = error as unknown as MetaMaskError;
+      console.error(e);
+      errorToast(e, e.reason);
+      return;
+    }
+  }
+  toaster.create("info", "Nonce invalidation transaction sent");
+  buttonController.hideInvalidator();
+});
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(app: AppState): Promise<boolean> {

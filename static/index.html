@@ -55,14 +55,14 @@
         </a>
       </header>
       <div>
-        <table>
+        <table data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
           <thead>
             <tr>
               <th>
                 <div>Notice</div>
               </th>
               <td>
-                <div>Loading...</div>
+                <div class="loading-message">Loading</div>
               </td>
             </tr>
           </thead>
@@ -72,7 +72,7 @@
                 <div>Amount</div>
               </th>
               <td id="rewardAmount">
-                <div>Loading...</div>
+                <div class="loading-message">Loading</div>
               </td>
             </tr>
             <tr id="Token">
@@ -84,7 +84,7 @@
                   <div></div>
                 </span>
                 <span class="short">
-                  <div>Loading...</div>
+                  <div class="loading-message">Loading</div>
                 </span>
               </td>
             </tr>
@@ -97,7 +97,10 @@
                   <div></div>
                 </span>
                 <span class="short">
-                  <div>Loading...</div>
+                  <div class="loading-message">Loading</div>
+                </span>
+                <span class="ens">
+                  <div></div>
                 </span>
               </td>
             </tr>
@@ -169,13 +172,13 @@
           </tbody>
           <tbody id="additionalDetailsTable"></tbody>
         </table>
-        <figure id="carousel">
+      </div>
+      <footer
+        ><figure id="carousel">
           <div id="prevTx"></div>
           <div id="rewardsCount"></div>
           <div id="nextTx"></div>
         </figure>
-      </div>
-      <footer>
         <div id="build">
           <a target="_blank" rel="noopener noreferrer"></a>
         </div>
