@@ -62,7 +62,7 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
   };
 }
 
-export async function isNonceRedeemed(reward: Erc721Permit, provider: JsonRpcProvider): Promise<boolean> {
+async function isNonceRedeemed(reward: Erc721Permit, provider: JsonRpcProvider): Promise<boolean> {
   const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(reward.request.nonce);
 }

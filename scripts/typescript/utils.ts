@@ -40,7 +40,7 @@ const colors = {
   bgCyan: "\x1b[46m",
   bgWhite: "\x1b[47m",
 };
-export function colorizeText(text: string, color: keyof typeof colors): string {
+function colorizeText(text: string, color: keyof typeof colors): string {
   return colors[color].concat(text).concat(colors.reset);
 }
 
