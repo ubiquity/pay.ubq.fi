@@ -32,11 +32,11 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claims = decodeClaimData(base64encodedTxData).flat();
   app.claimTxs = await getClaimedTxs(app);
   app.provider = await useFastestRpc(app);
-  if (window.ethereum) {
+  if (ethereum) {
     try {
       app.signer = await connectWallet();
     } catch (error) {
-      window.ethereum.on("accountsChanged", () => {
+      ethereum.on("accountsChanged", () => {
         checkRenderMakeClaimControl(app).catch(console.error);
         checkRenderInvalidatePermitAdminControl(app).catch(console.error);
       });
