@@ -68,7 +68,7 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
     permit = JSON.parse(atob(base64encodedTxData));
   } catch (error) {
     console.error(error);
-    setClaimMessage({ type: "Error", message: `1. Invalid claim data passed in URL` });
+    setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
     table.setAttribute(`data-make-claim`, "error");
     throw error;
   }
@@ -76,7 +76,7 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
     return [Value.Decode(Type.Array(claimTxT), permit)];
   } catch (error) {
     console.error(error);
-    setClaimMessage({ type: "Error", message: `2. Invalid claim data passed in URL` });
+    setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
     table.setAttribute(`data-make-claim`, "error");
     throw error;
   }
