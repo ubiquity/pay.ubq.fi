@@ -2,7 +2,7 @@ import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";
-import { permit2Address } from "../constants";
+import { permit2Address } from "@keyrxng/rpc-handler/dist/esm/src/constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
 import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";

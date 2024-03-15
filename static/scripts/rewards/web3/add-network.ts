@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
+import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "@keyrxng/rpc-handler/dist/esm/src/constants";
 
 export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   try {

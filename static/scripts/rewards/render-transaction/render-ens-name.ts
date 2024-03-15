@@ -1,5 +1,6 @@
-import { app } from "../app-state";
+import { AppState, app } from "../app-state";
 import { ensLookup } from "../cirip/ens-lookup";
+import { useRpcHandler } from "../web3/use-rpc-handler";
 
 type EnsParams =
   | {
@@ -7,18 +8,23 @@ type EnsParams =
       address: string;
       tokenAddress: string;
       tokenView: true;
+      networkId: number;
     }
   | {
       element: Element;
       address: string;
+      networkId: number;
       tokenAddress?: undefined;
       tokenView?: false;
     };
 
-export async function renderEnsName({ element, address, tokenAddress, tokenView }: EnsParams): Promise<void> {
+export async function renderEnsName({ element, address, tokenAddress, tokenView, networkId }: EnsParams): Promise<void> {
   let href: string = "";
+
+  const handler = await useRpcHandler({ networkId } as AppState);
+
   try {
-    const resolved = await ensLookup(address);
+    const resolved = await ensLookup(address, handler);
     let ensName: undefined | string;
     if (resolved.reverseRecord) {
       ensName = resolved.reverseRecord;
