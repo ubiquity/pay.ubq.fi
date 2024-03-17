@@ -1,5 +1,5 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { networkExplorers } from "@keyrxng/rpc-handler/dist";
+import { networkExplorers } from "@keyrxng/rpc-handler";
 import { RewardPermit } from "./render-transaction/tx-type";
 
 export class AppState {
@@ -17,8 +17,8 @@ export class AppState {
     this._signer = value;
   }
 
-  get networkId(): number {
-    return this.reward?.networkId || this.permitNetworkId;
+  get networkId(): number | null {
+    return this.reward?.networkId || null;
   }
 
   get provider(): JsonRpcProvider {

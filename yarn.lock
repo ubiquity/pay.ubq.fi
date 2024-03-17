@@ -1194,12 +1194,13 @@
     wrap-ansi "^8.1.0"
     wrap-ansi-cjs "npm:wrap-ansi@^7.0.0"
 
-"@keyrxng/rpc-handler@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@keyrxng/rpc-handler/-/rpc-handler-1.0.2.tgz#c0924f5d60a944a451a66a7731baff91d0425140"
-  integrity sha512-L8C4003tFKC5LzpoTlBf1VVACvSb509WgepTyJrTu6/Kac8/kw96GIpMJRdkCTjZsLTaX/kgnPMzSUAycAERGg==
+"@keyrxng/rpc-handler@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@keyrxng/rpc-handler/-/rpc-handler-1.0.3.tgz#d73f9a1e5c777224fea5f928971851a8145c998a"
+  integrity sha512-3E2GM4EtEBey5MPeck5g0nryx/TI8O520T+Z3PNWBW29nYuSZNEsDaMc9KTX5h9Yqzsg21q6jRpcGXi2/pzE/Q==
   dependencies:
     "@ethersproject/providers" "5.7.2"
+    axios "^1.6.8"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -1935,6 +1936,15 @@ axios@^1.6.7:
   integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
   dependencies:
     follow-redirects "^1.15.4"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.6.8:
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.8.tgz#66d294951f5d988a00e87a0ffb955316a619ea66"
+  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
+  dependencies:
+    follow-redirects "^1.15.6"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -3076,6 +3086,11 @@ follow-redirects@^1.15.4:
   version "1.15.5"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.5.tgz#54d4d6d062c0fa7d9d17feb008461550e3ba8020"
   integrity sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==
+
+follow-redirects@^1.15.6:
+  version "1.15.6"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
+  integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
 
 for-each@^0.3.3:
   version "0.3.3"

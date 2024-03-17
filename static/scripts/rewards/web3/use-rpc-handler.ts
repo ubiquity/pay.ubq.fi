@@ -1,4 +1,4 @@
-import { RPCHandler, HandlerConstructorConfig } from "@keyrxng/rpc-handler/dist";
+import { RPCHandler, HandlerConstructorConfig } from "@keyrxng/rpc-handler";
 import { AppState } from "../app-state";
 
 export async function useRpcHandler(app: AppState) {
@@ -15,7 +15,7 @@ export async function useRpcHandler(app: AppState) {
 
   const handler = new RPCHandler(config);
 
-  await handler.getFastestRpcProvider();
+  await handler.testRpcPerformance();
 
   return handler;
 }

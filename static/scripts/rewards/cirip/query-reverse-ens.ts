@@ -1,4 +1,4 @@
-import { RPCHandler } from "@keyrxng/rpc-handler/dist";
+import { RPCHandler } from "@keyrxng/rpc-handler";
 import { reverseEnsInterface } from "./ens-lookup";
 
 export async function queryReverseEns(address: string, handler: RPCHandler) {

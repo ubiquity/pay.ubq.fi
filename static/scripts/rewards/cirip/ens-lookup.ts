@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import abi from "../abis/cirip.json";
 import { fetchEns } from "./fetch-ens";
 import { queryReverseEns } from "./query-reverse-ens";
-import { RPCHandler } from "@keyrxng/rpc-handler/dist";
+import { RPCHandler } from "@keyrxng/rpc-handler";
 
 export const reverseEnsInterface = new ethers.utils.Interface(abi);
 
