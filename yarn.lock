@@ -1194,10 +1194,10 @@
     wrap-ansi "^8.1.0"
     wrap-ansi-cjs "npm:wrap-ansi@^7.0.0"
 
-"@keyrxng/rpc-handler@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@keyrxng/rpc-handler/-/rpc-handler-1.0.1.tgz#b9cf9166fbf0f983131ac48f1afbbe9cf5413062"
-  integrity sha512-F08mCZfee/zou0oKQsU7Y4Gm2gsHg86fHBQUbWv23lf6p9Ew0ZWTojZAANQXQrOSi5zFeexGE4gxOkeried2dg==
+"@keyrxng/rpc-handler@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@keyrxng/rpc-handler/-/rpc-handler-1.0.2.tgz#c0924f5d60a944a451a66a7731baff91d0425140"
+  integrity sha512-L8C4003tFKC5LzpoTlBf1VVACvSb509WgepTyJrTu6/Kac8/kw96GIpMJRdkCTjZsLTaX/kgnPMzSUAycAERGg==
   dependencies:
     "@ethersproject/providers" "5.7.2"
 

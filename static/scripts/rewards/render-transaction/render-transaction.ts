@@ -1,5 +1,5 @@
 import { app } from "../app-state";
-import { networkExplorers } from "@keyrxng/rpc-handler/dist/esm/src/constants";
+import { networkExplorers } from "@keyrxng/rpc-handler/dist";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
 import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";

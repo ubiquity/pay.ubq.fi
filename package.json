@@ -33,7 +33,7 @@
   ],
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
-    "@keyrxng/rpc-handler": "^1.0.1",
+    "@keyrxng/rpc-handler": "^1.0.2",
     "@octokit/core": "^5.1.0",
     "@octokit/plugin-create-or-update-text-file": "^4.0.1",
     "@octokit/plugin-throttling": "^8.1.3",

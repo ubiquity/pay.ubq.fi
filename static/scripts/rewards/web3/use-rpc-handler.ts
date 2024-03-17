@@ -1,10 +1,14 @@
-import { RPCHandler } from "@keyrxng/rpc-handler/dist/esm/src/rpc-handler";
-import { HandlerConstructorConfig } from "@keyrxng/rpc-handler/dist/esm/src";
+import { RPCHandler, HandlerConstructorConfig } from "@keyrxng/rpc-handler/dist";
 import { AppState } from "../app-state";
 
 export async function useRpcHandler(app: AppState) {
+  const networkId = app.networkId;
+  if (!networkId) {
+    throw new Error("Network ID not set");
+  }
+
   const config: HandlerConstructorConfig = {
-    networkId: app.networkId ?? app.reward.networkId,
+    networkId,
     autoStorage: true,
     cacheRefreshCycles: 10,
   };

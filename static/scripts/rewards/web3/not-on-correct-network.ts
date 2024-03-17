@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getNetworkName } from "@keyrxng/rpc-handler/dist/esm/src/constants";
+import { getNetworkName } from "@keyrxng/rpc-handler/dist";
 import { buttonController, toaster } from "../toaster";
 import { switchNetwork } from "./switch-network";
 

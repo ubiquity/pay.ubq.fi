@@ -1,4 +1,4 @@
-import { RPCHandler } from "@keyrxng/rpc-handler/dist/esm/src";
+import { RPCHandler } from "@keyrxng/rpc-handler/dist";
 import { reverseEnsInterface } from "./ens-lookup";
 
 export async function queryReverseEns(address: string, handler: RPCHandler) {
@@ -14,6 +14,7 @@ export async function queryReverseEns(address: string, handler: RPCHandler) {
 
     const provider = handler.getProvider();
 
+    // ENS registrar
     const ensName = await provider.send("eth_call", [{ to: "0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C", data: data }, "latest"]);
 
     if (ensName === "0x") {

@@ -34,7 +34,6 @@ export async function readClaimDataFromUrl(app: AppState) {
   const handler = await useRpcHandler(app);
 
   app.provider = handler.getProvider();
-  console.log("app.provider", app.provider);
   if (window.ethereum) {
     app.signer = await connectWallet().catch(console.error);
     window.ethereum.on("accountsChanged", () => {
