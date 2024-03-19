@@ -1,5 +1,5 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { networkExplorers } from "./constants";
+import { networkExplorers } from "@keyrxng/rpc-handler";
 import { RewardPermit } from "./render-transaction/tx-type";
 
 export class AppState {

@@ -2,7 +2,6 @@ import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { createClient } from "@supabase/supabase-js";
 import { AppState, app } from "../app-state";
-import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
 import { buttonController, toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
@@ -11,7 +10,7 @@ import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 import { RewardPermit, claimTxT } from "./tx-type";
-
+import { useRpcHandler } from "../web3/use-rpc-handler";
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
 
@@ -31,7 +30,10 @@ export async function readClaimDataFromUrl(app: AppState) {
 
   app.claims = decodeClaimData(base64encodedTxData).flat();
   app.claimTxs = await getClaimedTxs(app);
-  app.provider = await useFastestRpc(app);
+
+  const handler = await useRpcHandler(app);
+
+  app.provider = handler.getProvider();
   if (window.ethereum) {
     app.signer = await connectWallet().catch(console.error);
     window.ethereum.on("accountsChanged", () => {

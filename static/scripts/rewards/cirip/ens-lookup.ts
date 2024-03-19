@@ -2,15 +2,15 @@ import { ethers } from "ethers";
 import abi from "../abis/cirip.json";
 import { fetchEns } from "./fetch-ens";
 import { queryReverseEns } from "./query-reverse-ens";
+import { RPCHandler } from "@keyrxng/rpc-handler";
 
-export const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
 export const reverseEnsInterface = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function ensLookup(addr: string) {
+export async function ensLookup(addr: string, handler: RPCHandler) {
   const _address = "/".concat(addr); // quick adapter
 
   // try {
@@ -22,12 +22,13 @@ export async function ensLookup(addr: string) {
   const address = _address.substring(start + 1, start + 43).toLowerCase();
 
   let reverseRecord = null as null | string;
-  // let response = "";
   try {
-    reverseRecord = await queryReverseEns(address);
-    const responseParsed = JSON.parse(reverseRecord).result;
-    const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
-    reverseRecord = _reverseRecord[0][0];
+    reverseRecord = await queryReverseEns(address, handler);
+    if (reverseRecord !== undefined && reverseRecord !== null && reverseRecord !== "") {
+      const responseParsed = JSON.parse(reverseRecord).result;
+      const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
+      reverseRecord = _reverseRecord[0][0];
+    }
   } catch (e) {
     console.error(e);
     //   throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;
