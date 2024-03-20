@@ -53,7 +53,7 @@ export async function renderTransaction(): Promise<Success> {
     if (app.claimTxs[app.reward.permit.nonce.toString()] !== undefined) {
       buttonController.showViewClaim();
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.permit.nonce.toString()]}`));
-    } else if (window.ethereum) {
+    } else if (ethereum) {
       // requires wallet connection to claim
       buttonController.showMakeClaim();
       getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));

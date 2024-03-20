@@ -3,7 +3,7 @@ import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-
 import { grid } from "./the-grid";
 
 displayCommitHash(); // @DEV: display commit hash in footer
-grid(document.getElementById("grid") as HTMLElement); // @DEV: display grid background
+grid(document.getElementById("grid") as HTMLElement, gridLoadedCallback); // @DEV: display grid background
 
 readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
 
@@ -13,4 +13,9 @@ function displayCommitHash() {
   const buildElement = document.querySelector(`#build a`) as HTMLAnchorElement;
   buildElement.innerHTML = commitHash;
   buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${commitHash}`;
+}
+
+// cSpell:ignore llback
+function gridLoadedCallback() {
+  document.body.classList.add("grid-loaded");
 }

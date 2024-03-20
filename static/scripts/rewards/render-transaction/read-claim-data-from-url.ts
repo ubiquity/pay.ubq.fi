@@ -32,9 +32,13 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claims = decodeClaimData(base64encodedTxData).flat();
   app.claimTxs = await getClaimedTxs(app);
   app.provider = await useFastestRpc(app);
-  if (window.ethereum) {
-    app.signer = await connectWallet().catch(console.error);
-    window.ethereum.on("accountsChanged", () => {
+  if (ethereum) {
+    try {
+      app.signer = await connectWallet();
+    } catch (error) {
+      /* empty */
+    }
+    ethereum.on("accountsChanged", () => {
       checkRenderMakeClaimControl(app).catch(console.error);
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     });
@@ -46,7 +50,11 @@ export async function readClaimDataFromUrl(app: AppState) {
   displayRewardPagination();
 
   await renderTransaction();
-  await verifyCurrentNetwork(app.networkId);
+  if (app.networkId !== null) {
+    await verifyCurrentNetwork(app.networkId);
+  } else {
+    throw new Error("Network ID is null");
+  }
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
