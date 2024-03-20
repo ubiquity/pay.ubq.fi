@@ -1,4 +1,4 @@
-export function grid(node = document.body) {
+export function grid(node = document.body, callback?: () => void) {
   // Create canvas and WebGL context
   const canvas = document.createElement("canvas");
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -151,10 +151,12 @@ export function grid(node = document.body) {
   }
 
   // Handle window resize
-  window.addEventListener("resize", () => {
-    resizeCanvasToDisplaySize(canvas);
-  });
+  window.addEventListener("resize", () => resizeCanvasToDisplaySize(canvas));
 
+  // Callback
+  if (callback) {
+    callback();
+  }
   // Start the render loop
   render();
 }
