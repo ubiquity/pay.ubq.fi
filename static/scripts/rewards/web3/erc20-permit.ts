@@ -128,7 +128,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
   };
 }
 
-export async function checkPermitClaimable(app: AppState): Promise<boolean> {
+async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(app);
@@ -248,7 +248,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 });
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-export async function isNonceClaimed(app: AppState): Promise<boolean> {
+async function isNonceClaimed(app: AppState): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
@@ -266,7 +266,7 @@ export async function isNonceClaimed(app: AppState): Promise<boolean> {
   return bit.and(flipped).eq(0);
 }
 
-export async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
+async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428
@@ -277,7 +277,7 @@ export async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish
 }
 
 // mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L142
-export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number } {
+function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number } {
   // wordPos is the first 248 bits of the nonce
   const wordPos = BigNumber.from(nonce).shr(8);
   // bitPos is the last 8 bits of the nonce
@@ -285,7 +285,7 @@ export function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: 
   return { wordPos, bitPos };
 }
 
-export async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
+async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
   const { error } = await supabase
     .from("permits")
     .update({ transaction: hash })

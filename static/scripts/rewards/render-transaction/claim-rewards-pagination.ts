@@ -13,7 +13,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
   if (prevTxButton) prevTxButton.addEventListener("click", () => transactionHandler("previous"));
 }
 
-export function transactionHandler(direction: "next" | "previous") {
+function transactionHandler(direction: "next" | "previous") {
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
