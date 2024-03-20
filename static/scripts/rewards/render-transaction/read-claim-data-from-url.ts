@@ -36,11 +36,12 @@ export async function readClaimDataFromUrl(app: AppState) {
     try {
       app.signer = await connectWallet();
     } catch (error) {
-      ethereum.on("accountsChanged", () => {
-        checkRenderMakeClaimControl(app).catch(console.error);
-        checkRenderInvalidatePermitAdminControl(app).catch(console.error);
-      });
+      /* empty */
     }
+    ethereum.on("accountsChanged", () => {
+      checkRenderMakeClaimControl(app).catch(console.error);
+      checkRenderInvalidatePermitAdminControl(app).catch(console.error);
+    });
   } else {
     buttonController.hideAll();
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
