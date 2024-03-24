@@ -22,5 +22,10 @@ export async function useFastestRpc(app: AppState): Promise<JsonRpcProvider> {
     isTestCompleted = true;
   }
 
-  return getFastestRpcProvider(networkId);
+  const fastestProvider = await getFastestRpcProvider(networkId);
+  if (!fastestProvider) {
+    throw new Error("Failed to select a valid RPC Provider");
+  } else {
+    return fastestProvider;
+  }
 }
