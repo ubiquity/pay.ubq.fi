@@ -24,7 +24,7 @@ export async function getFastestRpcProvider(networkId: number) {
       await rpcProvider.getBlock(1);
       return rpcProvider;
     } catch (e) {
-      console.log(`Failed to get a block using network ${optimalRPC}, will try with another.`);
+      console.warn(`Failed to get a block using network ${optimalRPC}, will try with another.`);
       delete latencies[optimalRPC];
     }
   }
