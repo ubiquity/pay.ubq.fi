@@ -31,7 +31,11 @@ export async function readClaimDataFromUrl(app: AppState) {
 
   app.claims = decodeClaimData(base64encodedTxData).flat();
   app.claimTxs = await getClaimedTxs(app);
-  app.provider = await useFastestRpc(app);
+  try {
+    app.provider = await useFastestRpc(app);
+  } catch (e) {
+    toaster.create("error", `${e}`);
+  }
   if (ethereum) {
     try {
       app.signer = await connectWallet();
