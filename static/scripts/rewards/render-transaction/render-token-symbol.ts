@@ -37,7 +37,16 @@ export async function renderTokenSymbol({
   }
 
   // Format the amount
-  const formattedAmount = parseFloat(utils.formatUnits(amount, decimals)).toFixed(0);
+  let formattedAmount: string | number = parseFloat(utils.formatUnits(amount, decimals));
+
+  // If the amount is an integer, convert it to a string
+  if (Number.isInteger(formattedAmount)) {
+    formattedAmount = formattedAmount.toString();
+  } else {
+    // If the amount is not an integer, round it to a max of 4 decimal places
+    const decimals = Math.min(4, (formattedAmount.toString().split(".")[1] || "").length);
+    formattedAmount = formattedAmount.toFixed(decimals);
+  }
 
   table.setAttribute(`data-contract-loaded`, "true");
   requestedAmountElement.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}">${formattedAmount} ${symbol}</a>`;
