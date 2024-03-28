@@ -4,7 +4,7 @@ import { buttonController, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
-    const wallet = new ethers.providers.Web3Provider(ethereum);
+    const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
     await wallet.send("eth_requestAccounts", []);
 

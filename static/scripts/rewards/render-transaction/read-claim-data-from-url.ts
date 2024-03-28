@@ -36,13 +36,13 @@ export async function readClaimDataFromUrl(app: AppState) {
   } catch (e) {
     toaster.create("error", `${e}`);
   }
-  if (ethereum) {
+  if (window.ethereum) {
     try {
       app.signer = await connectWallet();
     } catch (error) {
       /* empty */
     }
-    ethereum.on("accountsChanged", () => {
+    window.ethereum.on("accountsChanged", () => {
       checkRenderMakeClaimControl(app).catch(console.error);
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     });
