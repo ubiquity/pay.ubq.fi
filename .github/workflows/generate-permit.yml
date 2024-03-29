@@ -1,0 +1,29 @@
+name: Generate Permit
+
+on:
+  workflow_dispatch:
+    inputs:
+      beneficiary-address:
+        required: true
+        description: The address of the beneficiary's wallet
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.0
+
+      - name: Generate Claimable Permit
+        run: |
+          yarn
+          yarn start:sign
+        env: # Set environment variables for the build
+          BENEFICIARY_ADDRESS: ${{ github.event.inputs.message }}
+          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
