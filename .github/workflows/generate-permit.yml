@@ -3,9 +3,12 @@ name: Generate Permit
 on:
   workflow_dispatch:
     inputs:
-      beneficiary-address:
+      beneficiary:
         required: true
         description: The address of the beneficiary's wallet
+      ubiquibot:
+        required: true
+        description: Ubiquibot's Private Key
 
 jobs:
   build:
@@ -25,5 +28,10 @@ jobs:
           yarn
           yarn start:sign
         env: # Set environment variables for the build
-          BENEFICIARY_ADDRESS: ${{ github.event.inputs.message }}
+          BENEFICIARY_ADDRESS: ${{ github.event.inputs.beneficiary }}
           PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          AMOUNT_IN_ETH: 0
+          CHAIN_ID: 100
+          FRONTEND_URL: "http://localhost:8080"
+          RPC_PROVIDER_URL: "http://eth.ubq.fi/v1/mainnet"
+          UBIQUIBOT_PRIVATE_KEY: ${{ github.event.inputs.ubiquibot }}
