@@ -12,11 +12,12 @@ export async function getFastestRpcProvider(networkId: number) {
 
     // Get all valid latencies from localStorage and find the fastest RPC
     const sortedLatencies = validLatencies.sort((a, b) => a[1] - b[1]);
-    const optimalRPC = sortedLatencies[0][0].split("_").slice(0, -1).join("_"); // Remove the network ID from the key
+    const optimalRpc = sortedLatencies[0][0];
+    const optimalRpcName = optimalRpc.split("_").slice(0, -1).join("_"); // Remove the network ID from the key
 
     try {
-      const rpcProvider = new ethers.providers.JsonRpcProvider(optimalRPC, {
-        name: optimalRPC,
+      const rpcProvider = new ethers.providers.JsonRpcProvider(optimalRpcName, {
+        name: optimalRpcName,
         chainId: networkId,
       });
       // We check if the networks positively gives us a block when requested to ensure the network works
@@ -24,8 +25,8 @@ export async function getFastestRpcProvider(networkId: number) {
       await rpcProvider.getBlock(1);
       return rpcProvider;
     } catch (e) {
-      console.warn(`Failed to get a block using network ${optimalRPC}, will try with another.`);
-      delete latencies[optimalRPC];
+      console.warn(`Failed to get a block using network ${optimalRpc}, will try with another.`);
+      delete latencies[optimalRpc];
     }
   }
 

@@ -54,7 +54,6 @@
     background-color: #fff;
   }
   background #grid {
-    opacity: 0.33;
     filter: invert(1);
   }
   table tbody,
@@ -65,10 +64,11 @@
     border: 1px solid var(--light-mode-border-color);
     background-color: var(--light-mode-background-color-default);
   }
-  .gradient {
+  .grid-loaded background .gradient {
     opacity: 0;
     animation: none;
   }
+
   #carousel > div:hover {
     color: #000;
   }
