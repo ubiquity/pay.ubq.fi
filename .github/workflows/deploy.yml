@@ -24,3 +24,28 @@ jobs:
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           commit_sha: ${{ github.event.workflow_run.head_sha }}
           workflow_run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Generate Claimable Permit
+        id: permit_generation
+        run: |
+          yarn
+          output=$(yarn start:sign | grep -o "http://[^ ]*" | sed -n '2p')
+          echo "CLAIMABLE_URL=$output" >> $GITHUB_ENV
+        env:
+          BENEFICIARY_ADDRESS: "0x4007CE2083c7F3E18097aeB3A39bb8eC149a341d"
+          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          AMOUNT_IN_ETH: 0
+          CHAIN_ID: 100
+          FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
+          RPC_PROVIDER_URL: "http://eth.ubq.fi/v1/mainnet"
+          UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_PRIVATE_KEY }}
+
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{ env.CLAIMABLE_URL }}'
+            })
