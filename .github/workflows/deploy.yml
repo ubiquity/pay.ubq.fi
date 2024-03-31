@@ -37,9 +37,7 @@ jobs:
         id: permit_generation
         run: |
           yarn
-          cat package.json
-          yarn "start:sign"
-          output=$(yarn "start:sign" | grep -o "http://[^ ]*" | sed -n '2p')
+          output=$(yarn "start:sign" | grep -o "https://[^ ]*" | sed -n '2p')
           echo "Permit available at the address:"
           echo $output
           echo "CLAIMABLE_URL=$output" >> $GITHUB_ENV
