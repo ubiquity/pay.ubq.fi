@@ -25,6 +25,14 @@ jobs:
           commit_sha: ${{ github.event.workflow_run.head_sha }}
           workflow_run_id: ${{ github.event.workflow_run.id }}
 
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.0
+
       - name: Generate Claimable Permit
         id: permit_generation
         run: |
