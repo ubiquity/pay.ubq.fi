@@ -8,7 +8,7 @@ import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
-import { renderTransaction } from "./render-transaction";
+import { renderTransactions } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 import { RewardPermit, claimTxT } from "./tx-type";
 
@@ -50,10 +50,9 @@ export async function readClaimDataFromUrl(app: AppState) {
     buttonController.hideAll();
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
   }
-  displayRewardDetails();
   displayRewardPagination();
 
-  await renderTransaction();
+  await renderTransactions();
   if (app.networkId !== null) {
     await verifyCurrentNetwork(app.networkId);
   } else {
@@ -96,14 +95,4 @@ function displayRewardPagination() {
       claimRewardsPagination(rewardsCount);
     }
   }
-}
-
-function displayRewardDetails() {
-  let isDetailsVisible = false;
-  table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
-  const additionalDetails = document.getElementById(`additionalDetails`) as HTMLElement;
-  additionalDetails.addEventListener("click", () => {
-    isDetailsVisible = !isDetailsVisible;
-    table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
-  });
 }

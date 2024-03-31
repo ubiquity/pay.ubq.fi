@@ -1,7 +1,7 @@
 import { app } from "../app-state";
 import { getMakeClaimButton } from "../toaster";
 import { table } from "./read-claim-data-from-url";
-import { renderTransaction } from "./render-transaction";
+import { renderTransactions } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
 
 const nextTxButton = document.getElementById("nextTx");
@@ -17,5 +17,5 @@ function transactionHandler(direction: "next" | "previous") {
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
-  renderTransaction().catch(console.error);
+  renderTransactions().catch(console.error);
 }

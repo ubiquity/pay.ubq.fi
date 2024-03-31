@@ -4,7 +4,7 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { Erc20Permit, Erc721Permit } from "../render-transaction/tx-type";
+import { Erc20Permit, Erc721Permit, RewardPermit } from "../render-transaction/tx-type";
 import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
 
 export async function fetchTreasury(
@@ -44,9 +44,9 @@ export async function fetchTreasury(
   }
 }
 
-async function checkPermitClaimability(app: AppState): Promise<boolean> {
+async function checkPermitClaimability(app: AppState, reward: RewardPermit): Promise<boolean> {
   try {
-    return await checkPermitClaimable(app);
+    return await checkPermitClaimable(app, reward);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -58,8 +58,7 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, app: AppState) {
-  const reward = app.reward;
+async function transferFromPermit(permit2Contract: Contract, app: AppState, reward: RewardPermit) {
   try {
     const tx = await permit2Contract.permitTransferFrom(reward.permit, reward.transferDetails, reward.owner, reward.signature);
     toaster.create("info", `Transaction sent`);
@@ -101,18 +100,18 @@ async function waitForTransaction(tx: TransactionResponse) {
   }
 }
 
-export function claimErc20PermitHandlerWrapper(app: AppState) {
+export function claimErc20PermitHandlerWrapper(app: AppState, reward: RewardPermit) {
   return async function claimErc20PermitHandler() {
     buttonController.hideMakeClaim();
     buttonController.showLoader();
 
-    const isPermitClaimable = await checkPermitClaimability(app);
+    const isPermitClaimable = await checkPermitClaimability(app, reward);
     if (!isPermitClaimable) return;
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
-    const tx = await transferFromPermit(permit2Contract, app);
+    const tx = await transferFromPermit(permit2Contract, app, reward);
     if (!tx) return;
 
     // buttonController.showLoader();
@@ -121,17 +120,17 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
 
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    const isHashUpdated = await updatePermitTxHash(reward, receipt.transactionHash);
     if (!isHashUpdated) return;
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
   };
 }
 
-async function checkPermitClaimable(app: AppState): Promise<boolean> {
+async function checkPermitClaimable(app: AppState, reward: RewardPermit): Promise<boolean> {
   let isClaimed: boolean;
   try {
-    isClaimed = await isNonceClaimed(app);
+    isClaimed = await isNonceClaimed(app, reward);
   } catch (error: unknown) {
     console.error("Error in isNonceClaimed: ", error);
     return false;
@@ -142,8 +141,6 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
     buttonController.showViewClaim();
     return false;
   }
-
-  const reward = app.reward;
 
   if (reward.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
@@ -167,6 +164,8 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
     buttonController.hideMakeClaim();
     return false;
   }
+
+  //Do I use the first reward to get network Id etc
 
   let user: string;
   try {
@@ -224,38 +223,40 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
   buttonController.showInvalidator();
 }
 
-const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
+export function handleInvalidateButton(table: HTMLTableElement, reward: RewardPermit) {
+  const invalidateButton = table.querySelector(".invalidator") as HTMLDivElement;
 
-invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
-  try {
-    const isClaimed = await isNonceClaimed(app);
-    if (isClaimed) {
-      toaster.create("error", `This reward has already been claimed or invalidated.`);
-      buttonController.hideInvalidator();
-      return;
+  invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
+    try {
+      const isClaimed = await isNonceClaimed(app, reward);
+      if (isClaimed) {
+        toaster.create("error", `This reward has already been claimed or invalidated.`);
+        buttonController.hideInvalidator();
+        return;
+      }
+      await invalidateNonce(app.signer, reward.permit.nonce);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        const e = error as unknown as MetaMaskError;
+        console.error(e);
+        errorToast(e, e.reason);
+        return;
+      }
     }
-    await invalidateNonce(app.signer, app.reward.permit.nonce);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error(e);
-      errorToast(e, e.reason);
-      return;
-    }
-  }
-  toaster.create("info", "Nonce invalidation transaction sent");
-  buttonController.hideInvalidator();
-});
+    toaster.create("info", "Nonce invalidation transaction sent");
+    buttonController.hideInvalidator();
+  });
+}
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-async function isNonceClaimed(app: AppState): Promise<boolean> {
+async function isNonceClaimed(app: AppState, reward: RewardPermit): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.permit.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(reward.permit.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(app.reward.owner, wordPos).catch((error: MetaMaskError) => {
+  const bitmap = await permit2Contract.nonceBitmap(reward.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });
@@ -285,12 +286,12 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
   return { wordPos, bitPos };
 }
 
-async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
+async function updatePermitTxHash(reward: RewardPermit, hash: string): Promise<boolean> {
   const { error } = await supabase
     .from("permits")
     .update({ transaction: hash })
     // using only nonce in the condition as it's defined unique on db
-    .eq("nonce", app.reward.permit.nonce.toString());
+    .eq("nonce", reward.permit.nonce.toString());
 
   if (error !== null) {
     console.error(error);

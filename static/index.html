@@ -54,8 +54,7 @@
           </div>
         </a>
       </header>
-      <div>
-        <table data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
+      <template id="table-template"><table data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
           <thead>
             <tr>
               <th>
@@ -158,7 +157,7 @@
                     </svg>
                   </button>
 
-                  <button id="invalidator">
+                  <button class="invalidator">
                     <div>Void</div>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
                       <path
@@ -171,8 +170,8 @@
             </tr>
           </tbody>
           <tbody id="additionalDetailsTable"></tbody>
-        </table>
-      </div>
+        </table></template>
+      <div id="table-target"></div>
       <footer
         ><figure id="carousel">
           <div id="prevTx"></div>

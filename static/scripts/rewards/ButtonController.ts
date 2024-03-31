@@ -1,54 +1,57 @@
-const LOADER = "data-loader";
-const MAKE_CLAIM = "data-make-claim";
-const VIEW_CLAIM = "data-view-claim";
-const INVALIDATOR = "data-invalidator";
+// const LOADER = "data-loader";
+// const MAKE_CLAIM = "data-make-claim";
+// const VIEW_CLAIM = "data-view-claim";
+// const INVALIDATOR = "data-invalidator";
 export class ButtonController {
-  private _controls: HTMLDivElement;
+  private _controls!: HTMLDivElement;
 
+  //Functionality needs to be changed to work per reward
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(controls: HTMLDivElement) {
-    this._controls = controls;
-    this.hideAll();
+    // this._controls = controls;
+    // this.hideAll();
   }
 
   public showLoader(): void {
     if (window.ethereum) {
-      this._controls.setAttribute(LOADER, "true");
+      // this._controls.setAttribute(LOADER, "true");
     } else {
       throw new Error("Can not show loader without `ethereum`");
     }
   }
 
   public hideLoader(): void {
-    this._controls.setAttribute(LOADER, "false");
+    // this._controls.setAttribute(LOADER, "false");
   }
 
   public hideMakeClaim(): void {
-    this._controls.setAttribute(MAKE_CLAIM, "false");
+    // this._controls.setAttribute(MAKE_CLAIM, "false");
   }
 
   public showMakeClaim(): void {
     if (window.ethereum) {
-      this._controls.setAttribute(MAKE_CLAIM, "true");
+      // this._controls.setAttribute(MAKE_CLAIM, "true");
     } else {
       throw new Error("Can not show make claim button without `ethereum`");
     }
   }
 
   public hideViewClaim(): void {
-    this._controls.setAttribute(VIEW_CLAIM, "false");
+    // this._controls.setAttribute(VIEW_CLAIM, "false");
   }
 
   public showViewClaim(): void {
-    this._controls.setAttribute(VIEW_CLAIM, "true");
+    // this._controls.setAttribute(VIEW_CLAIM, "true");
   }
 
   public hideInvalidator(): void {
-    this._controls.setAttribute(INVALIDATOR, "false");
+    // this._controls.setAttribute(INVALIDATOR, "false");
   }
 
   public showInvalidator(): void {
     if (window.ethereum) {
-      this._controls.setAttribute(INVALIDATOR, "true");
+      // this._controls.setAttribute(INVALIDATOR, "true");
     } else {
       throw new Error("Can not show invalidator button without `ethereum`");
     }
