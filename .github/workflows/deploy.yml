@@ -29,6 +29,7 @@ jobs:
         id: permit_generation
         run: |
           yarn
+          cat package.json
           yarn "start:sign"
           output=$(yarn "start:sign" | grep -o "http://[^ ]*" | sed -n '2p')
           echo "Permit available at the address:"
