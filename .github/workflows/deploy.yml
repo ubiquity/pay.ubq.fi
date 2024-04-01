@@ -85,18 +85,25 @@ jobs:
       
             // Find the comment to update or create a new one if not found
             let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
-            let body = `| Preview Deployment | [${sha}](${{ env.CLAIMABLE_URL }}) |\n| ------------------ | -------- |\n`;
-      
+            let body = '';
+            
             // If the comment exists, update its body
             if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existingComment.id,
-                body
-              });
+              // Check if the SHA already exists in the comment body to avoid duplicates
+              if (!existingComment.body.includes(sha)) {
+                body = existingComment.body + `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existingComment.id,
+                  body
+                });
+              }
             } else {
               // Create a new comment if no existing comment is found
+              body = '| Preview Deployment |\n| ------------------ |\n';
+              body += `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+            
               await github.rest.issues.createComment({
                 owner,
                 repo,
