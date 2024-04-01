@@ -67,7 +67,7 @@ jobs:
             }
             const issue_number = items[0].number;
             console.info("Pull request number is", issue_number);
-              
+            
             if (!issue_number) {
               console.log('Action not triggered from an issue, skipping.');
               return;
