@@ -38,17 +38,6 @@ export function renderTransactions() {
 }
 
 async function renderTransaction(reward: RewardPermit): Promise<HTMLTableElement> {
-  // if (app.claims && app.claims.length > 1) {
-  //   carousel.className = "flex";
-  //   const rewardsCount = document.getElementById("rewardsCount") as Element;
-  //   rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-  // }
-
-  // if (!app.reward) {
-  //   buttonController.hideAll();
-  //   console.log("No reward found");
-  //   return false;
-  // }
   const table = (document.getElementById("table-template") as HTMLTemplateElement)!.content.cloneNode(true).firstChild as HTMLTableElement;
   verifyCurrentNetwork(reward.networkId).catch(console.error);
 

@@ -1,13 +1,12 @@
 import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { createClient } from "@supabase/supabase-js";
-import { AppState, app } from "../app-state";
+import { AppState } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
 import { buttonController, toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
-import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransactions } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 import { RewardPermit, claimTxT } from "./tx-type";
@@ -50,7 +49,6 @@ export async function readClaimDataFromUrl(app: AppState) {
     buttonController.hideAll();
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
   }
-  displayRewardPagination();
 
   await renderTransactions();
   if (app.networkId !== null) {
@@ -86,13 +84,3 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
   }
 }
 
-function displayRewardPagination() {
-  const rewardsCount = document.getElementById("rewardsCount");
-  if (rewardsCount) {
-    if (!app.claims || app.claims.length <= 1) {
-      // already hidden
-    } else {
-      claimRewardsPagination(rewardsCount);
-    }
-  }
-}
