@@ -98,7 +98,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner,
                 repo,
-                issue_number: number,
+                issue_number,
                 body
               });
             }
