@@ -38,7 +38,7 @@ jobs:
         run: |
           yarn
           output=$(yarn "start:sign")
-          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p')
+          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p' | tr -d '\r\n')
           echo $output
           echo "Permit available at the address:"
           echo $url
@@ -86,9 +86,8 @@ jobs:
             let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
             let body = `| Preview Deployment | [${sha}](${{ env.CLAIMABLE_URL }}) |\n| ------------------ | -------- |\n`;
       
-            // If the comment exists, append data to its body
+            // If the comment exists, update its body
             if (existingComment) {
-              body = existingComment.body + '\n\n' + body;
               await github.rest.issues.updateComment({
                 owner,
                 repo,
