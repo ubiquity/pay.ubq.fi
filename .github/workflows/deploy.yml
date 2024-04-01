@@ -35,10 +35,11 @@ jobs:
 
       - name: Generate Claimable Permit
         id: permit_generation
+        # The sed command is used to remove color characters that are present in the output of the script
         run: |
           yarn
           output=$(yarn "start:sign")
-          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p' | tr -d '\r\n')
+          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p' | sed 's/\x1B\[[0-9;]*[JKmsu]//g')
           echo $output
           echo "Permit available at the address:"
           echo $url
