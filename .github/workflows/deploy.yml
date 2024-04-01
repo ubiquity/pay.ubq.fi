@@ -103,7 +103,6 @@ jobs:
               // Create a new comment if no existing comment is found
               body = '| Preview Deployment |\n| ------------------ |\n';
               body += `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
-            
               await github.rest.issues.createComment({
                 owner,
                 repo,
