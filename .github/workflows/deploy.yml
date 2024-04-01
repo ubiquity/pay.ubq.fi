@@ -54,7 +54,7 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const sha = ${{ github.sha }};
+            const sha = "${{ github.sha }}";
             
             console.log(owner, repo)
             
