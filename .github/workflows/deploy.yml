@@ -49,7 +49,7 @@ jobs:
           AMOUNT_IN_ETH: 0
           CHAIN_ID: 100
           FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
-          RPC_PROVIDER_URL: "http://eth.ubq.fi/v1/mainnet"
+          RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
           UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_PRIVATE_KEY }}
 
       - uses: actions/github-script@v7
