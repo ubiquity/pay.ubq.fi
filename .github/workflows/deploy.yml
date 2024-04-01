@@ -85,7 +85,7 @@ jobs:
       
             // Find the comment to update or create a new one if not found
             let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
-            let body = '';
+            let body = '| Preview Deployment |\n| ------------------ |\n';
             
             // If the comment exists, update its body
             if (existingComment) {
@@ -101,7 +101,6 @@ jobs:
               }
             } else {
               // Create a new comment if no existing comment is found
-              body = '| Preview Deployment |\n| ------------------ |\n';
               body += `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
               await github.rest.issues.createComment({
                 owner,
