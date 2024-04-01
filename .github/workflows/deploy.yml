@@ -54,13 +54,30 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const { number } = context.issue;
+            const sha = github.sha;
+            
+            const response = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${repo} is:pr sha:${sha}`,
+              per_page: 1,
+            })
+            const items = response.data.items
+            if (items.length < 1) {
+              console.error('No PRs found')
+              return
+            }
+            const issue_number = items[0].number
+            console.info("Pull request number is", issue_number)
+              
+            if (!issue_number) {
+              console.log('Action not triggered from an issue, skipping.');
+              return;
+            }
       
             // Fetch existing comments on the issue
             const comments = await github.rest.issues.listComments({
               owner,
               repo,
-              issue_number: number
+              issue_number,
             });
       
             // Find the comment to update or create a new one if not found
