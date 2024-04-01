@@ -37,10 +37,12 @@ jobs:
         id: permit_generation
         run: |
           yarn
-          output=$(yarn "start:sign" | grep -o "https://[^ ]*" | sed -n '2p')
-          echo "Permit available at the address:"
+          output=$(yarn "start:sign")
+          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p')
           echo $output
-          echo "CLAIMABLE_URL=$output" >> $GITHUB_ENV
+          echo "Permit available at the address:"
+          echo $url
+          echo "CLAIMABLE_URL=$url" >> $GITHUB_ENV
         env:
           BENEFICIARY_ADDRESS: "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd"
           PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
@@ -82,7 +84,7 @@ jobs:
       
             // Find the comment to update or create a new one if not found
             let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
-            let body = '${{ env.CLAIMABLE_URL }}';
+            let body = `| Preview Deployment | [${sha}](${{ env.CLAIMABLE_URL }}) |\n| ------------------ | -------- |\n`;
       
             // If the comment exists, append data to its body
             if (existingComment) {
