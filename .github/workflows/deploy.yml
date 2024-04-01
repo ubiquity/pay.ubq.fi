@@ -54,7 +54,12 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const { number } = context.issue;
+            const number = ${{ github.event.number }};
+            
+            if (!number) {
+              console.log('Action not triggered from an issue, skipping.');
+              return;
+            }
       
             // Fetch existing comments on the issue
             const comments = await github.rest.issues.listComments({
