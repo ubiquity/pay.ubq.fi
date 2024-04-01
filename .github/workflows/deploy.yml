@@ -53,9 +53,35 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '${{ env.CLAIMABLE_URL }}'
-            })
+            const { owner, repo } = context.repo;
+            const { number } = context.issue;
+      
+            // Fetch existing comments on the issue
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: number
+            });
+      
+            // Find the comment to update or create a new one if not found
+            let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
+            let body = '${{ env.CLAIMABLE_URL }}';
+      
+            // If the comment exists, append data to its body
+            if (existingComment) {
+              body = existingComment.body + '\n\n' + body;
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body
+              });
+            } else {
+              // Create a new comment if no existing comment is found
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body
+              });
+            }
