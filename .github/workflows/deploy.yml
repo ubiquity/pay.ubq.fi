@@ -54,7 +54,9 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const sha = github.sha;
+            const sha = ${{ github.sha }};
+            
+            console.log(owner, repo)
             
             const response = await github.rest.search.issuesAndPullRequests({
               q: `repo:${repo} is:pr sha:${sha}`,
