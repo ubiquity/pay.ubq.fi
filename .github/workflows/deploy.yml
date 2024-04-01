@@ -54,7 +54,7 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const number = ${{ github.event.number }};
+            const issue_number = context.payload.issue.number;
             
             if (!number) {
               console.log('Action not triggered from an issue, skipping.');
@@ -65,7 +65,7 @@ jobs:
             const comments = await github.rest.issues.listComments({
               owner,
               repo,
-              issue_number: number
+              issue_number,
             });
       
             // Find the comment to update or create a new one if not found
