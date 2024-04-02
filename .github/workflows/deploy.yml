@@ -24,3 +24,88 @@ jobs:
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           commit_sha: ${{ github.event.workflow_run.head_sha }}
           workflow_run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.0
+
+      - name: Generate Claimable Permit
+        id: permit_generation
+        # The sed command is used to remove color characters that are present in the output of the script
+        run: |
+          yarn
+          output=$(yarn "start:sign")
+          url=$(echo $output | grep -o "https://[^ ]*" | sed -n '2p' | sed 's/\x1B\[[0-9;]*[JKmsu]//g')
+          echo $output
+          echo "Permit available at the address:"
+          echo $url
+          echo "CLAIMABLE_URL=$url" >> $GITHUB_ENV
+        env:
+          BENEFICIARY_ADDRESS: "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd"
+          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          AMOUNT_IN_ETH: 0
+          CHAIN_ID: 100
+          FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
+          RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
+          UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_PRIVATE_KEY }}
+
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = "${{ github.event.workflow_run.head_sha }}";
+            
+            const response = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:pr sha:${sha}`,
+              per_page: 1,
+            });
+            const items = response.data.items;
+            if (items.length < 1) {
+              console.error('No related PRs found, skipping.');
+              return;
+            }
+            const issue_number = items[0].number;
+            console.info('Pull request number is', issue_number);
+
+            if (!issue_number) {
+              console.log('Action not triggered from an issue, skipping.');
+              return;
+            }
+
+            // Fetch existing comments on the issue
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+      
+            // Find the comment to update or create a new one if not found
+            let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
+            let body = '| Preview Deployment |\n| ------------------ |\n';
+            
+            // If the comment exists, update its body
+            if (existingComment) {
+              // Check if the SHA already exists in the comment body to avoid duplicates
+              if (!existingComment.body.includes(sha)) {
+                body = existingComment.body + `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existingComment.id,
+                  body
+                });
+              }
+            } else {
+              // Create a new comment if no existing comment is found
+              body += `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+            }

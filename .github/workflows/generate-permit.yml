@@ -1,0 +1,37 @@
+name: Generate Permit
+
+on:
+  workflow_dispatch:
+    inputs:
+      beneficiary:
+        required: true
+        description: The address of the beneficiary's wallet
+      evmPrivateEncrypted:
+        required: true
+        description: Ubiquibot's Private Key
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.0
+
+      - name: Generate Claimable Permit
+        run: |
+          yarn
+          yarn start:sign
+        env:
+          BENEFICIARY_ADDRESS: ${{ github.event.inputs.beneficiary }}
+          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          AMOUNT_IN_ETH: 0
+          CHAIN_ID: 100
+          FRONTEND_URL: "http://localhost:8080"
+          RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
+          UBIQUIBOT_PRIVATE_KEY: ${{ github.event.inputs.evmPrivateEncrypted }}
