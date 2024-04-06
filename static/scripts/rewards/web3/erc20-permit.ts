@@ -54,7 +54,7 @@ async function checkPermitClaimability(app: AppState, reward: RewardPermit): Pro
       errorToast(e, e.reason);
     }
   }
-  buttonController.hideMakeClaim();
+  buttonController.hideMakeClaim(reward);
   return false;
 }
 
@@ -70,8 +70,8 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState, rewa
       if (e.code == "ACTION_REJECTED") {
         // Handle the user rejection case
         toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
-        buttonController.hideLoader();
-        buttonController.showMakeClaim();
+        buttonController.hideLoader(reward);
+        buttonController.showMakeClaim(reward);
       } else {
         // Handle other errors
         console.error("Error in permitTransferFrom: ", e);
@@ -82,13 +82,13 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState, rewa
   }
 }
 
-async function waitForTransaction(tx: TransactionResponse) {
+async function waitForTransaction(tx: TransactionResponse, reward: RewardPermit) {
   try {
     const receipt = await tx.wait();
     toaster.create("success", `Claim Complete.`);
-    buttonController.showViewClaim();
-    buttonController.hideLoader();
-    buttonController.hideMakeClaim();
+    buttonController.showViewClaim(reward);
+    buttonController.hideLoader(reward);
+    buttonController.hideMakeClaim(reward);
     console.log(receipt.transactionHash);
     return receipt;
   } catch (error: unknown) {
@@ -102,8 +102,8 @@ async function waitForTransaction(tx: TransactionResponse) {
 
 export function claimErc20PermitHandlerWrapper(app: AppState, reward: RewardPermit) {
   return async function claimErc20PermitHandler() {
-    buttonController.hideMakeClaim();
-    buttonController.showLoader();
+    buttonController.hideMakeClaim(reward);
+    buttonController.showLoader(reward);
 
     const isPermitClaimable = await checkPermitClaimability(app, reward);
     if (!isPermitClaimable) return;
@@ -114,16 +114,16 @@ export function claimErc20PermitHandlerWrapper(app: AppState, reward: RewardPerm
     const tx = await transferFromPermit(permit2Contract, app, reward);
     if (!tx) return;
 
-    // buttonController.showLoader();
-    // buttonController.hideMakeClaim();
+    buttonController.showLoader(reward);
+    buttonController.hideMakeClaim(reward);
 
-    const receipt = await waitForTransaction(tx);
+    const receipt = await waitForTransaction(tx, reward);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(reward, receipt.transactionHash);
     if (!isHashUpdated) return;
 
-    getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
+    getMakeClaimButton(reward).removeEventListener("click", claimErc20PermitHandler);
   };
 }
 
@@ -138,7 +138,7 @@ async function checkPermitClaimable(app: AppState, reward: RewardPermit): Promis
 
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed.`);
-    buttonController.showViewClaim();
+    buttonController.showViewClaim(reward);
     return false;
   }
 
@@ -156,12 +156,12 @@ async function checkPermitClaimable(app: AppState, reward: RewardPermit): Promis
 
   if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
-    buttonController.hideMakeClaim();
+    buttonController.hideMakeClaim(reward);
     return false;
   }
   if (!isAllowed) {
     toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
-    buttonController.hideMakeClaim();
+    buttonController.hideMakeClaim(reward);
     return false;
   }
 
@@ -178,22 +178,22 @@ async function checkPermitClaimable(app: AppState, reward: RewardPermit): Promis
   const beneficiary = reward.transferDetails.to.toLowerCase();
   if (beneficiary !== user) {
     toaster.create("warning", `This reward is not for you.`);
-    buttonController.hideMakeClaim();
+    buttonController.hideMakeClaim(reward);
     return false;
   }
 
   return true;
 }
 
-export async function checkRenderMakeClaimControl(app: AppState) {
+export async function checkRenderMakeClaimControl(app: AppState, reward?: RewardPermit) {
   try {
     const address = await app.signer.getAddress();
     const user = address.toLowerCase();
 
-    if (app.reward) {
-      const beneficiary = app.reward.transferDetails.to.toLowerCase();
+    if (reward) {
+      const beneficiary = reward.transferDetails.to.toLowerCase();
       if (beneficiary !== user) {
-        buttonController.hideMakeClaim();
+        buttonController.hideMakeClaim(reward);
         return;
       }
     }
@@ -201,18 +201,18 @@ export async function checkRenderMakeClaimControl(app: AppState) {
     console.error("Error getting address from signer");
     console.error(error);
   }
-  buttonController.showMakeClaim();
+  buttonController.showMakeClaim(reward);
 }
 
-export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
+export async function checkRenderInvalidatePermitAdminControl(app: AppState, reward?: RewardPermit) {
   try {
     const address = await app.signer.getAddress();
     const user = address.toLowerCase();
 
-    if (app.reward) {
-      const owner = app.reward.owner.toLowerCase();
+    if (reward) {
+      const owner = reward.owner.toLowerCase();
       if (owner !== user) {
-        buttonController.hideInvalidator();
+        buttonController.hideInvalidator(reward);
         return;
       }
     }
@@ -220,7 +220,7 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
     console.error("Error getting address from signer");
     console.error(error);
   }
-  buttonController.showInvalidator();
+  buttonController.showInvalidator(reward);
 }
 
 export function handleInvalidateButton(table: HTMLTableElement, reward: RewardPermit) {
@@ -231,7 +231,7 @@ export function handleInvalidateButton(table: HTMLTableElement, reward: RewardPe
       const isClaimed = await isNonceClaimed(app, reward);
       if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
-        buttonController.hideInvalidator();
+        buttonController.hideInvalidator(reward);
         return;
       }
       await invalidateNonce(app.signer, reward.permit.nonce);
@@ -244,7 +244,7 @@ export function handleInvalidateButton(table: HTMLTableElement, reward: RewardPe
       }
     }
     toaster.create("info", "Nonce invalidation transaction sent");
-    buttonController.hideInvalidator();
+    buttonController.hideInvalidator(reward);
   });
 }
 

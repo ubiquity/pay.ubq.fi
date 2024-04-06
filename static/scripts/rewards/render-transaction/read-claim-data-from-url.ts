@@ -16,15 +16,18 @@ declare const SUPABASE_ANON_KEY: string;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
+
+function setError() {
+  document.getElementById("table-target")?.childNodes.forEach((node) => (node as HTMLTableElement).setAttribute(`data-make-claim`, "error"));
+}
 
 export async function readClaimDataFromUrl(app: AppState) {
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-make-claim`, "error");
+    setError();
     return;
   }
 
@@ -50,12 +53,13 @@ export async function readClaimDataFromUrl(app: AppState) {
     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
   }
 
-  await renderTransactions();
-  if (app.networkId !== null) {
-    await verifyCurrentNetwork(app.networkId);
-  } else {
-    throw new Error("Network ID is null");
-  }
+  await renderTransactions(async (claim) => {
+    if (claim.networkId !== null) {
+      await verifyCurrentNetwork(claim.networkId);
+    } else {
+      throw new Error("Network ID is null");
+    }
+  });
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
@@ -79,8 +83,7 @@ function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
-    table.setAttribute(`data-make-claim`, "error");
+    setError();
     throw error;
   }
 }
-

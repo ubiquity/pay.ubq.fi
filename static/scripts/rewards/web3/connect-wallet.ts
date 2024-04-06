@@ -1,8 +1,9 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { buttonController, toaster } from "../toaster";
+import { RewardPermit } from "../render-transaction/tx-type";
 
-export async function connectWallet(): Promise<JsonRpcSigner | null> {
+export async function connectWallet(reward?: RewardPermit): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -13,7 +14,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const address = await signer.getAddress();
 
     if (!address) {
-      buttonController.hideAll();
+      buttonController.hideAll(reward);
       console.error("Wallet not connected");
       return null;
     }

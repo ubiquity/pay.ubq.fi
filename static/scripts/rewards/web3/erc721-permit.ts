@@ -8,7 +8,7 @@ import { connectWallet } from "./connect-wallet";
 
 export function claimErc721PermitHandler(reward: Erc721Permit) {
   return async function claimHandler() {
-    const signer = await connectWallet();
+    const signer = await connectWallet(reward);
     if (!signer) {
       return;
     }
@@ -29,20 +29,20 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
       return;
     }
 
-    buttonController.showLoader();
+    buttonController.showLoader(reward);
     try {
       const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, signer);
 
       const tx: TransactionResponse = await nftContract.safeMint(reward.request, reward.signature);
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
-      buttonController.hideLoader();
+      buttonController.hideLoader(reward);
       toaster.create("success", `Claim Complete.`);
-      buttonController.showViewClaim();
-      buttonController.hideMakeClaim();
+      buttonController.showViewClaim(reward);
+      buttonController.hideMakeClaim(reward);
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      getMakeClaimButton().removeEventListener("click", claimHandler);
+      getMakeClaimButton(reward).removeEventListener("click", claimHandler);
 
       // app.nextPermit();
       // renderTransaction().catch((error) => {

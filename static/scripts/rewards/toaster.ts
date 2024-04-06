@@ -1,4 +1,5 @@
 import { ButtonController } from "./ButtonController";
+import { RewardPermit } from "./render-transaction/tx-type";
 
 export const toaster = {
   create: createToast,
@@ -11,13 +12,13 @@ export const toaster = {
   },
 };
 
-const controls = document.getElementById("controls") as HTMLDivElement;
-export function getMakeClaimButton() {
-  return document.getElementById("make-claim") as HTMLButtonElement;
+export function getMakeClaimButton(reward: RewardPermit) {
+  const table = document.getElementById(reward.permit.nonce.toString());
+  return table?.querySelector(`.make-claim`) as HTMLButtonElement;
 }
-export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
+
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
-export const buttonController = new ButtonController(controls);
+export const buttonController = new ButtonController();
 
 function createToast(meaning: keyof typeof toaster.icons, text: string) {
   if (meaning != "info") buttonController.hideLoader();

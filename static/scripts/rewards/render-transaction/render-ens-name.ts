@@ -1,5 +1,6 @@
-import { app } from "../app-state";
 import { ensLookup } from "../cirip/ens-lookup";
+import { currentExplorerUrl } from "../helpers";
+import { RewardPermit } from "./tx-type";
 
 type EnsParams =
   | {
@@ -15,7 +16,7 @@ type EnsParams =
       tokenView?: false;
     };
 
-export async function renderEnsName({ element, address, tokenAddress, tokenView }: EnsParams): Promise<void> {
+export async function renderEnsName({ element, address, tokenAddress, tokenView }: EnsParams, reward: RewardPermit): Promise<void> {
   let href: string = "";
   try {
     const resolved = await ensLookup(address);
@@ -30,9 +31,9 @@ export async function renderEnsName({ element, address, tokenAddress, tokenView 
     }
     if (ensName) {
       if (tokenView) {
-        href = `${app.currentExplorerUrl}/token/${tokenAddress}?a=${address}`;
+        href = `${currentExplorerUrl(reward)}/token/${tokenAddress}?a=${address}`;
       } else {
-        href = `${app.currentExplorerUrl}/address/${address}"`;
+        href = `${currentExplorerUrl(reward)}/address/${address}"`;
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }

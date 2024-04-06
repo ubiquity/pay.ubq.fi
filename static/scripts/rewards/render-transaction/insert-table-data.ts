@@ -1,6 +1,7 @@
 import { BigNumber, ethers } from "ethers";
-import { AppState, app } from "../app-state";
+import { AppState } from "../app-state";
 import { Erc721Permit, RewardPermit } from "./tx-type";
+import { currentExplorerUrl } from "../helpers";
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
@@ -13,10 +14,10 @@ export function insertErc20PermitTableData(
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
   const requestedAmountElement = table.querySelector("#rewardAmount") as Element;
-  renderToFields(table, reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(table, reward.permit.permitted.token, app.currentExplorerUrl);
+  renderToFields(table, reward.transferDetails.to, currentExplorerUrl(reward));
+  renderTokenFields(table, reward.permit.permitted.token, currentExplorerUrl(reward));
   renderDetailsFields(table, [
-    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">${reward.owner}</a>` },
+    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${currentExplorerUrl(reward)}/address/${reward.owner}">${reward.owner}</a>` },
     {
       name: "Expiry",
       value: (() => {
@@ -33,13 +34,13 @@ export function insertErc20PermitTableData(
 
 export function insertErc721PermitTableData(reward: Erc721Permit, table: Element): Element {
   const requestedAmountElement = table.querySelector("#rewardAmount") as Element;
-  renderToFields(table, reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(table, reward.permit.permitted.token, app.currentExplorerUrl);
+  renderToFields(table, reward.transferDetails.to, currentExplorerUrl(reward));
+  renderTokenFields(table, reward.permit.permitted.token, currentExplorerUrl(reward));
   const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.nftMetadata;
   renderDetailsFields(table, [
     {
       name: "NFT address",
-      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.permit.permitted.token}">${reward.permit.permitted.token}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="${currentExplorerUrl(reward)}/address/${reward.permit.permitted.token}">${reward.permit.permitted.token}</a>`,
     },
     {
       name: "Expiry",
