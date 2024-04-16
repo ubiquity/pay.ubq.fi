@@ -1,9 +1,9 @@
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
+import { Permit } from "@ubiquibot/permit-generation/types";
 import { networkExplorers } from "./constants";
-import { RewardPermit } from "./render-transaction/tx-type";
 
 export class AppState {
-  public claims: RewardPermit[] = [];
+  public claims: Permit[] = [];
   public claimTxs: Record<string, string> = {};
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
@@ -33,7 +33,7 @@ export class AppState {
     return this._currentIndex;
   }
 
-  get reward(): RewardPermit {
+  get reward(): Permit {
     return this.rewardIndex < this.claims.length ? this.claims[this.rewardIndex] : this.claims[0];
   }
 
@@ -48,12 +48,12 @@ export class AppState {
     return networkExplorers[this.reward.networkId] || "https://etherscan.io";
   }
 
-  nextPermit(): RewardPermit | null {
+  nextPermit(): Permit | null {
     this._currentIndex = Math.min(this.claims.length - 1, this.rewardIndex + 1);
     return this.reward;
   }
 
-  previousPermit(): RewardPermit | null {
+  previousPermit(): Permit | null {
     this._currentIndex = Math.max(0, this._currentIndex - 1);
     return this.reward;
   }

@@ -1,6 +1,6 @@
+import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
-import { AppState, app } from "../app-state";
-import { Erc20Permit, Erc721Permit } from "./tx-type";
+import { app, AppState } from "../app-state";
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
@@ -11,16 +11,16 @@ export function insertErc20PermitTableData(
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
-  const reward = app.reward as Erc20Permit;
+  const reward = app.reward as ERC20Permit;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(reward.permit.permitted.token, app.currentExplorerUrl);
+  renderToFields(reward.beneficiary, app.currentExplorerUrl);
+  renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
   renderDetailsFields([
     { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">${reward.owner}</a>` },
     {
       name: "Expiry",
       value: (() => {
-        const deadline = BigNumber.isBigNumber(reward.permit.deadline) ? reward.permit.deadline : BigNumber.from(reward.permit.deadline);
+        const deadline = BigNumber.isBigNumber(reward.deadline) ? reward.deadline : BigNumber.from(reward.deadline);
         return deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(deadline.toNumber()).toLocaleString() : undefined;
       })(),
     },
@@ -31,19 +31,19 @@ export function insertErc20PermitTableData(
   return requestedAmountElement;
 }
 
-export function insertErc721PermitTableData(reward: Erc721Permit, table: Element): Element {
+export function insertErc721PermitTableData(reward: ERC721Permit, table: Element): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
-  renderToFields(reward.transferDetails.to, app.currentExplorerUrl);
-  renderTokenFields(reward.permit.permitted.token, app.currentExplorerUrl);
-  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.nftMetadata;
+  renderToFields(reward.beneficiary, app.currentExplorerUrl);
+  renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
+  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.erc721Request?.metadata || {};
   renderDetailsFields([
     {
       name: "NFT address",
-      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.permit.permitted.token}">${reward.permit.permitted.token}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.tokenAddress}">${reward.tokenAddress}</a>`,
     },
     {
       name: "Expiry",
-      value: reward.permit.deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(reward.permit.deadline.toNumber()).toLocaleString() : undefined,
+      value: BigNumber.from(reward.deadline).lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(Number(reward.deadline)).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",
@@ -61,7 +61,7 @@ export function insertErc721PermitTableData(reward: Erc721Permit, table: Element
       name: "GitHub Username",
       value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_USERNAME}">${GITHUB_USERNAME}</a>`,
     },
-    { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE.split(",").join(", ") },
+    { name: "Contribution Type", value: GITHUB_CONTRIBUTION_TYPE?.split(",").join(", ") },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;
