@@ -19,10 +19,10 @@ export const viewClaimButton = document.getElementById("view-claim") as HTMLButt
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
 export const buttonController = new ButtonController(controls);
 
-function createToast(meaning: keyof typeof toaster.icons, text: string) {
+function createToast(meaning: keyof typeof toaster.icons, text: string, timeout: number = 5000) {
   if (meaning != "info") buttonController.hideLoader();
   const toastDetails = {
-    timer: 5000,
+    timer: timeout,
   } as {
     timer: number;
     timeoutId?: NodeJS.Timeout;
@@ -43,8 +43,10 @@ function createToast(meaning: keyof typeof toaster.icons, text: string) {
 
   notifications.appendChild(toastContent); // Append the toast to the notification ul
 
-  // Setting a timeout to remove the toast after the specified duration
-  toastDetails.timeoutId = setTimeout(() => removeToast(toastContent, toastDetails.timeoutId), toastDetails.timer);
+  if (timeout !== Infinity) {
+    // Setting a timeout to remove the toast after the specified duration
+    toastDetails.timeoutId = setTimeout(() => removeToast(toastContent, toastDetails.timeoutId), toastDetails.timer);
+  }
 }
 
 function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {

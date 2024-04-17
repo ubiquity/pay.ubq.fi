@@ -5,7 +5,8 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
+import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -58,6 +59,9 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   const reward = app.reward;
+  const signer = app.signer;
+  if (!signer) return null;
+
   try {
     const tx = await permit2Contract.permitTransferFrom(
       {
@@ -101,6 +105,7 @@ async function waitForTransaction(tx: TransactionResponse) {
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
+
     return receipt;
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -113,22 +118,22 @@ async function waitForTransaction(tx: TransactionResponse) {
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
+    const signer = await connectWallet();
+    if (!signer) {
+      return;
+    }
+
     buttonController.hideMakeClaim();
     buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    if (!app.signer) return;
-
-    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
+    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) return;
 
     const tx = await transferFromPermit(permit2Contract, app);
     if (!tx) return;
-
-    // buttonController.showLoader();
-    // buttonController.hideMakeClaim();
 
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
@@ -280,7 +285,11 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
   return bit.and(flipped).eq(0);
 }
 
-async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
+async function invalidateNonce(signer: JsonRpcSigner | null, nonce: BigNumberish): Promise<void> {
+  if (!signer) {
+    console.error("Signer is null");
+    return;
+  }
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428

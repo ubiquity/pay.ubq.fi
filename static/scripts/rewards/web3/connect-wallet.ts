@@ -20,18 +20,30 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
 
     return signer;
   } catch (error: unknown) {
-    // For testing purposes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (window.location.href.includes("localhost") && (window as any).signer) return (window as any).signer;
+    connectErrorHandler(error);
+  }
+  return null;
+}
 
-    if (error instanceof Error) {
-      console.error(error);
-      if (error?.message?.includes("missing provider")) {
-        toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
-      } else {
-        toaster.create("info", "Please connect your wallet to collect this reward.");
+function connectErrorHandler(error: unknown) {
+  if (window.location.href.includes("localhost") && (window as any).signer) return (window as any).signer;
+
+  if (error instanceof Error) {
+    console.error(error);
+    if (error?.message?.includes("missing provider")) {
+      // mobile browsers don't really support window.ethereum
+      const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+      if (mediaQuery.matches) {
+        toaster.create("warning", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward", Infinity);
+      } else if (!window.ethereum) {
+        toaster.create("warning", "Please use a web3 enabled browser to collect this reward.", Infinity);
+        buttonController.hideAll();
       }
+    } else {
+      toaster.create("error", error.message);
     }
-    return null;
+  } else {
+    toaster.create("error", "An unknown error occurred.");
   }
 }
