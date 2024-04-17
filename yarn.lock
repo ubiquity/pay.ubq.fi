@@ -1832,10 +1832,10 @@
     "@typescript-eslint/types" "7.1.1"
     eslint-visitor-keys "^3.4.1"
 
-"@ubiquibot/permit-generation@1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@ubiquibot/permit-generation/-/permit-generation-1.2.0.tgz#17e5cf71099ce22ef1b5f0ea5a19ac1e7bca1844"
-  integrity sha512-29qzOtC50NBRZLOIepqOoqPGsyr7ig6XPTE/Fcyj0Nb+0hHrWYA6VfLtGBFBH72EgKbGLV3dXwz68J8Cz9uKOw==
+"@ubiquibot/permit-generation@1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@ubiquibot/permit-generation/-/permit-generation-1.2.2.tgz#3493b4701e1d9deccd4e4d5c9aef4e3f7b76e4d8"
+  integrity sha512-782Pd5Ub7T5bjfsPGGhE1LVFWhhyAl20ZX1EgCltGzouHgXdha5NKWYh4aG1DIfx7EVJ/6lUAE2yb1PyqAlb5Q==
   dependencies:
     "@actions/core" "^1.10.1"
     "@actions/github" "^6.0.0"
