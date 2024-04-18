@@ -20,6 +20,11 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
 
     return signer;
   } catch (error: unknown) {
+    // For testing purposes
+    if (window.signer) {
+      return window.signer;
+    }
+
     if (error instanceof Error) {
       console.error(error);
       if (error?.message?.includes("missing provider")) {

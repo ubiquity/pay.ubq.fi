@@ -23,8 +23,10 @@
     "format:cspell": "cspell **/*",
     "prepare": "husky install",
     "postinstall": "git submodule update --init --recursive",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "test:anvil": "tsx cypress/scripts/anvil.ts",
+    "test:start": "yarn start",
+    "test:run": "cypress run",
+    "test:open": "cypress open"
   },
   "keywords": [
     "typescript",

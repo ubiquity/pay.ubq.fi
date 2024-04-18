@@ -1,0 +1,38 @@
+[
+  {
+    "type": "erc20-permit",
+    "permit": {
+      "permitted": {
+        "token": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
+        "amount": "95255555000000000000"
+      },
+      "nonce": "36367598329506163629701178851688339747065676639093029479054969572911320530479",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    },
+    "transferDetails": {
+      "to": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "requestedAmount": "95255555000000000000"
+    },
+    "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "signature": "0x02fcd7e46df6f4e0437f8a309bd8dbcdbd66de04ed47f308db9548cf609909ce0b8e4d2e5031ff5daf959fc09cbfc95d606493d0ecd7ec0e9d6def4300a909f81b",
+    "networkId": 100
+  },
+  {
+    "type": "erc20-permit",
+    "permit": {
+      "permitted": {
+        "token": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
+        "amount": "95255555000000000000"
+      },
+      "nonce": "36367598329506163629701178851688339747065676639093029479054969572911320530479",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    },
+    "transferDetails": {
+      "to": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "requestedAmount": "95255555000000000000"
+    },
+    "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "signature": "0x02fcd7e46df6f4e0437f8a309bd8dbcdbd66de04ed47f308db9548cf609909ce0b8e4d2e5031ff5daf959fc09cbfc95d606493d0ecd7ec0e9d6def4300a909f81b",
+    "networkId": 100
+  }
+]
