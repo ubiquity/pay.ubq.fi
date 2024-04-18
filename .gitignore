@@ -11,3 +11,6 @@ commit.txt
 .pnp.cjs
 .pnp.loader.mjs
 static/dist
+
+cypress/screenshots
+cypress/videos

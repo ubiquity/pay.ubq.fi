@@ -22,7 +22,9 @@
     "format:prettier": "prettier --write .",
     "format:cspell": "cspell **/*",
     "prepare": "husky install",
-    "postinstall": "git submodule update --init --recursive"
+    "postinstall": "git submodule update --init --recursive",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "keywords": [
     "typescript",
@@ -53,6 +55,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "cspell": "^8.3.2",
+    "cypress": "13.7.0",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
     "eslint-plugin-sonarjs": "^0.24.0",
