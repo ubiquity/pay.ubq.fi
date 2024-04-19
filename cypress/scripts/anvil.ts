@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 
 const url = "http://localhost:8545";
 
-const anvil = spawn("anvil", ["--chain-id", "31337", "--fork-url", "https://rpc.gnosis.gateway.fm", "--host", "127.0.0.1", "--port", "8545"], {
+const anvil = spawn("anvil", ["--chain-id", "31337", "--fork-url", "https://gnosis.drpc.org", "--host", "127.0.0.1", "--port", "8545"], {
   stdio: "inherit",
 });
 
