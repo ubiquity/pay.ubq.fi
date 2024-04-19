@@ -11,7 +11,7 @@ setTimeout(() => {
   console.log(`\n\n Anvil setup complete \n\n`);
 }, 5000);
 
-// anvil --chain-id 31337 --fork-url https://rpc.gnosis.gateway.fm --host 127.0.0.1 --port 8545
+// anvil --chain-id 31337 --fork-url https://eth.llamarpc.com --host 127.0.0.1 --port 8546
 
 spawn("cast", ["rpc", "--rpc-url", url, "anvil_impersonateAccount", "0xba12222222228d8ba445958a75a0704d566bf2c8"], {
   stdio: "inherit",

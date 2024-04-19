@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-describe("Claims Portal Failures", () => {
+describe("Claims Portal Non-Web3", () => {
   beforeEach(() => {
     cy.clearAllCookies();
     cy.clearAllLocalStorage();

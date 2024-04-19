@@ -5,7 +5,7 @@ import { Wallet } from "ethers";
 const beneficiary = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // anvil
 const SENDER_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // anvil
 
-describe("Claims Portal", () => {
+describe("Claims Portal Success", () => {
   beforeEach(() => {
     cy.clearAllCookies();
     cy.clearAllLocalStorage();
