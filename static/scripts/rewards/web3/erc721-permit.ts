@@ -33,7 +33,16 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
     try {
       const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, signer);
 
-      const tx: TransactionResponse = await nftContract.safeMint(reward, reward.signature);
+      const tx: TransactionResponse = await nftContract.safeMint(
+        {
+          beneficiary: reward.beneficiary,
+          deadline: reward.deadline,
+          keys: reward.erc721Request?.keys,
+          nonce: reward.nonce,
+          values: reward.erc721Request?.values,
+        },
+        reward.signature
+      );
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
       buttonController.hideLoader();
