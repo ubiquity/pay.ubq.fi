@@ -1,24 +1,24 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
-import { ethers } from "ethers";
+import { ERC721Permit } from "@ubiquibot/permit-generation/types";
+import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { Erc721Permit } from "../render-transaction/tx-type";
 import { buttonController, getMakeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
-export function claimErc721PermitHandler(reward: Erc721Permit) {
+export function claimErc721PermitHandler(reward: ERC721Permit) {
   return async function claimHandler() {
     const signer = await connectWallet();
     if (!signer) {
       return;
     }
 
-    if ((await signer.getAddress()).toLowerCase() !== reward.request.beneficiary) {
+    if ((await signer.getAddress()).toLowerCase() !== reward.beneficiary) {
       toaster.create("warning", `This NFT is not for you.`);
       return;
     }
 
-    if (reward.permit.deadline.lt(Math.floor(Date.now() / 1000))) {
+    if (BigNumber.from(reward.deadline).lt(Math.floor(Date.now() / 1000))) {
       toaster.create("error", `This NFT has expired.`);
       return;
     }
@@ -31,9 +31,18 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
 
     buttonController.showLoader();
     try {
-      const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, signer);
+      const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, signer);
 
-      const tx: TransactionResponse = await nftContract.safeMint(reward.request, reward.signature);
+      const tx: TransactionResponse = await nftContract.safeMint(
+        {
+          beneficiary: reward.beneficiary,
+          deadline: reward.deadline,
+          keys: reward.erc721Request?.keys,
+          nonce: reward.nonce,
+          values: reward.erc721Request?.values,
+        },
+        reward.signature
+      );
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
       buttonController.hideLoader();
@@ -62,7 +71,7 @@ export function claimErc721PermitHandler(reward: Erc721Permit) {
   };
 }
 
-async function isNonceRedeemed(reward: Erc721Permit, provider: JsonRpcProvider): Promise<boolean> {
-  const nftContract = new ethers.Contract(reward.permit.permitted.token, nftRewardAbi, provider);
-  return nftContract.nonceRedeemed(reward.request.nonce);
+async function isNonceRedeemed(reward: ERC721Permit, provider: JsonRpcProvider): Promise<boolean> {
+  const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, provider);
+  return nftContract.nonceRedeemed(reward.nonce);
 }

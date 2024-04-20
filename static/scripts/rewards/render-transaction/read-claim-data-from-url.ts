@@ -1,7 +1,7 @@
-import { Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
 import { createClient } from "@supabase/supabase-js";
-import { AppState, app } from "../app-state";
+import { decodePermits } from "@ubiquibot/permit-generation/handlers";
+import { Permit } from "@ubiquibot/permit-generation/types";
+import { app, AppState } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
 import { buttonController, toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
@@ -10,7 +10,6 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
-import { RewardPermit, claimTxT } from "./tx-type";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -29,7 +28,7 @@ export async function readClaimDataFromUrl(app: AppState) {
     return;
   }
 
-  app.claims = decodeClaimData(base64encodedTxData).flat();
+  app.claims = decodeClaimData(base64encodedTxData);
   app.claimTxs = await getClaimedTxs(app);
   try {
     app.provider = await useFastestRpc(app);
@@ -64,21 +63,21 @@ export async function readClaimDataFromUrl(app: AppState) {
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
   const txs: Record<string, string> = Object.create(null);
   for (const claim of app.claims) {
-    const { data } = await supabase.from("permits").select("transaction").eq("nonce", claim.permit.nonce.toString());
+    const { data } = await supabase.from("permits").select("transaction").eq("nonce", claim.nonce.toString());
 
     if (data?.length == 1 && data[0].transaction !== null) {
-      txs[claim.permit.nonce.toString()] = data[0].transaction as string;
+      txs[claim.nonce.toString()] = data[0].transaction as string;
     }
   }
   return txs;
 }
 
-function decodeClaimData(base64encodedTxData: string): RewardPermit[] {
+function decodeClaimData(base64encodedTxData: string): Permit[] {
   let permit;
 
   try {
-    permit = JSON.parse(atob(base64encodedTxData));
-    return [Value.Decode(Type.Array(claimTxT), permit)];
+    permit = decodePermits(base64encodedTxData);
+    return permit;
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
