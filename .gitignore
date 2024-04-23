@@ -14,3 +14,4 @@ static/dist
 
 cypress/screenshots
 cypress/videos
+.wrangler

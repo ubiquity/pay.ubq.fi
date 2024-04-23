@@ -1,5 +1,5 @@
 {
-  "include": ["src", "static", "build", "scripts/typescript", "globals.d.ts", "cypress/**/*.ts", "cypress.config.ts"],
+  "include": ["src", "static", "functions", "build", "scripts/typescript", "globals.d.ts", "cypress/**/*.ts", "cypress.config.ts"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */

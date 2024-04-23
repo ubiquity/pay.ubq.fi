@@ -54,3 +54,4 @@ export const networkRpcs: Record<number, string[]> = {
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const nftAddress = "0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b";
+export const giftCardTreasuryAddress = "0x3B47E3e4758E133acf72684727Dc10550C40e4B9";

@@ -6,6 +6,7 @@
     <link href="styles/rewards/background.css" rel="stylesheet" />
     <link href="styles/toast.css" rel="stylesheet" />
     <link href="styles/rewards/claim-table.css" rel="stylesheet" />
+    <link href="styles/rewards/gift-cards.css" rel="stylesheet" />
     <link href="styles/rewards/media-queries.css" rel="stylesheet" />
     <link href="styles/rewards/light-mode.css" rel="stylesheet" />
     <link rel="canonical" href="https://pay.ubq.fi" />
@@ -55,7 +56,7 @@
         </a>
       </header>
       <div>
-        <table data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
+        <table class="receipt" data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
           <thead>
             <tr>
               <th>
@@ -123,7 +124,7 @@
                 </div>
               </th>
               <td>
-                <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false">
+                <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false" data-collect-gift-card="false">
                   <button id="claim-loader">
                     <svg
                       version="1.1"
@@ -138,7 +139,7 @@
                     >
                       <path fill="#fff" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50"></path>
                     </svg>
-                    <div id="claiming-message">Claiming</div>
+                    <div id="claiming-message">Loading</div>
                   </button>
                   <button id="make-claim">
                     <div class="claim-title">Collect</div>
@@ -157,7 +158,6 @@
                       />
                     </svg>
                   </button>
-
                   <button id="invalidator">
                     <div>Void</div>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
@@ -173,12 +173,16 @@
           <tbody id="additionalDetailsTable"></tbody>
         </table>
       </div>
-      <footer
-        ><figure id="carousel">
-          <div id="prevTx"></div>
-          <div id="rewardsCount"></div>
-          <div id="nextTx"></div>
-        </figure>
+      <figure id="carousel">
+        <div id="prevTx"></div>
+        <div id="rewardsCount"></div>
+        <div id="nextTx"></div>
+      </figure>
+      <div>
+        <div id="gift-cards"></div>
+        <div id="activate-info"></div>
+      </div>
+      <footer>
         <div id="build">
           <a target="_blank" rel="noopener noreferrer"></a>
         </div>

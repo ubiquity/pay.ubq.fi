@@ -35,4 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: static
-          path: static
+          path: |
+            static
+            functions
+            shared

@@ -38,6 +38,7 @@ main {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  color: #808080;
 }
 
 main {
@@ -156,6 +157,7 @@ footer {
   /* display: none; */
   opacity: 0;
   transition: opacity 1s;
+  padding-top: 80px;
 }
 #carousel > div {
   color: #808080;

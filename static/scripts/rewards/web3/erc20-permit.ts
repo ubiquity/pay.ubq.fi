@@ -56,8 +56,7 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, app: AppState) {
-  const reward = app.reward;
+export async function transferFromPermit(permit2Contract: Contract, reward: Permit) {
   try {
     const tx = await permit2Contract.permitTransferFrom(
       {
@@ -93,10 +92,10 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   }
 }
 
-async function waitForTransaction(tx: TransactionResponse) {
+export async function waitForTransaction(tx: TransactionResponse, successMessage: string) {
   try {
     const receipt = await tx.wait();
-    toaster.create("success", `Claim Complete.`);
+    toaster.create("success", successMessage);
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
@@ -124,13 +123,13 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
-    const tx = await transferFromPermit(permit2Contract, app);
+    const tx = await transferFromPermit(permit2Contract, app.reward);
     if (!tx) return;
 
     // buttonController.showLoader();
     // buttonController.hideMakeClaim();
 
-    const receipt = await waitForTransaction(tx);
+    const receipt = await waitForTransaction(tx, `Claim Complete.`);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
@@ -262,7 +261,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 });
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-async function isNonceClaimed(app: AppState): Promise<boolean> {
+export async function isNonceClaimed(app: AppState): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);

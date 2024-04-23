@@ -1,4 +1,5 @@
 import { app } from "./app-state";
+import { initCollectGiftCard } from "./gift-cards/list-gift-cards";
 import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-url";
 import { grid } from "./the-grid";
 
@@ -19,3 +20,5 @@ function displayCommitHash() {
 function gridLoadedCallback() {
   document.body.classList.add("grid-loaded");
 }
+
+initCollectGiftCard(app).catch(console.error);
