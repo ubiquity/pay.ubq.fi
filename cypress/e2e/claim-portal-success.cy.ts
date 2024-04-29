@@ -27,7 +27,11 @@ describe("Claims Portal Success", () => {
 
       cy.get("#invalidator").should("not.be.visible");
 
-      cy.get("#claim-loader").should("be.visible");
+      cy.get("#claim-loader").should("be.visible").as("loader");
+
+      cy.wait(5000); // required for the action to complete
+
+      cy.get("@loader").should("not.be.visible");
 
       cy.get("#view-claim").should("be.visible").and("include.text", "View Claim");
 
