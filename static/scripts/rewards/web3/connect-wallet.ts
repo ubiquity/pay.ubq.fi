@@ -21,9 +21,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     return signer;
   } catch (error: unknown) {
     // For testing purposes
-    if (window.signer) {
-      return window.signer;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (window.location.href.includes("localhost") && (window as any).signer) return (window as any).signer;
 
     if (error instanceof Error) {
       console.error(error);

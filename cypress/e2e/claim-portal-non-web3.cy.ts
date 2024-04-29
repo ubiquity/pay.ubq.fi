@@ -56,15 +56,15 @@ function setupIntercepts() {
     }
   });
 
-  cy.intercept("POST", "https://gnxgtwvmduxcwucovxqp.supabase.co/rest/v1/*", {
+  cy.intercept("POST", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
     statusCode: 200,
     body: {},
   });
-  cy.intercept("PATCH", "https://gnxgtwvmduxcwucovxqp.supabase.co/rest/v1/*", {
+  cy.intercept("PATCH", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
     statusCode: 200,
     body: {},
   });
-  cy.intercept("GET", "https://gnxgtwvmduxcwucovxqp.supabase.co/rest/v1/*", {
+  cy.intercept("GET", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
     statusCode: 200,
     body: {},
   });
