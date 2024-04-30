@@ -11,11 +11,7 @@ export class ButtonController {
   }
 
   public showLoader(): void {
-    if (window.ethereum) {
-      this._controls.setAttribute(LOADER, "true");
-    } else {
-      throw new Error("Can not show loader without `ethereum`");
-    }
+    this._controls.setAttribute(LOADER, "true");
   }
 
   public hideLoader(): void {
@@ -27,11 +23,7 @@ export class ButtonController {
   }
 
   public showMakeClaim(): void {
-    if (window.ethereum) {
-      this._controls.setAttribute(MAKE_CLAIM, "true");
-    } else {
-      throw new Error("Can not show make claim button without `ethereum`");
-    }
+    this._controls.setAttribute(MAKE_CLAIM, "true");
   }
 
   public hideViewClaim(): void {
@@ -47,11 +39,7 @@ export class ButtonController {
   }
 
   public showInvalidator(): void {
-    if (window.ethereum) {
-      this._controls.setAttribute(INVALIDATOR, "true");
-    } else {
-      throw new Error("Can not show invalidator button without `ethereum`");
-    }
+    this._controls.setAttribute(INVALIDATOR, "true");
   }
 
   public onlyShowLoader(): void {
