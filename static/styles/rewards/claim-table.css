@@ -177,6 +177,60 @@ table[data-details-visible="true"] #additionalDetailsTable {
 table[data-contract-loaded] #Token {
   display: none;
 }
+
+table input {
+  background-color: #80808020;
+  color: #fff;
+  border: 1px solid #000;
+  padding: 8px 0;
+  width: 100%;
+  margin: 8px 0;
+  flex: auto;
+}
+
+table input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  max-width: 24px;
+  margin: 12px 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+table input[type="checkbox"]:checked {
+  background-color: #80808080;
+  border: 1px solid #000;
+  color: #fff;
+  fill: #000;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+table input::placeholder {
+  color: #fff;
+}
+
+table input:focus {
+  outline: none;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.button-container button {
+  width: 48%;
+  height: 48px;
+  background-color: #80808020;
+  color: #fff;
+  border: 1px solid #000;
+  cursor: pointer;
+  outline: none;
+}
+
 #rewardAmount a {
   font-size: 24px;
 }

@@ -20,7 +20,69 @@ export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
 
+async function handleLogin() {
+  const tableElement = document.getElementsByTagName(`table`)[0];
+  if (!tableElement) {
+    throw new Error("Table element not found");
+  }
+
+  const thead = tableElement.getElementsByTagName(`thead`)[0];
+
+  if (!thead) {
+    throw new Error("Table header not found");
+  }
+
+  const newHtml = `
+  <tr>
+    <th>
+      <div>Username</div>
+    </th>
+    <td>
+      <input name="username" id="loginform.username" autocomplete="username webauthn" />
+    </td>
+  </tr>
+  <tr>
+    <th>
+      <div>Remember Me</div>
+    </th>
+    <td>
+      <div class="button-container">
+        <input name="rememberMe" id="loginform.rememberMe" type="checkbox" />
+        <button type="submit">Login</button>
+      </div>
+    </td>
+  </tr>
+  `;
+  thead.innerHTML = newHtml;
+
+  const button = tableElement.getElementsByTagName(`button`)[0];
+  if (!button) {
+    throw new Error("Button element not found");
+  }
+
+  button.addEventListener("click", async () => {
+    const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
+    const rememberMe = (document.getElementById("loginform.rememberMe") as HTMLInputElement).checked;
+
+    if (!username) {
+      alert("Username is required");
+      return;
+    }
+
+    // todo WebAuthn login
+
+    console.log(username, rememberMe);
+  });
+}
+
 export async function readClaimDataFromUrl(app: AppState) {
+  // placeholder
+  const shouldLogin = true;
+  if (shouldLogin) {
+    await handleLogin();
+    return;
+  }
+
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
