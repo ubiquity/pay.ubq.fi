@@ -1,10 +1,10 @@
-import { ethers } from "ethers";
 import { handleIfOnCorrectNetwork } from "./handle-if-on-correct-network";
 import { notOnCorrectNetwork } from "./not-on-correct-network";
+import { Web3Provider } from "@ethersproject/providers";
 
 // verifyCurrentNetwork checks if the user is on the correct network and displays an error if not
 export async function verifyCurrentNetwork(desiredNetworkId: number) {
-  const web3provider = new ethers.providers.Web3Provider(window.ethereum);
+  const web3provider = new Web3Provider(window.ethereum);
 
   const network = await web3provider.getNetwork();
   const currentNetworkId = network.chainId;

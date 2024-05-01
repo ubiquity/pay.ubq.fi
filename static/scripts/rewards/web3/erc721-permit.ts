@@ -1,6 +1,6 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
 import { ERC721Permit } from "@ubiquibot/permit-generation/types";
-import { BigNumberish, ethers } from "ethers";
+import { ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
 import { buttonController, getMakeClaimButton, toaster } from "../toaster";

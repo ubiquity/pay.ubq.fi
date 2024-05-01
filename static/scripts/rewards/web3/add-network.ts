@@ -1,7 +1,7 @@
-import { ethers } from "ethers";
 import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
+import { Web3Provider } from "@ethersproject/providers";
 
-export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
+export async function addNetwork(provider: Web3Provider, networkId: number): Promise<boolean> {
   try {
     await provider.send("wallet_addEthereumChain", [
       {

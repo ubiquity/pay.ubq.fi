@@ -1,15 +1,14 @@
-import { MaxUint256, PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
-import { randomBytes } from "crypto";
+import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import * as dotenv from "dotenv";
-import { BigNumber, ethers, parseUnits } from "ethers";
+import { JsonRpcProvider, MaxUint256, Wallet, parseUnits } from "ethers";
 import { log } from "./utils";
 dotenv.config();
 
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // same on all chains
 
 function createProviderAndWallet() {
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
-  const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY, provider);
+  const provider = new JsonRpcProvider(process.env.RPC_PROVIDER_URL);
+  const myWallet = new Wallet(process.env.UBIQUIBOT_PRIVATE_KEY, provider);
   return { provider, myWallet };
 }
 
@@ -20,21 +19,24 @@ function createPermitTransferFromData(amount: string) {
       amount: parseUnits(amount || "", 18),
     },
     spender: process.env.BENEFICIARY_ADDRESS,
-    nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),
+    nonce: Math.max(1000, Math.floor(Math.random() * 1000000)),
     deadline: MaxUint256,
   };
 }
 
-async function signTypedData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom) {
+async function signTypedData(myWallet: Wallet, permitTransferFromData: PermitTransferFrom) {
   const { domain, types, values } = SignatureTransfer.getPermitData(
     permitTransferFromData,
     PERMIT2_ADDRESS,
     process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
   );
-  return await myWallet._signTypedData(domain, types, values);
+
+  // not sure where the BigNumber is being inferred from
+  // both getPermitData() and signTypedData() use TypedDataDomain which uses BigNumberish
+  return await myWallet.signTypedData(domain, types, values);
 }
 
-function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom, signature: string) {
+function createTxData(myWallet: Wallet, permitTransferFromData: PermitTransferFrom, signature: string) {
   return {
     type: "erc20-permit",
     permit: {

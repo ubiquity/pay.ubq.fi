@@ -1,6 +1,6 @@
-import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { networkExplorers } from "./constants";
+import { JsonRpcProvider, JsonRpcSigner } from "ethers";
 
 export class AppState {
   public claims: Permit[] = [];

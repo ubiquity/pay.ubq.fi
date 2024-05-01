@@ -1,6 +1,5 @@
-import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { Permit } from "@ubiquibot/permit-generation/types";
-import { BigNumberish, Contract, ethers } from "ethers";
+import { BigNumberish, Contract, JsonRpcSigner, TransactionResponse, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "../constants";
@@ -95,12 +94,12 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
 
 async function waitForTransaction(tx: TransactionResponse) {
   try {
-    const receipt = await tx.wait();
+    const receipt = await app.provider.waitForTransaction(tx.hash);
     toaster.create("success", `Claim Complete.`);
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
-    console.log(receipt.transactionHash);
+    console.log(receipt?.hash);
     return receipt;
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -131,7 +130,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
 
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    const isHashUpdated = await updatePermitTxHash(app, receipt.hash);
     if (!isHashUpdated) return;
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
@@ -269,24 +268,24 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
     throw error;
   });
 
-  const bit = 1 << bitPos;
-  const flipped = bitmap.toNumber() ^ bit;
+  const bit = BigInt(1) << BigInt(bitPos);
+  const flipped = bitmap ^ bit;
 
-  return flipped === 0;
+  return flipped === BigInt(0);
 }
 
 async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428
-  const bit = 1 << bitPos;
+  const bit = BigInt(1) << BigInt(bitPos);
   const sourceBitmap = await permit2Contract.nonceBitmap(await signer.getAddress(), wordPos.toString());
-  const mask = sourceBitmap.or(bit);
+  const mask = sourceBitmap ^ bit;
   await permit2Contract.invalidateUnorderedNonces(wordPos, mask);
 }
 
 // mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L142
-function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number } {
+function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumberish; bitPos: number } {
   // wordPos is the first 248 bits of the nonce
   const wordPos = Number(nonce) >> 8;
   // bitPos is the last 8 bits of the nonce

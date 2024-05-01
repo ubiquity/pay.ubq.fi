@@ -1,8 +1,8 @@
-import { ethers } from "ethers";
 import { addNetwork } from "./add-network";
 import { buttonController } from "../toaster";
+import { Web3Provider } from "@ethersproject/providers";
 
-export async function switchNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
+export async function switchNetwork(provider: Web3Provider, networkId: number): Promise<boolean> {
   try {
     await provider.send("wallet_switchEthereumChain", [{ chainId: "0x" + networkId.toString(16) }]);
     buttonController.showMakeClaim();

@@ -48,6 +48,7 @@ export async function webAuthn() {
   if (!button) {
     throw new Error("Button element not found");
   }
+
   if (isAvailable) {
     try {
       const authOptions = createCredOpts();

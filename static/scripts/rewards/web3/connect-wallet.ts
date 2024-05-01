@@ -1,10 +1,9 @@
-import { JsonRpcSigner } from "@ethersproject/providers";
-import { ethers } from "ethers";
+import { JsonRpcSigner, Web3Provider } from "@ethersproject/providers";
 import { buttonController, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
-    const wallet = new ethers.providers.Web3Provider(window.ethereum);
+    const wallet = new Web3Provider(window.ethereum);
 
     await wallet.send("eth_requestAccounts", []);
 

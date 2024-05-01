@@ -1,9 +1,9 @@
-import { ethers } from "ethers";
 import { getNetworkName } from "../constants";
 import { buttonController, toaster } from "../toaster";
 import { switchNetwork } from "./switch-network";
+import { Web3Provider } from "@ethersproject/providers";
 
-export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number, web3provider: ethers.providers.Web3Provider) {
+export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number, web3provider: Web3Provider) {
   if (currentNetworkId !== desiredNetworkId) {
     const networkName = getNetworkName(desiredNetworkId);
     if (!networkName) {

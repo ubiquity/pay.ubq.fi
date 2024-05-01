@@ -13,6 +13,7 @@ export function insertErc20PermitTableData(
 ): Element {
   const reward = app.reward as ERC20Permit;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
+
   renderToFields(reward.beneficiary, app.currentExplorerUrl);
   renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
   renderDetailsFields([
@@ -21,7 +22,8 @@ export function insertErc20PermitTableData(
       name: "Expiry",
       value: (() => {
         const deadline = reward.deadline;
-        return deadline <= Number.MAX_SAFE_INTEGER.toString() ? new Date(Number(deadline)).toLocaleString() : undefined;
+        const deadlineDate = new Date(Number(deadline.toString())).toLocaleString();
+        return deadline <= Number.MAX_SAFE_INTEGER.toString() ? deadlineDate : undefined;
       })(),
     },
     { name: "Balance", value: Number(treasury.balance) >= 0 ? `${formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },

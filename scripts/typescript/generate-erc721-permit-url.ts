@@ -1,7 +1,7 @@
-import { MaxUint256, PermitTransferFrom } from "@uniswap/permit2-sdk";
 import * as dotenv from "dotenv";
-import { ethers, solidityPackedKeccak256 } from "ethers";
+import { MaxUint256, ethers, solidityPackedKeccak256 } from "ethers";
 import { log } from "./utils";
+import { PermitTransferFrom } from "@uniswap/permit2-sdk";
 dotenv.config();
 
 const NFT_REWARDS_ANVIL_DEPLOYMENT = "0x38a70c040ca5f5439ad52d0e821063b0ec0b52b6";
@@ -23,7 +23,7 @@ if (CHAIN_ID === 1) {
 }
 
 function createProviderAndWallet() {
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
   const myWallet = new ethers.Wallet(ANVIL_ACC_2_PRIVATE_KEY, provider);
   return { provider, myWallet };
 }
@@ -59,7 +59,7 @@ async function signTypedData(myWallet: ethers.Wallet, mintRequest: ReturnType<ty
       { name: "values", type: "string[]" },
     ],
   };
-  return await myWallet._signTypedData(domain, types, mintRequest);
+  return await myWallet.signTypedData(domain, types, mintRequest);
 }
 
 function createMintRequest(myWallet: ethers.Wallet, valueBytes: string[], nonce: number) {

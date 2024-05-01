@@ -16,7 +16,7 @@ export async function getFastestRpcProvider(networkId: number) {
     const optimalRpcName = optimalRpc.split("_").slice(0, -1).join("_"); // Remove the network ID from the key
 
     try {
-      const rpcProvider = new ethers.providers.JsonRpcProvider(optimalRpcName, {
+      const rpcProvider = new ethers.JsonRpcProvider(optimalRpcName, {
         name: optimalRpcName,
         chainId: networkId,
       });
