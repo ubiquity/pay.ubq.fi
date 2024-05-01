@@ -4,8 +4,237 @@ import { app } from "../app-state";
 const PUBLIC_KEY = "public-key";
 import { ethers, randomBytes } from "ethers";
 import { toaster } from "../toaster";
-// import { SafeAuthPack, SafeAuthConfig, SafeAuthInitOptions, AuthKitBasePack, AuthKitSignInData } from "@safe-global/auth-kit";
-// import { EthersAdapter } from "@safe-global/protocol-kit";
+
+type CacheUser = {
+  id: string;
+  idx: Uint8Array;
+};
+
+export async function webAuthn() {
+  const { createPasskeyButton, thead, isAvailable } = await setupWebAuthUI();
+
+  const abortController = new AbortController();
+  const signal = abortController.signal;
+
+  const userCache = localStorage.getItem("ubqfi_acc");
+  const user = userCache ? JSON.parse(userCache) : null;
+
+  const credOpts = createCredOpts();
+
+  // this lets them create a credential set if they don't have one in local storage
+  createPasskeyButton.addEventListener("click", (e) => createPasskeyHandler(e, { credOpts, abortController, thead, user }));
+
+  // this allows the sign in process to be triggered if they have a credential set in local storage
+  if (isAvailable) {
+    const authOptions = createCredOpts();
+
+    // auto login if user exists
+    // should this be a flag saved in local storage?
+    if (user) {
+      const arrBuffer = new TextEncoder().encode(user.id);
+
+      const pk = await generateSAPrivateKey(user.id, arrBuffer);
+      const provider = new ethers.JsonRpcProvider("http://localhost:8545"); // @todo: pull from rpc-handler
+
+      const signer = new ethers.Wallet(pk.privateKey, provider);
+
+      app.signer = signer;
+
+      readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
+    }
+
+    // incase they lose localStorage or want to login with a different account
+    try {
+      const webAuthnResponse = await navigator.credentials.get({
+        mediation: "conditional",
+        publicKey: authOptions.publicKey,
+        signal,
+      });
+
+      if (webAuthnResponse) {
+        const { id, rawId } = webAuthnResponse as PublicKeyCredential;
+        localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
+
+        const binaryID = new Uint8Array(rawId);
+        const acc = await generateSAPrivateKey(id, binaryID);
+
+        const signer = new ethers.Wallet(acc.privateKey);
+        app.signer = signer;
+
+        readClaimDataFromUrl(app).catch(console.error);
+      }
+
+      // @TODO: handling for cancels, errors, etc
+    } catch (err) {
+      console.error(err);
+    }
+  } else {
+    alert("WebAuthn is not supported on this device");
+  }
+
+  // Handle Safe setup and deployment
+  // needs polyfills for assert, http, stream
+}
+
+async function createPasskeyHandler(
+  e: MouseEvent,
+  {
+    credOpts,
+    abortController,
+    thead,
+    user,
+  }: { credOpts: CredentialCreationOptions; abortController: AbortController; thead: HTMLTableSectionElement; user: CacheUser }
+) {
+  const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
+
+  if (!username) {
+    alert("Username is required");
+    return;
+  }
+
+  if (user) {
+    // this prevents duplicate key creation
+    credOpts.publicKey.excludeCredentials = [
+      {
+        id: new ArrayBuffer(user.idx),
+        type: PUBLIC_KEY,
+      },
+    ];
+  }
+
+  // is a webauthn request pending already if so cancel
+  abortController.abort();
+
+  credOpts.publicKey.user = {
+    id: new Uint8Array(randomBytes(64)),
+    name: username,
+    displayName: username,
+  };
+
+  let cred;
+
+  try {
+    cred = await navigator.credentials.create({
+      publicKey: credOpts.publicKey,
+    });
+  } catch {
+    /** */
+  }
+
+  if (!cred) {
+    /*
+     we are not allowing them to create a new credential set with the current
+     one saved in local storage.
+
+     We cannot get granular with the error responses here because of the following:
+
+     "In order to protect users from being identified without consent, 
+      implementations of the [[Create]](origin, options, sameOriginWithAncestors)
+      method need to take care to not leak information that could enable a malicious
+      WebAuthn Relying Party to distinguish between these cases, where "excluded"
+      means that at least one of the credentials listed by the Relying Party in
+      excludeCredentials is bound to the authenticator:
+
+      No authenticators are present.
+      At least one authenticator is present, and at least one present authenticator is excluded."
+
+      TLDR: It is not made explicit what the error is, so we can't tell the user
+      what to do to fix it. We can only assume that the user has an account
+      already and should login with their passkey. If they don't have an account
+      and this problem persists, they should contact us on Discord for ticket support.
+     */
+
+    toaster.create(
+      "info",
+      "If you have an account, please login with your passkey. If you don't have an account and this problem persists, please contact us on Discord."
+    );
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 5000);
+
+    return;
+  }
+
+  const { id, rawId } = cred as PublicKeyCredential;
+
+  localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
+
+  const hasCreds = await webAuthn();
+
+  if (hasCreds) {
+    thead.innerHTML = "";
+    readClaimDataFromUrl(app).catch(console.error);
+  }
+
+  // TODO: handle errors
+}
+
+function createCredOpts(): CredentialCreationOptions {
+  let RP_ID;
+  const host = window.location.origin;
+
+  const hostname = new URL(host).hostname;
+  const NODE_ENV = process.env.NODE_ENV;
+
+  let isCorrectUrl = false;
+
+  if (NODE_ENV === "development") {
+    isCorrectUrl = hostname === "localhost";
+  } else {
+    isCorrectUrl = hostname === "ubq.pay.fi";
+  }
+
+  if (isCorrectUrl) {
+    RP_ID = hostname;
+  } else {
+    RP_ID = "localhost";
+  }
+
+  return {
+    publicKey: {
+      challenge: randomBytes(32),
+      user: {
+        /**
+         * Since the user handle is not considered personally identifying information in
+         * Privacy of personally identifying information Stored in Authenticators,
+         * the Relying Party MUST NOT include personally identifying information,
+         * e.g., e-mail addresses or usernames, in the user handle.
+         *
+         * It is RECOMMENDED to let the user handle be 64 random bytes, and store this value in the user’s account.
+         *
+         * where we'll store it in local storage
+         */
+        id: new Uint8Array(),
+        name: "",
+        displayName: "",
+      },
+      authenticatorSelection: {
+        authenticatorAttachment: "cross-platform",
+        requireResidentKey: false,
+        userVerification: "preferred",
+      },
+      attestation: "indirect",
+      excludeCredentials: [],
+      timeout: 60000,
+      rp: {
+        name: "Ubiquity Rewards",
+        id: RP_ID,
+      },
+
+      pubKeyCredParams: [
+        {
+          type: PUBLIC_KEY,
+          alg: -257, // RS256
+        },
+        {
+          type: PUBLIC_KEY,
+          alg: -7, // ES256
+        },
+      ],
+    },
+  };
+}
 
 async function setupWebAuthUI() {
   const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable();
@@ -128,181 +357,4 @@ async function setupWebAuthUI() {
   }
 
   return { createPasskeyButton, thead, isAvailable };
-}
-
-export async function webAuthn() {
-  const { createPasskeyButton, thead, isAvailable } = await setupWebAuthUI();
-
-  const abortController = new AbortController();
-  const signal = abortController.signal;
-
-  const userCache = localStorage.getItem("ubqfi_acc");
-  const user = userCache ? JSON.parse(userCache) : null;
-
-  const credOpts = createCredOpts();
-
-  createPasskeyButton.addEventListener("click", async () => {
-    const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
-
-    if (!username) {
-      alert("Username is required");
-      return;
-    }
-
-    if (user) {
-      // this prevents duplicate key creation
-      credOpts.publicKey.excludeCredentials = [
-        {
-          id: new ArrayBuffer(user.idx),
-          type: PUBLIC_KEY,
-        },
-      ];
-    }
-
-    // is a webauthn request pending already if so cancel
-    abortController.abort();
-
-    credOpts.publicKey.user = {
-      id: new Uint8Array(randomBytes(64)),
-      name: username,
-      displayName: username,
-    };
-
-    let cred;
-
-    try {
-      cred = await navigator.credentials.create({
-        publicKey: credOpts.publicKey,
-      });
-    } catch {
-      /** */
-    }
-
-    if (!cred) {
-      // we are not allowing them to create a new credential set with the current
-      // one saved in local storage.
-      toaster.create(
-        "info",
-        "If you have an account, please login with your passkey. If you don't have an account and this problem persists, please contact us on Discord."
-      );
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 5000);
-
-      return;
-    }
-
-    const { id, rawId } = cred as PublicKeyCredential;
-
-    localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
-
-    const hasCreds = await webAuthn();
-
-    if (hasCreds) {
-      thead.innerHTML = "";
-      readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
-    }
-  });
-
-  if (isAvailable) {
-    const authOptions = createCredOpts();
-
-    // incase they lose localStorage we can allow them to choose a passkey
-    try {
-      const webAuthnResponse = await navigator.credentials.get({
-        mediation: "conditional",
-        publicKey: authOptions.publicKey,
-        signal,
-      });
-
-      if (webAuthnResponse) {
-        const { id, rawId } = webAuthnResponse as PublicKeyCredential;
-        localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
-
-        const binaryID = new Uint8Array(rawId);
-        const acc = await generateSAPrivateKey(id, binaryID);
-
-        const signer = new ethers.Wallet(acc.privateKey);
-        app.signer = signer;
-
-        readClaimDataFromUrl(app).catch(console.error);
-        return true;
-      }
-
-      // @TODO: handling for cancels, errors, etc
-    } catch (err) {
-      console.error(err);
-    }
-
-    return false;
-  } else {
-    alert("WebAuthn is not supported on this device");
-  }
-}
-
-function createCredOpts() {
-  let RP_ID;
-  const host = window.location.origin;
-
-  const hostname = new URL(host).hostname;
-  const NODE_ENV = process.env.NODE_ENV;
-
-  let isCorrectUrl = false;
-
-  if (NODE_ENV === "development") {
-    isCorrectUrl = hostname === "localhost";
-  } else {
-    isCorrectUrl = hostname === "ubq.pay.fi";
-  }
-
-  if (isCorrectUrl) {
-    RP_ID = hostname;
-  } else {
-    RP_ID = "localhost";
-  }
-
-  return {
-    publicKey: {
-      challenge: randomBytes(32),
-      user: {
-        /**
-         * Since the user handle is not considered personally identifying information in
-         * Privacy of personally identifying information Stored in Authenticators,
-         * the Relying Party MUST NOT include personally identifying information,
-         * e.g., e-mail addresses or usernames, in the user handle.
-         *
-         * It is RECOMMENDED to let the user handle be 64 random bytes, and store this value in the user’s account.
-         *
-         * where we'll store it in local storage
-         */
-        id: new Uint8Array(),
-        name: "",
-        displayName: "",
-      },
-      authenticatorSelection: {
-        authenticatorAttachment: "cross-platform",
-        requireResidentKey: false,
-        userVerification: "preferred",
-      },
-      attestation: "indirect",
-      excludeCredentials: [],
-      timeout: 60000,
-      rp: {
-        name: "Ubiquity Rewards",
-        id: RP_ID,
-      },
-
-      pubKeyCredParams: [
-        {
-          type: PUBLIC_KEY,
-          alg: -257, // RS256
-        },
-        {
-          type: PUBLIC_KEY,
-          alg: -7, // ES256
-        },
-      ],
-    },
-  };
 }
