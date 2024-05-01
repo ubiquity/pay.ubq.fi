@@ -33,13 +33,16 @@
   ],
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
+    "@safe-global/auth-kit": "^2.0.4",
     "@sinclair/typebox": "^0.32.15",
     "@supabase/supabase-js": "^2.39.8",
     "@ubiquibot/permit-generation": "1.2.2",
     "@uniswap/permit2-sdk": "^1.2.0",
+    "@web3auth/safeauth-embed": "^0.0.0",
     "axios": "^1.6.7",
     "dotenv": "^16.4.4",
     "ethers": "^5.7.2",
+    "libsodium-wrappers": "^0.7.13",
     "npm-run-all": "^4.1.5"
   },
   "devDependencies": {
@@ -49,9 +52,11 @@
     "@cspell/dict-software-terms": "^3.3.18",
     "@cspell/dict-typescript": "^3.1.2",
     "@types/ethereum-protocol": "^1.0.5",
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^20.11.19",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
+    "buffer": "^6.0.3",
     "cspell": "^8.3.2",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",

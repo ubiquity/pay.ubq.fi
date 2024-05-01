@@ -1,5 +1,7 @@
 import { randomBytes } from "ethers/lib/utils";
 import { readClaimDataFromUrl } from "../render-transaction/read-claim-data-from-url";
+import { generateSAPrivateKey } from "./sodium";
+import { app } from "../app-state";
 
 export async function webAuthn() {
   const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable();
@@ -54,8 +56,14 @@ export async function webAuthn() {
         });
 
         if (webAuthnResponse) {
-          const { id } = webAuthnResponse as PublicKeyCredential;
+          const { id, rawId } = webAuthnResponse as PublicKeyCredential;
           localStorage.setItem("ubqfi_acc", JSON.stringify({ id }));
+
+          // don't have any other reproducible entropy source to add
+          const binaryID = new Uint8Array(rawId);
+          const acc = await generateSAPrivateKey(id, binaryID);
+
+          console.log("Account created", acc);
 
           readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
           return true;
