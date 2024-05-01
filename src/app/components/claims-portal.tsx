@@ -1,14 +1,11 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import { CommitHashDisplay } from "./commit-hash";
 import { Icon } from "./icons";
-import { claimErc20PermitHandler } from "../scripts/rewards/web3/erc20-permit";
 import { GridBackground } from "./grid";
 import { app } from "../scripts/rewards/app-state";
 import { readClaimDataFromUrl } from "../scripts/rewards/render-transaction/read-claim-data-from-url";
-import { getButtonController, toaster } from "../scripts/rewards/toaster";
-import { User } from "@supabase/supabase-js";
-import { renderTransaction } from "../scripts/rewards/render-transaction/render-transaction";
+import { claimErc20PermitHandlerWrapper } from "../scripts/rewards/web3/erc20-permit";
 
 async function readClaimData() {
   await readClaimDataFromUrl(app);
@@ -103,7 +100,7 @@ export default function ClaimsPortal({ permits }: { permits?: string }) {
                       <Icon name="claimLoader" />
                       <div id="claiming-message">Claiming</div>
                     </button>
-                    <button id="make-claim" onClick={() => claimErc20PermitHandler(app)}>
+                    <button id="make-claim" onClick={() => claimErc20PermitHandlerWrapper(app)}>
                       <div className="claim-title">Collect</div>
                       <Icon name="makeClaim" className="claim-title" />
                     </button>

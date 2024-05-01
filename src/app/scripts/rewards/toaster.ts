@@ -29,7 +29,7 @@ function createToast(meaning: keyof typeof toaster.icons, text: string, timeout:
   const notifications = document.querySelector(".notifications") as HTMLUListElement;
 
   const buttonController = getButtonController();
-  if (meaning != "info") buttonController.hideLoader();
+  if (meaning != "info") getButtonController().hideLoader();
   const toastDetails = {
     timer: timeout,
   } as {

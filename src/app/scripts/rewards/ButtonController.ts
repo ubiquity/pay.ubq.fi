@@ -2,6 +2,7 @@ const LOADER = "data-loader";
 const MAKE_CLAIM = "data-make-claim";
 const VIEW_CLAIM = "data-view-claim";
 const INVALIDATOR = "data-invalidator";
+
 export class ButtonController {
   private _controls: HTMLDivElement;
 

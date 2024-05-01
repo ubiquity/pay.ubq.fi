@@ -1,5 +1,5 @@
 import { JsonRpcSigner, Web3Provider } from "@ethersproject/providers";
-import { buttonController, toaster } from "../toaster";
+import { getButtonController, toaster } from "../toaster";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -12,7 +12,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const address = await signer.getAddress();
 
     if (!address) {
-      buttonController.hideAll();
+      getButtonController().hideAll();
       console.error("Wallet not connected");
       return null;
     }

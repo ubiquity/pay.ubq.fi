@@ -1,9 +1,9 @@
-import { buttonController } from "../toaster";
+import { getButtonController } from "../toaster";
 
 export function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number) {
   if (desiredNetworkId === currentNetworkId) {
-    buttonController.showMakeClaim();
+    getButtonController().showMakeClaim();
   } else {
-    buttonController.hideMakeClaim();
+    getButtonController().hideMakeClaim();
   }
 }
