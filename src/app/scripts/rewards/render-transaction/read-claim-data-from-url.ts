@@ -11,15 +11,14 @@ import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
 
-declare const SUPABASE_URL: string;
-declare const SUPABASE_ANON_KEY: string;
+export const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-export const table = document.getElementsByTagName(`table`)[0];
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
+
 export async function readClaimDataFromUrl(app: AppState) {
+  const table = document.getElementsByTagName(`table`)[0];
+
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });

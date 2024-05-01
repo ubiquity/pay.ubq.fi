@@ -4,10 +4,9 @@ import { table } from "./read-claim-data-from-url";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
 
-const nextTxButton = document.getElementById("nextTx");
-const prevTxButton = document.getElementById("prevTx");
-
 export function claimRewardsPagination(rewardsCount: HTMLElement) {
+  const nextTxButton = document.getElementById("nextTx");
+  const prevTxButton = document.getElementById("prevTx");
   rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
   if (nextTxButton) nextTxButton.addEventListener("click", () => transactionHandler("next"));
   if (prevTxButton) prevTxButton.addEventListener("click", () => transactionHandler("previous"));

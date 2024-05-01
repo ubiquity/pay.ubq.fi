@@ -6,6 +6,7 @@ import { GridBackground } from "./grid";
 import { app } from "../scripts/rewards/app-state";
 import { readClaimDataFromUrl } from "../scripts/rewards/render-transaction/read-claim-data-from-url";
 import { claimErc20PermitHandlerWrapper } from "../scripts/rewards/web3/erc20-permit";
+import { viewClaimHandler } from "../scripts/rewards/render-transaction/render-transaction";
 
 async function readClaimData() {
   await readClaimDataFromUrl(app);
@@ -105,7 +106,7 @@ export default function ClaimsPortal({ permits }: { permits?: string }) {
                       <Icon name="makeClaim" className="claim-title" />
                     </button>
 
-                    <button id="view-claim">
+                    <button id="view-claim" onClick={() => viewClaimHandler(app)}>
                       <div className="claim-title">View Claim</div>
                       <Icon name="viewClaim" />
                     </button>
@@ -113,11 +114,6 @@ export default function ClaimsPortal({ permits }: { permits?: string }) {
                     <button id="invalidator">
                       <div>Void</div>
                       <Icon name="invalidator" />
-                    </button>
-
-                    <button onClick={githubLoginHandler} id="github-sign-in">
-                      <div>Sign In</div>
-                      <Icon name="github" />
                     </button>
                   </div>
                 </td>
