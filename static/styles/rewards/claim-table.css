@@ -284,7 +284,13 @@ table input:focus {
   overflow: auto;
   background-color: rgb(0, 0, 0);
   background-color: rgba(0, 0, 0, 0.4);
+}
 
+@media (max-width: 600px) {
+  .modal {
+    padding-top: 20px;
+    margin-top: 20px;
+  }
 }
 
 @keyframes modalopen {
@@ -301,11 +307,11 @@ table input:focus {
   opacity: 1;
   margin: auto;
   padding: 20px;
+  padding-bottom: 30px;
   border: 1px solid #888;
   width: 80%;
   max-width: 600px;
   border-radius: 8px;
-
 }
 
 .modal-content[data-modal-close="false"] {
@@ -334,7 +340,6 @@ table input:focus {
   float: right;
   font-size: 28px;
   font-weight: bold;
-  
 }
 
 .close:hover,

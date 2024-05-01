@@ -1,13 +1,23 @@
 import { readClaimDataFromUrl } from "../render-transaction/read-claim-data-from-url";
 import { generateSAPrivateKey } from "./sodium";
 import { app } from "../app-state";
-
+const PUBLIC_KEY = "public-key";
 import { ethers, randomBytes } from "ethers";
+import { toaster } from "../toaster";
 // import { SafeAuthPack, SafeAuthConfig, SafeAuthInitOptions, AuthKitBasePack, AuthKitSignInData } from "@safe-global/auth-kit";
 // import { EthersAdapter } from "@safe-global/protocol-kit";
 
-export async function webAuthn() {
+async function setupWebAuthUI() {
   const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable();
+
+  if (!isAvailable) {
+    /**
+     * What happens in the event that the browser doesn't support
+     * WebAuthn? No account for them I guess but most support so
+     * it should be fine probs
+     */
+    throw new Error("WebAuthn is not available");
+  }
 
   const tableElement = document.getElementsByTagName(`table`)[0];
   if (!tableElement) {
@@ -49,25 +59,30 @@ export async function webAuthn() {
   <div id="help-modal" >
   <div class="modal-content" data-modal-close="false">
   <span class="close">&times;</span>
-  <h2>Ubiquity Rewards Help</h2>
   <br/>
   <ul>
     <p>
-    After focusing on the input field, you will be prompted to use a passkey to create an account.
+    After focusing on the input field, you will be prompted to use a passkey to login to your Ubiquity Rewards account.
     </p>
     <p>
-    If you have already created an account, you can use the same passkey to login.
+    If you have already created an account, select the passkey you used to create your account.
     <p>
-    To create an account, ignore the passkey prompt and enter your username, it could be your GitHub username or any other username you prefer.
+    To create an account, ignore the passkey prompt and enter your username, it can be any username you like, although we recommend that it is not personally identifiable such as an email, or GitHub username.
     </p>
     <p>
-    After entering your username, click on the login button and your new Safe account will be created.
+    After entering your username, click on the login button and your new account will be created after completing the passkey registration process.
     </p>
     <p>
-    You can use the new passkey to login across multiple devices, create multiple keys for one account or create multiple accounts.
+    We do not store any sensitive information with the exception of an account identifier in your browser's local storage for future logins.
     </p>
     <p>
-    We do not store your passkey, private key or any other sensitive information. We do create a unique identifier for your account which is stored in your browser.
+    If an account exists in your local storage, you will not be able to create a new account with the same username this is to avoid duplicate keys being created for the same account. You can bypass this by clearing your local storage but it is not recommended.
+    </p>
+    <p>
+    If your local storage is cleared, you can recover your account by using the passkey you used to create your account. If this is not an option, account recovery is not possible unless you have a backup of your private key.
+    </p>
+    <p>
+    Backing up your private key can be done via the mnemonic phrase generated when you create your account. This phrase is not stored by us and is your responsibility to keep safe.
     </p>
     <br/>
   <p>
@@ -89,7 +104,6 @@ export async function webAuthn() {
   const modalContent = helpModal.getElementsByClassName(`modal-content`)[0] as HTMLDivElement;
 
   helpButton.addEventListener("click", () => {
-    console.log("clicked help button");
     modalContent.setAttribute("data-modal-close", "false");
     helpModal.classList.add("modal");
 
@@ -106,85 +120,117 @@ export async function webAuthn() {
     helpModal.remove();
   });
 
-  const button = tableElement.getElementsByTagName(`button`)[1];
-  if (!button) {
+  // technically a create account button because passkey
+  // recognition will generate their account without a username
+  const createPasskeyButton = tableElement.getElementsByTagName(`button`)[1];
+  if (!createPasskeyButton) {
     throw new Error("Button element not found");
   }
 
-  if (isAvailable) {
+  return { createPasskeyButton, thead, isAvailable };
+}
+
+export async function webAuthn() {
+  const { createPasskeyButton, thead, isAvailable } = await setupWebAuthUI();
+
+  const abortController = new AbortController();
+  const signal = abortController.signal;
+
+  const userCache = localStorage.getItem("ubqfi_acc");
+  const user = userCache ? JSON.parse(userCache) : null;
+
+  const credOpts = createCredOpts();
+
+  createPasskeyButton.addEventListener("click", async () => {
+    const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
+
+    if (!username) {
+      alert("Username is required");
+      return;
+    }
+
+    if (user) {
+      // this prevents duplicate key creation
+      credOpts.publicKey.excludeCredentials = [
+        {
+          id: new ArrayBuffer(user.idx),
+          type: PUBLIC_KEY,
+        },
+      ];
+    }
+
+    // is a webauthn request pending already if so cancel
+    abortController.abort();
+
+    credOpts.publicKey.user = {
+      id: new Uint8Array(randomBytes(64)),
+      name: username,
+      displayName: username,
+    };
+
+    let cred;
+
     try {
-      const authOptions = createCredOpts();
+      cred = await navigator.credentials.create({
+        publicKey: credOpts.publicKey,
+      });
+    } catch {
+      /** */
+    }
 
-      try {
-        const webAuthnResponse = await navigator.credentials.get({
-          mediation: "conditional",
-          publicKey: authOptions.publicKey,
-        });
+    if (!cred) {
+      // we are not allowing them to create a new credential set with the current
+      // one saved in local storage.
+      toaster.create(
+        "info",
+        "If you have an account, please login with your passkey. If you don't have an account and this problem persists, please contact us on Discord."
+      );
 
-        if (webAuthnResponse) {
-          const { id, rawId } = webAuthnResponse as PublicKeyCredential;
-          localStorage.setItem("ubqfi_acc", JSON.stringify({ id }));
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
 
-          // don't have any other reproducible entropy source to add
-          const binaryID = new Uint8Array(rawId);
-          const acc = await generateSAPrivateKey(id, binaryID);
+      return;
+    }
 
-          const signer = new ethers.Wallet(acc.privateKey);
-          app.signer = signer;
+    const { id, rawId } = cred as PublicKeyCredential;
 
-          readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
-          return true;
-        } else {
-          console.log("WebAuthn response is null");
+    localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
 
-          /**
-           * clicking on input will popup with passkey autofill
-           * this here will be used to register a new credential set
-           */
-          button.addEventListener("click", async () => {
-            const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
-            // const rememberMe = (document.getElementById("loginform.rememberMe") as HTMLInputElement).checked;
+    const hasCreds = await webAuthn();
 
-            if (!username) {
-              alert("Username is required");
-              return;
-            }
+    if (hasCreds) {
+      thead.innerHTML = "";
+      readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
+    }
+  });
 
-            const credOpts = createCredOpts();
+  if (isAvailable) {
+    const authOptions = createCredOpts();
 
-            credOpts.publicKey.user = {
-              id: new TextEncoder().encode(username),
-              name: username,
-              displayName: username,
-            };
+    // incase they lose localStorage we can allow them to choose a passkey
+    try {
+      const webAuthnResponse = await navigator.credentials.get({
+        mediation: "conditional",
+        publicKey: authOptions.publicKey,
+        signal,
+      });
 
-            const cred = await navigator.credentials.create({
-              publicKey: credOpts.publicKey,
-            });
+      if (webAuthnResponse) {
+        const { id, rawId } = webAuthnResponse as PublicKeyCredential;
+        localStorage.setItem("ubqfi_acc", JSON.stringify({ id, idx: new Uint8Array(rawId) }));
 
-            if (!cred) {
-              throw new Error("Failed to create credential");
-            }
+        const binaryID = new Uint8Array(rawId);
+        const acc = await generateSAPrivateKey(id, binaryID);
 
-            const { id } = cred as PublicKeyCredential;
+        const signer = new ethers.Wallet(acc.privateKey);
+        app.signer = signer;
 
-            localStorage.setItem("ubqfi_acc", JSON.stringify({ username, id }));
-
-            const hasCreds = await webAuthn();
-
-            if (hasCreds) {
-              thead.innerHTML = "";
-              readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
-
-              return;
-            }
-
-            throw new Error("Failed to login btn");
-          });
-        }
-      } catch (err) {
-        console.error(err);
+        readClaimDataFromUrl(app).catch(console.error);
+        return true;
       }
+
+      // @TODO: handling for cancels, errors, etc
     } catch (err) {
       console.error(err);
     }
@@ -196,8 +242,6 @@ export async function webAuthn() {
 }
 
 function createCredOpts() {
-  const challenge = randomBytes(32);
-
   let RP_ID;
   const host = window.location.origin;
 
@@ -220,7 +264,22 @@ function createCredOpts() {
 
   return {
     publicKey: {
-      challenge,
+      challenge: randomBytes(32),
+      user: {
+        /**
+         * Since the user handle is not considered personally identifying information in
+         * Privacy of personally identifying information Stored in Authenticators,
+         * the Relying Party MUST NOT include personally identifying information,
+         * e.g., e-mail addresses or usernames, in the user handle.
+         *
+         * It is RECOMMENDED to let the user handle be 64 random bytes, and store this value in the user’s account.
+         *
+         * where we'll store it in local storage
+         */
+        id: new Uint8Array(),
+        name: "",
+        displayName: "",
+      },
       authenticatorSelection: {
         authenticatorAttachment: "cross-platform",
         requireResidentKey: false,
@@ -236,11 +295,11 @@ function createCredOpts() {
 
       pubKeyCredParams: [
         {
-          type: "public-key",
+          type: PUBLIC_KEY,
           alg: -257, // RS256
         },
         {
-          type: "public-key",
+          type: PUBLIC_KEY,
           alg: -7, // ES256
         },
       ],
