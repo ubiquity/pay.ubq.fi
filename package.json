@@ -9,11 +9,11 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "start": "run-s start:sign start:ui",
+    "esbuild:start": "run-s start:sign start:ui",
     "watch": "nodemon -e ts,tsx --exec yarn start",
     "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
     "format": "run-s format:lint format:prettier format:cspell",
-    "build": "run-s utils:build",
+    "esbuild:build": "run-s utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx build/esbuild-build.ts",
@@ -22,7 +22,11 @@
     "format:prettier": "prettier --write .",
     "format:cspell": "cspell **/*",
     "prepare": "husky install",
-    "postinstall": "git submodule update --init --recursive"
+    "postinstall": "git submodule update --init --recursive",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "dev": "next dev"
   },
   "keywords": [
     "typescript",
@@ -37,6 +41,7 @@
     "@safe-global/protocol-kit": "^3.1.0",
     "@sinclair/typebox": "^0.32.15",
     "@supabase/supabase-js": "^2.39.8",
+    "@tanstack/react-query": "^5.29.2",
     "@ubiquibot/permit-generation": "1.2.2",
     "@uniswap/permit2-sdk": "^1.2.0",
     "@web3auth/safeauth-embed": "^0.0.0",
@@ -44,7 +49,10 @@
     "dotenv": "^16.4.4",
     "ethers": "^6.7.1",
     "libsodium-wrappers": "^0.7.13",
-    "npm-run-all": "^4.1.5"
+    "npm-run-all": "^4.1.5",
+    "next": "14.1.4",
+    "react": "^18",
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.1",
@@ -55,12 +63,16 @@
     "@types/ethereum-protocol": "^1.0.5",
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^20.11.19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
+    "autoprefixer": "^10.4.19",
     "buffer": "^6.0.3",
     "cspell": "^8.3.2",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
+    "eslint-config-next": "14.1.4",
     "eslint-plugin-sonarjs": "^0.24.0",
     "husky": "^9.0.11",
     "knip": "^5.0.1",
@@ -69,6 +81,8 @@
     "nodemon": "^3.0.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.2.5",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
