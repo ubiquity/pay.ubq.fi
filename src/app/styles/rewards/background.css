@@ -1,39 +1,39 @@
-background,
-background #grid {
+#background,
+#background #grid {
   position: fixed;
   top: 0;
   left: 0;
 }
 html,
-background {
+#background {
   background-color: #000410;
 }
 
-background #grid {
+#background #grid {
   pointer-events: none;
 }
 
-background #grid canvas {
+#background #grid canvas {
   width: 100%;
   height: 100%;
   opacity: 0;
   animation: background-grid-fade-in 2s ease-in-out forwards;
 }
 
-background .gradient {
+#background .gradient {
   width: 200vw;
   height: 200vh;
   position: absolute;
   opacity: 0;
 }
-.grid-loaded background .gradient {
+.grid-loaded #background .gradient {
   background-image: radial-gradient(#00bfff00 0%, #00bfffff 15%, #00bfff00 34%, #00bfffff 58%, #00bfff00 75%, #00bfffff 100%);
   animation: background-gradients-fade-in 2s ease-in-out forwards;
 }
-background > :nth-child(1) {
+#background > :nth-child(1) {
   transform: translateX(-100vw);
 }
-background > :nth-child(2) {
+#background > :nth-child(2) {
   transform: translateY(-50vh);
 }
 
@@ -43,6 +43,11 @@ background > :nth-child(2) {
   }
 }
 @keyframes background-grid-fade-in {
+  to {
+    opacity: 0.5;
+  }
+}
+id-fade-in {
   to {
     opacity: 0.5;
   }

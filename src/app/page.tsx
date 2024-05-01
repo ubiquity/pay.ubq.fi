@@ -1,7 +1,7 @@
 import ClaimsPortal from "./components/claims-portal";
 
 export default async function Page(params: { searchParams: { claim: string } }) {
-  return <ClaimsPortal />;
+  return <ClaimsPortal permits={params.searchParams.claim} />;
 
   /**
    * good idea to have section for account setup, options, etc. here if we don't have a permit

@@ -22,7 +22,10 @@ export function insertErc20PermitTableData(
       name: "Expiry",
       value: (() => {
         const deadline = reward.deadline;
-        const deadlineDate = new Date(Number(deadline.toString())).toLocaleString();
+        const deadlineDate = new Date(Number(deadline)).toLocaleString();
+
+        if (deadlineDate === "Invalid Date") return undefined;
+
         return deadline <= Number.MAX_SAFE_INTEGER.toString() ? deadlineDate : undefined;
       })(),
     },

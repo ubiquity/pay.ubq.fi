@@ -3,7 +3,7 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
-import { toaster } from "../toaster";
+import { getButtonController, toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -13,10 +13,8 @@ import { setClaimMessage } from "./set-claim-message";
 
 export const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-const urlParams = new URLSearchParams(window.location.search);
-const base64encodedTxData = urlParams.get("claim");
-
-export async function readClaimDataFromUrl(app: AppState) {
+export async function readClaimDataFromUrl(app: AppState, permits?: string) {
+  const base64encodedTxData = permits;
   const table = document.getElementsByTagName(`table`)[0];
 
   if (!base64encodedTxData) {
@@ -33,6 +31,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   } catch (e) {
     toaster.create("error", `${e}`);
   }
+
   try {
     app.signer = await connectWallet();
     window.ethereum.on("accountsChanged", () => {
@@ -48,7 +47,7 @@ export async function readClaimDataFromUrl(app: AppState) {
 
   await renderTransaction();
   if (app.networkId !== null) {
-    await verifyCurrentNetwork(app.networkId);
+    await verifyCurrentNetwork(app);
   } else {
     throw new Error("Network ID is null");
   }
@@ -68,6 +67,7 @@ async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
 
 function decodeClaimData(base64encodedTxData: string): Permit[] {
   let permit;
+  const table = document.getElementsByTagName(`table`)[0];
 
   try {
     permit = decodePermits(base64encodedTxData);
@@ -93,6 +93,7 @@ function displayRewardPagination() {
 
 function displayRewardDetails() {
   let isDetailsVisible = false;
+  const table = document.getElementsByTagName(`table`)[0];
   table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
   const additionalDetails = document.getElementById(`additionalDetails`) as HTMLElement;
   additionalDetails.addEventListener("click", () => {

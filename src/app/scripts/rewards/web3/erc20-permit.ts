@@ -97,9 +97,9 @@ async function waitForTransaction(tx: TransactionResponse) {
   try {
     const receipt = await app.provider.waitForTransaction(tx.hash);
     toaster.create("success", `Claim Complete.`);
-    getButtonController().showViewClaim();
     getButtonController().hideLoader();
     getButtonController().hideMakeClaim();
+    getButtonController().showViewClaim();
     console.log(receipt?.hash);
     return receipt;
   } catch (error: unknown) {

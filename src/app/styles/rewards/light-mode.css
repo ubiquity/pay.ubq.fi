@@ -6,7 +6,7 @@
   --light-mode-border-color: hsl(225 0% calc(100% - var(--border-brightness)) / 1);
 }
 @media (prefers-color-scheme: light) {
-  background {
+  #background {
     background-color: #fff;
     color: #000;
   }
@@ -53,7 +53,7 @@
   html {
     background-color: #fff;
   }
-  background #grid {
+  #background #grid {
     filter: invert(1);
   }
   table tbody,
@@ -64,7 +64,7 @@
     border: 1px solid var(--light-mode-border-color);
     background-color: var(--light-mode-background-color-default);
   }
-  .grid-loaded background .gradient {
+  .grid-loaded #background .gradient {
     opacity: 0;
     animation: none;
   }

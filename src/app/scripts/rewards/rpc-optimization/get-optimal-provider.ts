@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { JsonRpcProvider } from "ethers";
 import { AppState } from "../app-state";
 import { getFastestRpcProvider } from "./get-fastest-rpc-provider";
 import { testRpcPerformance } from "./test-rpc-performance";

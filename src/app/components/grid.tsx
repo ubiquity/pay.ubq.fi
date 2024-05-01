@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 
-export function GridBackground() {
+export function GridBackground({ children }: { children: React.ReactNode }) {
   const canvasRef: React.RefObject<HTMLCanvasElement> = useRef(null);
   if (typeof document === "undefined") return null;
 
@@ -210,8 +210,9 @@ export function GridBackground() {
       <div className="gradient"></div>
       <div className="gradient"></div>
       <div id="grid">
-        <canvas ref={canvasRef} />
+        <canvas ref={canvasRef}></canvas>
       </div>
+      {children}
     </div>
   );
 }

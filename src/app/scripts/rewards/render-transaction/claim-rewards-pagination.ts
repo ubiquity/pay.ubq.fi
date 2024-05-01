@@ -1,6 +1,5 @@
 import { app } from "../app-state";
 import { getMakeClaimButton } from "../toaster";
-import { table } from "./read-claim-data-from-url";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
 
@@ -13,6 +12,7 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
 }
 
 function transactionHandler(direction: "next" | "previous") {
+  const table = document.querySelector(`table`) as HTMLTableElement;
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
