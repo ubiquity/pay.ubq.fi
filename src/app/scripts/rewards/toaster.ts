@@ -1,3 +1,4 @@
+"use client";
 import { ButtonController } from "./ButtonController";
 
 export const toaster = {
@@ -11,18 +12,26 @@ export const toaster = {
   },
 };
 
-const controls = document.getElementById("controls") as HTMLDivElement;
 export function getMakeClaimButton() {
   return document.getElementById("make-claim") as HTMLButtonElement;
 }
-export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
-const notifications = document.querySelector(".notifications") as HTMLUListElement;
-export const buttonController = new ButtonController(controls);
 
-function createToast(meaning: keyof typeof toaster.icons, text: string) {
+export function getViewClaimButton() {
+  return document.getElementById("view-claim") as HTMLButtonElement;
+}
+
+export function getButtonController() {
+  const controls = document.getElementById("controls") as HTMLDivElement;
+  return new ButtonController(controls);
+}
+
+function createToast(meaning: keyof typeof toaster.icons, text: string, timeout: number = 5000) {
+  const notifications = document.querySelector(".notifications") as HTMLUListElement;
+
+  const buttonController = getButtonController();
   if (meaning != "info") buttonController.hideLoader();
   const toastDetails = {
-    timer: 5000,
+    timer: timeout,
   } as {
     timer: number;
     timeoutId?: NodeJS.Timeout;
@@ -43,8 +52,10 @@ function createToast(meaning: keyof typeof toaster.icons, text: string) {
 
   notifications.appendChild(toastContent); // Append the toast to the notification ul
 
-  // Setting a timeout to remove the toast after the specified duration
-  toastDetails.timeoutId = setTimeout(() => removeToast(toastContent, toastDetails.timeoutId), toastDetails.timer);
+  if (timeout !== Infinity) {
+    // Setting a timeout to remove the toast after the specified duration
+    toastDetails.timeoutId = setTimeout(() => removeToast(toastContent, toastDetails.timeoutId), toastDetails.timer);
+  }
 }
 
 function removeToast(toast: HTMLElement, timeoutId?: NodeJS.Timeout) {

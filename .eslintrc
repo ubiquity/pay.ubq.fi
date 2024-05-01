@@ -13,8 +13,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:sonarjs/recommended",
-    "next/core-web-vitals"
+    "plugin:sonarjs/recommended"
   ],
   "ignorePatterns": [
     "**/*.js"
@@ -23,15 +22,15 @@
     "prefer-arrow-callback": [
       "warn",
       {
-        "allowNamedFunctions": true,
-      },
+        "allowNamedFunctions": true
+      }
     ],
     "func-style": [
       "warn",
       "declaration",
       {
-        "allowArrowFunctions": false,
-      },
+        "allowArrowFunctions": false
+      }
     ],
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-non-null-assertion": "error",
@@ -52,8 +51,8 @@
         "ignoreRestSiblings": true,
         "vars": "all",
         "varsIgnorePattern": "^_",
-        "argsIgnorePattern": "^_",
-      },
+        "argsIgnorePattern": "^_"
+      }
     ],
     "@typescript-eslint/await-thenable": "error",
     "@typescript-eslint/no-misused-new": "error",
@@ -73,8 +72,8 @@
         ],
         "custom": {
           "regex": "^I[A-Z]",
-          "match": false,
-        },
+          "match": false
+        }
       },
       {
         "selector": "memberLike",
@@ -84,13 +83,13 @@
         "format": [
           "camelCase"
         ],
-        "leadingUnderscore": "require",
+        "leadingUnderscore": "require"
       },
       {
         "selector": "typeLike",
         "format": [
           "PascalCase"
-        ],
+        ]
       },
       {
         "selector": "typeParameter",
@@ -99,7 +98,7 @@
         ],
         "prefix": [
           "T"
-        ],
+        ]
       },
       {
         "selector": "variable",
@@ -108,7 +107,7 @@
           "UPPER_CASE"
         ],
         "leadingUnderscore": "allow",
-        "trailingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
@@ -116,14 +115,14 @@
           "camelCase"
         ],
         "leadingUnderscore": "allow",
-        "trailingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
       {
         "selector": "variable",
         "modifiers": [
           "destructured"
         ],
-        "format": null,
+        "format": null
       },
       {
         "selector": "variable",
@@ -141,23 +140,31 @@
           "did",
           "will",
           "does"
-        ],
+        ]
       },
       {
         "selector": "variableLike",
         "format": [
           "camelCase"
-        ],
+        ]
       },
       {
         "selector": [
-          "function",
           "variable"
         ],
         "format": [
           "camelCase"
-        ],
+        ]
       },
-    ],
-  },
+      {
+        "selector": [
+          "function"
+        ],
+        "format": [
+          "camelCase",
+          "PascalCase"
+        ]
+      }
+    ]
+  }
 }

@@ -6,77 +6,15 @@ import { claimErc20PermitHandler } from "../scripts/rewards/web3/erc20-permit";
 import { GridBackground } from "./grid";
 import { app } from "../scripts/rewards/app-state";
 import { readClaimDataFromUrl } from "../scripts/rewards/render-transaction/read-claim-data-from-url";
-import { WebAuthnHandler } from "../scripts/rewards/account-abstraction/webauthn";
-import { githubLoginHandler } from "../scripts/rewards/account-abstraction/github-login-button";
 import { getButtonController, toaster } from "../scripts/rewards/toaster";
 import { User } from "@supabase/supabase-js";
-import { SupabaseBrowserClient } from "../scripts/rewards/account-abstraction/supabase-browser-client";
 import { renderTransaction } from "../scripts/rewards/render-transaction/render-transaction";
 
 async function readClaimData() {
   await readClaimDataFromUrl(app);
 }
 
-export default function ClaimsPortal({ permits, supabaseUser }: { permits?: string; supabaseUser?: User | null }) {
-  const webAuthnHandler = new WebAuthnHandler();
-  const [isMounted, setMounted] = React.useState(false);
-  const isLoggedIn = React.useMemo(() => !!supabaseUser, [supabaseUser]);
-
-  useEffect(() => {
-    async function load() {
-      if (!isLoggedIn && permits) {
-        await SupabaseBrowserClient.getInstance().loginWithGitHub(permits);
-        return;
-      }
-      await readClaimData();
-
-      if (app.claims.length === 0 || !permits) {
-        return;
-      }
-
-      if (supabaseUser && !isMounted) {
-        // use this to create or authenticate with webauthn
-        const dataForWebAuthnCredential = {
-          id: new TextEncoder().encode(supabaseUser.email),
-          name: supabaseUser.user_metadata.preferred_username,
-          displayName: supabaseUser.user_metadata.preferred_username,
-        };
-
-        // we'll create an EOA for the user and then attach it to the SMA
-        if (!window.ethereum) {
-          app.signer = await webAuthnHandler.handleUserAuthentication(supabaseUser, dataForWebAuthnCredential, app);
-
-          if (app.signer.account?.address) {
-            toaster.create("success", `Successfully authenticated with WebAuthn. Welcome back ${supabaseUser.user_metadata.preferred_username}!`);
-          } else {
-            toaster.create("warning", "Failed to authenticate with WebAuthn. Please try again.");
-          }
-        } else {
-          // just saves their EOA to supabase for future use
-          // webauthn doesn't make sense here unless using it to either
-          // - create them an EOA like above then we can reproduce the private key to sign txs with
-          // - embed their current EOA private key in the webauthn credential (not recommended)
-
-          app.signer = await webAuthnHandler.registerEOA(supabaseUser, dataForWebAuthnCredential, app);
-        }
-      }
-
-      const toasterEle = document.getElementsByClassName("toast .fa-circle-check success");
-
-      await app.signer.getPermissions();
-
-      const [address] = (await app.signer.getAddresses()) || [];
-
-      if (!toasterEle.length && address) {
-        toaster.create("success", `Connected to ${address}!`);
-        await renderTransaction();
-        getButtonController().showMakeClaim();
-      }
-    }
-    load().catch(console.error);
-    setMounted(true);
-  }, []);
-
+export default function ClaimsPortal({ permits }: { permits?: string }) {
   return (
     <>
       <div id="background">
