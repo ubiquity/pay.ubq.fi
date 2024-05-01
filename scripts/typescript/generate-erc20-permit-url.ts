@@ -1,7 +1,7 @@
 import { MaxUint256, PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import { randomBytes } from "crypto";
 import * as dotenv from "dotenv";
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, ethers, parseUnits } from "ethers";
 import { log } from "./utils";
 dotenv.config();
 
@@ -17,7 +17,7 @@ function createPermitTransferFromData(amount: string) {
   return {
     permitted: {
       token: process.env.PAYMENT_TOKEN_ADDRESS || "",
-      amount: ethers.utils.parseUnits(amount || "", 18),
+      amount: parseUnits(amount || "", 18),
     },
     spender: process.env.BENEFICIARY_ADDRESS,
     nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),

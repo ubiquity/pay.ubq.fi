@@ -1,7 +1,6 @@
 import { MaxUint256, PermitTransferFrom } from "@uniswap/permit2-sdk";
 import * as dotenv from "dotenv";
-import { ethers } from "ethers";
-import { solidityKeccak256 } from "ethers/lib/utils";
+import { ethers, solidityPackedKeccak256 } from "ethers";
 import { log } from "./utils";
 dotenv.config();
 
@@ -126,11 +125,11 @@ export async function generateERC721Permit() {
   const GITHUB_USERNAME = "testing";
   const GITHUB_CONTRIBUTION_TYPE = "issue";
   const valueBytes = [
-    solidityKeccak256(["string"], [GITHUB_ORGANIZATION_NAME]),
-    solidityKeccak256(["string"], [GITHUB_REPOSITORY_NAME]),
-    solidityKeccak256(["string"], [GITHUB_ISSUE_ID]),
-    solidityKeccak256(["string"], [GITHUB_USERNAME]),
-    solidityKeccak256(["string"], [GITHUB_CONTRIBUTION_TYPE]),
+    solidityPackedKeccak256(["string"], [GITHUB_ORGANIZATION_NAME]),
+    solidityPackedKeccak256(["string"], [GITHUB_REPOSITORY_NAME]),
+    solidityPackedKeccak256(["string"], [GITHUB_ISSUE_ID]),
+    solidityPackedKeccak256(["string"], [GITHUB_USERNAME]),
+    solidityPackedKeccak256(["string"], [GITHUB_CONTRIBUTION_TYPE]),
   ];
 
   const erc721TransferFromData = createPermitTransferFromData(myWallet, 313327);

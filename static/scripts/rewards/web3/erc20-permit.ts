@@ -1,14 +1,14 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { Permit } from "@ubiquibot/permit-generation/types";
-import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
+import { BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "../constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
 
-export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
-  let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
+export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumberish; allowance: BigNumberish; decimals: number; symbol: string }> {
+  let balance: BigNumberish, allowance: BigNumberish, decimals: number, symbol: string;
 
   try {
     const tokenAddress = permit.tokenAddress;
@@ -38,7 +38,7 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
 
     return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
-    return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
+    return { balance: -1, allowance: -1, decimals: -1, symbol: "" };
   }
 }
 
@@ -155,16 +155,16 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
   const reward = app.reward;
 
-  if (BigNumber.from(reward.deadline).lt(Math.floor(Date.now() / 1000))) {
+  if (Number(reward.deadline) < Math.floor(Date.now() / 1000)) {
     toaster.create("error", `This reward has expired.`);
     return false;
   }
 
   const { balance, allowance } = await fetchTreasury(reward);
-  const permitted = BigNumber.from(reward.amount);
+  const permitted = reward.amount;
 
-  const isSolvent = balance.gte(permitted);
-  const isAllowed = allowance.gte(permitted);
+  const isSolvent = balance > permitted;
+  const isAllowed = allowance > permitted;
 
   if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
@@ -262,24 +262,24 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.nonce));
+  const { wordPos, bitPos } = nonceBitmap(app.reward.nonce);
 
   const bitmap = await permit2Contract.nonceBitmap(app.reward.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });
 
-  const bit = BigNumber.from(1).shl(bitPos);
-  const flipped = BigNumber.from(bitmap).xor(bit);
+  const bit = 1 << bitPos;
+  const flipped = bitmap.toNumber() ^ bit;
 
-  return bit.and(flipped).eq(0);
+  return flipped === 0;
 }
 
 async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428
-  const bit = BigNumber.from(1).shl(bitPos);
+  const bit = 1 << bitPos;
   const sourceBitmap = await permit2Contract.nonceBitmap(await signer.getAddress(), wordPos.toString());
   const mask = sourceBitmap.or(bit);
   await permit2Contract.invalidateUnorderedNonces(wordPos, mask);
@@ -288,9 +288,9 @@ async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Prom
 // mimics https://github.com/Uniswap/permit2/blob/db96e06278b78123970183d28f502217bef156f4/src/SignatureTransfer.sol#L142
 function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number } {
   // wordPos is the first 248 bits of the nonce
-  const wordPos = BigNumber.from(nonce).shr(8);
+  const wordPos = Number(nonce) >> 8;
   // bitPos is the last 8 bits of the nonce
-  const bitPos = BigNumber.from(nonce).and(255).toNumber();
+  const bitPos = Number(nonce) & 255;
   return { wordPos, bitPos };
 }
 

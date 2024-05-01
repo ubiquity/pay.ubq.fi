@@ -1,7 +1,10 @@
-import { randomBytes } from "ethers/lib/utils";
 import { readClaimDataFromUrl } from "../render-transaction/read-claim-data-from-url";
 import { generateSAPrivateKey } from "./sodium";
 import { app } from "../app-state";
+
+import { ethers, randomBytes } from "ethers";
+import { SafeAuthPack, SafeAuthConfig, SafeAuthInitOptions, AuthKitBasePack, AuthKitSignInData } from "@safe-global/auth-kit";
+import { EthersAdapter } from "@safe-global/protocol-kit";
 
 export async function webAuthn() {
   const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable();
@@ -63,7 +66,8 @@ export async function webAuthn() {
           const binaryID = new Uint8Array(rawId);
           const acc = await generateSAPrivateKey(id, binaryID);
 
-          console.log("Account created", acc);
+          const signer = new ethers.Wallet(acc.privateKey);
+          app.signer = signer;
 
           readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
           return true;

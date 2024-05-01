@@ -1,5 +1,5 @@
 import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
-import { BigNumber, ethers } from "ethers";
+import { BigNumberish, formatUnits } from "ethers";
 import { app, AppState } from "../app-state";
 
 function shortenAddress(address: string): string {
@@ -9,7 +9,7 @@ function shortenAddress(address: string): string {
 export function insertErc20PermitTableData(
   app: AppState,
   table: Element,
-  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
+  treasury: { balance: BigNumberish; allowance: BigNumberish; decimals: number; symbol: string }
 ): Element {
   const reward = app.reward as ERC20Permit;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
@@ -20,12 +20,12 @@ export function insertErc20PermitTableData(
     {
       name: "Expiry",
       value: (() => {
-        const deadline = BigNumber.isBigNumber(reward.deadline) ? reward.deadline : BigNumber.from(reward.deadline);
-        return deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(deadline.toNumber()).toLocaleString() : undefined;
+        const deadline = reward.deadline;
+        return deadline <= Number.MAX_SAFE_INTEGER.toString() ? new Date(Number(deadline)).toLocaleString() : undefined;
       })(),
     },
-    { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
-    { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+    { name: "Balance", value: Number(treasury.balance) >= 0 ? `${formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+    { name: "Allowance", value: Number(treasury.allowance) >= 0 ? `${formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;
@@ -43,7 +43,7 @@ export function insertErc721PermitTableData(reward: ERC721Permit, table: Element
     },
     {
       name: "Expiry",
-      value: BigNumber.from(reward.deadline).lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(Number(reward.deadline)).toLocaleString() : undefined,
+      value: reward.deadline <= Number.MAX_SAFE_INTEGER.toString() ? new Date(Number(reward.deadline)).toLocaleString() : undefined,
     },
     {
       name: "GitHub Organization",

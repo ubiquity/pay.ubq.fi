@@ -1,7 +1,7 @@
-import { ethers, wordlists } from "ethers";
-import { BytesLike, entropyToMnemonic, isValidMnemonic } from "ethers/lib/utils";
+import { BytesLike, ethers, wordlists } from "ethers";
 import SODIUM from "libsodium-wrappers";
 import { Buffer } from "buffer";
+import { entropyToMnemonic, isValidMnemonic } from "@ethersproject/hdnode";
 
 export async function generateSAPrivateKey(publicKey: string, binaryID: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>) {
   if (!publicKey) throw new Error("No public key created for private key generation");

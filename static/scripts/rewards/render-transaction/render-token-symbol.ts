@@ -1,4 +1,4 @@
-import { BigNumberish, ethers, utils } from "ethers";
+import { BigNumberish, ethers, formatUnits } from "ethers";
 import { erc20Abi } from "../abis/erc20Abi";
 import { app } from "../app-state";
 export async function renderTokenSymbol({
@@ -37,7 +37,7 @@ export async function renderTokenSymbol({
   }
 
   // Format the amount
-  let formattedAmount: string | number = parseFloat(utils.formatUnits(amount, decimals));
+  let formattedAmount: string | number = parseFloat(formatUnits(amount, decimals));
 
   // If the amount is an integer, convert it to a string
   if (Number.isInteger(formattedAmount)) {

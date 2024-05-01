@@ -1,6 +1,6 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
 import { ERC721Permit } from "@ubiquibot/permit-generation/types";
-import { BigNumber, ethers } from "ethers";
+import { BigNumberish, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
 import { buttonController, getMakeClaimButton, toaster } from "../toaster";
@@ -18,7 +18,7 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
       return;
     }
 
-    if (BigNumber.from(reward.deadline).lt(Math.floor(Date.now() / 1000))) {
+    if (Number(reward.deadline) < Math.floor(Date.now() / 1000)) {
       toaster.create("error", `This NFT has expired.`);
       return;
     }
