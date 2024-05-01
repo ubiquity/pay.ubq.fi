@@ -1,9 +1,11 @@
-import { webAuthn } from "./account-abstraction/webauthn";
+import { app } from "./app-state";
+import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-url";
 import { grid } from "./the-grid";
 
 displayCommitHash(); // @DEV: display commit hash in footer
 grid(document.getElementById("grid") as HTMLElement, gridLoadedCallback); // @DEV: display grid background
-webAuthn().catch(console.error); // @DEV: handles user login and calls renderTransaction
+
+readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
 
 declare const commitHash: string; // @DEV: passed in at build time check build/esbuild-build.ts
 function displayCommitHash() {
