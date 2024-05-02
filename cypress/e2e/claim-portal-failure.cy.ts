@@ -112,13 +112,6 @@ function setupIntercepts() {
             result: "0x0000000000000000000000000000000000c097ce7bc906e58377f59a8306ffff",
           },
         });
-      } else if (selector == "0x95d89b41" || selector == "0x313ce567" || selector == "0x4fe02b44") {
-        // decimals and symbol
-        // get names?
-        // nonceBitmap
-      } else if (selector == "0xcbf8b66c") {
-        // permit
-        // req.destroy();
       }
     }
   });
