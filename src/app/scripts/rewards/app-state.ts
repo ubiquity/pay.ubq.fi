@@ -1,13 +1,14 @@
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { networkExplorers } from "./constants";
 import { JsonRpcProvider, JsonRpcSigner } from "ethers";
+import { Wallet } from "ethers";
 
 export class AppState {
   public claims: Permit[] = [];
   public claimTxs: Record<string, string> = {};
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
-  private _signer: JsonRpcSigner | null = null;
+  private _signer: JsonRpcSigner | Wallet | null = null;
 
   get signer() {
     return this._signer;

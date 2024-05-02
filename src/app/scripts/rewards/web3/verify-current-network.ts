@@ -5,6 +5,10 @@ import { Web3Provider } from "@ethersproject/providers";
 
 // verifyCurrentNetwork checks if the user is on the correct network and displays an error if not
 export async function verifyCurrentNetwork(app: AppState) {
+  if (!window.ethereum) {
+    return;
+  }
+
   const web3provider = new Web3Provider(window.ethereum);
 
   const network = await web3provider.getNetwork();

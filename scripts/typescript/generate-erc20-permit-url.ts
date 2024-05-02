@@ -31,9 +31,7 @@ async function signTypedData(myWallet: Wallet, permitTransferFromData: PermitTra
     process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
   );
 
-  // not sure where the BigNumber is being inferred from
-  // both getPermitData() and signTypedData() use TypedDataDomain which uses BigNumberish
-  return await myWallet.signTypedData(domain, types, values);
+  return myWallet.signTypedData(domain, types, values);
 }
 
 function createTxData(myWallet: Wallet, permitTransferFromData: PermitTransferFrom, signature: string) {

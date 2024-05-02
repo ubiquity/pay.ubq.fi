@@ -193,8 +193,8 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
 export async function checkRenderMakeClaimControl(app: AppState) {
   try {
-    const address = await app.signer.getAddress();
-    const user = address.toLowerCase();
+    const address = await app.signer?.getAddress();
+    const user = address?.toLowerCase();
 
     if (app.reward) {
       const beneficiary = app.reward.beneficiary.toLowerCase();
@@ -212,8 +212,8 @@ export async function checkRenderMakeClaimControl(app: AppState) {
 
 export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
   try {
-    const address = await app.signer.getAddress();
-    const user = address.toLowerCase();
+    const address = await app.signer?.getAddress();
+    const user = address?.toLowerCase();
 
     if (app.reward) {
       const owner = app.reward.owner.toLowerCase();
@@ -271,12 +271,12 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
   return flipped === BigInt(0);
 }
 
-async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
+async function invalidateNonce(signer: JsonRpcSigner | null, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428
   const bit = BigInt(1) << BigInt(bitPos);
-  const sourceBitmap = await permit2Contract.nonceBitmap(await signer.getAddress(), wordPos.toString());
+  const sourceBitmap = await permit2Contract.nonceBitmap(await signer?.getAddress(), wordPos.toString());
   const mask = sourceBitmap ^ bit;
   await permit2Contract.invalidateUnorderedNonces(wordPos, mask);
 }

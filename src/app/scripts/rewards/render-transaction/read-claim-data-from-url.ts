@@ -3,7 +3,7 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
 import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
-import { getButtonController, toaster } from "../toaster";
+import { toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -32,14 +32,12 @@ export async function readClaimDataFromUrl(app: AppState, permits?: string) {
     toaster.create("error", `${e}`);
   }
 
-  try {
+  if (window.ethereum) {
     app.signer = await connectWallet();
     window.ethereum.on("accountsChanged", () => {
       checkRenderMakeClaimControl(app).catch(console.error);
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     });
-  } catch (error) {
-    /* empty */
   }
 
   displayRewardDetails();

@@ -26,14 +26,14 @@ export async function renderTokenSymbol({
   if (tokenInfo) {
     // If the token info is in localStorage, parse it and use it
     const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
-    decimals = storedDecimals;
+    decimals = Number(storedDecimals);
     symbol = storedSymbol;
   } else {
     // If the token info is not in localStorage, fetch it from the blockchain
     [symbol, decimals] = await Promise.all([contract.symbol(), contract.decimals()]);
 
     // Store the token info in localStorage for future use
-    localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
+    localStorage.setItem(tokenAddress, JSON.stringify({ decimals: decimals.toString(), symbol }));
   }
 
   // Format the amount
@@ -69,7 +69,6 @@ export async function renderNftSymbol({
 
   // Try to get the token info from localStorage
   const tokenInfo = localStorage.getItem(tokenAddress);
-
   if (tokenInfo) {
     // If the token info is in localStorage, parse it and use it
     const { symbol: storedSymbol } = JSON.parse(tokenInfo);

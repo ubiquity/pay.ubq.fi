@@ -29,8 +29,11 @@ export function insertErc20PermitTableData(
         return deadline <= Number.MAX_SAFE_INTEGER.toString() ? deadlineDate : undefined;
       })(),
     },
-    { name: "Balance", value: Number(treasury.balance) >= 0 ? `${formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
-    { name: "Allowance", value: Number(treasury.allowance) >= 0 ? `${formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+    { name: "Balance", value: Number(treasury.balance) >= 0 ? `${formatUnits(treasury.balance, Number(treasury.decimals))} ${treasury.symbol}` : "N/A" },
+    {
+      name: "Allowance",
+      value: Number(treasury.allowance) >= 0 ? `${formatUnits(treasury.allowance, Number(treasury.decimals))} ${treasury.symbol}` : "N/A",
+    },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;

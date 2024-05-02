@@ -28,8 +28,12 @@ export function getButtonController() {
 function createToast(meaning: keyof typeof toaster.icons, text: string, timeout: number = 5000) {
   const notifications = document.querySelector(".notifications") as HTMLUListElement;
 
-  const buttonController = getButtonController();
-  if (meaning != "info") getButtonController().hideLoader();
+  try {
+    if (meaning != "info") getButtonController().hideLoader();
+  } catch (err) {
+    console.log(err);
+  }
+
   const toastDetails = {
     timer: timeout,
   } as {
