@@ -1,6 +1,5 @@
-import { Web3Provider } from "@ethersproject/providers";
+import { Web3Provider, JsonRpcSigner } from "@ethersproject/providers";
 import { getButtonController } from "../toaster";
-import { JsonRpcSigner } from "ethers";
 
 export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
@@ -20,14 +19,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
 
     return signer;
   } catch (error: unknown) {
-    // if (error instanceof Error) {
-    //   console.error(error);
-    //   if (error?.message?.includes("missing provider")) {
-    //     toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
-    //   } else {
-    //     toaster.create("info", "Please connect your wallet to collect this reward.");
-    //   }
-    // }
+    console.error("Error connecting wallet", error);
     return null;
   }
 }

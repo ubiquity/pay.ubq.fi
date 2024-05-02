@@ -10,7 +10,7 @@ export async function generateSAPrivateKey(publicKey: string, binaryID: WithImpl
   const sodium = SODIUM;
   await sodium.ready;
 
-  const salt = "ubiquity-rewards"; // || process.env.SALT
+  const salt = process.env.SALT || "ubiquity-rewards";
   const concData = Buffer.concat([Buffer.from(salt), Buffer.from(publicKey), Buffer.from(binaryID)]);
 
   const hash = sodium.crypto_generichash(sodium.crypto_generichash_BYTES, concData);

@@ -112,6 +112,7 @@ export async function createPasskeyHandler({
   setHasCreds: (creds: boolean) => void;
   permits?: string;
 }) {
+  // this is what the passkey will be named on their device, it's irrelevant to us
   const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
 
   if (!username) {
