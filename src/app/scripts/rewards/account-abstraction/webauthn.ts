@@ -115,7 +115,7 @@ export async function createPasskeyHandler({
   const username = (document.getElementById("loginform.username") as HTMLInputElement).value;
 
   if (!username) {
-    alert("Username is required");
+    toaster.create("error", "Please enter a username.");
     return;
   }
 
