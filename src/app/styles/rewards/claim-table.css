@@ -312,27 +312,25 @@ table input:focus {
   width: 80%;
   max-width: 600px;
   border-radius: 8px;
-}
-
-.modal-content[data-modal-close="false"] {
   animation-name: modalopen;
   animation-duration: 0.4s;
   animation-fill-mode: forwards;
-  display: block;
 }
 
-.modal-content h2 {
+.modal-content ul {
+  list-style-type: none;
+}
+
+.modal-content ul li {
+  padding: 8px;
+  border-bottom: 1px solid #80808040;
   color: #fff;
-  text-align: center;
   margin: 0;
-  padding: 16px 0;
-  font-size: large;
+  text-wrap: wrap;
 }
 
-.modal-content p {
-  color: #fff;
-  padding: 16px 0;
-  word-spacing: 2px;
+.modal-content ul li:last-child {
+  border-bottom: none;
 }
 
 .close {

@@ -23,7 +23,7 @@
   }
   #background #grid {
     filter: invert(1);
-   }
+  }
   .grid-loaded #background .gradient {
     opacity: 0;
     animation: none;

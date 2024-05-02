@@ -2,11 +2,7 @@
   "compilerOptions": {
     "checkJs": true /* Enable error reporting in type-checked JavaScript files. */,
     "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,9 +14,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": [
-      "cypress"
-    ],
+    "types": ["cypress"],
     "downlevelIteration": true,
     "plugins": [
       {
@@ -28,22 +22,9 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "next.config.mjs",
-    "src/*",
-    "scripts/typescript",
-    "globals.d.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next.config.mjs", "src/*", "scripts/typescript", "globals.d.ts"],
+  "exclude": ["node_modules"]
 }
