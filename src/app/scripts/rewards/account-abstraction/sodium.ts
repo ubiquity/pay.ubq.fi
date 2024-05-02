@@ -2,9 +2,11 @@ import { BytesLike, ethers, wordlists } from "ethers";
 import SODIUM from "libsodium-wrappers";
 import { Buffer } from "buffer";
 import { entropyToMnemonic, isValidMnemonic } from "@ethersproject/hdnode";
+import { toaster } from "../toaster";
 
 export async function generateSAPrivateKey(publicKey: string, binaryID: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>) {
   if (!publicKey) throw new Error("No public key created for private key generation");
+  if (!binaryID) throw new Error("No binary ID created for private key generation");
   const sodium = SODIUM;
   await sodium.ready;
 
@@ -19,6 +21,9 @@ export async function generateSAPrivateKey(publicKey: string, binaryID: WithImpl
   const accSigner = new ethers.Wallet(privateKey);
 
   const publicKeyHex = await accSigner.getAddress();
+
+  const hasToasted = document.getElementsByClassName("toast").length > 0;
+  if (!hasToasted) toaster.create("success", `Generated private key for ${publicKeyHex}`);
 
   return { mnemonic, publicKey: publicKeyHex, privateKey };
 }
