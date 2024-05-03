@@ -1,0 +1,78 @@
+[
+  {
+    "type": "erc721-permit",
+    "permit": {
+      "permitted": {
+        "token": "0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b",
+        "amount": "1"
+      },
+      "nonce": "313327",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    },
+    "transferDetails": {
+      "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "requestedAmount": "1"
+    },
+    "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "signature": "0xfc56bee3c8f90cb0a5a528808f37883ac1c88e21b59647e6fab2640c34692a9636914cbc98b15b4f43d95d2c69c6832ce19e150c809cf14dc9f06e6025ee649f1b",
+    "networkId": 100,
+    "nftMetadata": {
+      "GITHUB_ORGANIZATION_NAME": "ubiquity",
+      "GITHUB_REPOSITORY_NAME": "pay.ubq.fi",
+      "GITHUB_ISSUE_ID": "1",
+      "GITHUB_USERNAME": "testing",
+      "GITHUB_CONTRIBUTION_TYPE": "issue"
+    },
+    "request": {
+      "beneficiary": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      "keys": [
+        "0x1c474488c03c83ad98714cfe3a60c752036f92ab8378227adfcb13585f115c5c",
+        "0x0480f34997cc2d3abc2dafd652b25652ba845458fc3e3692f28acbd4920a37ea",
+        "0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6",
+        "0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02",
+        "0xa33d0fabbfddf3db8e1458550edc0ab7e061990c85809d25341eab0885973d7d"
+      ],
+      "nonce": "313327",
+      "values": ["ubiquity", "pay.ubq.fi", "1", "testing", "issue"]
+    }
+  },
+  {
+    "type": "erc721-permit",
+    "permit": {
+      "permitted": {
+        "token": "0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b",
+        "amount": "1"
+      },
+      "nonce": "3137",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    },
+    "transferDetails": {
+      "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "requestedAmount": "1"
+    },
+    "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "signature": "0x49ef799bc3e859d8b850f58f696dd44a89c4209ec5677ce1aa6cb0b1312a3a1b14a594ef7af293efffeef0669c2817e7c4031cffe035ce084e34dd5a4d32ea5f1b",
+    "networkId": 100,
+    "nftMetadata": {
+      "GITHUB_ORGANIZATION_NAME": "ubiquity",
+      "GITHUB_REPOSITORY_NAME": "pay.ubq.fi",
+      "GITHUB_ISSUE_ID": "1",
+      "GITHUB_USERNAME": "testing",
+      "GITHUB_CONTRIBUTION_TYPE": "issue"
+    },
+    "request": {
+      "beneficiary": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      "keys": [
+        "0x1c474488c03c83ad98714cfe3a60c752036f92ab8378227adfcb13585f115c5c",
+        "0x0480f34997cc2d3abc2dafd652b25652ba845458fc3e3692f28acbd4920a37ea",
+        "0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6",
+        "0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02",
+        "0xa33d0fabbfddf3db8e1458550edc0ab7e061990c85809d25341eab0885973d7d"
+      ],
+      "nonce": "3137",
+      "values": ["ubiquity", "pay.ubq.fi", "1", "testing", "issue"]
+    }
+  }
+]

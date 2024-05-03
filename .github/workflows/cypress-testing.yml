@@ -1,0 +1,66 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+      - development
+  pull_request:
+    branches:
+      - main
+      - development
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  tests:
+    name: Cypress tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.0
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Start Anvil
+        run: yarn test:anvil &
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          build: yarn run build
+          start: yarn test:fund, yarn start
+
+        env:
+          SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
+          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmenBld21seWlvenVwdWxidXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU2NzQzMzksImV4cCI6MjAxMTI1MDMzOX0.SKIL3Q0NOBaMehH0ekFspwgcu3afp3Dl9EDzPqs1nKs"
+          AMOUNT_IN_ETH: "0.1"
+          BENEFICIARY_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          CHAIN_ID: "31337"
+          FRONTEND_URL: "http://localhost:8080"
+          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          RPC_PROVIDER_URL: "http://localhost:8545"
+          UBIQUIBOT_PRIVATE_KEY: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          if-no-files-found: ignore

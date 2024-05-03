@@ -119,6 +119,8 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
+    if (!app.signer) return;
+
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
@@ -177,9 +179,10 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
     return false;
   }
 
-  let user: string;
+  let user: string | undefined;
   try {
-    user = (await app.signer.getAddress()).toLowerCase();
+    const address = await app.signer?.getAddress();
+    user = address?.toLowerCase();
   } catch (error: unknown) {
     console.error("Error in signer.getAddress: ", error);
     return false;
@@ -197,8 +200,8 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
 export async function checkRenderMakeClaimControl(app: AppState) {
   try {
-    const address = await app.signer.getAddress();
-    const user = address.toLowerCase();
+    const address = await app.signer?.getAddress();
+    const user = address?.toLowerCase();
 
     if (app.reward) {
       const beneficiary = app.reward.beneficiary.toLowerCase();
@@ -216,8 +219,8 @@ export async function checkRenderMakeClaimControl(app: AppState) {
 
 export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
   try {
-    const address = await app.signer.getAddress();
-    const user = address.toLowerCase();
+    const address = await app.signer?.getAddress();
+    const user = address?.toLowerCase();
 
     if (app.reward) {
       const owner = app.reward.owner.toLowerCase();
@@ -243,7 +246,9 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
       buttonController.hideInvalidator();
       return;
     }
-    await invalidateNonce(app.signer, app.reward.nonce);
+
+    if (!app.signer) return;
+    await invalidateNonce(app.signer, app.reward.permit.nonce);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;

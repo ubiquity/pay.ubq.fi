@@ -61,10 +61,10 @@ export async function generateERC20Permit() {
   const permitTransferFromData = createPermitTransferFromData(process.env.AMOUNT_IN_ETH);
   const signature = await signTypedData(myWallet, permitTransferFromData);
 
-  // const permitTransferFromData2 = createPermitTransferFromData("9");
+  const permitTransferFromData2 = createPermitTransferFromData("9");
   const sig = await signTypedData(myWallet, permitTransferFromData);
 
-  const txData = [createTxData(myWallet, permitTransferFromData, signature), createTxData(myWallet, permitTransferFromData, sig)];
+  const txData = [createTxData(myWallet, permitTransferFromData, signature), createTxData(myWallet, permitTransferFromData2, sig)];
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
 
