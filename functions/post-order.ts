@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
-import { Interface, formatEther } from "ethers/lib/utils";
-import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, isProductAvailableForAmount } from "../shared/helpers";
+import { Interface } from "ethers/lib/utils";
+import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, getProductValueAfterFee, isProductAvailableForAmount } from "../shared/helpers";
 import { AccessToken, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
@@ -87,7 +87,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return errorResponse;
     }
 
-    const amountDai = formatEther(txParsed.args.transferDetails.requestedAmount);
+    const amountDai = txParsed.args.transferDetails.requestedAmount;
+    const gitCardValue = getProductValueAfterFee(product, amountDai);
 
     const orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);
 
@@ -96,7 +97,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return Response.json({ message: "The permit has already claimed a gift card." }, { status: 400 });
     }
 
-    const order = await orderGiftCard(productId, amountDai, orderId, accessToken);
+    const order = await orderGiftCard(productId, gitCardValue, orderId, accessToken);
 
     if (order.status == "SUCCESSFUL") {
       return Response.json(order, { status: 200 });
@@ -137,14 +138,14 @@ const getProductById = async (productId: number, accessToken: AccessToken) => {
   return responseJson as ReloadlyProduct;
 };
 
-const orderGiftCard = async (productId: number, amount: string, identifier: string, accessToken: AccessToken) => {
+const orderGiftCard = async (productId: number, cardValue: number, identifier: string, accessToken: AccessToken) => {
   const url = `${getBaseUrl(accessToken.isSandbox)}/orders`;
   console.log(`Placing order at url: ${url}`);
 
   const requestBody = JSON.stringify({
     productId: productId,
     quantity: 1,
-    unitPrice: amount,
+    unitPrice: cardValue,
     customIdentifier: identifier,
     preOrder: false,
   });
