@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 import { ReloadlyProduct } from "../../../../shared/types";
-import { getProductValueAfterFee, isProductAvailableForAmount } from "../../../../shared/helpers";
+import { addProductFeesToPrice, getProductValueAfterFee, isProductAvailableForAmount } from "../../../../shared/helpers";
 import { getFixedPricesAndValues } from "./helpers";
 import { formatEther } from "ethers/lib/utils";
 
@@ -60,17 +60,15 @@ export function getGiftCardHtml(giftcard: ReloadlyProduct, allowBuy: boolean, re
                       <div>Value</div>
                     </div>
                     ${getFixedPricesAndValues(giftcard)}`
-                  : `<div>
-                  <div>Price</div>
-                  <div>${giftcard.minSenderDenomination}-${giftcard.maxSenderDenomination}${giftcard.senderCurrencyCode}</div>
-                </div>
+                  : `
                 <div>
                   <div>Value</div>
                   <div>${giftcard.minRecipientDenomination}-${giftcard.maxRecipientDenomination}${giftcard.recipientCurrencyCode}</div>
                 </div>
+                  
                 <div>
-                  <div>Fee</div>
-                  <div>(${giftcard.senderFee}${giftcard.senderCurrencyCode}+${giftcard.senderFeePercentage}%fee)</div>
+                  <div>Price</div>
+                  <div>${addProductFeesToPrice(giftcard, giftcard.minSenderDenomination)}-${addProductFeesToPrice(giftcard, giftcard.maxSenderDenomination)}${giftcard.senderCurrencyCode}</div>
                 </div>
                 `
               }`}
