@@ -31,7 +31,7 @@ export function attachClaimAction(className: string, giftcards: ReloadlyProduct[
 
 async function claimGiftCard(productId: number, app: AppState) {
   if (app.signer) {
-    if ((await app.signer.getAddress()) != app.reward.beneficiary) {
+    if ((await app.signer.getAddress()).toLowerCase() != app.reward.beneficiary.toLowerCase()) {
       toaster.create("error", "The connected wallet is not the beneficiary of the reward.");
       return;
     }
