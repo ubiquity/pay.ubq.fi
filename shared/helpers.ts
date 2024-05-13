@@ -73,8 +73,8 @@ export function getProductValueAfterFee(product: ReloadlyProduct, rewardAmount: 
   return Number(formatEther(remainingValue));
 }
 
-export function addProductFeesToPrice(product: ReloadlyProduct, price: number) {
-  const priceEth = parseEther(price.toString());
+export function addProductFeesToValue(product: ReloadlyProduct, value: number) {
+  const priceEth = parseEther(value.toString());
   const productFeePercentageEth = parseEther(product.senderFeePercentage.toString());
 
   const senderFeeFixed = parseEther(product.senderFee.toString());
