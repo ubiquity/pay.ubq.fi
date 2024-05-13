@@ -3,11 +3,9 @@ import { BigNumber, BigNumberish, ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 export interface Env {
+  USE_RELOADLY_SANDBOX: boolean;
   RELOADLY_API_CLIENT_ID: string;
   RELOADLY_API_CLIENT_SECRET: string;
-  ADDRESS_PERMIT2: string;
-  ADDRESS_GIFT_CARD_TREASURY: string;
-  USE_RELOADLY_SANDBOX: boolean;
 }
 
 export type ReloadlyAuthResponse = {

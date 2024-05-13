@@ -6,12 +6,14 @@ import { validateEnvVars, validateRequestMethod } from "./validators";
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
+import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 
 export const networkRpcs: Record<number, string[]> = {
   1: ["https://gateway.tenderly.co/public/mainnet"],
   5: ["https://eth-goerli.public.blastapi.io"],
   100: ["https://rpc.gnosischain.com"],
   31337: ["http://127.0.0.1:8545"],
+  31338: ["https://rpc.tenderly.co/fork/07e0d1c0-c5f5-4690-81ce-0676d0c8dbcd"],
 };
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
@@ -63,20 +65,16 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const errorResponse = Response.json({ message: "Transaction is not authorized to purchase gift card." }, { status: 403 });
 
-    if (txReceipt.to != ctx.env.ADDRESS_PERMIT2) {
-      console.error(
-        "Given transaction hash is not an interaction with ctx.env.ADDRESS_PERMIT2",
-        `txReceipt.to=${txReceipt.to}`,
-        `ctx.env.ADDRESS_PERMIT2=${ctx.env.ADDRESS_PERMIT2}`
-      );
+    if (txReceipt.to.toLowerCase() != permit2Address.toLowerCase()) {
+      console.error("Given transaction hash is not an interaction with permit2Address", `txReceipt.to=${txReceipt.to}`, `permit2Address=${permit2Address}`);
       return errorResponse;
     }
 
-    if (txParsed.args.transferDetails.to != ctx.env.ADDRESS_GIFT_CARD_TREASURY) {
+    if (txParsed.args.transferDetails.to.toLowerCase() != giftCardTreasuryAddress.toLowerCase()) {
       console.error(
-        "Given transaction hash is not a token transfer to ADDRESS_GIFT_CARD_TREASURY",
+        "Given transaction hash is not a token transfer to giftCardTreasuryAddress",
         `txParsed.args.transferDetails.to=${txParsed.args.transferDetails.to}`,
-        `ctx.env.ADDRESS_GIFT_CARD_TREASURY=${ctx.env.ADDRESS_GIFT_CARD_TREASURY}`
+        `giftCardTreasuryAddress=${giftCardTreasuryAddress}`
       );
       return errorResponse;
     }

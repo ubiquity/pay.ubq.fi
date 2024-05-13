@@ -1,7 +1,8 @@
 import { ethers } from "ethers";
 import { permit2Abi } from "../../abis";
 import { AppState } from "../../app-state";
-import { giftCardTreasuryAddress, permit2Address } from "../../constants";
+import { permit2Address } from "../../../../../shared/constants";
+import { giftCardTreasuryAddress } from "../../../../../shared/constants";
 import { toaster } from "../../toaster";
 import { isNonceClaimed, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl } from "../helpers";
