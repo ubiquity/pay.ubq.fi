@@ -79,6 +79,6 @@ export async function renderTransaction(): Promise<Success> {
   return true;
 }
 
-function isErc20Permit(permit: Permit): permit is ERC20Permit {
+export function isErc20Permit(permit: Permit): permit is ERC20Permit {
   return permit.tokenType === TokenType.ERC20;
 }

@@ -8,6 +8,7 @@ import { isNonceClaimed, transferFromPermit, waitForTransaction } from "../../we
 import { getApiBaseUrl } from "../helpers";
 import { isProductAvailableForAmount } from "../../../../../shared/pricing";
 import { OrderRequestParams, ReloadlyProduct } from "../../../../../shared/types";
+import { isErc20Permit } from "../../render-transaction/render-transaction";
 
 export function attachClaimAction(className: string, giftcards: ReloadlyProduct[], app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName(className);
@@ -18,7 +19,9 @@ export function attachClaimAction(className: string, giftcards: ReloadlyProduct[
 
       const product = giftcards.find((product: ReloadlyProduct) => product.productId == productId);
       if (product) {
-        if (!isProductAvailableForAmount(product, app.reward.amount)) {
+        if (!isErc20Permit(app.reward)) {
+          toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
+        } else if (!isProductAvailableForAmount(product, app.reward.amount)) {
           toaster.create("error", "Your reward amount is not equal to the price of available card.");
         } else {
           await claimGiftCard(productId, app);
