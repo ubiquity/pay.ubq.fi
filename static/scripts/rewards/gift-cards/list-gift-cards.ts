@@ -25,7 +25,7 @@ export async function initCollectGiftCard(app: AppState) {
   const [retrieveOrderResponse, retrieveGiftCardsResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
 
   const transaction = (await retrieveOrderResponse.json()) as ReloadlyTransaction;
-  const giftcards = (await retrieveGiftCardsResponse.json()) as ReloadlyProduct[];
+  const giftCards = (await retrieveGiftCardsResponse.json()) as ReloadlyProduct[];
 
   const giftCardsSection = document.getElementById("gift-cards");
   if (!giftCardsSection) {
@@ -39,20 +39,20 @@ export async function initCollectGiftCard(app: AppState) {
   }
 
   if (retrieveOrderResponse.status == 200) {
-    const giftcard = giftcards.find((giftcard) => transaction.product.productId == giftcard.productId);
+    const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
 
     let giftCardsHtml = `<h2 class="heading-gift-card">Your gift card</h2>`;
     giftCardsHtml += `<div class="products purchased">`;
-    if (giftcard) {
-      giftCardsHtml += getGiftCardHtml(giftcard, false, app.reward.amount);
+    if (giftCard) {
+      giftCardsHtml += getGiftCardHtml(giftCard, false, app.reward.amount);
     }
     giftCardsHtml += getRedeemCodeHtml(transaction);
     giftCardsHtml += `</div>`;
     giftCardsSection.innerHTML = giftCardsHtml;
 
     let activateInfoHtml = "";
-    if (giftcard) {
-      activateInfoHtml += getGiftCardActivateInfoHtml(giftcard);
+    if (giftCard) {
+      activateInfoHtml += getGiftCardActivateInfoHtml(giftCard);
     }
 
     activateInfoSection.innerHTML = activateInfoHtml;
@@ -61,8 +61,8 @@ export async function initCollectGiftCard(app: AppState) {
   } else if (retrieveGiftCardsResponse.status == 200) {
     let giftCardsHtml = `<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`;
     giftCardsHtml += `<div class="products">`;
-    giftcards.forEach((giftcard: ReloadlyProduct) => {
-      giftCardsHtml += getGiftCardHtml(giftcard, true, app.reward.amount);
+    giftCards.forEach((giftCard: ReloadlyProduct) => {
+      giftCardsHtml += getGiftCardHtml(giftCard, true, app.reward.amount);
     });
     giftCardsHtml += `</div><br />`;
     giftCardsHtml += getDisclaimerHtml();
@@ -72,12 +72,12 @@ export async function initCollectGiftCard(app: AppState) {
     giftCardsSection.innerHTML = giftCardsHtml;
 
     let activateInfoHtml = "";
-    giftcards.forEach((giftcard: ReloadlyProduct) => {
-      activateInfoHtml += getGiftCardActivateInfoHtml(giftcard);
+    giftCards.forEach((giftCard: ReloadlyProduct) => {
+      activateInfoHtml += getGiftCardActivateInfoHtml(giftCard);
     });
     activateInfoSection.innerHTML = activateInfoHtml;
 
-    attachClaimAction("claim-gift-card-btn", giftcards, app);
+    attachClaimAction("claim-gift-card-btn", giftCards, app);
   } else {
     giftCardsSection.innerText = "There was a problem in fetching gift cards. Try again later.";
   }
@@ -88,7 +88,7 @@ export async function initCollectGiftCard(app: AppState) {
 function getDisclaimerHtml() {
   return html`
     <h2>Disclaimer</h2>
-    <p>All visa/mastercards are non-exchangeable & non-refundable.</p>
+    <p>All Visa/Mastercard are non-exchangeable & non-refundable.</p>
     <p>Exact value of a card can be slightly different due to exchange rate.</p>
   `;
 }

@@ -79,7 +79,7 @@ function getRangePricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberis
       <div class="available">
         <div>${formatEther(rewardAmount)}${giftCard.senderCurrencyCode}</div>
         <div>${productValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div> </div
-      ><br /><p>Availble in range</p>`;
+      ><br /><p>Available in range</p>`;
   }
 
   const priceToValueMap = getRangePriceToValueMap(giftCard);

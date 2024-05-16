@@ -10,14 +10,14 @@ import { isProductAvailableForAmount } from "../../../../../shared/pricing";
 import { OrderRequestParams, ReloadlyProduct } from "../../../../../shared/types";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
 
-export function attachClaimAction(className: string, giftcards: ReloadlyProduct[], app: AppState) {
+export function attachClaimAction(className: string, giftCards: ReloadlyProduct[], app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName(className);
   Array.from(claimButtons).forEach((claimButton: Element) => {
     (claimButton as HTMLButtonElement).addEventListener("click", async () => {
       claimButton.setAttribute("data-loading", "true");
       const productId = Number(claimButton.parentElement?.parentElement?.parentElement?.getAttribute("data-product-id"));
 
-      const product = giftcards.find((product: ReloadlyProduct) => product.productId == productId);
+      const product = giftCards.find((product: ReloadlyProduct) => product.productId == productId);
       if (product) {
         if (!isErc20Permit(app.reward)) {
           toaster.create("error", "Only ERC20 permits are allowed to claim a card.");

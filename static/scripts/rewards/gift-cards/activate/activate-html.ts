@@ -2,9 +2,9 @@ import { ReloadlyProduct } from "../../../../../shared/types";
 
 const html = String.raw;
 
-export function getGiftCardActivateInfoHtml(giftcard: ReloadlyProduct) {
+export function getGiftCardActivateInfoHtml(giftCard: ReloadlyProduct) {
   return html`
-    <div class="redeem-info-wrapper" data-show="false" data-info-for="${giftcard.productId}">
+    <div class="redeem-info-wrapper" data-show="false" data-info-for="${giftCard.productId}">
       <div class="redeem-info">
         <div class="close-btn">
           <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,8 +21,8 @@ export function getGiftCardActivateInfoHtml(giftcard: ReloadlyProduct) {
           </svg>
         </div>
         <div class="instructions">
-          <p>${giftcard.redeemInstruction.concise}</p>
-          ${giftcard.redeemInstruction.concise != giftcard.redeemInstruction.verbose ? `<p>${giftcard.redeemInstruction.verbose}</p>` : ``}
+          <p>${giftCard.redeemInstruction.concise}</p>
+          ${giftCard.redeemInstruction.concise != giftCard.redeemInstruction.verbose ? `<p>${giftCard.redeemInstruction.verbose}</p>` : ``}
         </div>
       </div>
     </div>
