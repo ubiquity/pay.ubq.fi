@@ -10,8 +10,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const accessToken = await getAccessToken(ctx.env);
 
-    // TODO: load visa and mastercards only by default
-    const products = await getProducts("visa", accessToken);
+    const visaCards = await getProducts("visa", accessToken);
+    const masterCards = await getProducts("mastercard", accessToken);
+    const products = [...masterCards, ...visaCards];
 
     if (products.length) {
       return Response.json(products, { status: 200 });
@@ -37,6 +38,13 @@ const getProducts = async (productQuery: string, accessToken: AccessToken) => {
   const response = await fetch(url, options);
   const responseJson = await response.json();
 
+  console.log("Response status", response.status);
+  console.log(`Response from ${url}`, responseJson);
+
+  if (response.status == 404) {
+    return [];
+  }
+
   if (response.status != 200) {
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
@@ -45,8 +53,6 @@ const getProducts = async (productQuery: string, accessToken: AccessToken) => {
       })}`
     );
   }
-  console.log("Response status", response.status);
-  console.log(`Response from ${url}`, responseJson);
 
   return (responseJson as ReloadlyListGiftCardResponse).content;
 };
