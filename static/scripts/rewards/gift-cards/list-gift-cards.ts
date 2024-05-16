@@ -9,6 +9,8 @@ import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
 
+const html = String.raw;
+
 export async function initCollectGiftCard(app: AppState) {
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
   const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards`;
@@ -62,8 +64,11 @@ export async function initCollectGiftCard(app: AppState) {
     giftcards.forEach((giftcard: ReloadlyProduct) => {
       giftCardsHtml += getGiftCardHtml(giftcard, true, app.reward.amount);
     });
-    giftCardsHtml += `</div>`;
-    giftCardsHtml += `<p>*The value of a claimed card can be slightly different due to exchange rate.</p>`;
+    giftCardsHtml += `</div><br />`;
+    giftCardsHtml += getDisclaimerHtml();
+    giftCardsHtml += `<p></p>`;
+    giftCardsHtml += `<p></p>`;
+
     giftCardsSection.innerHTML = giftCardsHtml;
 
     let activateInfoHtml = "";
@@ -78,4 +83,12 @@ export async function initCollectGiftCard(app: AppState) {
   }
 
   attachActivateInfoAction();
+}
+
+function getDisclaimerHtml() {
+  return html`
+    <h2>Disclaimer</h2>
+    <p>All visa/mastercards are non-exchangeable & non-refundable.</p>
+    <p>Exact value of a card can be slightly different due to exchange rate.</p>
+  `;
 }
