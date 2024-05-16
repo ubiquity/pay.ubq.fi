@@ -1,5 +1,5 @@
 import { getGiftCardOrderId } from "../../../../shared/helpers";
-import { ReloadlyProduct, ReloadlyTransaction } from "../../../../shared/types";
+import { GiftCard, ReloadlyTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
 import { attachClaimAction } from "./claim/claim-action";
@@ -25,7 +25,7 @@ export async function initCollectGiftCard(app: AppState) {
   const [retrieveOrderResponse, retrieveGiftCardsResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
 
   const transaction = (await retrieveOrderResponse.json()) as ReloadlyTransaction;
-  const giftCards = (await retrieveGiftCardsResponse.json()) as ReloadlyProduct[];
+  const giftCards = (await retrieveGiftCardsResponse.json()) as GiftCard[];
 
   const giftCardsSection = document.getElementById("gift-cards");
   if (!giftCardsSection) {
@@ -42,7 +42,7 @@ export async function initCollectGiftCard(app: AppState) {
     const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
 
     let giftCardsHtml = `<h2 class="heading-gift-card">Your gift card</h2>`;
-    giftCardsHtml += `<div class="products purchased">`;
+    giftCardsHtml += `<div class="gift-cards-wrapper purchased">`;
     if (giftCard) {
       giftCardsHtml += getGiftCardHtml(giftCard, false, app.reward.amount);
     }
@@ -60,8 +60,8 @@ export async function initCollectGiftCard(app: AppState) {
     attachRevealAction(transaction, app);
   } else if (retrieveGiftCardsResponse.status == 200) {
     let giftCardsHtml = `<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`;
-    giftCardsHtml += `<div class="products">`;
-    giftCards.forEach((giftCard: ReloadlyProduct) => {
+    giftCardsHtml += `<div class="gift-cards-wrapper">`;
+    giftCards.forEach((giftCard: GiftCard) => {
       giftCardsHtml += getGiftCardHtml(giftCard, true, app.reward.amount);
     });
     giftCardsHtml += `</div><br />`;
@@ -72,7 +72,7 @@ export async function initCollectGiftCard(app: AppState) {
     giftCardsSection.innerHTML = giftCardsHtml;
 
     let activateInfoHtml = "";
-    giftCards.forEach((giftCard: ReloadlyProduct) => {
+    giftCards.forEach((giftCard: GiftCard) => {
       activateInfoHtml += getGiftCardActivateInfoHtml(giftCard);
     });
     activateInfoSection.innerHTML = activateInfoHtml;

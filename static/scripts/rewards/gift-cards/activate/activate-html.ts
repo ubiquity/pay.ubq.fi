@@ -1,8 +1,8 @@
-import { ReloadlyProduct } from "../../../../../shared/types";
+import { GiftCard } from "../../../../../shared/types";
 
 const html = String.raw;
 
-export function getGiftCardActivateInfoHtml(giftCard: ReloadlyProduct) {
+export function getGiftCardActivateInfoHtml(giftCard: GiftCard) {
   return html`
     <div class="redeem-info-wrapper" data-show="false" data-info-for="${giftCard.productId}">
       <div class="redeem-info">

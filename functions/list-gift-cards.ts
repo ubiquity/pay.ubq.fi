@@ -10,23 +10,23 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const accessToken = await getAccessToken(ctx.env);
 
-    const visaCards = await getProducts("visa", accessToken);
-    const masterCards = await getProducts("mastercard", accessToken);
-    const products = [...masterCards, ...visaCards];
+    const visaCards = await getGiftCards("visa", accessToken);
+    const masterCards = await getGiftCards("mastercard", accessToken);
+    const giftCards = [...masterCards, ...visaCards];
 
-    if (products.length) {
-      return Response.json(products, { status: 200 });
+    if (giftCards.length) {
+      return Response.json(giftCards, { status: 200 });
     }
-    return Response.json({ message: "There are no products available." }, { status: 404 });
+    return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {
     console.error("There was an error while processing your request.", error);
     return Response.json({ message: "There was an error while processing your request." }, { status: 500 });
   }
 };
 
-const getProducts = async (productQuery: string, accessToken: AccessToken) => {
+const getGiftCards = async (productQuery: string, accessToken: AccessToken) => {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products?productName=${productQuery}`;
-  console.log(`Retrieving products from ${url}`);
+  console.log(`Retrieving gift cards from ${url}`);
   const options = {
     method: "GET",
     headers: {

@@ -11,18 +11,18 @@
   align-items: center;
 }
 
-main:has(#gift-cards .product) {
+main:has(#gift-cards .gift-card) {
   height: auto;
 }
 
-main:has(#gift-cards .product) div:has(table.receipt) {
+main:has(#gift-cards .gift-card) div:has(table.receipt) {
   padding-top: 50px;
 }
 .redeem-info-wrapper[data-show="false"] {
   display: none;
 }
 
-.products {
+.gift-cards-wrapper {
   display: flex;
   flex-direction: row;
   overflow-x: auto;
@@ -33,7 +33,7 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   align-items: end;
   padding-bottom: 12px;
 }
-.products .product {
+.gift-cards-wrapper .gift-card {
   transform: rotateX(180deg);
 }
 
@@ -42,7 +42,7 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   align-items: center;
 }
 
-.product {
+.gift-card {
   background-color: var(--background-color-default);
   margin-right: 10px;
   padding: 12px 6px;
@@ -55,17 +55,17 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   width: 160px;
 }
 
-.product h3 {
+.gift-card h3 {
   color: #fff;
 }
 
-.product div.buttons {
+.gift-card div.buttons {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
   margin: 10px 0;
 }
-.product div.buttons span {
+.gift-card div.buttons span {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,13 +73,13 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   padding: 6px;
 }
 
-.product div.buttons button {
+.gift-card div.buttons button {
   background-color: #80808020;
   border: none;
   color: #fff;
   cursor: pointer;
 }
-.product img {
+.gift-card img {
   box-sizing: border-box;
   width: 100%;
   height: auto;
@@ -88,14 +88,14 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   max-height: 110px;
 }
 
-.product .pricing {
+.gift-card .pricing {
   display: flex;
   flex-direction: column;
 }
-.product .pricing .available {
+.gift-card .pricing .available {
   color: #fff;
 }
-.product .pricing div {
+.gift-card .pricing div {
   display: flex;
   flex-direction: row;
   justify-content: space-between;

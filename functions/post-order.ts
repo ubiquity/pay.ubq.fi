@@ -3,13 +3,13 @@ import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider"
 import { Interface } from "ethers/lib/utils";
 import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
-import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
+import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 import { Env, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken } from "./types";
-import { getProductValue, isProductAvailableForAmount } from "../shared/pricing";
+import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 
 export const networkRpcs: Record<number, string[]> = {
   1: ["https://gateway.tenderly.co/public/mainnet"],
@@ -44,10 +44,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       chainId
     );
 
-    const [txReceipt, tx, product]: [TransactionReceipt, TransactionResponse, ReloadlyProduct] = await Promise.all([
+    const [txReceipt, tx, giftCard]: [TransactionReceipt, TransactionResponse, GiftCard] = await Promise.all([
       provider.getTransactionReceipt(txHash),
       provider.getTransaction(txHash),
-      getProductById(productId, accessToken),
+      getGiftCardById(productId, accessToken),
     ]);
 
     if (!txReceipt) {
@@ -62,7 +62,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const rewardAmount = txParsed.args.transferDetails.requestedAmount;
 
-    if (!isProductAvailableForAmount(product, rewardAmount)) {
+    if (!isClaimableForAmount(giftCard, rewardAmount)) {
       return Response.json({ message: "Your reward amount is either too high or too low to buy this card." }, { status: 403 });
     }
 
@@ -93,11 +93,11 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     const amountDaiWei = txParsed.args.transferDetails.requestedAmount;
 
     let exchangeRate = 1;
-    if (product.recipientCurrencyCode != "USD") {
-      const exchangeRateResponse = await getExchangeRate(1, product.recipientCurrencyCode, accessToken);
+    if (giftCard.recipientCurrencyCode != "USD") {
+      const exchangeRateResponse = await getExchangeRate(1, giftCard.recipientCurrencyCode, accessToken);
       exchangeRate = exchangeRateResponse.senderAmount;
     }
-    const productValue = getProductValue(product, amountDaiWei, exchangeRate);
+    const giftCardValue = getGiftCardValue(giftCard, amountDaiWei, exchangeRate);
 
     const orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);
 
@@ -106,7 +106,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return Response.json({ message: "The permit has already claimed a gift card." }, { status: 400 });
     }
 
-    const order = await orderGiftCard(productId, productValue, orderId, accessToken);
+    const order = await orderGiftCard(productId, giftCardValue, orderId, accessToken);
 
     if (order.status == "SUCCESSFUL") {
       return Response.json(order, { status: 200 });
@@ -119,9 +119,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   }
 };
 
-const getProductById = async (productId: number, accessToken: AccessToken) => {
+const getGiftCardById = async (productId: number, accessToken: AccessToken) => {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products/${productId}`;
-  console.log(`Retrieving product from ${url}`);
+  console.log(`Retrieving gift cards from ${url}`);
   const options = {
     method: "GET",
     headers: {
@@ -144,7 +144,7 @@ const getProductById = async (productId: number, accessToken: AccessToken) => {
   console.log("response.status", response.status);
   console.log(`Response from ${url}`, responseJson);
 
-  return responseJson as ReloadlyProduct;
+  return responseJson as GiftCard;
 };
 
 const orderGiftCard = async (productId: number, cardValue: number, identifier: string, accessToken: AccessToken) => {
@@ -200,7 +200,7 @@ async function isDuplicateOrder(orderId: string, accessToken: AccessToken) {
 
 async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken) {
   const url = `${getBaseUrl(accessToken.isSandbox)}/fx-rate?currencyCode=${fromCurrency}&amount=${usdAmount}`;
-  console.log(`Retrieving products from ${url}`);
+  console.log(`Retrieving url ${url}`);
   const options = {
     method: "GET",
     headers: {

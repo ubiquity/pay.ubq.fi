@@ -1,4 +1,4 @@
-export type ReloadlyProduct = {
+export type GiftCard = {
   productId: number;
   productName: string;
   global: boolean;
@@ -34,7 +34,7 @@ export type ReloadlyProduct = {
 };
 
 export type ReloadlyListGiftCardResponse = {
-  content: ReloadlyProduct[];
+  content: GiftCard[];
   pageable: {
     sort: {
       sorted: boolean;

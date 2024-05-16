@@ -1,13 +1,13 @@
 import { BigNumberish } from "ethers";
-import { ReloadlyProduct } from "../../../../shared/types";
-import { getFixedPriceToValueMap, getProductValue, getRangePriceToValueMap, isRangePriceProductAvailable } from "../../../../shared/pricing";
+import { GiftCard } from "../../../../shared/types";
+import { getFixedPriceToValueMap, getGiftCardValue, getRangePriceToValueMap, isRangePriceGiftCardClaimable } from "../../../../shared/pricing";
 import { formatEther } from "ethers/lib/utils";
 
 const html = String.raw;
 
-export function getGiftCardHtml(giftCard: ReloadlyProduct, allowBuy: boolean, rewardAmount: BigNumberish) {
+export function getGiftCardHtml(giftCard: GiftCard, allowBuy: boolean, rewardAmount: BigNumberish) {
   return html`
-    <div class="product" data-product-id="${giftCard.productId}">
+    <div class="gift-card" data-product-id="${giftCard.productId}">
       <div>
         <h3 title="${giftCard.productName}">${giftCard.productName.length > 16 ? giftCard.productName.substring(0, 16) + "..." : giftCard.productName}</h3>
         <p>
@@ -48,7 +48,7 @@ export function getGiftCardHtml(giftCard: ReloadlyProduct, allowBuy: boolean, re
   `;
 }
 
-function getFixedPricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberish) {
+function getFixedPricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   let _html = html` <div>
     <div>Price</div>
     <div>Value</div>
@@ -67,10 +67,10 @@ function getFixedPricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberis
   return _html;
 }
 
-function getRangePricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberish) {
+function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   let _html = ``;
-  const productValue = getProductValue(giftCard, rewardAmount);
-  const isAvailable = isRangePriceProductAvailable(giftCard, rewardAmount);
+  const giftCardValue = getGiftCardValue(giftCard, rewardAmount);
+  const isAvailable = isRangePriceGiftCardClaimable(giftCard, rewardAmount);
   if (isAvailable) {
     _html += html` <div>
         <div>Price</div>
@@ -78,7 +78,7 @@ function getRangePricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberis
       </div>
       <div class="available">
         <div>${formatEther(rewardAmount)}${giftCard.senderCurrencyCode}</div>
-        <div>${productValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div> </div
+        <div>${giftCardValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div> </div
       ><br /><p>Available in range</p>`;
   }
 

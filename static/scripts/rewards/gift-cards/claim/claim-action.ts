@@ -6,22 +6,22 @@ import { giftCardTreasuryAddress } from "../../../../../shared/constants";
 import { toaster } from "../../toaster";
 import { isNonceClaimed, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl } from "../helpers";
-import { isProductAvailableForAmount } from "../../../../../shared/pricing";
-import { OrderRequestParams, ReloadlyProduct } from "../../../../../shared/types";
+import { isClaimableForAmount } from "../../../../../shared/pricing";
+import { OrderRequestParams, GiftCard } from "../../../../../shared/types";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
 
-export function attachClaimAction(className: string, giftCards: ReloadlyProduct[], app: AppState) {
+export function attachClaimAction(className: string, giftCards: GiftCard[], app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName(className);
   Array.from(claimButtons).forEach((claimButton: Element) => {
     (claimButton as HTMLButtonElement).addEventListener("click", async () => {
       claimButton.setAttribute("data-loading", "true");
       const productId = Number(claimButton.parentElement?.parentElement?.parentElement?.getAttribute("data-product-id"));
 
-      const product = giftCards.find((product: ReloadlyProduct) => product.productId == productId);
+      const product = giftCards.find((product: GiftCard) => product.productId == productId);
       if (product) {
         if (!isErc20Permit(app.reward)) {
           toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
-        } else if (!isProductAvailableForAmount(product, app.reward.amount)) {
+        } else if (!isClaimableForAmount(product, app.reward.amount)) {
           toaster.create("error", "Your reward amount is not equal to the price of available card.");
         } else {
           await claimGiftCard(productId, app);

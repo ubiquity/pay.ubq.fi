@@ -4,7 +4,7 @@ const html = String.raw;
 
 export function getRedeemCodeHtml(transaction: ReloadlyTransaction) {
   return html`
-    <div class="product redeem-code" data-transactionId="${transaction.transactionId}">
+    <div class="gift-card redeem-code" data-transactionId="${transaction.transactionId}">
       <h3>Your redeem code</h3>
       <p>xxxxxxxxxxxx</p>
       <p>xxxxxxxxxxxx</p>
