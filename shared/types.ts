@@ -20,7 +20,7 @@ export type ReloadlyProduct = {
   maxSenderDenomination: number;
   fixedRecipientDenominations: number[];
   fixedSenderDenominations: number[];
-  fixedRecipientToSenderDenominationsMap: { string: number };
+  fixedRecipientToSenderDenominationsMap: ValueToPriceMap;
   metadata?: object;
   logoUrls: string[];
   brand: {
@@ -37,6 +37,7 @@ export type ReloadlyProduct = {
     verbose: string;
   };
 };
+
 export type ReloadlyListGiftCardResponse = {
   content: ReloadlyProduct[];
   pageable: {
@@ -153,3 +154,13 @@ export type OrderRequestParams = {
   txHash: string;
   chainId: number;
 };
+
+export type ExchangeRate = {
+  senderCurrency: string;
+  senderAmount: number;
+  recipientCurrency: string;
+  recipientAmount: number;
+};
+
+export type PriceToValueMap = { [key: string]: number };
+export type ValueToPriceMap = { [key: string]: number };

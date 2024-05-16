@@ -92,6 +92,9 @@ main:has(#gift-cards .product) div:has(table.receipt) {
   display: flex;
   flex-direction: column;
 }
+.product .pricing .available {
+  color: #fff;
+}
 .product .pricing div {
   display: flex;
   flex-direction: row;

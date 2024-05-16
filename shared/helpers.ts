@@ -1,4 +1,4 @@
-import { AccessToken, ReloadlyProduct } from "./types";
+import { AccessToken, PriceToValueMap, ReloadlyProduct } from "./types";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
@@ -55,34 +55,147 @@ export function isProductAvailableForAmount(product: ReloadlyProduct, rewardAmou
     throw new Error(`Failed to validate price because product's senderCurrencyCode is not USD: ${JSON.stringify({ rewardAmount, product })}`);
   }
 
-  const value = getProductValueAfterFee(product, rewardAmount);
-
-  return (
-    (product.denominationType == "FIXED" && product.fixedSenderDenominations.includes(value)) ||
-    (product.denominationType == "RANGE" && value >= product.minSenderDenomination && value <= product.maxSenderDenomination)
-  );
+  if (product.denominationType == "RANGE") {
+    return isRangePriceProductAvailable(product, rewardAmount);
+  } else if (product.denominationType == "FIXED") {
+    return isFixedPriceProductAvailable(product, rewardAmount);
+  }
 }
 
-export function getProductValueAfterFee(product: ReloadlyProduct, rewardAmount: BigNumberish) {
-  const rewardAmountEth = BigNumber.from(rewardAmount.toString());
-  const productFeePercentageEth = parseEther(product.senderFeePercentage.toString());
-  const senderFeeFixed = parseEther(product.senderFee.toString());
-  const senderFeePercentage = rewardAmountEth.mul(productFeePercentageEth).div(100);
-  const totalFee = senderFeePercentage.add(senderFeeFixed);
-  const remainingValue = rewardAmountEth.sub(totalFee);
-  return Number(formatEther(remainingValue));
+// For use in range price only
+// Because reward = price is fixed
+// But we can select aa value within the range
+export function getValueAfterFeeAndDiscount(product: ReloadlyProduct, rewardAmount: BigNumberish) {
+  const rewardAmountWei = BigNumber.from(rewardAmount.toString());
+  const productFeePercentageWei = parseEther(product.senderFeePercentage.toString());
+  const senderFeeFixedWei = parseEther(product.senderFee.toString());
+  const senderFeePercentageWei = rewardAmountWei.mul(productFeePercentageWei).div(100);
+  const totalFeeWei = senderFeePercentageWei.add(senderFeeFixedWei);
+
+  const discountPercentageWei = parseEther(product.discountPercentage.toString());
+  const discountWei = rewardAmountWei.mul(discountPercentageWei).div(100);
+
+  const value = rewardAmountWei.add(discountWei).sub(totalFeeWei);
+  return Number(formatEther(value));
 }
 
-export function addProductFeesToValue(product: ReloadlyProduct, value: number) {
-  const priceEth = parseEther(value.toString());
-  const productFeePercentageEth = parseEther(product.senderFeePercentage.toString());
+export function getEstimatedExchangeRate(product: ReloadlyProduct) {
+  let exchangeRate = 1;
+  if (product.recipientCurrencyCode != "USD") {
+    if (product.denominationType == "FIXED") {
+      const key = Object.keys(product.fixedRecipientToSenderDenominationsMap)[0];
+      exchangeRate = product.fixedRecipientToSenderDenominationsMap[key] / Number(key);
+    } else {
+      exchangeRate = product.minSenderDenomination / product.minRecipientDenomination;
+    }
+  }
+  return exchangeRate;
+}
+export function getRangePriceToValueMap(product: ReloadlyProduct) {
+  // product.minRecipientDenomination, product.maxRecipientDenomination
+  // are the range of values the gift card is availble in
 
-  const senderFeeFixed = parseEther(product.senderFee.toString());
-  const senderFeePercentage = priceEth.mul(productFeePercentageEth).div(100);
-  const totalFee = senderFeePercentage.add(senderFeeFixed);
+  // product.minSenderDenomination, product.maxSenderDenomination
+  // are the equivalent of available values range in our account currency USD
+  // they do no include any fees, and we must add fees/discounts
 
-  const priceWithFees = priceEth.add(totalFee);
-  return Number(formatEther(priceWithFees));
+  // price = amount that is deducted from our reloadly USD acacount when a gift card is claimed
+  // value = amount the gift card holds, it can be any currency
+
+  // price = value + percent discount of value - senderFee - percentFee of value
+  // value = price - percent discount of value + senderFee + percentFee of value
+
+  const priceToValueMap: PriceToValueMap = {};
+
+  [product.minRecipientDenomination, product.maxRecipientDenomination].forEach((value) => {
+    const totalPrice = getTotalPriceOfValue(Number(value), product);
+    priceToValueMap[totalPrice.toFixed(2).toString()] = Number(value);
+  });
+
+  return priceToValueMap;
+}
+
+export function getTotalPriceOfValue(value: number, product: ReloadlyProduct) {
+  const exchangeRate = getEstimatedExchangeRate(product);
+  console.log(product.productId);
+  console.log(exchangeRate, value);
+  const usdValue = parseEther((exchangeRate * value).toString());
+
+  // multiply by extra 100 to support minimum upto 0.01%
+  // because we are using BigNumbers
+  const feePercentage = BigNumber.from((product.senderFeePercentage * 100).toString());
+  const fee = usdValue.mul(feePercentage).div(100 * 100);
+  const totalFee = fee.add(parseEther(product.senderFee.toString()));
+  const discountPercent = BigNumber.from(Math.trunc(product.discountPercentage * 100).toString());
+  const discount = usdValue.mul(discountPercent).div(100 * 100);
+
+  return Number(formatEther(usdValue.add(totalFee).sub(discount)));
+}
+
+export function getUsdValueForRangePrice(product: ReloadlyProduct, price: BigNumberish) {
+  // price = value + senderFee + feePercent - discountPercent
+  const priceWei = BigNumber.from(price.toString());
+  const priceAfterFee = priceWei.sub(parseEther(product.senderFee.toString()));
+
+  const feeDiscountPercentDiff = product.senderFeePercentage - product.discountPercentage;
+  // multiply by extra 100 to support minimum upto 0.01%
+  // because we are using BigNumbers
+  const feeDiscountPercentDiffWei = parseEther(Math.trunc(feeDiscountPercentDiff * 100).toString());
+  const hundredPercent = parseEther((100 * 100).toString());
+  const priceWithAddedPercentFromFees = hundredPercent.add(feeDiscountPercentDiffWei);
+  const usdValue = hundredPercent.mul(priceAfterFee).div(priceWithAddedPercentFromFees);
+  return Number(formatEther(usdValue));
+}
+
+export function isRangePriceProductAvailable(product: ReloadlyProduct, rewardAmount: BigNumberish) {
+  const value = Number(getProductValue(product, rewardAmount).toFixed(2));
+  return value >= product.minRecipientDenomination && value <= product.maxRecipientDenomination;
+}
+
+export function getFixedPriceToValueMap(product: ReloadlyProduct) {
+  const valueToPriceMap = product.fixedRecipientToSenderDenominationsMap;
+
+  const priceToValueMap: PriceToValueMap = {};
+  Object.keys(valueToPriceMap).forEach((value) => {
+    const totalPrice = getTotalPriceOfValue(Number(value), product);
+    priceToValueMap[totalPrice.toFixed(2).toString()] = Number(value);
+  });
+
+  return priceToValueMap;
+}
+
+export function isFixedPriceProductAvailable(product: ReloadlyProduct, rewardAmount: BigNumberish) {
+  const priceToValueMap = getFixedPriceToValueMap(product);
+  const priceAsKey = Number(formatEther(rewardAmount)).toFixed(2).toString();
+  return !!priceToValueMap[priceAsKey];
+}
+
+export function getProductValue(product: ReloadlyProduct, reward: BigNumberish, exchangeRate?: number) {
+  let productValue;
+  const amountDaiEth = Number(formatEther(reward)).toFixed(2);
+  if (product.denominationType == "FIXED") {
+    const priceToValueMap = getFixedPriceToValueMap(product);
+    productValue = priceToValueMap[amountDaiEth];
+  } else if (product.denominationType == "RANGE") {
+    const usdValue = getUsdValueForRangePrice(product, reward);
+    if (!exchangeRate) {
+      exchangeRate = getEstimatedExchangeRate(product);
+    }
+    productValue = usdValue / exchangeRate;
+    console.log("usdValue", usdValue);
+    console.log("productValue", productValue);
+  } else {
+    throw new Error(
+      `Unknown denomination type of gift card: ${JSON.stringify({
+        denominationType: product.denominationType,
+      })}`
+    );
+  }
+
+  if (!productValue) {
+    throw new Error(`Product is not available for the reward amount: ${JSON.stringify({ product, reward: reward })}`);
+  }
+  return productValue;
 }
 
 export function getGiftCardOrderId(rewardToAddress: string, signature: string) {

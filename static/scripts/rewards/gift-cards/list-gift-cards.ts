@@ -63,6 +63,7 @@ export async function initCollectGiftCard(app: AppState) {
       giftCardsHtml += getGiftCardHtml(giftcard, true, app.reward.amount);
     });
     giftCardsHtml += `</div>`;
+    giftCardsHtml += `<p>*The value of a claimed card can be slightly different due to exchange rate.</p>`;
     giftCardsSection.innerHTML = giftCardsHtml;
 
     let activateInfoHtml = "";

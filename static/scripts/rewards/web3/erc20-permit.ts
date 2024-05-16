@@ -3,7 +3,7 @@ import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { permit2Address } from "../constants";
+import { permit2Address } from "../../../../shared/constants";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
 

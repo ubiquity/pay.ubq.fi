@@ -1,12 +1,13 @@
+import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface } from "ethers/lib/utils";
-import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, getProductValueAfterFee, isProductAvailableForAmount } from "../shared/helpers";
-import { AccessToken, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
-import { validateEnvVars, validateRequestMethod } from "./validators";
-import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
+import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
+import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, isProductAvailableForAmount, getProductValue } from "../shared/helpers";
+import { AccessToken, ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
+import { validateEnvVars, validateRequestMethod } from "./validators";
+import { ACCEPT_HEADAER_VALUE } from "./helpers";
 
 export const networkRpcs: Record<number, string[]> = {
   1: ["https://gateway.tenderly.co/public/mainnet"],
@@ -87,8 +88,14 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return errorResponse;
     }
 
-    const amountDai = txParsed.args.transferDetails.requestedAmount;
-    const gitCardValue = getProductValueAfterFee(product, amountDai);
+    const amountDaiWei = txParsed.args.transferDetails.requestedAmount;
+
+    let exchangeRate = 1;
+    if (product.recipientCurrencyCode != "USD") {
+      const exchangeRateResponse = await getExchangeRate(1, product.recipientCurrencyCode, accessToken);
+      exchangeRate = exchangeRateResponse.senderAmount;
+    }
+    const productValue = getProductValue(product, amountDaiWei, exchangeRate);
 
     const orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);
 
@@ -97,7 +104,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return Response.json({ message: "The permit has already claimed a gift card." }, { status: 400 });
     }
 
-    const order = await orderGiftCard(productId, gitCardValue, orderId, accessToken);
+    const order = await orderGiftCard(productId, productValue, orderId, accessToken);
 
     if (order.status == "SUCCESSFUL") {
       return Response.json(order, { status: 200 });
@@ -116,7 +123,7 @@ const getProductById = async (productId: number, accessToken: AccessToken) => {
   const options = {
     method: "GET",
     headers: {
-      Accept: "application/com.reloadly.giftcards-v1+json",
+      Accept: ACCEPT_HEADAER_VALUE,
       Authorization: `Bearer ${accessToken.token}`,
     },
   };
@@ -145,7 +152,7 @@ const orderGiftCard = async (productId: number, cardValue: number, identifier: s
   const requestBody = JSON.stringify({
     productId: productId,
     quantity: 1,
-    unitPrice: cardValue,
+    unitPrice: cardValue.toFixed(2),
     customIdentifier: identifier,
     preOrder: false,
   });
@@ -157,7 +164,7 @@ const orderGiftCard = async (productId: number, cardValue: number, identifier: s
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Accept: "application/com.reloadly.giftcards-v1+json",
+      Accept: ACCEPT_HEADAER_VALUE,
       Authorization: `Bearer ${accessToken.token}`,
     },
     body: requestBody,
@@ -188,4 +195,32 @@ async function isDuplicateOrder(orderId: string, accessToken: AccessToken) {
   } catch (error) {
     return false;
   }
+}
+
+async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken) {
+  const url = `${getBaseUrl(accessToken.isSandbox)}/fx-rate?currencyCode=${fromCurrency}&amount=${usdAmount}`;
+  console.log(`Retrieving products from ${url}`);
+  const options = {
+    method: "GET",
+    headers: {
+      Accept: ACCEPT_HEADAER_VALUE,
+      Authorization: `Bearer ${accessToken.token}`,
+    },
+  };
+
+  const response = await fetch(url, options);
+  const responseJson = await response.json();
+
+  if (response.status != 200) {
+    throw new Error(
+      `Error from Reloadly API: ${JSON.stringify({
+        status: response.status,
+        message: (responseJson as NotOkReloadlyApiResponse).message,
+      })}`
+    );
+  }
+  console.log("Response status", response.status);
+  console.log(`Response from ${url}`, responseJson);
+
+  return responseJson as ExchangeRate;
 }
