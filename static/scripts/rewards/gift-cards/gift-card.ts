@@ -60,8 +60,8 @@ function getFixedPricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberis
   Object.keys(priceToValueMap).forEach((price) => {
     const _class = price == priceAsKey ? ` class="available"` : ``;
     _html += html`<div${_class}>
-      <div>${price}${giftCard.senderCurrencyCode}</div>
-      <div>${priceToValueMap[price]}${giftCard.recipientCurrencyCode}</div>
+      <div>${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
+      <div>${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div>
     </div>`;
   });
   return _html;
@@ -88,11 +88,11 @@ function getRangePricesHtml(giftCard: ReloadlyProduct, rewardAmount: BigNumberis
   _html += html`
     <div>
       <div>Value</div>
-      <div>${giftCard.minRecipientDenomination.toFixed(2)}-${giftCard.maxRecipientDenomination}${giftCard.recipientCurrencyCode}</div>
+      <div>${giftCard.minRecipientDenomination.toFixed(0)}-${giftCard.maxRecipientDenomination.toFixed(0)}${giftCard.recipientCurrencyCode}</div>
     </div>
     <div>
       <div>Price</div>
-      <div>${prices[0]}-${prices[1]}${giftCard.senderCurrencyCode}</div>
+      <div>${Number(prices[0]).toFixed(0)}-${Number(prices[1]).toFixed(0)}${giftCard.senderCurrencyCode}</div>
     </div>
   `;
 
