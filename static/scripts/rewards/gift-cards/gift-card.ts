@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 import { ReloadlyProduct } from "../../../../shared/types";
-import { getFixedPriceToValueMap, getProductValue, getRangePriceToValueMap, isRangePriceProductAvailable } from "../../../../shared/helpers";
+import { getFixedPriceToValueMap, getProductValue, getRangePriceToValueMap, isRangePriceProductAvailable } from "../../../../shared/pricing";
 import { formatEther } from "ethers/lib/utils";
 
 const html = String.raw;

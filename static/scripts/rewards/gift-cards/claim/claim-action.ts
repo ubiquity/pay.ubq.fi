@@ -6,7 +6,7 @@ import { giftCardTreasuryAddress } from "../../../../../shared/constants";
 import { toaster } from "../../toaster";
 import { isNonceClaimed, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl } from "../helpers";
-import { isProductAvailableForAmount } from "../../../../../shared/helpers";
+import { isProductAvailableForAmount } from "../../../../../shared/pricing";
 import { OrderRequestParams, ReloadlyProduct } from "../../../../../shared/types";
 
 export function attachClaimAction(className: string, giftcards: ReloadlyProduct[], app: AppState) {

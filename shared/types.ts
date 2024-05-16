@@ -1,8 +1,3 @@
-export type AccessToken = {
-  token: string;
-  isSandbox: boolean;
-};
-
 export type ReloadlyProduct = {
   productId: number;
   productName: string;

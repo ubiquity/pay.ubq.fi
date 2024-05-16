@@ -1,8 +1,10 @@
-import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
-import { AccessToken, NotOkReloadlyApiResponse, ReloadlyRedeemCodeResponse } from "../shared/types";
+import { getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
+import { NotOkReloadlyApiResponse, ReloadlyRedeemCodeResponse } from "../shared/types";
 import { verifyMessage } from "ethers/lib/utils";
 import { getTransactionFromOrderId } from "./get-order";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
+import { AccessToken } from "./types";
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   try {
@@ -68,7 +70,7 @@ export const getRedeemCode = async (transactionId: number, accessToken: AccessTo
   const options = {
     method: "GET",
     headers: {
-      Accept: "application/com.reloadly.giftcards-v1+json",
+      ...commonHeaders,
       Authorization: `Bearer ${accessToken.token}`,
     },
   };

@@ -1,5 +1,6 @@
-import { Env, getAccessToken, getBaseUrl } from "../shared/helpers";
-import { AccessToken, NotOkReloadlyApiResponse, ReloadlyListGiftCardResponse } from "../shared/types";
+import { NotOkReloadlyApiResponse, ReloadlyListGiftCardResponse } from "../shared/types";
+import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
+import { AccessToken } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
@@ -28,7 +29,7 @@ const getProducts = async (productQuery: string, accessToken: AccessToken) => {
   const options = {
     method: "GET",
     headers: {
-      Accept: "application/com.reloadly.giftcards-v1+json",
+      ...commonHeaders,
       Authorization: `Bearer ${accessToken.token}`,
     },
   };

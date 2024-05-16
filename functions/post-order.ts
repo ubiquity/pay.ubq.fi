@@ -2,12 +2,14 @@ import { TransactionReceipt, TransactionResponse } from "@ethersproject/provider
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface } from "ethers/lib/utils";
 import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
-import { Env, getAccessToken, getBaseUrl, getGiftCardOrderId, isProductAvailableForAmount, getProductValue } from "../shared/helpers";
-import { AccessToken, ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
+import { getGiftCardOrderId } from "../shared/helpers";
+import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, ReloadlyProduct } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-import { ACCEPT_HEADAER_VALUE } from "./helpers";
+import { Env, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { AccessToken } from "./types";
+import { getProductValue, isProductAvailableForAmount } from "../shared/pricing";
 
 export const networkRpcs: Record<number, string[]> = {
   1: ["https://gateway.tenderly.co/public/mainnet"],
@@ -123,7 +125,7 @@ const getProductById = async (productId: number, accessToken: AccessToken) => {
   const options = {
     method: "GET",
     headers: {
-      Accept: ACCEPT_HEADAER_VALUE,
+      ...commonHeaders,
       Authorization: `Bearer ${accessToken.token}`,
     },
   };
@@ -163,8 +165,7 @@ const orderGiftCard = async (productId: number, cardValue: number, identifier: s
   const options = {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Accept: ACCEPT_HEADAER_VALUE,
+      ...commonHeaders,
       Authorization: `Bearer ${accessToken.token}`,
     },
     body: requestBody,
@@ -203,7 +204,7 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
   const options = {
     method: "GET",
     headers: {
-      Accept: ACCEPT_HEADAER_VALUE,
+      ...commonHeaders,
       Authorization: `Bearer ${accessToken.token}`,
     },
   };
