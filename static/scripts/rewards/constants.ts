@@ -11,11 +11,6 @@ enum NetworkIds {
   Anvil = 31337,
 }
 
-enum Tokens {
-  DAI = "0x6b175474e89094c44da98b954eedeac495271d0f",
-  WXDAI = "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
-}
-
 const networkNames = {
   [NetworkIds.Mainnet]: "Ethereum Mainnet",
   [NetworkIds.Goerli]: "Goerli Testnet",

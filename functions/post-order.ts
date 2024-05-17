@@ -1,7 +1,7 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface } from "ethers/lib/utils";
-import { giftCardTreasuryAddress, permit2Address } from "../shared/constants";
+import { Tokens, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
 import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
@@ -86,6 +86,17 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       console.error(
         "Given transaction hash is not call to contract function permitTransferFrom",
         `txParsed.functionFragment.name=${txParsed.functionFragment.name}`
+      );
+      return errorResponse;
+    }
+
+    if (txParsed.args.permit[0].token.toLowerCase() != Tokens.WXDAI.toLowerCase()) {
+      console.error(
+        "Given transaction hash is not transferring the required ERC20 token.",
+        JSON.stringify({
+          tranferedToken: txParsed.args.permit[0].token.toLowerCase(),
+          requiredToken: Tokens.WXDAI.toLowerCase(),
+        })
       );
       return errorResponse;
     }
