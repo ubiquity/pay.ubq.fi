@@ -1,7 +1,7 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
-import { Tokens, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
+import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
 import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
@@ -60,9 +60,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     console.log("Parsed transaction data: ", JSON.stringify(txParsed));
 
-    const errorResposne = validateTransaction(txParsed, txReceipt, giftCard);
-    if (errorResposne) {
-      return errorResposne;
+    const errorResponse = validateTransaction(txParsed, txReceipt, chainId, giftCard);
+    if (errorResponse) {
+      return errorResponse;
     }
 
     const amountDaiWei = txParsed.args.transferDetails.requestedAmount;
@@ -201,7 +201,7 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
   return responseJson as ExchangeRate;
 }
 
-function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, giftCard: GiftCard) {
+function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard) {
   const rewardAmount = txParsed.args.transferDetails.requestedAmount;
 
   if (!isClaimableForAmount(giftCard, rewardAmount)) {
@@ -232,11 +232,11 @@ function validateTransaction(txParsed: TransactionDescription, txReceipt: Transa
     return errorResponse;
   }
 
-  if (txParsed.args.permit[0].token.toLowerCase() != Tokens.WXDAI.toLowerCase()) {
+  if (txParsed.args.permit[0].token.toLowerCase() != chainIdToRewardTokenMap[chainId].toLowerCase()) {
     console.error(
       "Given transaction hash is not transferring the required ERC20 token.",
       JSON.stringify({
-        tranferedToken: txParsed.args.permit[0].token,
+        transferredToken: txParsed.args.permit[0].token,
         requiredToken: Tokens.WXDAI.toLowerCase(),
       })
     );
