@@ -1,7 +1,7 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
-import { Interface } from "ethers/lib/utils";
-import { Tokens, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
+import { Interface, TransactionDescription } from "ethers/lib/utils";
+import { Tokens, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
 import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
@@ -60,45 +60,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     console.log("Parsed transaction data: ", JSON.stringify(txParsed));
 
-    const rewardAmount = txParsed.args.transferDetails.requestedAmount;
-
-    if (!isClaimableForAmount(giftCard, rewardAmount)) {
-      return Response.json({ message: "Your reward amount is either too high or too low to buy this card." }, { status: 403 });
-    }
-
-    const errorResponse = Response.json({ message: "Transaction is not authorized to purchase gift card." }, { status: 403 });
-
-    if (txReceipt.to.toLowerCase() != permit2Address.toLowerCase()) {
-      console.error("Given transaction hash is not an interaction with permit2Address", `txReceipt.to=${txReceipt.to}`, `permit2Address=${permit2Address}`);
-      return errorResponse;
-    }
-
-    if (txParsed.args.transferDetails.to.toLowerCase() != giftCardTreasuryAddress.toLowerCase()) {
-      console.error(
-        "Given transaction hash is not a token transfer to giftCardTreasuryAddress",
-        `txParsed.args.transferDetails.to=${txParsed.args.transferDetails.to}`,
-        `giftCardTreasuryAddress=${giftCardTreasuryAddress}`
-      );
-      return errorResponse;
-    }
-
-    if (txParsed.functionFragment.name != "permitTransferFrom") {
-      console.error(
-        "Given transaction hash is not call to contract function permitTransferFrom",
-        `txParsed.functionFragment.name=${txParsed.functionFragment.name}`
-      );
-      return errorResponse;
-    }
-
-    if (txParsed.args.permit[0].token.toLowerCase() != Tokens.WXDAI.toLowerCase()) {
-      console.error(
-        "Given transaction hash is not transferring the required ERC20 token.",
-        JSON.stringify({
-          tranferedToken: txParsed.args.permit[0].token.toLowerCase(),
-          requiredToken: Tokens.WXDAI.toLowerCase(),
-        })
-      );
-      return errorResponse;
+    const errorResposne = validateTransaction(txParsed, txReceipt, giftCard);
+    if (errorResposne) {
+      return errorResposne;
     }
 
     const amountDaiWei = txParsed.args.transferDetails.requestedAmount;
@@ -235,4 +199,58 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
   console.log(`Response from ${url}`, responseJson);
 
   return responseJson as ExchangeRate;
+}
+
+function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, giftCard: GiftCard) {
+  const rewardAmount = txParsed.args.transferDetails.requestedAmount;
+
+  if (!isClaimableForAmount(giftCard, rewardAmount)) {
+    return Response.json({ message: "Your reward amount is either too high or too low to buy this card." }, { status: 403 });
+  }
+
+  const errorResponse = Response.json({ message: "Transaction is not authorized to purchase gift card." }, { status: 403 });
+
+  if (txReceipt.to.toLowerCase() != permit2Address.toLowerCase()) {
+    console.error("Given transaction hash is not an interaction with permit2Address", `txReceipt.to=${txReceipt.to}`, `permit2Address=${permit2Address}`);
+    return errorResponse;
+  }
+
+  if (txParsed.args.transferDetails.to.toLowerCase() != giftCardTreasuryAddress.toLowerCase()) {
+    console.error(
+      "Given transaction hash is not a token transfer to giftCardTreasuryAddress",
+      `txParsed.args.transferDetails.to=${txParsed.args.transferDetails.to}`,
+      `giftCardTreasuryAddress=${giftCardTreasuryAddress}`
+    );
+    return errorResponse;
+  }
+
+  if (txParsed.functionFragment.name != "permitTransferFrom") {
+    console.error(
+      "Given transaction hash is not call to contract function permitTransferFrom",
+      `txParsed.functionFragment.name=${txParsed.functionFragment.name}`
+    );
+    return errorResponse;
+  }
+
+  if (txParsed.args.permit[0].token.toLowerCase() != Tokens.WXDAI.toLowerCase()) {
+    console.error(
+      "Given transaction hash is not transferring the required ERC20 token.",
+      JSON.stringify({
+        tranferedToken: txParsed.args.permit[0].token,
+        requiredToken: Tokens.WXDAI.toLowerCase(),
+      })
+    );
+    return errorResponse;
+  }
+
+  if (txParsed.args.owner.toLowerCase() != permitTokenOwner.toLowerCase()) {
+    console.error(
+      "Given transaction hash has not a valid permit signer, and reward token owner.",
+      JSON.stringify({
+        "txParsed.args.owner": txParsed.args.owner,
+        permitsTransferOwner: permitTokenOwner,
+      })
+    );
+    return errorResponse;
+  }
 }

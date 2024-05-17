@@ -4,3 +4,6 @@ export enum Tokens {
 }
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 export const giftCardTreasuryAddress = "0x3B47E3e4758E133acf72684727Dc10550C40e4B9";
+
+// Signer of the permit and owner of the tokens are same in SignatureTransfer
+export const permitTokenOwner = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
