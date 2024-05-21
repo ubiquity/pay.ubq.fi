@@ -60,8 +60,8 @@ function getFixedPricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   Object.keys(priceToValueMap).forEach((price) => {
     const _class = price == priceAsKey ? ` class="available"` : ``;
     _html += html`<div${_class}>
-      <div>${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
-      <div>${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div>
+      <div title="${Number(price).toFixed(2)}${giftCard.senderCurrencyCode}">${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
+      <div title="${priceToValueMap[price].toFixed(2)}${giftCard.recipientCurrencyCode}">${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div>
     </div>`;
   });
   return _html;
@@ -88,11 +88,15 @@ function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   _html += html`
     <div>
       <div>Value</div>
-      <div>${giftCard.minRecipientDenomination.toFixed(0)}-${giftCard.maxRecipientDenomination.toFixed(0)}${giftCard.recipientCurrencyCode}</div>
+      <div title="${giftCard.minRecipientDenomination.toFixed(2)}-${giftCard.maxRecipientDenomination.toFixed(2)}${giftCard.recipientCurrencyCode}"
+        >${giftCard.minRecipientDenomination.toFixed(0)}-${giftCard.maxRecipientDenomination.toFixed(0)}${giftCard.recipientCurrencyCode}</div
+      >
     </div>
     <div>
       <div>Price</div>
-      <div>${Number(prices[0]).toFixed(0)}-${Number(prices[1]).toFixed(0)}${giftCard.senderCurrencyCode}</div>
+      <div title="${Number(prices[0]).toFixed(2)}-${Number(prices[1]).toFixed(2)}${giftCard.senderCurrencyCode}"
+        >${Number(prices[0]).toFixed(0)}-${Number(prices[1]).toFixed(0)}${giftCard.senderCurrencyCode}</div
+      >
     </div>
   `;
 
