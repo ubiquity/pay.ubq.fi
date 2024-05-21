@@ -8,6 +8,9 @@ export default defineConfig({
     setupNodeEvents() {},
     baseUrl: "http://localhost:8080",
     experimentalStudio: true,
+    env: {
+      permitConfig: { ...process.env },
+    },
   },
   viewportHeight: 900,
   viewportWidth: 1440,
