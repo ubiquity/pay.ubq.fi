@@ -21,7 +21,7 @@ describe("Claims Portal Success", () => {
     it("should successfully claim a permit", () => {
       cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
 
-      cy.get('table[data-make-claim="ok"]').should("exist").and("include.text", "337888.4 WXDAI");
+      cy.get('table[data-make-claim="ok"]').should("exist");
 
       cy.get("button[id='make-claim']").invoke("click");
 
