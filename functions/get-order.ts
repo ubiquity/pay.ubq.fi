@@ -31,7 +31,11 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 };
 
 export const getTransactionFromOrderId = async (orderId: string, accessToken: AccessToken) => {
-  const url = `${getBaseUrl(accessToken.isSandbox)}/reports/transactions?size=1&page=1&customIdentifier=${orderId}`;
+  const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 19); //// yyyy-mm-dd HH:mm:ss
+  const oneYearago = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+  const oneYearagoFormatted = oneYearago.toISOString().replace("T", " ").substring(0, 19);
+
+  const url = `${getBaseUrl(accessToken.isSandbox)}/reports/transactions?size=1&page=1&customIdentifier=${orderId}&startDate=${oneYearagoFormatted}&endDate=${nowFormatted}`;
   console.log(`Retrieving transaction from ${url}`);
   const options = {
     method: "GET",
