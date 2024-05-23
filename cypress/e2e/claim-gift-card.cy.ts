@@ -103,7 +103,7 @@ describe("Gift Cards", () => {
 });
 
 function setupStubs() {
-  const provider = new JsonRpcProvider("http://localhost:8545", 31337);
+  const provider = new JsonRpcProvider("http://localhost:8545");
   const signer = provider.getSigner(beneficiary);
   const wallet = new Wallet(SENDER_PRIVATE_KEY, provider);
 
