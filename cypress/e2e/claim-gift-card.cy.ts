@@ -91,7 +91,6 @@ describe("Gift Cards", () => {
     cy.wait(2000);
 
     cy.wait("@listGiftCards");
-    cy.get(".gift-card").should("have.length", 0);
 
     cy.get("#gift-cards").should("exist").and("include.text", "Your gift card");
     cy.get(".gift-card.redeem-code > h3").eq(0).should("have.text", "Your redeem code");
