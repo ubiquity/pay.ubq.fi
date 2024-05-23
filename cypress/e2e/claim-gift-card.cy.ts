@@ -41,10 +41,8 @@ describe("Gift Cards", () => {
 
   it("should claim a gift card", () => {
     const permitConfig = Cypress.env("permitConfig");
-    // 9 WXDAI permit
-    // Reloadly sandbox has auto recharge when balance falls below 10USD
-    // so reloadly balance should not be below 10$
-    const customPermitConfig = { ...permitConfig, AMOUNT_IN_ETH: "9.0" };
+
+    const customPermitConfig = { ...permitConfig, AMOUNT_IN_ETH: "30.0" };
 
     void cy.getPermitUrl(customPermitConfig).then((customPermitUrl) => {
       //        console.log("permitUrl", customPermitUrl);
