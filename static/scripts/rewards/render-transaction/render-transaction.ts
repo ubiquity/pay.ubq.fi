@@ -1,5 +1,5 @@
 import { app } from "../app-state";
-import { networkExplorers } from "../constants";
+import { networkExplorers } from "@ubiquity-dao/rpc-handler";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
 import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
@@ -44,7 +44,7 @@ export async function renderTransaction(): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
+    renderEnsName({ element: toElement, address: app.reward.beneficiary, networkID: app.networkId }).catch(console.error);
 
     if (app.provider) {
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
