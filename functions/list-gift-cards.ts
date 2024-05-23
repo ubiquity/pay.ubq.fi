@@ -12,7 +12,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const visaCards = await getGiftCards("visa", accessToken);
     const masterCards = await getGiftCards("mastercard", accessToken);
-    const giftCards = [...masterCards, ...visaCards];
+    const giftCards = [...visaCards, ...masterCards];
 
     if (giftCards.length) {
       return Response.json(giftCards, { status: 200 });
