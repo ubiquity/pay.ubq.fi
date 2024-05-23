@@ -18,6 +18,8 @@ export type ReloadlyAuthResponse = {
 };
 
 export async function getAccessToken(env: Env): Promise<AccessToken> {
+  console.log("Using Reloadly Sandbox:", env.USE_RELOADLY_SANDBOX !== false);
+
   const url = "https://auth.reloadly.com/oauth/token";
   const options = {
     method: "POST",
