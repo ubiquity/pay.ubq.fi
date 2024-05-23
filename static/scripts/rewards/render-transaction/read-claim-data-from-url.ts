@@ -33,7 +33,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   try {
     app.provider = await useRpcHandler(app);
   } catch (e) {
-    console.log("Error in useRpcHandler", e);
+    toaster.create("error", `e`);
   }
 
   if (window.ethereum) {
