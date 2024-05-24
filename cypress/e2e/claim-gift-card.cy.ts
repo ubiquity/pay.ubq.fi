@@ -64,9 +64,12 @@ describe("Gift Cards", () => {
       cy.intercept({ method: "POST", url: "/post-order" }).as("postOrder");
 
       cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").should("have.length", 1);
-      cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").invoke("click");
 
-      cy.wait("@postOrder", { timeout: 10000 });
+      cy.intercept({ method: "GET", url: "/get-order**" }).as("getOrder");
+      cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").invoke("click");
+      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Transaction sent");
+      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Payment confirmed. Claiming card now...");
+      cy.wait("@getOrder", { timeout: 10000 });
 
       cy.get("#gift-cards").should("exist").and("include.text", "Your gift card");
 
