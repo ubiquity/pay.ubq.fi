@@ -43,10 +43,8 @@ describe("Gift Cards", () => {
 
     const customPermitConfig = { ...permitConfig, AMOUNT_IN_ETH: "30.0" };
 
-    void cy.getPermitUrl(customPermitConfig).then((customPermitUrl) => {
-      //        console.log("permitUrl", customPermitUrl);
-
-      cy.visit(customPermitUrl);
+    void cy.getPermitUrl(customPermitConfig).then((permitUrl) => {
+      cy.visit(permitUrl);
       cy.wait(2000);
 
       cy.wait("@listGiftCards");
