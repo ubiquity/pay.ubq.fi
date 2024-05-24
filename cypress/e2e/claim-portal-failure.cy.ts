@@ -28,7 +28,7 @@ describe("Claims Portal Failures", () => {
       cy.get("#claim-loader").should("not.be.visible");
       cy.get("#view-claim").should("not.be.visible").and("include.text", "View Claim");
 
-      cy.get("body").should("contain.text", "This reward is not for you");
+      cy.get("body").should("contain.text", "Please connect your wallet to claim this reward.");
     });
   });
 

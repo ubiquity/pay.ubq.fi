@@ -120,6 +120,8 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
     const signer = await connectWallet();
     if (!signer) {
+      buttonController.hideAll();
+      toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
 

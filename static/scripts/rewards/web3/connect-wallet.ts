@@ -20,14 +20,11 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
 
     return signer;
   } catch (error: unknown) {
-    connectErrorHandler(error);
+    return connectErrorHandler(error);
   }
-  return null;
 }
 
 function connectErrorHandler(error: unknown) {
-  if (window.location.href.includes("localhost") && (window as any).signer) return (window as any).signer;
-
   if (error instanceof Error) {
     console.error(error);
     if (error?.message?.includes("missing provider")) {
@@ -46,4 +43,9 @@ function connectErrorHandler(error: unknown) {
   } else {
     toaster.create("error", "An unknown error occurred.");
   }
+
+  if (window.location.href.includes("localhost")) {
+    return (window as unknown as { signer: ethers.providers.JsonRpcSigner }).signer;
+  }
+  return null;
 }
