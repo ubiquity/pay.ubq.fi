@@ -17,8 +17,6 @@ describe("Gift Cards", () => {
   });
 
   it("should show/hide activation info", () => {
-    cy.intercept({ method: "GET", url: "/list-gift-cards" }).as("listGiftCards");
-
     const permitConfig = Cypress.env("permitConfig");
     void cy.getPermitUrl(permitConfig).then((permitUrl) => {
       cy.visit(`${permitUrl as string}`);
@@ -47,7 +45,6 @@ describe("Gift Cards", () => {
 
     void cy.getPermitUrl(customPermitConfig).then((customPermitUrl) => {
       //        console.log("permitUrl", customPermitUrl);
-      cy.intercept({ method: "GET", url: "/list-gift-cards" }).as("listGiftCards");
 
       cy.visit(customPermitUrl);
       cy.wait(2000);
@@ -84,7 +81,6 @@ describe("Gift Cards", () => {
   });
 
   it("should reveal a redeem code after claim", () => {
-    cy.intercept({ method: "GET", url: "/list-gift-cards" }).as("listGiftCards");
     cy.visit(
       "http://localhost:8080/?claim=W3sidHlwZSI6ImVyYzIwLXBlcm1pdCIsInBlcm1pdCI6eyJwZXJtaXR0ZWQiOnsidG9rZW4iOiIweGU5MUQxNTNFMGI0MTUxOEEyQ2U4RGQzRDc5NDRGYTg2MzQ2M2E5N2QiLCJhbW91bnQiOiIzMDAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjczMDU2NzU0MjU1ODU4ODMxMzQ0NTMzNDgxMDc0Njg5NTE1ODEyNzIzNDE5NTkwNjMwOTY2MTUwOTIxNzk3ODEzMzExMDE4NjgyMDMzIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhmMzlGZDZlNTFhYWQ4OEY2RjRjZTZhQjg4MjcyNzljZmZGYjkyMjY2IiwicmVxdWVzdGVkQW1vdW50IjoiMzAwMDAwMDAwMDAwMDAwMDAwMDAifSwib3duZXIiOiIweDcwOTk3OTcwQzUxODEyZGMzQTAxMEM3ZDAxYjUwZTBkMTdkYzc5QzgiLCJzaWduYXR1cmUiOiIweDdkYWYxMTNhNTA0ZjYxYzk5MDg0ZGM2ZGFlZTZkZDFkZjhhM2I4YjM5ZTU0N2VkYWIxMjNhNzQxNjBhNWVhNDYwZDgyODdmYWM1MDlhYTc5M2ZhNjc5M2RlOTg5YmVhOTg4Y2M3NDAyNGE5ZmQyNjAyMjY2YTQzZjg1MDlhYTJkMWIiLCJuZXR3b3JrSWQiOjMxMzM3fSx7InR5cGUiOiJlcmMyMC1wZXJtaXQiLCJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHhlOTFEMTUzRTBiNDE1MThBMkNlOERkM0Q3OTQ0RmE4NjM0NjNhOTdkIiwiYW1vdW50IjoiOTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjYyOTc2MjY4MDU3NjQ1MTA0ODc3MTI4NDU3MTU1NDgwNTU5NzU1OTQwMjA4MzExMDQ3Mjc1Njc2NjAyNDI3NzQwODY1NzE0MDkxMzAwIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhmMzlGZDZlNTFhYWQ4OEY2RjRjZTZhQjg4MjcyNzljZmZGYjkyMjY2IiwicmVxdWVzdGVkQW1vdW50IjoiOTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJvd25lciI6IjB4NzA5OTc5NzBDNTE4MTJkYzNBMDEwQzdkMDFiNTBlMGQxN2RjNzlDOCIsInNpZ25hdHVyZSI6IjB4N2RhZjExM2E1MDRmNjFjOTkwODRkYzZkYWVlNmRkMWRmOGEzYjhiMzllNTQ3ZWRhYjEyM2E3NDE2MGE1ZWE0NjBkODI4N2ZhYzUwOWFhNzkzZmE2NzkzZGU5ODliZWE5ODhjYzc0MDI0YTlmZDI2MDIyNjZhNDNmODUwOWFhMmQxYiIsIm5ldHdvcmtJZCI6MzEzMzd9XQ=="
     );
@@ -141,6 +137,8 @@ function setupIntercepts() {
     statusCode: 200,
     body: {},
   });
+
+  cy.intercept({ method: "GET", url: "/list-gift-cards" }).as("listGiftCards");
 }
 
 function stubEthereum(signer: JsonRpcSigner) {
