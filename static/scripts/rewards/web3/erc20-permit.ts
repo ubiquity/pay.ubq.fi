@@ -287,11 +287,7 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
   return bit.and(flipped).eq(0);
 }
 
-async function invalidateNonce(signer: JsonRpcSigner | null, nonce: BigNumberish): Promise<void> {
-  if (!signer) {
-    console.error("Signer is null");
-    return;
-  }
+async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428

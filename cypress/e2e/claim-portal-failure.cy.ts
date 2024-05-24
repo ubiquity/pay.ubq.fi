@@ -18,9 +18,6 @@ describe("Claims Portal Failures", () => {
     });
 
     it("should handle no connected signer", () => {
-      /**
-       * This covers a user declining to connect their wallet
-       */
       cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
 
       cy.get("button[id='make-claim']").should("be.visible").click();
