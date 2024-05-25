@@ -1,4 +1,4 @@
-export type GiftCard = {
+export interface GiftCard {
   productId: number;
   productName: string;
   global: boolean;
@@ -31,9 +31,9 @@ export type GiftCard = {
     concise: string;
     verbose: string;
   };
-};
+}
 
-export type ReloadlyListGiftCardResponse = {
+export interface ReloadlyListGiftCardResponse {
   content: GiftCard[];
   pageable: {
     sort: {
@@ -60,9 +60,9 @@ export type ReloadlyListGiftCardResponse = {
   size: number;
   number: number;
   empty: boolean;
-};
+}
 
-export type ReloadlyOrderedProduct = {
+export interface ReloadlyOrderedProduct {
   productId: number;
   productName: string;
   countryCode: string;
@@ -74,9 +74,9 @@ export type ReloadlyOrderedProduct = {
     brandId: number;
     brandName: string;
   };
-};
+}
 
-export type ReloadlyOrderResponse = {
+export interface ReloadlyOrderResponse {
   transactionId: number;
   amount: number;
   discount: number;
@@ -90,9 +90,9 @@ export type ReloadlyOrderResponse = {
   recipientPhone: number;
   transactionCreatedTime: string; //"2022-02-28 13:46:00",
   preOrdered: boolean;
-};
+}
 
-export type ReloadlyTransaction = {
+export interface ReloadlyTransaction {
   transactionId: number;
   amount: number;
   discount: number;
@@ -106,8 +106,8 @@ export type ReloadlyTransaction = {
   recipientPhone: number;
   transactionCreatedTime: string; //"2022-02-28 13:46:00",
   preOrdered: boolean;
-};
-export type ReloadlyGetTransactionResponse = {
+}
+export interface ReloadlyGetTransactionResponse {
   content: ReloadlyTransaction[];
   pageable: {
     sort: { sorted: boolean; unsorted: boolean; empty: boolean };
@@ -126,36 +126,40 @@ export type ReloadlyGetTransactionResponse = {
   size: number;
   number: number;
   empty: boolean;
-};
+}
 
-export type RedeemCode = {
+export interface RedeemCode {
   cardNumber: string;
   pinCode: string;
-};
+}
 export type ReloadlyRedeemCodeResponse = RedeemCode[];
 
 // TODO: rename this to FailedReloadlyApiResponse
-export type NotOkReloadlyApiResponse = {
+export interface NotOkReloadlyApiResponse {
   timeStamp: string;
   message: string;
   path: string;
   errorCode: string;
   infoLink?: string;
   details: [];
-};
+}
 
-export type OrderRequestParams = {
+export interface OrderRequestParams {
   productId: number;
   txHash: string;
   chainId: number;
-};
+}
 
-export type ExchangeRate = {
+export interface ExchangeRate {
   senderCurrency: string;
   senderAmount: number;
   recipientCurrency: string;
   recipientAmount: number;
-};
+}
 
-export type PriceToValueMap = { [key: string]: number };
-export type ValueToPriceMap = { [key: string]: number };
+export interface PriceToValueMap {
+  [key: string]: number;
+}
+export interface ValueToPriceMap {
+  [key: string]: number;
+}

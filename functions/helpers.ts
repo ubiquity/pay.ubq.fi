@@ -10,12 +10,12 @@ export interface Env {
   RELOADLY_API_CLIENT_SECRET: string;
 }
 
-export type ReloadlyAuthResponse = {
+export interface ReloadlyAuthResponse {
   access_token: string;
   scope: string;
   expires_in: number;
   token_type: string;
-};
+}
 
 export async function getAccessToken(env: Env): Promise<AccessToken> {
   console.log("Using Reloadly Sandbox:", env.USE_RELOADLY_SANDBOX !== false);
