@@ -9,7 +9,7 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "start": "run-s start:sign start:ui",
+    "start": "run-s start:sign && npx wrangler pages dev static --port 8080",
     "watch": "nodemon -e ts,tsx --exec yarn start",
     "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
     "format": "run-s format:lint format:prettier format:cspell",
