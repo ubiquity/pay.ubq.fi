@@ -74,8 +74,9 @@ export async function generateERC20Permit(permitConfig: PermitConfig) {
 }
 
 export async function logERC20Permit(permitConfig: PermitConfig) {
+  const erc20Permit = await generateERC20Permit(permitConfig);
   log.ok("ERC20 Local URL:");
-  log.info(await generateERC20Permit(permitConfig));
+  log.info(erc20Permit);
 }
 
 /* eslint-disable @typescript-eslint/no-namespace */
