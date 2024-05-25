@@ -49,7 +49,7 @@ export function getGiftCardHtml(giftCard: GiftCard, allowBuy: boolean, rewardAmo
 }
 
 function getFixedPricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
-  let _html = html` <div>
+  const _html = html` <div>
     <div>Price</div>
     <div>Value</div>
   </div>`;
@@ -57,14 +57,26 @@ function getFixedPricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   const priceToValueMap = getFixedPriceToValueMap(giftCard);
   const priceAsKey = Number(formatEther(rewardAmount)).toFixed(2).toString();
 
+  let matchingCardHtml = "";
+  let otherCardsHtml = "";
   Object.keys(priceToValueMap).forEach((price) => {
-    const _class = price == priceAsKey ? ` class="available"` : ``;
-    _html += html`<div${_class}>
-      <div title="${Number(price).toFixed(2)}${giftCard.senderCurrencyCode}">${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
-      <div title="${priceToValueMap[price].toFixed(2)}${giftCard.recipientCurrencyCode}">${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div>
-    </div>`;
+    if (price == priceAsKey) {
+      matchingCardHtml += html`<div class="available">
+          <div title="${Number(price).toFixed(2)}${giftCard.senderCurrencyCode}">${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
+          <div title="${priceToValueMap[price].toFixed(2)}${giftCard.recipientCurrencyCode}"
+            >${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div
+          > </div
+        ><br /><p>Also available in</p>`;
+    } else {
+      otherCardsHtml += html`<div>
+        <div title="${Number(price).toFixed(2)}${giftCard.senderCurrencyCode}">${Number(price).toFixed(0)}${giftCard.senderCurrencyCode}</div>
+        <div title="${priceToValueMap[price].toFixed(2)}${giftCard.recipientCurrencyCode}"
+          >${priceToValueMap[price].toFixed(0)}${giftCard.recipientCurrencyCode}</div
+        >
+      </div>`;
+    }
   });
-  return _html;
+  return `${_html}${matchingCardHtml}${otherCardsHtml}`;
 }
 
 function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
@@ -78,8 +90,8 @@ function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
       </div>
       <div class="available">
         <div>${formatEther(rewardAmount)}${giftCard.senderCurrencyCode}</div>
-        <div>${giftCardValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div>
-      </div>`;
+        <div>${giftCardValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div> </div
+      ><br /><p>Also available in</p>`;
   }
 
   const priceToValueMap = getRangePriceToValueMap(giftCard);
