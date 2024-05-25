@@ -33,6 +33,9 @@ main:has(#gift-cards .gift-card) div:has(table.receipt) {
   align-items: end;
   padding-bottom: 12px;
 }
+.gift-cards-wrapper.center {
+  justify-content: center;
+}
 .gift-cards-wrapper .gift-card {
   transform: rotateX(180deg);
 }

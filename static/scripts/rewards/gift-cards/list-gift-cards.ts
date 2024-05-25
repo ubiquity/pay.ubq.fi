@@ -60,7 +60,7 @@ export async function initCollectGiftCard(app: AppState) {
     attachRevealAction(transaction, app);
   } else if (retrieveGiftCardsResponse.status == 200) {
     let giftCardsHtml = `<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`;
-    giftCardsHtml += `<div class="gift-cards-wrapper">`;
+    giftCardsHtml += `<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`;
     giftCards.forEach((giftCard: GiftCard) => {
       giftCardsHtml += getGiftCardHtml(giftCard, true, app.reward.amount);
     });
