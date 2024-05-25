@@ -170,3 +170,18 @@ main:has(#gift-cards .gift-card) div:has(table.receipt) {
 #reveal-btn[data-loading-reveal="true"] .action {
   display: none;
 }
+@media (prefers-color-scheme: light) {
+  .gift-card,
+  .redeem-info-wrapper {
+    background-color: #fff;
+  }
+  .gift-card h3,
+  .gift-card .pricing .available,
+  .gift-card div.buttons button,
+  .close-btn {
+    color: #000;
+  }
+  .gift-card img {
+    border-color: var(--light-mode-border-color);
+  }
+}
