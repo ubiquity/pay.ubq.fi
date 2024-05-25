@@ -11,7 +11,7 @@ import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
 
 const html = String.raw;
 
-export async function initCollectGiftCard(app: AppState) {
+export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
   if (!giftCardsSection) {
     console.error("Missing gift cards section #gift-cards");
