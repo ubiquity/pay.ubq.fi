@@ -17,7 +17,7 @@ export async function initClaimGiftCard(app: AppState) {
     console.error("Missing gift cards section #gift-cards");
     return;
   }
-  giftCardsSection.innerHTML = "";
+  giftCardsSection.innerHTML = "Loading...";
 
   const activateInfoSection = document.getElementById("activate-info");
   if (!activateInfoSection) {
