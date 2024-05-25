@@ -134,8 +134,7 @@ export interface RedeemCode {
 }
 export type ReloadlyRedeemCodeResponse = RedeemCode[];
 
-// TODO: rename this to FailedReloadlyApiResponse
-export interface NotOkReloadlyApiResponse {
+export interface ReloadlyFailureResponse {
   timeStamp: string;
   message: string;
   path: string;
