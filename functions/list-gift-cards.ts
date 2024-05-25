@@ -1,4 +1,4 @@
-import { NotOkReloadlyApiResponse, ReloadlyListGiftCardResponse } from "../shared/types";
+import { ReloadlyFailureResponse, ReloadlyListGiftCardResponse } from "./types";
 import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
 import { AccessToken } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
@@ -49,7 +49,7 @@ const getGiftCards = async (productQuery: string, accessToken: AccessToken) => {
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }

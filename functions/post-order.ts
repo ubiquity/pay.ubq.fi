@@ -3,12 +3,12 @@ import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider"
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
-import { ExchangeRate, NotOkReloadlyApiResponse, OrderRequestParams, ReloadlyOrderResponse, GiftCard } from "../shared/types";
+import { ExchangeRate, OrderRequestParams, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 import { Env, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
-import { AccessToken } from "./types";
+import { AccessToken, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 
 export const networkRpcs: Record<number, string[]> = {
@@ -112,7 +112,7 @@ const getGiftCardById = async (productId: number, accessToken: AccessToken) => {
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }
@@ -153,7 +153,7 @@ const orderGiftCard = async (productId: number, cardValue: number, identifier: s
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }
@@ -191,7 +191,7 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }

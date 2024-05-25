@@ -33,36 +33,7 @@ export interface GiftCard {
   };
 }
 
-export interface ReloadlyListGiftCardResponse {
-  content: GiftCard[];
-  pageable: {
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
-    };
-    pageNumber: number;
-    pageSize: number;
-    offset: number;
-    unpaged: boolean;
-    paged: boolean;
-  };
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  first: boolean;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
-    empty: boolean;
-  };
-  numberOfElements: number;
-  size: number;
-  number: number;
-  empty: boolean;
-}
-
-export interface ReloadlyOrderedProduct {
+export interface OrderedProduct {
   productId: number;
   productName: string;
   countryCode: string;
@@ -76,7 +47,7 @@ export interface ReloadlyOrderedProduct {
   };
 }
 
-export interface ReloadlyOrderResponse {
+export interface Order {
   transactionId: number;
   amount: number;
   discount: number;
@@ -85,14 +56,14 @@ export interface ReloadlyOrderResponse {
   recipientEmail: string;
   customIdentifier: string;
   status: string;
-  product: ReloadlyOrderedProduct;
+  product: OrderedProduct;
   smsFee: number;
   recipientPhone: number;
   transactionCreatedTime: string; //"2022-02-28 13:46:00",
   preOrdered: boolean;
 }
 
-export interface ReloadlyTransaction {
+export interface OrderTransaction {
   transactionId: number;
   amount: number;
   discount: number;
@@ -101,46 +72,16 @@ export interface ReloadlyTransaction {
   recipientEmail: string;
   customIdentifier: string;
   status: string;
-  product: ReloadlyOrderedProduct;
+  product: OrderedProduct;
   smsFee: number;
   recipientPhone: number;
   transactionCreatedTime: string; //"2022-02-28 13:46:00",
   preOrdered: boolean;
-}
-export interface ReloadlyGetTransactionResponse {
-  content: ReloadlyTransaction[];
-  pageable: {
-    sort: { sorted: boolean; unsorted: boolean; empty: boolean };
-    pageNumber: number;
-    pageSize: number;
-    offset: number;
-    unpaged: boolean;
-    paged: boolean;
-  };
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  first: boolean;
-  sort: { sorted: boolean; unsorted: boolean; empty: boolean };
-  numberOfElements: number;
-  size: number;
-  number: number;
-  empty: boolean;
 }
 
 export interface RedeemCode {
   cardNumber: string;
   pinCode: string;
-}
-export type ReloadlyRedeemCodeResponse = RedeemCode[];
-
-export interface ReloadlyFailureResponse {
-  timeStamp: string;
-  message: string;
-  path: string;
-  errorCode: string;
-  infoLink?: string;
-  details: [];
 }
 
 export interface OrderRequestParams {

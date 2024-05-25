@@ -1,10 +1,10 @@
 import { getMessageToSign } from "../../../../../shared/helpers";
-import { RedeemCode, ReloadlyRedeemCodeResponse, ReloadlyTransaction } from "../../../../../shared/types";
+import { RedeemCode, OrderTransaction } from "../../../../../shared/types";
 import { AppState } from "../../app-state";
 import { toaster } from "../../toaster";
 import { getApiBaseUrl } from "../helpers";
 
-export function attachRevealAction(transaction: ReloadlyTransaction, app: AppState) {
+export function attachRevealAction(transaction: OrderTransaction, app: AppState) {
   const revealButton = document.getElementById("reveal-btn");
   const loaderAttribute = "data-loading-reveal";
   revealButton?.addEventListener("click", async () => {
@@ -43,7 +43,7 @@ async function revealRedeemCode(transactionId: number, signedMessage: string, ap
     return;
   }
 
-  const responseJson = (await response.json()) as ReloadlyRedeemCodeResponse;
+  const responseJson = (await response.json()) as RedeemCode[];
 
   const redeemCodeElements = document.getElementsByClassName("redeem-code");
   if (redeemCodeElements && redeemCodeElements.length) {

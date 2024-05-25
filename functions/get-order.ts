@@ -1,5 +1,5 @@
 import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
-import { NotOkReloadlyApiResponse, ReloadlyGetTransactionResponse } from "../shared/types";
+import { ReloadlyFailureResponse, ReloadlyGetTransactionResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 import { AccessToken } from "./types";
 
@@ -57,7 +57,7 @@ export const getTransactionFromOrderId = async (orderId: string, accessToken: Ac
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }

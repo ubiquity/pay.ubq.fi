@@ -1,5 +1,5 @@
 import { getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
-import { NotOkReloadlyApiResponse, ReloadlyRedeemCodeResponse } from "../shared/types";
+import { ReloadlyFailureResponse, ReloadlyRedeemCodeResponse } from "./types";
 import { verifyMessage } from "ethers/lib/utils";
 import { getTransactionFromOrderId } from "./get-order";
 import { validateEnvVars, validateRequestMethod } from "./validators";
@@ -82,7 +82,7 @@ export const getRedeemCode = async (transactionId: number, accessToken: AccessTo
     throw new Error(
       `Error from Reloadly API: ${JSON.stringify({
         status: response.status,
-        message: (responseJson as NotOkReloadlyApiResponse).message,
+        message: (responseJson as ReloadlyFailureResponse).message,
       })}`
     );
   }

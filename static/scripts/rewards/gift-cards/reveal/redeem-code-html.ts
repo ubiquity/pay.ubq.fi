@@ -1,8 +1,8 @@
-import { ReloadlyTransaction } from "../../../../../shared/types";
+import { OrderTransaction } from "../../../../../shared/types";
 
 const html = String.raw;
 
-export function getRedeemCodeHtml(transaction: ReloadlyTransaction) {
+export function getRedeemCodeHtml(transaction: OrderTransaction) {
   return html`
     <div class="gift-card redeem-code" data-transactionId="${transaction.transactionId}">
       <h3>Your redeem code</h3>

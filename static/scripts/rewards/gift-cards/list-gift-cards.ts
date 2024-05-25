@@ -1,5 +1,5 @@
 import { getGiftCardOrderId } from "../../../../shared/helpers";
-import { GiftCard, ReloadlyTransaction } from "../../../../shared/types";
+import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
 import { attachClaimAction } from "./claim/claim-action";
@@ -24,7 +24,7 @@ export async function initCollectGiftCard(app: AppState) {
 
   const [retrieveOrderResponse, retrieveGiftCardsResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
 
-  const transaction = (await retrieveOrderResponse.json()) as ReloadlyTransaction;
+  const transaction = (await retrieveOrderResponse.json()) as OrderTransaction;
   const giftCards = (await retrieveGiftCardsResponse.json()) as GiftCard[];
 
   const giftCardsSection = document.getElementById("gift-cards");
