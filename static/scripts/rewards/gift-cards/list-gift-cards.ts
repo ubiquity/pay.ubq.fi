@@ -12,6 +12,20 @@ import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
 const html = String.raw;
 
 export async function initCollectGiftCard(app: AppState) {
+  const giftCardsSection = document.getElementById("gift-cards");
+  if (!giftCardsSection) {
+    console.error("Missing gift cards section #gift-cards");
+    return;
+  }
+  giftCardsSection.innerHTML = "";
+
+  const activateInfoSection = document.getElementById("activate-info");
+  if (!activateInfoSection) {
+    console.error("Missing gift cards activate info section #activate-info");
+    return;
+  }
+  activateInfoSection.innerHTML = "";
+
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
   const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards`;
 
@@ -26,17 +40,6 @@ export async function initCollectGiftCard(app: AppState) {
 
   const transaction = (await retrieveOrderResponse.json()) as OrderTransaction;
   const giftCards = (await retrieveGiftCardsResponse.json()) as GiftCard[];
-
-  const giftCardsSection = document.getElementById("gift-cards");
-  if (!giftCardsSection) {
-    console.error("Missing gift cards section #gift-cards");
-    return;
-  }
-  const activateInfoSection = document.getElementById("activate-info");
-  if (!activateInfoSection) {
-    console.error("Missing gift cards activate info section #activate-info");
-    return;
-  }
 
   if (retrieveOrderResponse.status == 200) {
     const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
