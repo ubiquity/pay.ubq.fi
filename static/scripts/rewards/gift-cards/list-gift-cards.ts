@@ -78,8 +78,10 @@ export async function initCollectGiftCard(app: AppState) {
     activateInfoSection.innerHTML = activateInfoHtml;
 
     attachClaimAction("claim-gift-card-btn", giftCards, app);
+  } else if (retrieveGiftCardsResponse.status == 404) {
+    giftCardsSection.innerHTML = "<p class='list-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
   } else {
-    giftCardsSection.innerText = "There was a problem in fetching gift cards. Try again later.";
+    giftCardsSection.innerHTML = "<p class='list-error'>There was a problem in fetching gift cards. Try again later.</p>";
   }
 
   attachActivateInfoAction();

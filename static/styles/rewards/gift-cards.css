@@ -11,6 +11,10 @@
   align-items: center;
 }
 
+#gift-cards p.list-error {
+  text-align: center;
+}
+
 main:has(#gift-cards .gift-card) {
   height: auto;
 }
