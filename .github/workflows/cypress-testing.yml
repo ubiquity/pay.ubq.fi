@@ -36,11 +36,20 @@ jobs:
       - name: Start Anvil
         run: yarn test:anvil &
 
+      - name: Wait for Anvil
+        run: |
+          while ! curl -s http://localhost:8545; do
+            sleep 1
+          done
+
+      - name: Fund test accounts
+        run: yarn test:fund
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
           build: yarn run build
-          start: yarn test:fund, yarn start
+          start: yarn start
 
         env:
           SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
