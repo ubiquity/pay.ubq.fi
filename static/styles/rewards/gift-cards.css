@@ -92,7 +92,7 @@ main:has(#gift-cards .gift-card) div:has(table.receipt) {
   height: auto;
   border: 2px solid #80808020;
   max-width: 168px;
-  max-height: 110px;
+  height: 110px;
 }
 
 .gift-card .pricing {
