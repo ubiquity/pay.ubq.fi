@@ -18,9 +18,6 @@ describe("Claims Portal Failures", () => {
     });
 
     it("should handle no connected signer", () => {
-      /**
-       * This covers a user declining to connect their wallet
-       */
       cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
 
       cy.get("button[id='make-claim']").should("be.visible").click();
@@ -28,7 +25,7 @@ describe("Claims Portal Failures", () => {
       cy.get("#claim-loader").should("not.be.visible");
       cy.get("#view-claim").should("not.be.visible").and("include.text", "View Claim");
 
-      cy.get("body").should("contain.text", "This reward is not for you");
+      cy.get("body").should("contain.text", "Please connect your wallet to claim this reward.");
     });
   });
 

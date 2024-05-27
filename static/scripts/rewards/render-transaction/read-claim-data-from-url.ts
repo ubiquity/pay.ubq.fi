@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
-import { buttonController, toaster } from "../toaster";
+import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
+import { toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";
@@ -30,26 +31,32 @@ export async function readClaimDataFromUrl(app: AppState) {
 
   app.claims = decodeClaimData(base64encodedTxData);
   app.claimTxs = await getClaimedTxs(app);
+
   try {
     app.provider = await useRpcHandler(app);
   } catch (e) {
     toaster.create("error", `e`);
   }
 
-  if (window.ethereum) {
-    try {
-      app.signer = await connectWallet();
-    } catch (error) {
-      /* empty */
-    }
-    window.ethereum.on("accountsChanged", () => {
+  try {
+    app.signer = await connectWallet();
+  } catch (error) {
+    /* empty */
+  }
+
+  try {
+    // this would throw on mobile browsers & non-web3 browsers
+    window?.ethereum.on("accountsChanged", () => {
       checkRenderMakeClaimControl(app).catch(console.error);
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     });
-  } else {
-    buttonController.hideAll();
-    toaster.create("info", "Please use a web3 enabled browser to collect this reward.");
+  } catch (err) {
+    /*
+     * handled feedback upstream already
+     * buttons are hidden and non-web3 infinite toast exists
+     */
   }
+
   displayRewardDetails();
   displayRewardPagination();
 
