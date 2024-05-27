@@ -138,9 +138,5 @@ export function getGiftCardValue(giftCard: GiftCard, reward: BigNumberish, excha
       })}`
     );
   }
-
-  if (!giftCardValue) {
-    throw new Error(`Gift card is not available for the reward amount: ${JSON.stringify({ giftCard: giftCard, reward: reward })}`);
-  }
   return giftCardValue;
 }
