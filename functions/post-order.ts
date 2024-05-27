@@ -16,7 +16,6 @@ export const networkRpcs: Record<number, string[]> = {
   5: ["https://eth-goerli.public.blastapi.io"],
   100: ["https://rpc.gnosischain.com"],
   31337: ["http://127.0.0.1:8545"],
-  31338: ["https://rpc.tenderly.co/fork/07e0d1c0-c5f5-4690-81ce-0676d0c8dbcd"],
 };
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
