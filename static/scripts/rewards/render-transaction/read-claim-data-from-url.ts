@@ -10,6 +10,7 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
+import { useRpcHandler } from "../web3/use-rpc-handler";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -32,9 +33,9 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useFastestRpc(app);
+    app.provider = await useRpcHandler(app);
   } catch (e) {
-    toaster.create("error", `${e}`);
+    toaster.create("error", `e`);
   }
 
   try {

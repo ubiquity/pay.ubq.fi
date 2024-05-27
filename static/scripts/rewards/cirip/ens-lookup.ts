@@ -3,14 +3,13 @@ import abi from "../abis/cirip.json";
 import { fetchEns } from "./fetch-ens";
 import { queryReverseEns } from "./query-reverse-ens";
 
-export const UBIQUITY_RPC_ENDPOINT = "https://rpc-pay.ubq.fi/v1/mainnet";
 export const reverseEnsInterface = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function ensLookup(addr: string) {
+export async function ensLookup(addr: string, networkID: number) {
   const _address = "/".concat(addr); // quick adapter
 
   // try {
@@ -24,7 +23,7 @@ export async function ensLookup(addr: string) {
   let reverseRecord = null as null | string;
   // let response = "";
   try {
-    reverseRecord = await queryReverseEns(address);
+    reverseRecord = await queryReverseEns(address, networkID);
     const responseParsed = JSON.parse(reverseRecord).result;
     const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
     reverseRecord = _reverseRecord[0][0];
