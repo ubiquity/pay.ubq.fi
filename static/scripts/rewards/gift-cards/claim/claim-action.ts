@@ -43,9 +43,9 @@ async function claimGiftCard(productId: number, app: AppState) {
     };
     reward.beneficiary = giftCardTreasuryAddress;
 
-    const tx = await transferFromPermit(permit2Contract, reward);
+    const tx = await transferFromPermit(permit2Contract, reward, "Processing... Please wait. Do not close this page.");
     if (!tx) return;
-    await waitForTransaction(tx, `Payment confirmed. Claiming card now...`);
+    await waitForTransaction(tx, `Success. Refresh this page in a few minutes to get your card.`);
 
     const url = `${getApiBaseUrl()}/post-order`;
 

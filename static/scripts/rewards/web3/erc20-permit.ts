@@ -56,7 +56,7 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return false;
 }
 
-export async function transferFromPermit(permit2Contract: Contract, reward: Permit) {
+export async function transferFromPermit(permit2Contract: Contract, reward: Permit, successMessage?: string) {
   try {
     const tx = await permit2Contract.permitTransferFrom(
       {
@@ -71,7 +71,7 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
       reward.owner,
       reward.signature
     );
-    toaster.create("info", `Transaction sent`);
+    toaster.create("info", successMessage ?? `Transaction sent`);
     return tx;
   } catch (error: unknown) {
     if (error instanceof Error) {
