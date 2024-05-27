@@ -32,7 +32,7 @@ describe("Claims Portal Non-Web3", () => {
       cy.get("#claim-loader").should("not.be.visible");
       cy.get("#view-claim").should("not.be.visible");
 
-      cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a web3 enabled browser to collect this reward.");
+      cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward");
     });
   });
 });
