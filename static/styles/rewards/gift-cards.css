@@ -60,6 +60,11 @@ main:has(#gift-cards .gift-card) div:has(table.receipt) {
 }
 .redeem-code {
   width: 160px;
+  overflow-wrap: break-word;
+  text-transform: none;
+}
+.redeem-code p {
+  text-transform: none;
 }
 
 .gift-card h3 {
