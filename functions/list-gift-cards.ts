@@ -9,9 +9,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     validateEnvVars(ctx);
 
     const accessToken = await getAccessToken(ctx.env);
-    const [visaCards, masterCards] = await Promise.all([getGiftCards("visa", accessToken), getGiftCards("mastercard", accessToken)]);
+    const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", accessToken), getGiftCards("visa", accessToken)]);
 
-    const giftCards = [...visaCards, ...masterCards];
+    const giftCards = [...masterCards, ...visaCards];
 
     if (giftCards.length) {
       return Response.json(giftCards, { status: 200 });
