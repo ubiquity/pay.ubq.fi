@@ -82,7 +82,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     const order = await orderGiftCard(productId, giftCardValue, orderId, accessToken);
 
-    if (order.status == "SUCCESSFUL") {
+    if (order.status != "REFUNDED" && order.status != "FAILED") {
       return Response.json(order, { status: 200 });
     } else {
       throw new Error(`Order failed: ${JSON.stringify(order)}`);
