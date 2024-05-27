@@ -139,7 +139,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
   };
 }
 
-async function checkPermitClaimable(app: AppState): Promise<boolean> {
+export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(app);

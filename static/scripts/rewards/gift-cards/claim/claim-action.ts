@@ -4,7 +4,7 @@ import { AppState } from "../../app-state";
 import { permit2Address } from "../../../../../shared/constants";
 import { giftCardTreasuryAddress } from "../../../../../shared/constants";
 import { toaster } from "../../toaster";
-import { isNonceClaimed, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
+import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl } from "../helpers";
 import { isClaimableForAmount } from "../../../../../shared/pricing";
 import { OrderRequestParams, GiftCard } from "../../../../../shared/types";
@@ -34,16 +34,7 @@ export function attachClaimAction(className: string, giftCards: GiftCard[], app:
 
 async function claimGiftCard(productId: number, app: AppState) {
   if (app.signer) {
-    if ((await app.signer.getAddress()).toLowerCase() != app.reward.beneficiary.toLowerCase()) {
-      toaster.create("error", "The connected wallet is not the beneficiary of the reward.");
-      return;
-    }
-    const isClaimed = await isNonceClaimed(app);
-    if (isClaimed) {
-      toaster.create("error", "Reward has been claimed already.");
-      return;
-    }
-
+    await checkPermitClaimable(app);
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
     if (!permit2Contract) return;
 
