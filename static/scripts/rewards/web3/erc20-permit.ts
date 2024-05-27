@@ -3,9 +3,10 @@ import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { permit2Address } from "../../../../shared/constants";
+import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { buttonController, errorToast, getMakeClaimButton, MetaMaskError, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
+import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -57,6 +58,9 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
 }
 
 export async function transferFromPermit(permit2Contract: Contract, reward: Permit, successMessage?: string) {
+  const signer = app.signer;
+  if (!signer) return null;
+
   try {
     const tx = await permit2Contract.permitTransferFrom(
       {
@@ -100,6 +104,7 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
+
     return receipt;
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -112,22 +117,24 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
+    const signer = await connectWallet();
+    if (!signer) {
+      buttonController.hideAll();
+      toaster.create("error", `Please connect your wallet to claim this reward.`);
+      return;
+    }
+
     buttonController.hideMakeClaim();
     buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    if (!app.signer) return;
-
-    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
+    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) return;
 
     const tx = await transferFromPermit(permit2Contract, app.reward);
     if (!tx) return;
-
-    // buttonController.showLoader();
-    // buttonController.hideMakeClaim();
 
     const receipt = await waitForTransaction(tx, `Claim Complete.`);
     if (!receipt) return;

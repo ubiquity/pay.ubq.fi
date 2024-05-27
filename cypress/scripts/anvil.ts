@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 
 const url = "http://localhost:8545";
 
-const anvil = spawn("anvil", ["--chain-id", "31337", "--fork-url", "wss://rpc.gnosischain.com/wss", "--host", "127.0.0.1", "--port", "8545"], {
+const anvil = spawn("anvil", ["--chain-id", "31337", "--fork-url", "https://gnosis-pokt.nodies.app", "--host", "127.0.0.1", "--port", "8545"], {
   stdio: "inherit",
 });
 

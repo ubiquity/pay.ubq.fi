@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "../constants";
+import { getNetworkName, networkCurrencies, networkExplorers, networkRpcs } from "@ubiquity-dao/rpc-handler";
 
 export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   try {

@@ -36,6 +36,16 @@ jobs:
       - name: Start Anvil
         run: yarn test:anvil &
 
+      - name: Wait for Anvil
+        run: |
+          for i in {1..30}
+          do
+            if curl -s http://localhost:8545; then
+              break
+            fi
+            sleep 1
+          done || exit 1
+
       - name: Start Cloudflare Wrangler
         run: npx wrangler pages dev static --port 8080 --binding USE_RELOADLY_SANDBOX=true RELOADLY_API_CLIENT_ID="$RELOADLY_SANDBOX_API_CLIENT_ID" RELOADLY_API_CLIENT_SECRET="$RELOADLY_SANDBOX_API_CLIENT_SECRET" &
         env:
