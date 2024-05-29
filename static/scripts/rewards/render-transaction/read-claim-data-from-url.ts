@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
-import { useFastestRpc } from "../rpc-optimization/get-optimal-provider";
 import { toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";

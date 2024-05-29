@@ -1,80 +1,63 @@
-/* eslint-disable sonarjs/no-duplicate-string */
-import { spawn } from "child_process";
+import { spawnSync } from "child_process";
+import { useHandler } from "../../static/scripts/rewards/web3/use-rpc-handler";
+// @ts-expect-error - Missing types
+import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
-const url = "http://localhost:8545";
+class Anvil {
+  rpcs: string[] = [];
+  rpcHandler: RPCHandler | null = null;
 
-const anvil = spawn("anvil", ["--chain-id", "31337", "--fork-url", "https://gnosis-pokt.nodies.app", "--host", "127.0.0.1", "--port", "8545"], {
-  stdio: "inherit",
-});
+  async init() {
+    this.rpcHandler = await useHandler(100);
+    console.log(`[RPCHandler] Fetching RPCs...`);
+    await this.rpcHandler.testRpcPerformance();
+    const latencies: Record<string, number> = this.rpcHandler.getLatencies();
+    const sorted = Object.entries(latencies).sort(([, a], [, b]) => a - b);
+    console.log(
+      `Fetched ${sorted.length} RPCs.\nFastest: ${sorted[0][0]} (${sorted[0][1]}ms)\nSlowest: ${sorted[sorted.length - 1][0]} (${sorted[sorted.length - 1][1]}ms)`
+    );
 
-setTimeout(() => {
-  console.log(`\n\n Anvil setup complete \n\n`);
-}, 5000);
-
-// anvil --chain-id 31337 --fork-url https://eth.llamarpc.com --host 127.0.0.1 --port 8546
-
-spawn("cast", ["rpc", "--rpc-url", url, "anvil_impersonateAccount", "0xba12222222228d8ba445958a75a0704d566bf2c8"], {
-  stdio: "inherit",
-});
-spawn(
-  "cast",
-  [
-    "send",
-    "--rpc-url",
-    url,
-    "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
-    "--unlocked",
-    "--from",
-    "0xba12222222228d8ba445958a75a0704d566bf2c8",
-    "transfer(address,uint256)(bool)",
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "337888400000000000000000",
-  ],
-  {
-    stdio: "inherit",
+    this.rpcs = sorted.map(([rpc]) => rpc.split("__")[1]);
   }
-);
-spawn(
-  "cast",
-  [
-    "send",
-    "--rpc-url",
-    url,
-    "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
-    "--unlocked",
-    "--from",
-    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "approve(address,uint256)(bool)",
-    "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "9999999999999991111111119999999999999999",
-  ],
-  {
-    stdio: "inherit",
-  }
-);
-spawn(
-  "cast",
-  [
-    "send",
-    "--rpc-url",
-    url,
-    "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
-    "--unlocked",
-    "--from",
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "approve(address,uint256)(bool)",
-    "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "999999999999999111119999999999999999",
-  ],
-  {
-    stdio: "inherit",
-  }
-);
 
-anvil.on("close", (code) => {
-  console.log(`Anvil exited with code ${code}`);
-});
+  async run() {
+    await this.init();
+    console.log(`Starting Anvil...`);
+    const isSuccess = await this.spawner(this.rpcs.shift());
 
-anvil.on("error", (err) => {
-  console.error("Failed to start Anvil", err);
+    if (!isSuccess) {
+      throw new Error(`Anvil failed to start`);
+    }
+  }
+
+  async spawner(rpc?: string): Promise<boolean> {
+    if (!rpc) {
+      console.log(`No RPCs left to try`);
+      return false;
+    }
+
+    console.log(`Forking with RPC: ${rpc}`);
+
+    const anvil = spawnSync("anvil", ["--chain-id", "31337", "--fork-url", rpc, "--host", "127.0.0.1", "--port", "8545"], {
+      stdio: "inherit",
+    });
+
+    if (anvil.status !== 0) {
+      console.log(`Anvil failed to start with RPC: ${rpc}`);
+      console.log(`Retrying with next RPC...`);
+      return this.spawner(this.rpcs.shift());
+    }
+
+    return true;
+  }
+}
+
+async function main() {
+  const anvil = new Anvil();
+  await anvil.run();
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
