@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+// @ts-expect-error - Missing types
 import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
 function useHandler(networkId: number) {

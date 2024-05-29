@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { spawnSync } from "child_process";
+import { SpawnSyncOptionsWithStringEncoding, spawnSync } from "child_process";
 
 /**
  * Handles the async funding of the testing environment
@@ -23,62 +23,31 @@ class TestFunder {
     balance: "337888400000000000000000",
   };
 
-  loader() {
-    const steps = ["|", "/", "-", "\\"];
-    let i = 0;
-    return setInterval(() => {
-      process.stdout.write(`\r${steps[i++]}`);
-      i = i % steps.length;
-    }, 100);
-  }
-
   async execute() {
     const loader = this.loader();
 
     let isMoving = true;
 
+    const steps = {
+      impersonate: async () => await this._impersonateAccount(this.whale),
+      approveFunding: async () => await this._approvePayload(this.fundingWallet),
+      approveBeneficiary: async () => await this._approvePayload(this.beneficiary),
+      transfer: async () => await this._transferPayload(),
+    };
+
     while (isMoving) {
       console.log(`Attempting to fund the testing environment`);
-      if (!(await this._impersonateAccount(this.whale))) {
-        console.log(`Failed to impersonate account -> retrying...`);
-        const isSuccess = await this.retry(() => this._impersonateAccount(this.whale));
 
-        if (!isSuccess) {
-          console.log(`Failed to impersonate account -> exiting...`);
-          isMoving = false;
-        }
-      }
+      for (const [step, fn] of Object.entries(steps)) {
+        console.log(`Running step: ${step}`);
+        if (!(await fn())) {
+          console.log(`Failed to run step: ${step} -> retrying...`);
+          const isSuccess = await this.retry(fn);
 
-      console.log(`Approving for funding wallet`);
-      if (!(await this._approvePayload(this.fundingWallet))) {
-        console.log(`Failed to approve funding wallet -> retrying...`);
-        const isSuccess = await this.retry(() => this._approvePayload(this.fundingWallet));
-
-        if (!isSuccess) {
-          console.log(`Failed to approve funding wallet -> exiting...`);
-          isMoving = false;
-        }
-      }
-
-      console.log(`Approving for beneficiary wallet`);
-      if (!(await this._approvePayload(this.beneficiary))) {
-        console.log(`Failed to approve beneficiary wallet -> retrying...`);
-        const isSuccess = await this.retry(() => this._approvePayload(this.beneficiary));
-
-        if (!isSuccess) {
-          console.log(`Failed to approve beneficiary wallet -> exiting...`);
-          isMoving = false;
-        }
-      }
-
-      console.log(`Transferring funds to funding wallet`);
-      if (!(await this._transferPayload())) {
-        console.log(`Failed to transfer funds to funding wallet -> retrying...`);
-        const isSuccess = await this.retry(() => this._transferPayload());
-
-        if (!isSuccess) {
-          console.log(`Failed to transfer funds to funding wallet -> exiting...`);
-          isMoving = false;
+          if (!isSuccess) {
+            console.log(`Failed to run step: ${step} -> exiting...`);
+            isMoving = false;
+          }
         }
       }
 
@@ -92,7 +61,7 @@ class TestFunder {
     clearInterval(loader);
   }
 
-  async retry(fn: () => Promise<any>, retries = 5) {
+  async retry(fn: () => Promise<boolean>, retries = 5) {
     let i = 0;
     let isSuccess = false;
     while (i < retries) {
@@ -120,11 +89,11 @@ class TestFunder {
       throw new Error("Balance is not set correctly");
     }
 
-    console.log(`Funding wallet is ready for testing`);
-    console.log(`Allowance: ${allowance}\n Balance: ${balance}`);
+    console.log(`Funding wallet is ready for testing\n`);
+    console.log(`Allowance: ${allowance}\nBalance: ${balance}`);
   }
 
-  private async _exec(payload: { command: string; args: string[]; options: any }) {
+  private async _exec(payload: { command: string; args: string[]; options: SpawnSyncOptionsWithStringEncoding }) {
     const { command, args, options } = payload;
     const result = spawnSync(command, args, options);
     if (result.error) {
@@ -138,7 +107,7 @@ class TestFunder {
     const impersonate = await this._exec({
       command: "cast",
       args: ["rpc", "--rpc-url", this.anvilRPC, "anvil_impersonateAccount", address],
-      options: { stdio: "inherit" },
+      options: { encoding: "utf8", stdio: "inherit" },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -155,6 +124,7 @@ class TestFunder {
 
     return allowance.stdout;
   }
+
   private async _fundingBalanceCheck() {
     const balance = await this._exec({
       command: "cast",
@@ -164,6 +134,7 @@ class TestFunder {
 
     return balance.stdout;
   }
+
   private async _approvePayload(address: string) {
     const approve = await this._exec({
       command: "cast",
@@ -179,13 +150,14 @@ class TestFunder {
         this.permit2,
         this.expected.allowance,
       ],
-      options: { stdio: "inherit" },
+      options: { encoding: "utf8", stdio: "inherit" },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     return approve.status === 0;
   }
+
   private async _transferPayload() {
     const balance = parseInt(await this._fundingBalanceCheck());
     const expected = parseInt(this.expected.balance);
@@ -210,7 +182,7 @@ class TestFunder {
         this.fundingWallet,
         this.expected.balance,
       ],
-      options: { stdio: "inherit" },
+      options: { encoding: "utf8", stdio: "inherit" },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -219,7 +191,7 @@ class TestFunder {
   }
 
   private async _clearBalance() {
-    console.log(`Funder was overfunded, clearing excess funds`);
+    console.log(`Funder was over-funded, clearing excess funds`);
     const balance = parseInt(await this._fundingBalanceCheck());
     const difference = BigInt(balance - parseInt(this.expected.balance));
 
@@ -237,12 +209,21 @@ class TestFunder {
         this.whale,
         difference.toString(),
       ],
-      options: { stdio: "inherit" },
+      options: { encoding: "utf8", stdio: "inherit" },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     return clear.status === 0;
+  }
+
+  loader() {
+    const steps = ["|", "/", "-", "\\"];
+    let i = 0;
+    return setInterval(() => {
+      process.stdout.write(`\r${steps[i++]}`);
+      i = i % steps.length;
+    }, 100);
   }
 }
 
