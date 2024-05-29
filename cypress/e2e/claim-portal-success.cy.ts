@@ -2,7 +2,6 @@
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { Wallet } from "ethers";
 
-const beneficiary = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // anvil
 const SENDER_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // anvil
 
 describe("Claims Portal Success", () => {
@@ -11,7 +10,6 @@ describe("Claims Portal Success", () => {
     cy.clearAllLocalStorage();
     cy.clearAllSessionStorage();
     setupStubs();
-
     setupIntercepts();
 
     cy.visit(`/${claimUrl}`);
@@ -61,11 +59,33 @@ describe("Claims Portal Success", () => {
       cy.get("body").should("contain.text", "This reward is not for you");
     });
   });
+
+  describe("Invalidate nonce", () => {
+    beforeEach(() => {
+      setupStubs(1);
+    });
+
+    it("should successfully invalidate a nonce", () => {
+      cy.visit(`/${notMeantForYouPermit}`).then(() => {
+        cy.wait(2000);
+      });
+      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+
+      cy.get('table[data-make-claim="ok"]').should("exist");
+
+      cy.get("#invalidator").should("be.visible").invoke("click");
+
+      cy.get("#claim-loader").should("not.be.visible");
+      cy.get("#view-claim").should("not.be.visible");
+
+      cy.get("body").should("contain.text", "Nonce invalidation transaction sent");
+    });
+  });
 });
 
-function setupStubs() {
+function setupStubs(walletIndex = 0) {
   const provider = new JsonRpcProvider("http://localhost:8545");
-  const signer = provider.getSigner(beneficiary);
+  const signer = provider.getSigner(walletIndex);
   const wallet = new Wallet(SENDER_PRIVATE_KEY, provider);
 
   stubEthereum(signer);
