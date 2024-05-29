@@ -31,7 +31,6 @@ class TestFunder {
     const steps = {
       impersonate: async () => await this._impersonateAccount(this.whale),
       approveFunding: async () => await this._approvePayload(this.fundingWallet),
-      approveBeneficiary: async () => await this._approvePayload(this.beneficiary),
       transfer: async () => await this._transferPayload(),
     };
 
@@ -217,6 +216,24 @@ class TestFunder {
     return clear.status === 0;
   }
 
+  async pingAnvil() {
+    try {
+      const resp = await fetch("http://localhost:8545", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "eth_blockNumber", params: [], id: 1, jsonrpc: "2.0" }),
+      });
+
+      const { result } = await resp.json();
+
+      if (parseInt(result) > 0) {
+        return true;
+      }
+    } catch {
+      //
+    }
+    return false;
+  }
   loader() {
     const steps = ["|", "/", "-", "\\"];
     let i = 0;
@@ -229,8 +246,23 @@ class TestFunder {
 
 async function main() {
   const funder = new TestFunder();
+  let isAnvilReady = false;
+  let retries = 5;
+
+  while (!isAnvilReady && retries > 0) {
+    isAnvilReady = await funder.pingAnvil();
+    retries--;
+    console.log(`Waiting for Anvil to ready up...`);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    if (retries === 0) {
+      throw new Error(`Could not connect to Anvil`);
+    }
+  }
+
   await funder.execute();
 }
+
 main()
   .catch((error) => {
     console.error(error);
