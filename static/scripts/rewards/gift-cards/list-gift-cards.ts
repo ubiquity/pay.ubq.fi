@@ -41,15 +41,15 @@ export async function initClaimGiftCard(app: AppState) {
 
   if (retrieveOrderResponse.status == 200) {
     const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
-    const giftCardsHtmlParts: string[] = [];
-    giftCardsHtmlParts.push(`<h2 class="heading-gift-card">Your gift card</h2>`);
-    giftCardsHtmlParts.push(`<div class="gift-cards-wrapper purchased">`);
+    const htmlParts: string[] = [];
+    htmlParts.push(`<h2 class="heading-gift-card">Your gift card</h2>`);
+    htmlParts.push(`<div class="gift-cards-wrapper purchased">`);
     if (giftCard) {
-      giftCardsHtmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
+      htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     }
-    giftCardsHtmlParts.push(getRedeemCodeHtml(transaction));
-    giftCardsHtmlParts.push(`</div>`);
-    giftCardsSection.innerHTML = giftCardsHtmlParts.join(",");
+    htmlParts.push(getRedeemCodeHtml(transaction));
+    htmlParts.push(`</div>`);
+    giftCardsSection.innerHTML = htmlParts.join(",");
 
     const activateInfoHtmlParts: string[] = [];
     if (giftCard) {
@@ -60,15 +60,15 @@ export async function initClaimGiftCard(app: AppState) {
 
     attachRevealAction(transaction, app);
   } else if (retrieveGiftCardsResponse.status == 200) {
-    const giftCardsHtmlParts: string[] = [];
-    giftCardsHtmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
-    giftCardsHtmlParts.push(`<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`);
+    const htmlParts: string[] = [];
+    htmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
+    htmlParts.push(`<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`);
     giftCards.forEach((giftCard: GiftCard) => {
-      giftCardsHtmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
+      htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     });
-    giftCardsHtmlParts.push(`</div>`);
+    htmlParts.push(`</div>`);
 
-    giftCardsSection.innerHTML = giftCardsHtmlParts.join("");
+    giftCardsSection.innerHTML = htmlParts.join("");
 
     const activateInfoHtmlParts: string[] = [];
     giftCards.forEach((giftCard: GiftCard) => {
