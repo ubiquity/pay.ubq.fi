@@ -47,7 +47,7 @@ export async function initClaimGiftCard(app: AppState) {
     let giftCardsHtml = `<h2 class="heading-gift-card">Your gift card</h2>`;
     giftCardsHtml += `<div class="gift-cards-wrapper purchased">`;
     if (giftCard) {
-      giftCardsHtml += getGiftCardHtml(giftCard, false, app.reward.amount);
+      giftCardsHtml += getGiftCardHtml(giftCard, app.reward.amount);
     }
     giftCardsHtml += getRedeemCodeHtml(transaction);
     giftCardsHtml += `</div>`;
@@ -65,7 +65,7 @@ export async function initClaimGiftCard(app: AppState) {
     let giftCardsHtml = `<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`;
     giftCardsHtml += `<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`;
     giftCards.forEach((giftCard: GiftCard) => {
-      giftCardsHtml += getGiftCardHtml(giftCard, true, app.reward.amount);
+      giftCardsHtml += getGiftCardHtml(giftCard, app.reward.amount);
     });
     giftCardsHtml += `</div><br />`;
     giftCardsHtml += getDisclaimerHtml();

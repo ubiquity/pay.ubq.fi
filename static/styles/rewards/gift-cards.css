@@ -157,6 +157,9 @@ main:has(#gift-cards .gift-card) div:has(table.receipt) {
 .claim-gift-card-btn[data-loading="false"] > span.loading {
   display: none;
 }
+.gift-cards-wrapper.purchased .claim-gift-card-btn {
+  display: none;
+}
 
 #reveal-btn[data-loading-reveal="false"] .loading {
   display: none;
