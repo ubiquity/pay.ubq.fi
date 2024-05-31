@@ -51,7 +51,7 @@ jobs:
           CHAIN_ID: 100
           FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
           RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
-          UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_PRIVATE_KEY }}
+          UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_APP_PRIVATE_KEY }}
 
       - uses: actions/github-script@v7
         with:
