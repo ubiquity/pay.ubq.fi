@@ -255,7 +255,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
     }
 
     if (!app.signer) return;
-    await invalidateNonce(app.signer, app.reward.permit.nonce);
+    await invalidateNonce(app.signer, app.reward.nonce);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
