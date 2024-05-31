@@ -1,9 +1,9 @@
-import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
-import { ReloadlyFailureResponse, ReloadlyGetTransactionResponse } from "./types";
+import { OrderTransaction } from "../shared/types";
+import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyGetTransactionResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-import { AccessToken } from "./types";
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export async function onRequest(ctx: Context): Promise<Response> {
   try {
     validateRequestMethod(ctx.request.method, "GET");
     validateEnvVars(ctx);
@@ -30,9 +30,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     console.error("There was an error while processing your request.", error);
     return Response.json({ message: "There was an error while processing your request." }, { status: 500 });
   }
-};
+}
 
-export const getTransactionFromOrderId = async (orderId: string, accessToken: AccessToken) => {
+export async function getTransactionFromOrderId(orderId: string, accessToken: AccessToken): Promise<OrderTransaction> {
   const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 19); //// yyyy-mm-dd HH:mm:ss
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const oneYearAgoFormatted = oneYearAgo.toISOString().replace("T", " ").substring(0, 19);
@@ -62,4 +62,4 @@ export const getTransactionFromOrderId = async (orderId: string, accessToken: Ac
     );
   }
   return (responseJson as ReloadlyGetTransactionResponse).content[0];
-};
+}

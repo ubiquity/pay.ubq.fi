@@ -3,13 +3,13 @@ import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider"
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
 import { getGiftCardOrderId } from "../shared/helpers";
-import { ExchangeRate, OrderRequestParams, GiftCard } from "../shared/types";
+import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
+import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
+import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-import { Env, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
-import { AccessToken, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
-import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 
 export const networkRpcs: Record<number, string[]> = {
   1: ["https://gateway.tenderly.co/public/mainnet"],
@@ -18,7 +18,7 @@ export const networkRpcs: Record<number, string[]> = {
   31337: ["http://127.0.0.1:8545"],
 };
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export async function onRequest(ctx: Context): Promise<Response> {
   try {
     validateRequestMethod(ctx.request.method, "POST");
     validateEnvVars(ctx);
@@ -91,9 +91,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     console.error("There was an error while processing your request.", error);
     return Response.json({ message: "There was an error while processing your request." }, { status: 500 });
   }
-};
+}
 
-const getGiftCardById = async (productId: number, accessToken: AccessToken) => {
+async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products/${productId}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {
@@ -119,9 +119,9 @@ const getGiftCardById = async (productId: number, accessToken: AccessToken) => {
   console.log(`Response from ${url}`, responseJson);
 
   return responseJson as GiftCard;
-};
+}
 
-const orderGiftCard = async (productId: number, cardValue: number, identifier: string, accessToken: AccessToken) => {
+async function orderGiftCard(productId: number, cardValue: number, identifier: string, accessToken: AccessToken): Promise<ReloadlyOrderResponse> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/orders`;
   console.log(`Placing order at url: ${url}`);
 
@@ -161,9 +161,9 @@ const orderGiftCard = async (productId: number, cardValue: number, identifier: s
   console.log(`Response from ${url}`, responseJson);
 
   return responseJson as ReloadlyOrderResponse;
-};
+}
 
-async function isDuplicateOrder(orderId: string, accessToken: AccessToken) {
+async function isDuplicateOrder(orderId: string, accessToken: AccessToken): Promise<boolean> {
   try {
     const transaction = await getTransactionFromOrderId(orderId, accessToken);
     return !!transaction.transactionId;
@@ -172,7 +172,7 @@ async function isDuplicateOrder(orderId: string, accessToken: AccessToken) {
   }
 }
 
-async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken) {
+async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken): Promise<ExchangeRate> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/fx-rate?currencyCode=${fromCurrency}&amount=${usdAmount}`;
   console.log(`Retrieving url ${url}`);
   const options = {
@@ -200,7 +200,7 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
   return responseJson as ExchangeRate;
 }
 
-function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard) {
+function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
   const rewardAmount = txParsed.args.transferDetails.requestedAmount;
 
   if (!isClaimableForAmount(giftCard, rewardAmount)) {

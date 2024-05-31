@@ -1,12 +1,12 @@
-import { getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
-import { ReloadlyFailureResponse, ReloadlyRedeemCodeResponse } from "./types";
 import { verifyMessage } from "ethers/lib/utils";
+import { getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
+import { RedeemCode } from "../shared/types";
 import { getTransactionFromOrderId } from "./get-order";
+import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyRedeemCodeResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
-import { AccessToken } from "./types";
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export async function onRequest(ctx: Context): Promise<Response> {
   try {
     validateRequestMethod(ctx.request.method, "GET");
     validateEnvVars(ctx);
@@ -62,9 +62,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     console.error("There was an error while processing your request.", error);
     return Response.json({ message: "There was an error while processing your request." }, { status: 500 });
   }
-};
+}
 
-export const getRedeemCode = async (transactionId: number, accessToken: AccessToken) => {
+export async function getRedeemCode(transactionId: number, accessToken: AccessToken): Promise<RedeemCode[]> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/orders/transactions/${transactionId}/cards`;
   console.log(`Retrieving redeem codes from ${url}`);
   const options = {
@@ -90,4 +90,4 @@ export const getRedeemCode = async (transactionId: number, accessToken: AccessTo
   console.log(`Response from ${url}`, responseJson);
 
   return responseJson as ReloadlyRedeemCodeResponse;
-};
+}

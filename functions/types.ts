@@ -1,4 +1,5 @@
 import { GiftCard, Order, OrderTransaction, RedeemCode } from "../shared/types";
+import { Env } from "./helpers";
 
 export interface AccessToken {
   token: string;
@@ -66,3 +67,5 @@ export interface ReloadlyFailureResponse {
   infoLink?: string;
   details: [];
 }
+
+export type Context = EventContext<Env, string, Record<string, string>>;

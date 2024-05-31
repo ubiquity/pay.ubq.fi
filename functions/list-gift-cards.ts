@@ -1,9 +1,9 @@
-import { ReloadlyFailureResponse, ReloadlyListGiftCardResponse } from "./types";
-import { Env, getAccessToken, getBaseUrl, commonHeaders } from "./helpers";
-import { AccessToken } from "./types";
+import { GiftCard } from "../shared/types";
+import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyListGiftCardResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export async function onRequest(ctx: Context): Promise<Response> {
   try {
     validateRequestMethod(ctx.request.method, "GET");
     validateEnvVars(ctx);
@@ -21,9 +21,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     console.error("There was an error while processing your request.", error);
     return Response.json({ message: "There was an error while processing your request." }, { status: 500 });
   }
-};
+}
 
-const getGiftCards = async (productQuery: string, accessToken: AccessToken) => {
+async function getGiftCards(productQuery: string, accessToken: AccessToken): Promise<GiftCard[]> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products?productName=${productQuery}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {
@@ -54,4 +54,4 @@ const getGiftCards = async (productQuery: string, accessToken: AccessToken) => {
   }
 
   return (responseJson as ReloadlyListGiftCardResponse).content;
-};
+}
