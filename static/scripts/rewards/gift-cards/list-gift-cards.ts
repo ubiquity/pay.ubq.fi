@@ -9,8 +9,6 @@ import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
 
-const html = String.raw;
-
 export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
   if (!giftCardsSection) {
@@ -68,10 +66,7 @@ export async function initClaimGiftCard(app: AppState) {
     giftCards.forEach((giftCard: GiftCard) => {
       giftCardsHtmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     });
-    giftCardsHtmlParts.push(`</div><br />`);
-    giftCardsHtmlParts.push(getDisclaimerHtml());
-    giftCardsHtmlParts.push(`<p></p>`);
-    giftCardsHtmlParts.push(`<p></p>`);
+    giftCardsHtmlParts.push(`</div>`);
 
     giftCardsSection.innerHTML = giftCardsHtmlParts.join("");
 
@@ -89,12 +84,4 @@ export async function initClaimGiftCard(app: AppState) {
   }
 
   attachActivateInfoAction();
-}
-
-function getDisclaimerHtml() {
-  return html`
-    <h2>Disclaimer</h2>
-    <p>All Visa/Mastercard are non-exchangeable & non-refundable.</p>
-    <p>Exact value of a card can be slightly different due to exchange rate.</p>
-  `;
 }
