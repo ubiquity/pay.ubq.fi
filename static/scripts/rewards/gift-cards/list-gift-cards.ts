@@ -43,42 +43,43 @@ export async function initClaimGiftCard(app: AppState) {
 
   if (retrieveOrderResponse.status == 200) {
     const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
-
-    let giftCardsHtml = `<h2 class="heading-gift-card">Your gift card</h2>`;
-    giftCardsHtml += `<div class="gift-cards-wrapper purchased">`;
+    const giftCardsHtmlParts: string[] = [];
+    giftCardsHtmlParts.push(`<h2 class="heading-gift-card">Your gift card</h2>`);
+    giftCardsHtmlParts.push(`<div class="gift-cards-wrapper purchased">`);
     if (giftCard) {
-      giftCardsHtml += getGiftCardHtml(giftCard, app.reward.amount);
+      giftCardsHtmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     }
-    giftCardsHtml += getRedeemCodeHtml(transaction);
-    giftCardsHtml += `</div>`;
-    giftCardsSection.innerHTML = giftCardsHtml;
+    giftCardsHtmlParts.push(getRedeemCodeHtml(transaction));
+    giftCardsHtmlParts.push(`</div>`);
+    giftCardsSection.innerHTML = giftCardsHtmlParts.join(",");
 
-    let activateInfoHtml = "";
+    const activateInfoHtmlParts: string[] = [];
     if (giftCard) {
-      activateInfoHtml += getGiftCardActivateInfoHtml(giftCard);
+      activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
     }
 
-    activateInfoSection.innerHTML = activateInfoHtml;
+    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
 
     attachRevealAction(transaction, app);
   } else if (retrieveGiftCardsResponse.status == 200) {
-    let giftCardsHtml = `<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`;
-    giftCardsHtml += `<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`;
+    const giftCardsHtmlParts: string[] = [];
+    giftCardsHtmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
+    giftCardsHtmlParts.push(`<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`);
     giftCards.forEach((giftCard: GiftCard) => {
-      giftCardsHtml += getGiftCardHtml(giftCard, app.reward.amount);
+      giftCardsHtmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     });
-    giftCardsHtml += `</div><br />`;
-    giftCardsHtml += getDisclaimerHtml();
-    giftCardsHtml += `<p></p>`;
-    giftCardsHtml += `<p></p>`;
+    giftCardsHtmlParts.push(`</div><br />`);
+    giftCardsHtmlParts.push(getDisclaimerHtml());
+    giftCardsHtmlParts.push(`<p></p>`);
+    giftCardsHtmlParts.push(`<p></p>`);
 
-    giftCardsSection.innerHTML = giftCardsHtml;
+    giftCardsSection.innerHTML = giftCardsHtmlParts.join("");
 
-    let activateInfoHtml = "";
+    const activateInfoHtmlParts: string[] = [];
     giftCards.forEach((giftCard: GiftCard) => {
-      activateInfoHtml += getGiftCardActivateInfoHtml(giftCard);
+      activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
     });
-    activateInfoSection.innerHTML = activateInfoHtml;
+    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
 
     attachClaimAction("claim-gift-card-btn", giftCards, app);
   } else if (retrieveGiftCardsResponse.status == 404) {
