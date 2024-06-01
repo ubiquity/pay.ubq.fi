@@ -141,7 +141,7 @@ describe("Failure cases", () => {
     } catch (er) {
       console.log(er);
     }
-    expect(consoleSpy).toHaveBeenCalledWith();
+    expect(consoleSpy).toHaveBeenCalledWith(PROXY_ERROR);
     expect(consoleSpy).toHaveBeenCalledTimes(10); // 10 because we have 10 bad providers
   });
 

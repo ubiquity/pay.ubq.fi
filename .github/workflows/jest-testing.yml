@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: latest
-          
+
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
@@ -29,10 +29,10 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
-    
+
       - name: Start Anvil
         run: yarn test:anvil &
-  
+
       - name: Wait for Anvil
         run: |
           for i in {1..30}
@@ -42,10 +42,10 @@ jobs:
             fi
             sleep 1
           done || exit 1
-  
+
       - name: Fund test accounts
         run: yarn test:fund
-  
+
       - name: Testing
         run: |
           yarn test:jest | tee ./coverage.txt && exit ${PIPESTATUS[0]}
