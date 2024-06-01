@@ -2,7 +2,7 @@
 
 Tool for generating offline permits for bounty hunters to withdraw their payments.
 
-## How to setup
+## How to set up
 
 Create a `.env` file in the project root:
 
