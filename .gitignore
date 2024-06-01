@@ -11,6 +11,8 @@ commit.txt
 .pnp.cjs
 .pnp.loader.mjs
 static/dist
-
+junit.xml
+coverage
+coverage.txt
 cypress/screenshots
 cypress/videos
