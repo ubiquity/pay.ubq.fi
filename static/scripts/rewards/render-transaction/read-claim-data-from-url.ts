@@ -9,7 +9,8 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
-import { useRpcHandler } from "../web3/use-rpc-handler";
+import { useHandler } from "../web3/use-rpc-handler";
+import { createProviderProxy } from "../web3/onchain-call-handler";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -32,9 +33,22 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useRpcHandler(app);
+    // create a handler instance
+    const handler = await useHandler(app.networkId as number);
+    // get the fastest provider
+    const provider = await handler.getFastestRpcProvider();
+    // needs to be assigned to create our proxy
+    app.provider = provider;
+    // create the proxy
+    app.provider = createProviderProxy(app, handler);
   } catch (e) {
-    toaster.create("error", `e`);
+    if (e instanceof Error) {
+      toaster.create("error", e.message);
+    } else {
+      if (typeof e === "string") {
+        toaster.create("error", e);
+      }
+    }
   }
 
   try {
