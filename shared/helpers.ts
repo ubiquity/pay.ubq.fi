@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
 export function getGiftCardOrderId(rewardToAddress: string, signature: string) {
   const checksumAddress = ethers.utils.getAddress(rewardToAddress);
@@ -12,4 +13,20 @@ export function getMessageToSign(transactionId: number) {
     from: "pay.ubq.fi",
     transactionId: transactionId,
   });
+}
+
+export async function getFastestRpcUrl(networkId: string | number) {
+  const config = {
+    networkId: networkId,
+    autoStorage: true,
+    cacheRefreshCycles: 5,
+    rpcTimeout: 1500,
+    networkName: null,
+    runtimeRpcs: null,
+    networkRpcs: null,
+  };
+
+  const handler = new RPCHandler(config);
+  const provider = await handler.getFastestRpcProvider();
+  return provider.connection.url;
 }

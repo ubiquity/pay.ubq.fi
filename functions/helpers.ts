@@ -1,9 +1,12 @@
 import { AccessToken } from "./types";
 
+export const allowedChainIds = [1, 5, 100, 31337];
+
 export const commonHeaders = {
   "Content-Type": "application/json",
   Accept: "application/com.reloadly.giftcards-v1+json",
 };
+
 export interface Env {
   USE_RELOADLY_SANDBOX: boolean;
   RELOADLY_API_CLIENT_ID: string;

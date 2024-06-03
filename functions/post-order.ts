@@ -2,21 +2,14 @@ import { TransactionReceipt, TransactionResponse } from "@ethersproject/provider
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
-import { getGiftCardOrderId } from "../shared/helpers";
+import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-
-export const networkRpcs: Record<number, string[]> = {
-  1: ["https://gateway.tenderly.co/public/mainnet"],
-  5: ["https://eth-goerli.public.blastapi.io"],
-  100: ["https://rpc.gnosischain.com"],
-  31337: ["http://127.0.0.1:8545"],
-};
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -31,13 +24,15 @@ export async function onRequest(ctx: Context): Promise<Response> {
       throw new Error(`Invalid post parameters: ${JSON.stringify({ productId, txHash, chainId })}`);
     }
 
-    if (!networkRpcs[chainId]) {
+    if (!allowedChainIds.includes(chainId)) {
       throw new Error(`Unsupported chain: ${JSON.stringify({ chainId })}`);
     }
 
+    const fastestRpcUrl = await getFastestRpcUrl(chainId);
+
     const provider = new JsonRpcProvider(
       {
-        url: networkRpcs[chainId][0],
+        url: fastestRpcUrl,
         skipFetchSetup: true,
       },
       chainId
