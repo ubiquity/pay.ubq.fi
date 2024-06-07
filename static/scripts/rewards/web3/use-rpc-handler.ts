@@ -1,6 +1,5 @@
 import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { AppState } from "../app-state";
-import { ethers } from "ethers";
 
 export async function useHandler(networkId: number) {
   const config = {
@@ -29,5 +28,5 @@ export async function useRpcHandler(app: AppState) {
   if (!url) {
     throw new Error("Provider URL not set");
   }
-  return new ethers.providers.JsonRpcProvider(provider.connection.url);
+  return provider;
 }
