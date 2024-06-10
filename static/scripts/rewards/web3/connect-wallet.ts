@@ -25,7 +25,12 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const isOkay = await stressTestWalletRpc(wallet);
 
     if (!isOkay) {
-      toaster.create("error", "We have detected potential issues with your in-wallet RPC. Accept the request to replace it with a more reliable one.");
+      if (mediaQuery.matches) {
+        toaster.create("info", `In case of network issues, please change your in-wallet RPC to the one below...`, 15000);
+      } else {
+        // Their wallet provider will auto-prompt due to the call succeeding
+        toaster.create("error", "We have detected potential issues with your in-wallet RPC. Accept the request to replace it with a more reliable one.");
+      }
       await addFastestHandlerNetwork(wallet);
     }
 
@@ -47,13 +52,14 @@ async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider) {
 
   let toSuggest = sorted[0];
 
+  let isOkay = false;
+
   for await (const { url } of sorted) {
     const _url = url.split("__")[1];
-    toaster.create("info", `Testing ${_url}...`);
     if (_url !== appUrl) {
       provider = new ethers.providers.JsonRpcProvider(_url);
 
-      const isOkay = await stressTestWalletRpc(provider);
+      isOkay = await stressTestWalletRpc(provider);
 
       if (isOkay) {
         toSuggest = { url: _url, latency: latencies[url] };
@@ -62,14 +68,15 @@ async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider) {
     }
   }
 
+  if (!isOkay) {
+    toaster.create("error", "We failed to find a more reliable RPC for you. Please try again later if you have network issues.");
+    return;
+  }
+
   try {
     await addHandlerSuggested(wallet, toSuggest.url);
-    if (!mediaQuery.matches) {
-      toaster.create("success", `Optimal RPC network added: ${toSuggest.url}`);
-    }
   } catch (error) {
-    toaster.create("info", `Please replace your in-wallet RPC manually and then refresh the page.`, 15000);
-    toaster.create("info", `Replacement RPC: ${toSuggest.url}`, Infinity);
+    toaster.create("info", `${toSuggest.url}`, Infinity);
   }
 }
 
@@ -86,8 +93,7 @@ async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url:
      * so we'll show a toast suggesting they do it manually
      */
 
-    toaster.create("info", `Please replace your in-wallet RPC manually and then refresh the page.`, 15000);
-    toaster.create("info", `Replacement RPC: ${url}`, Infinity);
+    toaster.create("info", `${url}`, Infinity);
     return;
   }
 
