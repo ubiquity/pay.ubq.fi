@@ -149,6 +149,9 @@ table[data-make-claim-rendered] button.show > svg#claim-loader {
 table[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
+table[data-details-visible="true"][data-additional-data-size="large"] #mainTableBody {
+  transform: translate(-50%, 15%);
+}
 table #controls {
   opacity: 0;
   transition: 1s ease-in-out opacity;
