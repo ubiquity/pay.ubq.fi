@@ -48,7 +48,7 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 - Importing the anvil accounts into your wallet:
   - Open your wallet provider and select `import wallet` or `import account`, something to that effect.
   - You can obtain the private keys by simply running the yarn command or just `anvil` and it will list the private keys for you.
-  - Copy and paste into your wallet provider and you should now be able to the local permit generated
+  - Copy and paste into your wallet provider and you should now be able to interact with the locally generated permits.
   - Only account [0] can claim it and only account [1] can invalidate it.
 
 ## What to expect
