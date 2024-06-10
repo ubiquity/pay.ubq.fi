@@ -1,8 +1,8 @@
-# Generate Permit
+# [pay.ubq.fi](https://pay.ubq.fi)
 
-Tool for generating offline permits for bounty hunters to withdraw their payments.
+A vanilla Typescript dapp for claiming Ubiquity task payments. It also includes tools for generating and invalidating permits and can be used to claim both ERC20 and ERC721 tokens.
 
-## How to set up
+## How to set up the local testing environment
 
 Ensure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation) in order to use the helper scripts to setup the local testing environment.
 
@@ -21,18 +21,6 @@ PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
 AMOUNT_IN_ETH="1" # amount in ether, 1 AMOUNT_IN_ETH = 1000000000000000000 WEI
 BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 ```
-
-## How it works
-
-1. Admin sets `env.AMOUNT_IN_ETH` and `env.BENEFICIARY_ADDRESS` depending on a bounty hunter's reward and address
-2. Admin generates an offline permit URL via `npx tsx generate-permit2-url.ts`. Permit URL example:
-
-```
-http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZFNEI2QUUxM2QyYTYwNTVDOEQ5Y0Y2NWM1NWJhYzMyQjVkODQ0IiwiYW1vdW50IjoiMTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjQ0NTUxMjc4NTQwNTU0MzM1MDQ2NzU2NDQ3MzM2MjI1ODg5OTE4OTY5MTczODQwNTU0Nzk2NzQ3MzQzMzAwOTg0NzU4MDIyMzY1ODczIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhjODZhMDU5NzgwMThlMDRkNmVGMmFhNzNFNjlhNzMzQzA2ZDFmODllIiwicmVxdWVzdGVkQW1vdW50IjoiMTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJvd25lciI6IjB4NTRmNGEzNjQyMkRjOTZkMDg0OTY3NWMxZjBkZDJCOTZEMjc1NThFMiIsInNpZ25hdHVyZSI6IjB4NWI0OTE5MjhmYzI4MzBlMjZiNTViMWUxOWQ3YzVhMmVjNGE2ZmRhYWI1OGFiYjgyOWMwNmYzYzlkNGE4YTc5YjAzYmE2NjlkMDM4YjFmYzg5NjgzYzMyYjBiYTA5MzU2MDRjMGU1MDNjYWE3ZmY2ZWM2MDg2ZWZlYjY2MTY5MjQxYyJ9
-```
-
-3. Admin posts offline permit URL in issue comments
-4. Bounty hunter opens permit URL, connects wallet and clicks a "withdraw" button to get a payment
 
 ## How to test locally
 
@@ -98,6 +86,18 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 - The test suite is not perfect because we spoof MetaMask, so tests will toast errors that are not actually errors. This is because we are not actually connected to a wallet provider, we are just pretending to be. We are able to do this by injecting a `Signer` into the global scope during tests which allows us to sign transactions and interact with the blockchain as if we were connected to a wallet provider.
 
 - If you see that `Allowance` or `Balance` is `0.00` and you are sure the scripts have run successfully, this means that your `.env` is potentially incorrect and the app is reading from the wrong chain. Ensure that you have the correct chain id and RPC provider URL set in your `.env` file and the correct wallet network selected in your wallet provider (The app should handle this for you and prompt you to change network if it doesn't match the chain id in the `.env` file).
+
+## How to generate a permit2 URL using the script
+
+1. Admin sets `env.AMOUNT_IN_ETH` and `env.BENEFICIARY_ADDRESS` depending on a bounty hunter's reward and address
+2. Admin generates an offline permit URL via `npx tsx generate-permit2-url.ts`. Permit URL example:
+
+```
+http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZFNEI2QUUxM2QyYTYwNTVDOEQ5Y0Y2NWM1NWJhYzMyQjVkODQ0IiwiYW1vdW50IjoiMTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjQ0NTUxMjc4NTQwNTU0MzM1MDQ2NzU2NDQ3MzM2MjI1ODg5OTE4OTY5MTczODQwNTU0Nzk2NzQ3MzQzMzAwOTg0NzU4MDIyMzY1ODczIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhjODZhMDU5NzgwMThlMDRkNmVGMmFhNzNFNjlhNzMzQzA2ZDFmODllIiwicmVxdWVzdGVkQW1vdW50IjoiMTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJvd25lciI6IjB4NTRmNGEzNjQyMkRjOTZkMDg0OTY3NWMxZjBkZDJCOTZEMjc1NThFMiIsInNpZ25hdHVyZSI6IjB4NWI0OTE5MjhmYzI4MzBlMjZiNTViMWUxOWQ3YzVhMmVjNGE2ZmRhYWI1OGFiYjgyOWMwNmYzYzlkNGE4YTc5YjAzYmE2NjlkMDM4YjFmYzg5NjgzYzMyYjBiYTA5MzU2MDRjMGU1MDNjYWE3ZmY2ZWM2MDg2ZWZlYjY2MTY5MjQxYyJ9
+```
+
+3. Admin posts offline permit URL in issue comments (with the payment portal domain name)
+4. Bounty hunter opens permit URL, connects wallet and clicks a "withdraw" button to get a payment
 
 ## How to invalidate a permit2 nonce using the script
 
