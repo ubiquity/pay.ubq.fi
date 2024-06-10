@@ -99,32 +99,7 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 
 - If you see that `Allowance` or `Balance` is `0.00` and you are sure the scripts have run successfully, this means that your `.env` is potentially incorrect and the app is reading from the wrong chain. Ensure that you have the correct chain id and RPC provider URL set in your `.env` file and the correct wallet network selected in your wallet provider (The app should handle this for you and prompt you to change network if it doesn't match the chain id in the `.env` file).
 
-## CloudFlare Setup (GitHub Secrets)
-
-##### CLOUDFLARE_ACCOUNT_ID =
-
-    https://dash.cloudflare.com/***/pages
-    https://dash.cloudflare.com/abcd1234/pages
-    (Here `abcd1234` is your account ID)
-
-##### CLOUDFLARE_API_TOKEN =
-
-    https://dash.cloudflare.com/profile/api-tokens > Create Token > API token templates > Edit Cloudflare Workers > Use Template
-    Account Resources = All Accounts or Target Account
-    Zone Resources = All Zones
-    (Detailed Instructions: https://developers.cloudflare.com/workers/wrangler/ci-cd/)
-
-##### CLOUDFLARE_ASSET_DIRECTORY =
-
-    static
-
-##### CLOUDFLARE_PROJECT_NAME =
-
-    npm install -g wrangler
-    wrangler login
-    wrangler pages project create
-
-## How to invalidate a permit2 nonce by example
+## How to invalidate a permit2 nonce using the script
 
 This section describes how to invalidate the following [permit](https://github.com/ubiquity/ubiquity-dollar/issues/643#issuecomment-1607152588) (i.e. invalidate a permit2 nonce)
 
