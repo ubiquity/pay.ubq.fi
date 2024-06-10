@@ -4,18 +4,24 @@ Tool for generating offline permits for bounty hunters to withdraw their payment
 
 ## How to set up
 
+Ensure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation) in order to use the helper scripts to setup the local testing environment.
+
+
+
 Create a `.env` file in the project root:
+
+- These are the default test env settings that allow for easy E2E local setup using the yarn commands. If you want to produce or invalidate real onchain permits you must change the below values to reflect the real permit information such as address, chain id, private key and so on.
 
 ```
 # common variables
-CHAIN_ID="" # mainnet: 1, goerli: 5
-FRONTEND_URL=""
-UBIQUIBOT_PRIVATE_KEY=""
-RPC_PROVIDER_URL=""
-PAYMENT_TOKEN_ADDRESS="" # // DAI address, mainnet: 0x6b175474e89094c44da98b954eedeac495271d0f, goerli: 0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844
+CHAIN_ID="31337" # 1 | 100, 31337 is default for local testing and claiming
+FRONTEND_URL="http://localhost:8080"
+UBIQUIBOT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+RPC_PROVIDER_URL="http://127.0.0.1:8545"
+PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
 # variables depending on spender (bounty hunter)
 AMOUNT_IN_ETH="1" # amount in ether, 1 AMOUNT_IN_ETH = 1000000000000000000 WEI
-BENEFICIARY_ADDRESS=""
+BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 ```
 
 ## How it works
@@ -33,26 +39,19 @@ http://localhost:8080?claim=eyJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHgxMWZF
 ## How to test locally
 
 1. Set `.env` variables.
-2. Run `anvil --chain-id 31337 --fork-url https://rpc.gnosis.gateway.fm` in a separate terminal.
-3. Run the Anvil commands (uses the Anvil default wallets).
-4. In the project root run `yarn start`.
-5. A permit URL for both ERC20 and ERC721 is generated in the terminal.
-6. Open the generated permit URL defaulting to the variable values in the `.env` file.
-7. Connect the bounty hunter's address.
-8. Click the "withdraw" button to get a reward.
-9. Testing the ERC721 permit is easiest deploying the `nft-rewards` contract from the [repository](https://github.com/ubiquity/nft-rewards)
+2. Run `yarn test:anvil` in terminal A and `yarn test:fund` in terminal B.
+3. Use terminal B to then run `yarn start`.
+4. A permit URL for both ERC20 and ERC721 is generated in the terminal.
+5. Open the generated permit URL using the link in the console.
+6. Connect your wallet. (This requires that you have imported the two anvil accounts [0] & [1] into your wallet.)
+7. Either the claim or invalidate button should be visible depending on your connected account.
+8. Testing the ERC721 permit is easiest deploying the `nft-rewards` contract from the [repository](https://github.com/ubiquity/nft-rewards)
 
-#### Anvil commands
-
-###### Using any other `--chain-id` will hit real RPC endpoints.
-
-```shell
-cast rpc anvil_impersonateAccount 0xba12222222228d8ba445958a75a0704d566bf2c8 &
-cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xba12222222228d8ba445958a75a0704d566bf2c8 "transfer(address,uint256)(bool)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8  337888400000000000000000 &
-cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 "approve(address,uint256)(bool)" 0x000000000022D473030F116dDEE9F6B43aC78BA3  9999999999999991111111119999999999999999 &
-cast send 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d --unlocked --from 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 "approve(address,uint256)(bool)" 0x000000000022D473030F116dDEE9F6B43aC78BA3  999999999999999111119999999999999999
-
-```
+- Importing the anvil accounts into your wallet:
+  - Open your wallet provider and select `import wallet` or `import account`, something to that effect.
+  - You can obtain the private keys by simply running the yarn command or just `anvil` and it will list the private keys for you.
+  - Copy and paste into your wallet provider and you should now be able to the local permit generated
+  - Only account [0] can claim it and only account [1] can invalidate it.
 
 ## CloudFlare Setup (GitHub Secrets)
 
