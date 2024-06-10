@@ -6,6 +6,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
+    window.history.pushState({}, "", "/");
+
     await wallet.send("eth_requestAccounts", []);
 
     const signer = wallet.getSigner();
