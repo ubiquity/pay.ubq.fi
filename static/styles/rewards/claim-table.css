@@ -150,7 +150,7 @@ table[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
 table[data-details-visible="true"][data-additional-data-size="large"] #mainTableBody {
-  transform: translate(-50%, 15%);
+  transform: translate(-50%, 20px);
 }
 table #controls {
   opacity: 0;

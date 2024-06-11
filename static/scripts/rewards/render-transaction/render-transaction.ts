@@ -30,6 +30,7 @@ export async function renderTransaction(): Promise<Success> {
 
   if (isErc20Permit(app.reward)) {
     const treasury = await fetchTreasury(app.reward);
+    table.setAttribute(`data-additional-data-size`, "small");
 
     // insert tx data into table
     const requestedAmountElement = insertErc20PermitTableData(app, table, treasury);
