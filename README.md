@@ -67,7 +67,8 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
 
 - Clear transaction history in MetaMask if transactions hang after restarting the Anvil instance.
 - The test suite may show error toasts due to MetaMask spoofing.
-- Ensure `.env` is correctly configured if `Allowance` or `Balance` is `0.00`.
+- Ensure `.env` is correctly configured and wallet provider network is correct if `Allowance` or `Balance` is `0.00`.
+- Always start the Anvil instance before using `yarn start` as permit generation requires an on-chain call to `token.decimals()`.
 
 ## How to generate a permit2 URL using the script
 
