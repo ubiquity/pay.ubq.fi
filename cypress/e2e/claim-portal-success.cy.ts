@@ -36,6 +36,15 @@ describe("Claims Portal Success", () => {
       // anvil confirms it instantly so there is two notifications
       cy.get("body").should("contain.text", "Transaction sent");
       cy.get("body").should("contain.text", "Claim Complete");
+
+      cy.window().then((win) => {
+        win.open = cy.stub().as("open");
+      });
+
+      cy.get("#view-claim").invoke("click")
+        .then(() => {
+          cy.get("@open").should("be.calledWithMatch", /https:\/\/gnosisscan.io\/tx/);
+        });
     });
   });
 
