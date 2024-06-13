@@ -13,11 +13,17 @@ function createProviderAndWallet() {
   return { provider, myWallet };
 }
 
-function createPermitTransferFromData(amount: string) {
+async function createPermitTransferFromData(amount: string) {
+  // get payment token decimals
+  const { provider } = createProviderAndWallet();
+  const erc20Abi = ["function decimals() public view returns (uint8)"];
+  const tokenContract = new ethers.Contract(process.env.PAYMENT_TOKEN_ADDRESS, erc20Abi, provider);
+  const tokenDecimals = await tokenContract.decimals();
+
   return {
     permitted: {
       token: process.env.PAYMENT_TOKEN_ADDRESS || "",
-      amount: ethers.utils.parseUnits(amount || "", 18),
+      amount: ethers.utils.parseUnits(amount || "", tokenDecimals),
     },
     spender: process.env.BENEFICIARY_ADDRESS,
     nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),
@@ -58,10 +64,10 @@ function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTra
 export async function generateERC20Permit() {
   const { myWallet } = createProviderAndWallet();
 
-  const permitTransferFromData = createPermitTransferFromData(process.env.AMOUNT_IN_ETH);
+  const permitTransferFromData = await createPermitTransferFromData(process.env.AMOUNT_IN_ETH);
   const signature = await signTypedData(myWallet, permitTransferFromData);
 
-  const permitTransferFromData2 = createPermitTransferFromData("9");
+  const permitTransferFromData2 = await createPermitTransferFromData("9");
   const sig = await signTypedData(myWallet, permitTransferFromData);
 
   const txData = [createTxData(myWallet, permitTransferFromData, signature), createTxData(myWallet, permitTransferFromData2, sig)];
