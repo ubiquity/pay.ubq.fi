@@ -101,7 +101,7 @@ async function waitForTransaction(tx: TransactionResponse) {
   try {
     const receipt = await tx.wait();
     viewClaimButton.onclick = () => {
-      window.open(`https://${tx.chainId === 1 ? "etherscan" : "gnosisscan"}.io/tx/${receipt.transactionHash}`, "_blank");
+      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
     }
 
     toaster.create("success", `Claim Complete.`);

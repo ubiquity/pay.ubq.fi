@@ -43,7 +43,7 @@ describe("Claims Portal Success", () => {
 
       cy.get("#view-claim").invoke("click")
         .then(() => {
-          cy.get("@open").should("be.calledWithMatch", /https:\/\/gnosisscan.io\/tx/);
+          cy.get("@open").should("be.calledWithMatch", /https:\/\/blockscan.com\/tx/);
         });
     });
   });
