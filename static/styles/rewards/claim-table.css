@@ -149,9 +149,6 @@ table[data-make-claim-rendered] button.show > svg#claim-loader {
 table[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
-table[data-details-visible="true"][data-additional-data-size="large"] #mainTableBody {
-  transform: translate(-50%, 20px);
-}
 table #controls {
   opacity: 0;
   transition: 1s ease-in-out opacity;
@@ -172,6 +169,11 @@ table #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -90px);
+}
+table[data-additional-data-size="large"] #additionalDetailsTable {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -175px);
 }
 table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
