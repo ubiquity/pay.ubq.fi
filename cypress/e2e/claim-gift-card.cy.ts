@@ -68,7 +68,7 @@ describe("Gift Cards", () => {
       cy.intercept({ method: "GET", url: "/get-order**" }).as("getOrder");
       cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").invoke("click");
       cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Processing... Please wait. Do not close this page.");
-      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Success. Refresh this page in a few minutes to get your card.");
+      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Transaction confirmed. Loading your card now.");
       cy.wait("@getOrder", { timeout: 10000 });
 
       cy.get("#gift-cards").should("exist").and("include.text", "Your gift card");
