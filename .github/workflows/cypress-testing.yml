@@ -46,14 +46,17 @@ jobs:
             sleep 1
           done || exit 1
 
-      - name: Fund test accounts
-        run: yarn test:fund
+      - name: Start Cloudflare Wrangler
+        run: npx wrangler pages dev static --port 8080 --binding USE_RELOADLY_SANDBOX=true RELOADLY_API_CLIENT_ID="$RELOADLY_SANDBOX_API_CLIENT_ID" RELOADLY_API_CLIENT_SECRET="$RELOADLY_SANDBOX_API_CLIENT_SECRET" &
+        env:
+          RELOADLY_SANDBOX_API_CLIENT_ID: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_ID }}
+          RELOADLY_SANDBOX_API_CLIENT_SECRET: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_SECRET }}
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
           build: yarn run build
-          start: yarn start
+          start: yarn test:fund
 
         env:
           SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
@@ -65,6 +68,7 @@ jobs:
           PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
           RPC_PROVIDER_URL: "http://localhost:8545"
           UBIQUIBOT_PRIVATE_KEY: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -170,6 +170,11 @@ table #additionalDetailsTable {
   pointer-events: none;
   transform: translate(-50%, -90px);
 }
+table[data-additional-data-size="large"] #additionalDetailsTable {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -175px);
+}
 table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
   pointer-events: all;
@@ -252,6 +257,9 @@ table th {
   display: none;
 }
 [data-make-claim="false"] #make-claim {
+  display: none;
+}
+[data-collect-gift-card="false"] #collect-gift-card {
   display: none;
 }
 [data-view-claim="false"] #view-claim {
