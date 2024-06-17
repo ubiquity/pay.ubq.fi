@@ -170,6 +170,11 @@ table #additionalDetailsTable {
   pointer-events: none;
   transform: translate(-50%, -90px);
 }
+table[data-additional-data-size="large"] #additionalDetailsTable {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -175px);
+}
 table[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
   pointer-events: all;
