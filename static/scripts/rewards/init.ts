@@ -5,7 +5,6 @@ import { grid } from "./the-grid";
 
 displayCommitHash(); // @DEV: display commit hash in footer
 grid(document.getElementById("grid") as HTMLElement, gridLoadedCallback); // @DEV: display grid background
-
 readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
 
 declare const commitHash: string; // @DEV: passed in at build time check build/esbuild-build.ts

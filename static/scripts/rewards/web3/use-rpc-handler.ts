@@ -2,7 +2,7 @@ import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { AppState } from "../app-state";
 import { ethers } from "ethers";
 
-async function useHandler(networkId: number) {
+export async function useHandler(networkId: number) {
   const config = {
     networkId: networkId,
     autoStorage: true,

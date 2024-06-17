@@ -5,7 +5,7 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
@@ -99,6 +99,10 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
 export async function waitForTransaction(tx: TransactionResponse, successMessage: string) {
   try {
     const receipt = await tx.wait();
+    viewClaimButton.onclick = () => {
+      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
+    };
+
     toaster.create("success", successMessage);
     buttonController.showViewClaim();
     buttonController.hideLoader();
@@ -254,7 +258,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
     }
 
     if (!app.signer) return;
-    await invalidateNonce(app.signer, app.reward.permit.nonce);
+    await invalidateNonce(app.signer, app.reward.nonce);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
