@@ -9,6 +9,7 @@ import { getApiBaseUrl } from "../helpers";
 import { isClaimableForAmount } from "../../../../../shared/pricing";
 import { OrderRequestParams, GiftCard } from "../../../../../shared/types";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
+import { initClaimGiftCard } from "../list-gift-cards";
 
 export function attachClaimAction(className: string, giftCards: GiftCard[], app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName(className);
@@ -45,7 +46,7 @@ async function claimGiftCard(productId: number, app: AppState) {
 
     const tx = await transferFromPermit(permit2Contract, reward, "Processing... Please wait. Do not close this page.");
     if (!tx) return;
-    await waitForTransaction(tx, `Success. Refresh this page in a few minutes to get your card.`);
+    await waitForTransaction(tx, `Transaction confirmed. Loading your card now.`);
 
     const url = `${getApiBaseUrl()}/post-order`;
 
@@ -68,7 +69,7 @@ async function claimGiftCard(productId: number, app: AppState) {
     }
 
     toaster.create("success", "Gift card claimed successfully.");
-    window.location.reload();
+    await initClaimGiftCard(app);
   } else {
     toaster.create("error", "Connect your wallet to proceed.");
   }
