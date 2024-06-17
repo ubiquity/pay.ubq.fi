@@ -19,7 +19,7 @@ async function createPermitTransferFromData(permitConfig: PermitConfig) {
   // get payment token decimals
   const { provider } = createProviderAndWallet(permitConfig);
   const erc20Abi = ["function decimals() public view returns (uint8)"];
-  const tokenContract = new ethers.Contract(process.env.PAYMENT_TOKEN_ADDRESS, erc20Abi, provider);
+  const tokenContract = new ethers.Contract(permitConfig.PAYMENT_TOKEN_ADDRESS, erc20Abi, provider);
   const tokenDecimals = await tokenContract.decimals();
 
   return {
