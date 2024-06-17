@@ -1,7 +1,7 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
-import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, permitTokenOwner } from "../shared/constants";
+import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
@@ -232,17 +232,6 @@ function validateTransaction(txParsed: TransactionDescription, txReceipt: Transa
       JSON.stringify({
         transferredToken: txParsed.args.permit[0].token,
         requiredToken: Tokens.WXDAI.toLowerCase(),
-      })
-    );
-    return errorResponse;
-  }
-
-  if (txParsed.args.owner.toLowerCase() != permitTokenOwner.toLowerCase()) {
-    console.error(
-      "Given transaction hash has not a valid permit signer, and reward token owner.",
-      JSON.stringify({
-        "txParsed.args.owner": txParsed.args.owner,
-        permitsTransferOwner: permitTokenOwner,
       })
     );
     return errorResponse;
