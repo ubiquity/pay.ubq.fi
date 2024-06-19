@@ -200,3 +200,13 @@ footer {
   right: 20px;
   cursor: pointer;
 }
+
+a.faq-icon > div {
+  opacity: 0.35;
+  font-size: 12px;
+  color: #fff;
+}
+
+a.faq-icon > div:hover {
+  opacity: 1;
+}
