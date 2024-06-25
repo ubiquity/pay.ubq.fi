@@ -196,7 +196,6 @@ footer {
 
 .faq-icon {
   position: fixed;
-  bottom: 42px;
   right: 20px;
   cursor: pointer;
 }
@@ -209,4 +208,9 @@ a.faq-icon > div {
 
 a.faq-icon > div:hover {
   opacity: 1;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
 }
