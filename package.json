@@ -84,6 +84,5 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
-  },
-  "packageManager": "yarn@4.2.2"
+  }
 }
