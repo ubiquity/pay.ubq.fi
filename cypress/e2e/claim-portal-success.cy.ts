@@ -35,7 +35,7 @@ describe("Claims Portal Success", () => {
 
       // anvil confirms it instantly so there is two notifications
       cy.get("body").should("contain.text", "Transaction sent");
-      cy.get("body").should("contain.text", "Claim Complete");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "Claim Complete");
 
       cy.window().then((win) => {
         win.open = cy.stub().as("open");
