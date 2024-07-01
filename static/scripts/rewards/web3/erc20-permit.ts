@@ -5,7 +5,7 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster } from "../toaster";
+import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
@@ -100,11 +100,16 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
 async function waitForTransaction(tx: TransactionResponse) {
   try {
     const receipt = await tx.wait();
+    viewClaimButton.onclick = () => {
+      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
+    }
+
     toaster.create("success", `Claim Complete.`);
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
+
 
     return receipt;
   } catch (error: unknown) {
@@ -118,12 +123,14 @@ async function waitForTransaction(tx: TransactionResponse) {
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
-    const signer = await connectWallet();
+    const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       buttonController.hideAll();
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
+
+    app.signer = signer; // update this here to be sure it's set if it wasn't before
 
     buttonController.hideMakeClaim();
     buttonController.showLoader();

@@ -7,12 +7,13 @@ describe("Claims Portal Non-Web3", () => {
 
     setupIntercepts();
 
-    cy.visit(`/${claimUrl}`);
-    cy.wait(2000);
   });
 
   describe("No window.ethereum", () => {
     it("Should toast and hide buttons in a non-web3 env", () => {
+      cy.visit(`/${claimUrl}`)
+      cy.wait(2000);
+
       cy.get("#invalidator").should("not.be.visible");
       cy.get("#claim-loader").should("not.be.visible");
       cy.get("#view-claim").should("not.be.visible");
@@ -22,22 +23,71 @@ describe("Claims Portal Non-Web3", () => {
   });
 
   describe("Mobile: No window.ethereum", () => {
-    beforeEach(() => {
-      cy.viewport("iphone-6");
-      cy.reload();
+    const userAgents = [
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 16_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WebView MetaMaskMobile",
+      "Mozilla/5.0 (Android; Mobile; rv:89.0) Gecko/89.0 Firefox/89.0 WebView MetaMaskMobile",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; Lumia 950) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.14977",
+      "Mozilla/5.0 (Linux; Android 10; SM-A505FN) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36 WebView MetaMaskMobile",
+      "Mozilla/5.0 (Linux; U; Android 8.1.0; en-us; Redmi Note 5 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.91 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 9; SM-G960F Build/PPR1.180610.011) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 11; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.93 Mobile Safari/537.36"
+    ]
+
+    it("UserAgent 0", () => {
+      testUserAgent(userAgents[0]);
     });
 
-    it("Should toast and hide buttons in a non-web3 env", () => {
-      cy.get("#invalidator").should("not.be.visible");
-      cy.get("#claim-loader").should("not.be.visible");
-      cy.get("#view-claim").should("not.be.visible");
+    it("UserAgent 1", () => {
+      testUserAgent(userAgents[1]);
+    });
 
-      cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward");
+    it("UserAgent 2", () => {
+      testUserAgent(userAgents[2]);
+    });
+
+    it("UserAgent 3", () => {
+      testUserAgent(userAgents[3]);
+    });
+
+    it("UserAgent 4", () => {
+      testUserAgent(userAgents[4]);
+    });
+
+    it("UserAgent 5", () => {
+      testUserAgent(userAgents[5]);
+    });
+
+    it("UserAgent 6", () => {
+      testUserAgent(userAgents[6]);
+    });
+
+    it("UserAgent 7", () => {
+      testUserAgent(userAgents[7]);
     });
   });
 });
 
+function testUserAgent(userAgent: string) {
+  cy.visit(`/${claimUrl}`, {
+    onBeforeLoad: (win) => {
+      Object.defineProperty(win.navigator, 'userAgent', {
+        value: userAgent,
+        configurable: true
+      });
+    },
+  });
+
+  cy.wait(2000);
+  cy.get("#invalidator").should("not.be.visible");
+  cy.get("#claim-loader").should("not.be.visible");
+  cy.get("#view-claim").should("not.be.visible");
+
+  cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward");
+}
+
 function setupIntercepts() {
+
   cy.intercept("POST", "*", (req) => {
     // return a 404 for rpc optimization meaning no successful RPC
     // to return our balanceOf and allowance calls

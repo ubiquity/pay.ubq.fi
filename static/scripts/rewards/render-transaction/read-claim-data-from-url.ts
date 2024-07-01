@@ -34,7 +34,11 @@ export async function readClaimDataFromUrl(app: AppState) {
   try {
     app.provider = await useRpcHandler(app);
   } catch (e) {
-    toaster.create("error", `e`);
+    if (e instanceof Error) {
+      toaster.create("error", e.message);
+    } else {
+      toaster.create("error", JSON.stringify(e));
+    }
   }
 
   try {
