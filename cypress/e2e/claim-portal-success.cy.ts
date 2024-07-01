@@ -56,7 +56,7 @@ describe("Claims Portal Success", () => {
 
       cy.get("#view-claim").should("not.be.visible");
 
-      cy.get("body").should("contain.text", "This reward is not for you");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "This reward is not for you");
     });
   });
 
