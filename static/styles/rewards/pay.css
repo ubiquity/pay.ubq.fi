@@ -201,7 +201,6 @@ footer {
 }
 
 a.faq-icon > div {
-  opacity: 0.35;
   font-size: 12px;
   color: #fff;
 }
@@ -213,4 +212,10 @@ a.faq-icon > div:hover {
 .footer {
   display: flex;
   align-items: center;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.footer.animate {
+  opacity: 1;
 }
