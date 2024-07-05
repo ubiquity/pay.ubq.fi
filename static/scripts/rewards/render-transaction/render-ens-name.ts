@@ -36,7 +36,7 @@ export async function renderEnsName({ element, address, tokenAddress, tokenView,
       } else {
         href = `${app.currentExplorerUrl}/address/${address}"`;
       }
-      element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
+      element.innerHTML = `<div><a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a></div>`;
     }
   } catch (error) {
     console.error(error);
