@@ -85,6 +85,8 @@ table td div {
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 table td div svg ~ div {
   width: unset;
