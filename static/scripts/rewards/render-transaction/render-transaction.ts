@@ -8,18 +8,12 @@ import { insertErc20PermitTableData, insertErc721PermitTableData } from "./inser
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
-import { displayCommitHash } from "./display-commit-hash";
 
 const carousel = document.getElementById("carousel") as Element;
-const footer = document.querySelector(".footer") as Element;
 const table = document.querySelector(`table`) as HTMLTableElement;
 type Success = boolean;
 
 export async function renderTransaction(): Promise<Success> {
-  displayCommitHash(); // @DEV: display commit hash in footer
-
-  footer.classList.add("animate");
-
   if (app.claims && app.claims.length > 1) {
     carousel.className = "flex";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
