@@ -1,4 +1,5 @@
 import { app } from "./app-state";
+import { displayCommitHash } from "./render-transaction/display-commit-hash";
 import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-url";
 import { grid } from "./the-grid";
 
@@ -8,14 +9,6 @@ readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from UR
 
 const footer = document.querySelector(".footer") as Element;
 footer.classList.add("animate");
-
-declare const commitHash: string; // @DEV: passed in at build time check build/esbuild-build.ts
-function displayCommitHash() {
-  // display commit hash in footer
-  const buildElement = document.querySelector(`#build a`) as HTMLAnchorElement;
-  buildElement.innerHTML = commitHash;
-  buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${commitHash}`;
-}
 
 // cSpell:ignore llback
 function gridLoadedCallback() {
