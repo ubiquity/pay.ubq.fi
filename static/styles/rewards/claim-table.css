@@ -88,6 +88,18 @@ table td div {
   white-space: nowrap;
   max-width: 240px;
 }
+
+@media (max-width: 768px) {
+  table td div {
+    max-width: 200px; 
+  }
+}
+
+@media (max-width: 480px) {
+  table td div {
+    max-width: 150px; 
+  }
+}
 table td div svg ~ div {
   width: unset;
 }
