@@ -86,18 +86,16 @@ table td div {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 240px;
+  max-width: 400px;
 }
-
 @media (max-width: 768px) {
   table td div {
-    max-width: 200px; 
+    max-width: 350px; 
   }
 }
-
 @media (max-width: 480px) {
   table td div {
-    max-width: 150px; 
+    max-width: 250px; 
   }
 }
 table td div svg ~ div {
