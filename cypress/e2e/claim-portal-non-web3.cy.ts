@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+// cspell:disable
 describe("Claims Portal Non-Web3", () => {
   beforeEach(() => {
     cy.clearAllCookies();
@@ -6,12 +7,11 @@ describe("Claims Portal Non-Web3", () => {
     cy.clearAllSessionStorage();
 
     setupIntercepts();
-
   });
 
   describe("No window.ethereum", () => {
     it("Should toast and hide buttons in a non-web3 env", () => {
-      cy.visit(`/${claimUrl}`)
+      cy.visit(`/${claimUrl}`);
       cy.wait(2000);
 
       cy.get("#invalidator").should("not.be.visible");
@@ -31,8 +31,8 @@ describe("Claims Portal Non-Web3", () => {
       "Mozilla/5.0 (Linux; Android 10; SM-A505FN) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36 WebView MetaMaskMobile",
       "Mozilla/5.0 (Linux; U; Android 8.1.0; en-us; Redmi Note 5 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.91 Mobile Safari/537.36",
       "Mozilla/5.0 (Linux; Android 9; SM-G960F Build/PPR1.180610.011) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 11; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.93 Mobile Safari/537.36"
-    ]
+      "Mozilla/5.0 (Linux; Android 11; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.93 Mobile Safari/537.36",
+    ];
 
     it("UserAgent 0", () => {
       testUserAgent(userAgents[0]);
@@ -71,9 +71,9 @@ describe("Claims Portal Non-Web3", () => {
 function testUserAgent(userAgent: string) {
   cy.visit(`/${claimUrl}`, {
     onBeforeLoad: (win) => {
-      Object.defineProperty(win.navigator, 'userAgent', {
+      Object.defineProperty(win.navigator, "userAgent", {
         value: userAgent,
-        configurable: true
+        configurable: true,
       });
     },
   });
@@ -87,7 +87,6 @@ function testUserAgent(userAgent: string) {
 }
 
 function setupIntercepts() {
-
   cy.intercept("POST", "*", (req) => {
     // return a 404 for rpc optimization meaning no successful RPC
     // to return our balanceOf and allowance calls

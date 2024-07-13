@@ -102,14 +102,13 @@ async function waitForTransaction(tx: TransactionResponse) {
     const receipt = await tx.wait();
     viewClaimButton.onclick = () => {
       window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
-    }
+    };
 
     toaster.create("success", `Claim Complete.`);
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
-
 
     return receipt;
   } catch (error: unknown) {
