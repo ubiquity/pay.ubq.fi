@@ -41,7 +41,8 @@ describe("Claims Portal Success", () => {
         win.open = cy.stub().as("open");
       });
 
-      cy.get("#view-claim").invoke("click")
+      cy.get("#view-claim")
+        .invoke("click")
         .then(() => {
           cy.get("@open").should("be.calledWithMatch", /https:\/\/blockscan.com\/tx/);
         });
