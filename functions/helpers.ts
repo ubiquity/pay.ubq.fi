@@ -8,7 +8,7 @@ export const commonHeaders = {
 };
 
 export interface Env {
-  USE_RELOADLY_SANDBOX: boolean;
+  USE_RELOADLY_SANDBOX: string;
   RELOADLY_API_CLIENT_ID: string;
   RELOADLY_API_CLIENT_SECRET: string;
 }
@@ -21,7 +21,7 @@ export interface ReloadlyAuthResponse {
 }
 
 export async function getAccessToken(env: Env): Promise<AccessToken> {
-  console.log("Using Reloadly Sandbox:", env.USE_RELOADLY_SANDBOX !== false);
+  console.log("Using Reloadly Sandbox:", env.USE_RELOADLY_SANDBOX !== "false");
 
   const url = "https://auth.reloadly.com/oauth/token";
   const options = {
@@ -31,7 +31,7 @@ export async function getAccessToken(env: Env): Promise<AccessToken> {
       client_id: env.RELOADLY_API_CLIENT_ID,
       client_secret: env.RELOADLY_API_CLIENT_SECRET,
       grant_type: "client_credentials",
-      audience: env.USE_RELOADLY_SANDBOX === false ? "https://giftcards.reloadly.com" : "https://giftcards-sandbox.reloadly.com",
+      audience: env.USE_RELOADLY_SANDBOX === "false" ? "https://giftcards.reloadly.com" : "https://giftcards-sandbox.reloadly.com",
     }),
   };
 
@@ -40,7 +40,7 @@ export async function getAccessToken(env: Env): Promise<AccessToken> {
     const successResponse = (await res.json()) as ReloadlyAuthResponse;
     return {
       token: successResponse.access_token,
-      isSandbox: env.USE_RELOADLY_SANDBOX !== false,
+      isSandbox: env.USE_RELOADLY_SANDBOX !== "false",
     };
   }
   throw `Getting access token failed: ${JSON.stringify(await res.json())}`;
