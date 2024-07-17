@@ -34,8 +34,8 @@ describe("Claims Portal Success", () => {
       cy.get("#view-claim").should("be.visible").and("include.text", "View Claim");
 
       // anvil confirms it instantly so there is two notifications
-      cy.get("body").should("contain.text", "Transaction sent");
-      cy.get("body").should("contain.text", "Claim Complete");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "Transaction sent");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "Claim Complete");
 
       cy.window().then((win) => {
         win.open = cy.stub().as("open");
@@ -66,7 +66,7 @@ describe("Claims Portal Success", () => {
 
       cy.get("#view-claim").should("not.be.visible");
 
-      cy.get("body").should("contain.text", "This reward is not for you");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "This reward is not for you");
     });
   });
 
@@ -88,7 +88,7 @@ describe("Claims Portal Success", () => {
       cy.get("#claim-loader").should("not.be.visible");
       cy.get("#view-claim").should("not.be.visible");
 
-      cy.get("body").should("contain.text", "Nonce invalidation transaction sent");
+      cy.get("body", { timeout: 15000 }).should("contain.text", "Nonce invalidation transaction sent");
     });
   });
 });

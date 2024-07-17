@@ -121,12 +121,14 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
 
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
-    const signer = await connectWallet();
+    const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       buttonController.hideAll();
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
+
+    app.signer = signer; // update this here to be sure it's set if it wasn't before
 
     buttonController.hideMakeClaim();
     buttonController.showLoader();

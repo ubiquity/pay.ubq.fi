@@ -195,3 +195,29 @@ footer {
   border-bottom-color: transparent;
   border-left-color: transparent;
 }
+
+.faq-icon {
+  position: fixed;
+  right: 20px;
+  cursor: pointer;
+}
+
+a.faq-icon > div {
+  font-size: 12px;
+  color: #fff;
+}
+
+a.faq-icon > div:hover {
+  opacity: 1;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.footer.animate {
+  opacity: 1;
+}

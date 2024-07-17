@@ -6,20 +6,21 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
 
 1. Install [Foundry](https://book.getfoundry.sh/getting-started/installation).
 2. Create a `.env` file in the project root with the following settings:
+
 - These are the suggested default test environment variables that allow for local setup using the supplied yarn commands. If you want to produce or invalidate real on-chain permits you must change the below values to reflect the real permit information such as address, chain ID, private key and so on.
 
-    ```env
-    # Common variables
-    CHAIN_ID="31337"
-    FRONTEND_URL="http://localhost:8080"
-    UBIQUIBOT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-    RPC_PROVIDER_URL="http://127.0.0.1:8545"
-    PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
-    
-    # Variables depending on spender (bounty hunter)
-    AMOUNT_IN_ETH="1"
-    BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-    ```
+  ```env
+  # Common variables
+  CHAIN_ID="31337"
+  FRONTEND_URL="http://localhost:8080"
+  UBIQUIBOT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+  RPC_PROVIDER_URL="http://127.0.0.1:8545"
+  PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+
+  # Variables depending on spender (bounty hunter)
+  AMOUNT_IN_ETH="1"
+  BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  ```
 
 ## Local Testing
 
