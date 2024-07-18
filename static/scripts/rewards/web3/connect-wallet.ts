@@ -28,7 +28,10 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
-    window.history.pushState({}, "", "/");
+    if (mobileCheck()) {
+      // the param is too long and prevents a mobile user from connecting their wallet
+      window.history.pushState({}, "", "/");
+    }
 
     await wallet.send("eth_requestAccounts", []);
 
