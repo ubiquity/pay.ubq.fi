@@ -7,20 +7,20 @@ type EnsParams =
       address: string;
       tokenAddress: string;
       tokenView: true;
-      networkID: number;
+      networkId: number;
     }
   | {
       element: Element;
       address: string;
       tokenAddress?: undefined;
       tokenView?: false;
-      networkID: number;
+      networkId: number;
     };
 
-export async function renderEnsName({ element, address, tokenAddress, tokenView, networkID }: EnsParams): Promise<void> {
+export async function renderEnsName({ element, address, tokenAddress, tokenView, networkId }: EnsParams): Promise<void> {
   let href: string = "";
   try {
-    const resolved = await ensLookup(address, networkID);
+    const resolved = await ensLookup(address, networkId);
     let ensName: undefined | string;
     if (resolved.reverseRecord) {
       ensName = resolved.reverseRecord;

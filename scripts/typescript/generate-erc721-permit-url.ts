@@ -118,7 +118,7 @@ function createTxData(myWallet: ethers.Wallet, erc721TransferFromData: PermitTra
   };
 }
 
-export async function generateERC721Permit() {
+export async function generateErc721Permit() {
   const { myWallet } = createProviderAndWallet();
   const GITHUB_ORGANIZATION_NAME = "ubiquity";
 

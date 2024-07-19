@@ -1,4 +1,4 @@
-import { ButtonController } from "./ButtonController";
+import { ButtonController } from "./button-controller";
 
 export const toaster = {
   create: createToast,

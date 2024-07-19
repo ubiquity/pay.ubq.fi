@@ -61,7 +61,7 @@ function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTra
   };
 }
 
-export async function generateERC20Permit() {
+export async function generateErc20Permit() {
   const { myWallet } = createProviderAndWallet();
 
   const permitTransferFromData = await createPermitTransferFromData(process.env.AMOUNT_IN_ETH);
