@@ -1,0 +1,27 @@
+name: Run Jest testing suite
+on:
+  workflow_dispatch:
+  pull_request:
+
+env:
+  NODE_ENV: "test"
+
+jobs:
+  testing:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.10.0"
+
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Jest With Coverage
+        run: yarn install --immutable --immutable-cache --check-cache && yarn test
+
+      - name: Add Jest Report to Summary
+        if: always()
+        run: echo "$(cat test-dashboard.md)" >> $GITHUB_STEP_SUMMARY
