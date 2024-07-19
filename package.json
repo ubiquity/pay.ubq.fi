@@ -43,6 +43,8 @@
   ],
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
+    "@supabase/supabase-js": "^2.44.4",
+    "@ubiquibot/permit-generation": "^1.4.1",
     "@ubiquity-dao/rpc-handler": "^1.1.0",
     "dotenv": "^16.4.4",
     "ethers": "^5.7.2",
