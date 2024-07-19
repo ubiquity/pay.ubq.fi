@@ -34,7 +34,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: full-stack-app
+          name: static
           path: |
             static
             functions

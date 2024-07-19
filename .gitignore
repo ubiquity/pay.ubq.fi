@@ -10,8 +10,11 @@ commit.txt
 # yarn2
 .pnp.cjs
 .pnp.loader.mjs
+.env
 static/dist
 
 cypress/screenshots
 cypress/videos
 .wrangler
+coverage
+junit.xml

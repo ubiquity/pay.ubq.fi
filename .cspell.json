@@ -1,13 +1,16 @@
 {
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
   "version": "0.2",
-  "ignorePaths": ["**/*.json", "**/*.css", "node_modules", "**/*.log", "/lib"],
+  "ignorePaths": [
+    "**/*.json",
+    "**/*.css",
+    "node_modules",
+    "**/*.log",
+    "/lib"
+  ],
   "useGitignore": true,
   "language": "en",
   "words": [
-    "blockscan",
-    "funder",
-    "Funder",
     "binkey",
     "binsec",
     "blockscan",
@@ -20,13 +23,17 @@
     "fract",
     "giftcards",
     "gnosischain",
+    "funder",
+    "Funder",
     "gnosisscan",
     "godb",
     "greyscale",
     "IERC",
     "keccak",
     "keypair",
+    "Knip",
     "libsodium",
+    "mswjs",
     "Numberish",
     "outdir",
     "pageable",
@@ -46,7 +53,18 @@
     "XDAI",
     "xmark"
   ],
-  "dictionaries": ["typescript", "node", "software-terms", "html"],
-  "import": ["@cspell/dict-typescript/cspell-ext.json", "@cspell/dict-node/cspell-ext.json", "@cspell/dict-software-terms"],
-  "ignoreRegExpList": ["[0-9a-fA-F]{6}"]
+  "dictionaries": [
+    "typescript",
+    "node",
+    "software-terms",
+    "html"
+  ],
+  "import": [
+    "@cspell/dict-typescript/cspell-ext.json",
+    "@cspell/dict-node/cspell-ext.json",
+    "@cspell/dict-software-terms"
+  ],
+  "ignoreRegExpList": [
+    "[0-9a-fA-F]{6}"
+  ]
 }

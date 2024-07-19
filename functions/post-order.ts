@@ -5,7 +5,7 @@ import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Addres
 import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
-import { permit2Abi } from "../static/scripts/rewards/abis/permit2Abi";
+import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { getTransactionFromOrderId } from "./get-order";
 import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";

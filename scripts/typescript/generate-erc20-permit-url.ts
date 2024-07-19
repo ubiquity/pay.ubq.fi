@@ -63,7 +63,7 @@ function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTra
   };
 }
 
-export async function generateERC20Permit(permitConfig: PermitConfig) {
+export async function generateErc20Permit(permitConfig: PermitConfig) {
   const { myWallet } = createProviderAndWallet(permitConfig);
 
   const permitTransferFromData = await createPermitTransferFromData(permitConfig);
@@ -79,8 +79,8 @@ export async function generateERC20Permit(permitConfig: PermitConfig) {
   return `${permitConfig.FRONTEND_URL}?claim=${base64encodedTxData}`;
 }
 
-export async function logERC20Permit(permitConfig: PermitConfig) {
-  const erc20Permit = await generateERC20Permit(permitConfig);
+export async function logErc20Permit(permitConfig: PermitConfig) {
+  const erc20Permit = await generateErc20Permit(permitConfig);
   log.ok("ERC20 Local URL:");
   log.info(erc20Permit);
 }

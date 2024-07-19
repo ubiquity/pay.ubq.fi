@@ -17,8 +17,8 @@ jobs:
         with:
           repository: ${{ github.repository }}
           production_branch: ${{ github.event.repository.default_branch }}
-          build_artifact_name: "full-stack-app"
-          output_directory: "full-stack-app"
+          build_artifact_name: "static"
+          output_directory: "static"
           current_branch: ${{ github.event.workflow_run.head_branch }}
           cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
