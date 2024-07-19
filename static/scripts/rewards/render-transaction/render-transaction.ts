@@ -15,7 +15,7 @@ type Success = boolean;
 
 export async function renderTransaction(): Promise<Success> {
   if (app.claims && app.claims.length > 1) {
-    carousel.className = "flex";
+    carousel.className = "ready";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
     rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
   }
