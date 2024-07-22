@@ -64,7 +64,7 @@ table hr {
   height: 1px;
   border: none;
 }
-table svg path {
+svg path {
   fill: currentColor;
 }
 table td div {

@@ -8,7 +8,7 @@ grid(document.getElementById("grid") as HTMLElement, gridLoadedCallback); // @DE
 readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
 
 const footer = document.querySelector(".footer") as Element;
-footer.classList.add("animate");
+footer.classList.add("ready");
 
 // cSpell:ignore llback
 function gridLoadedCallback() {

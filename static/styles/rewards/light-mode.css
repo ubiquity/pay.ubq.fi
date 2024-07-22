@@ -16,7 +16,7 @@
   #rewardAmount > a {
     color: #000;
   }
-  table svg path {
+  svg path {
     fill: #000;
   }
   #logo-icon > svg {
