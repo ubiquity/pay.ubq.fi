@@ -2,13 +2,13 @@ import { app } from "../app-state";
 import { useRpcHandler } from "../web3/use-rpc-handler";
 import { reverseEnsInterface } from "./ens-lookup";
 
-export async function queryReverseEns(address: string, networkID: number) {
+export async function queryReverseEns(address: string, networkId: number) {
   // Try to get the ENS name from localStorage
   const cachedEnsName = localStorage.getItem(address);
   const endpoint = app.provider?.connection.url || (await useRpcHandler(app)).connection.url;
 
   if (!endpoint) {
-    console.error("ENS lookup failed: No endpoint found for network ID", networkID);
+    console.error("ENS lookup failed: No endpoint found for network ID", networkId);
     if (cachedEnsName) return cachedEnsName;
   }
 

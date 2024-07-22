@@ -9,7 +9,7 @@ export const reverseEnsInterface = new ethers.utils.Interface(abi);
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function ensLookup(addr: string, networkID: number) {
+export async function ensLookup(addr: string, networkId: number) {
   const _address = "/".concat(addr); // quick adapter
 
   // try {
@@ -23,7 +23,7 @@ export async function ensLookup(addr: string, networkID: number) {
   let reverseRecord = null as null | string;
   // let response = "";
   try {
-    reverseRecord = await queryReverseEns(address, networkID);
+    reverseRecord = await queryReverseEns(address, networkId);
     const responseParsed = JSON.parse(reverseRecord).result;
     const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
     reverseRecord = _reverseRecord[0][0];

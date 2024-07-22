@@ -1,2 +1,2 @@
-export * from "./erc20Abi";
-export * from "./permit2Abi";
+export * from "./erc20-abi";
+export * from "./permit2-abi";
