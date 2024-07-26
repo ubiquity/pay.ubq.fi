@@ -43,9 +43,9 @@ export class AppState {
 
   get currentExplorerUrl(): string {
     if (!this.reward) {
-      return "https://blockscan.io";
+      return "https://blockscan.com";
     }
-    return networkExplorers[this.reward.networkId] || "https://blockscan.io";
+    return networkExplorers[this.reward.networkId] || "https://blockscan.com";
   }
 
   nextPermit(): Permit | null {
