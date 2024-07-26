@@ -82,8 +82,7 @@
   "lint-staged": {
     "*.ts": [
       "yarn prettier --write",
-      "eslint --fix",
-      "bash .github/workflows/scripts/kebab-case.sh"
+      "eslint --fix"
     ],
     "src/**.{ts,json}": [
       "cspell"
