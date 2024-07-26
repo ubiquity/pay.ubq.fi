@@ -8,6 +8,7 @@ import { getApiBaseUrl } from "./helpers";
 import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
+import ct from "countries-and-timezones";
 
 export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
@@ -25,7 +26,10 @@ export async function initClaimGiftCard(app: AppState) {
   activateInfoSection.innerHTML = "";
 
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
-  const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards`;
+
+  const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const countries = ct.getCountriesForTimezone(localTimezone);
+  const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards?country=${countries[0].id}`;
 
   const requestInit = {
     method: "GET",

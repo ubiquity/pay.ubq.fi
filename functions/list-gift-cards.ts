@@ -8,8 +8,15 @@ export async function onRequest(ctx: Context): Promise<Response> {
     validateRequestMethod(ctx.request.method, "GET");
     validateEnvVars(ctx);
 
+    const { searchParams } = new URL(ctx.request.url);
+    const country = searchParams.get("country");
+
+    if (!country) {
+      throw new Error(`Invalid query parameters: ${{ countrycode: country }}`);
+    }
+
     const accessToken = await getAccessToken(ctx.env);
-    const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", accessToken), getGiftCards("visa", accessToken)]);
+    const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", country, accessToken), getGiftCards("visa", country, accessToken)]);
 
     const giftCards = [...masterCards, ...visaCards];
 
@@ -23,8 +30,8 @@ export async function onRequest(ctx: Context): Promise<Response> {
   }
 }
 
-async function getGiftCards(productQuery: string, accessToken: AccessToken): Promise<GiftCard[]> {
-  const url = `${getBaseUrl(accessToken.isSandbox)}/products?productName=${productQuery}`;
+async function getGiftCards(productQuery: string, country: string, accessToken: AccessToken): Promise<GiftCard[]> {
+  const url = `${getBaseUrl(accessToken.isSandbox)}/countries/${country}/products?productName=${productQuery}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {
     method: "GET",
