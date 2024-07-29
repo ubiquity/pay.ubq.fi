@@ -21,8 +21,10 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const giftCards = [...masterCards, ...visaCards];
 
     if (giftCards.length) {
-      return Response.json(giftCards, { status: 200 });
+      const giftCardsRangePriced = giftCards.filter((giftCard) => giftCard.denominationType == "RANGE");
+      return Response.json(giftCardsRangePriced, { status: 200 });
     }
+
     return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {
     console.error("There was an error while processing your request.", error);
