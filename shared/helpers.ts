@@ -1,5 +1,7 @@
-import { ethers } from "ethers";
+import { BigNumberish, ethers } from "ethers";
 import { RPCHandler } from "@ubiquity-dao/rpc-handler";
+import { GiftCard } from "./types";
+import { isRangePriceGiftCardClaimable } from "./pricing";
 
 export function getGiftCardOrderId(rewardToAddress: string, signature: string) {
   const checksumAddress = ethers.utils.getAddress(rewardToAddress);
@@ -29,4 +31,8 @@ export async function getFastestRpcUrl(networkId: string | number) {
   const handler = new RPCHandler(config);
   const provider = await handler.getFastestRpcProvider();
   return provider.connection.url;
+}
+
+export function isGiftCardAvailable(giftCard: GiftCard, reward: BigNumberish): boolean {
+  return giftCard.denominationType == "RANGE" && isRangePriceGiftCardClaimable(giftCard, reward);
 }
