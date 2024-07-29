@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 import { GiftCard } from "../../../../shared/types";
-import { getFixedPriceToValueMap, getGiftCardValue, getRangePriceToValueMap, isRangePriceGiftCardClaimable } from "../../../../shared/pricing";
+import { getFixedPriceToValueMap, getGiftCardValue, isRangePriceGiftCardClaimable } from "../../../../shared/pricing";
 import { formatEther } from "ethers/lib/utils";
 
 const html = String.raw;
@@ -88,27 +88,9 @@ function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
       </div>
       <div class="available">
         <div>${formatEther(rewardAmount)}${giftCard.senderCurrencyCode}</div>
-        <div>${giftCardValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div> </div
-      ><br /><p>Also available in</p>`;
+        <div>${giftCardValue.toFixed(2)}${giftCard.recipientCurrencyCode}</div>
+      </div>`;
   }
-
-  const priceToValueMap = getRangePriceToValueMap(giftCard);
-  const prices = Object.keys(priceToValueMap);
-
-  _html += html`
-    <div>
-      <div>Value</div>
-      <div title="${giftCard.minRecipientDenomination.toFixed(2)}-${giftCard.maxRecipientDenomination.toFixed(2)}${giftCard.recipientCurrencyCode}"
-        >${giftCard.minRecipientDenomination.toFixed(0)}-${giftCard.maxRecipientDenomination.toFixed(0)}${giftCard.recipientCurrencyCode}</div
-      >
-    </div>
-    <div>
-      <div>Price</div>
-      <div title="${Number(prices[0]).toFixed(2)}-${Number(prices[1]).toFixed(2)}${giftCard.senderCurrencyCode}"
-        >${Number(prices[0]).toFixed(0)}-${Number(prices[1]).toFixed(0)}${giftCard.senderCurrencyCode}</div
-      >
-    </div>
-  `;
 
   return _html;
 }
