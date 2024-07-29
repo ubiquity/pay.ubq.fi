@@ -1,6 +1,6 @@
 import { GiftCard } from "../shared/types";
 import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
-import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyListGiftCardResponse } from "./types";
+import { AccessToken, Context, ReloadlyFailureResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
 export async function onRequest(ctx: Context): Promise<Response> {
@@ -60,5 +60,5 @@ async function getGiftCards(productQuery: string, country: string, accessToken: 
     );
   }
 
-  return (responseJson as ReloadlyListGiftCardResponse).content;
+  return responseJson as GiftCard[];
 }
