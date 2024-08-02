@@ -136,7 +136,11 @@ header a:hover #logo {
 main {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* adjust this according to your needs */
+}
+
+main div.receipt-container {
+  height: 120px;
+  margin-bottom: 32px;
 }
 
 header {

@@ -100,7 +100,7 @@ function addAvailableCardsHtml(giftCards: GiftCard[], app: AppState, giftCardsSe
     });
     htmlParts.push(`</div>`);
   } else {
-    htmlParts.push(`<p>There are no Visa/Mastercard available to claim at the moment.</p>`);
+    htmlParts.push(`<p class="list-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
   }
 
   giftCardsSection.innerHTML = htmlParts.join("");
