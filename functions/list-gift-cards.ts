@@ -12,7 +12,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const country = searchParams.get("country");
 
     if (!country) {
-      throw new Error(`Invalid query parameters: ${{ countrycode: country }}`);
+      throw new Error(`Invalid query parameters: ${{ country }}`);
     }
 
     const accessToken = await getAccessToken(ctx.env);
