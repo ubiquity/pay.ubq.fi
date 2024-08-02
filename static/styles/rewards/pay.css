@@ -161,7 +161,6 @@ footer {
   /* display: none; */
   opacity: 0;
   transition: opacity 1s;
-  /* padding-top: 80px; */
   text-align: center;
 }
 #carousel > div {
