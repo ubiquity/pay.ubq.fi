@@ -20,7 +20,8 @@ main:has(#gift-cards .gift-card) {
 }
 
 main:has(#gift-cards .gift-card) div:has(table.receipt) {
-  padding-top: 50px;
+  height: 120px;
+  margin-bottom: 32px;
 }
 .redeem-info-wrapper[data-show="false"] {
   display: none;
