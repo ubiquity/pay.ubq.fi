@@ -16,7 +16,7 @@
   line-height: 1;
   padding: 0;
   margin: 0;
-  font-size: 12px;
+  font-size: 48px;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -33,15 +33,15 @@ body {
 
 body,
 main {
-  max-width: 100vw;
-  display: flex;
+  /* max-width: 100vw; */
+  /* display: flex; */
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
 main {
-  width: 100vw;
+  /* width: 100vw; */
   position: relative;
 }
 
@@ -58,7 +58,7 @@ a {
 
 #logo {
   letter-spacing: 2px;
-  padding: 48px 0;
+  padding:  0;
   -ms-flex-pack: justify;
   -ms-flex-align: center;
   line-height: 1;
@@ -79,7 +79,7 @@ a {
   margin: 0;
   width: 36px;
   padding: 0;
-  margin-right: 10px;
+  /* margin-right: 4px; */
   fill: #fff;
 }
 
@@ -88,7 +88,7 @@ a {
   vertical-align: middle;
 }
 #logo > div#logo-text > span::after {
-  content: " ";
+  /* content: " "; */
   display: inline-block;
   width: 8px;
 }
@@ -100,6 +100,7 @@ a {
   color: #fff;
   /* margin-right: 8px; */
   /* font-weight: 400; */
+  vertical-align: middle;
 }
 
 div.footer > div {
@@ -126,7 +127,7 @@ footer a:hover {
   opacity: 1;
 }
 header a #logo {
-  opacity: 0.5;
+  /* opacity: 0.5; */
 }
 header a:hover #logo {
   opacity: 1;
@@ -141,6 +142,9 @@ main {
 header {
   /* height: 140px; */
   /* width: 100%; */
+  position: absolute;
+  transform: translateY(108px);
+  opacity: 0.5;
 }
 
 footer {
@@ -232,4 +236,40 @@ footer {
   /* display: inline-block; */
   padding: 42px;
   right: 0;
+}
+
+video{
+  box-sizing: border-box;
+  color: rgb(255, 255, 255);
+  /* display: none; */
+  filter: blur(0px) hue-rotate(240deg);
+  font-family: "Proxima Nova", "Ubiquity Nova", sans-serif;
+  font-size: 16px;
+  font-size-adjust: none;
+  font-stretch: 100%;
+  font-weight: 400;
+  height: 794px;
+  line-height: 24px;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  object-fit: cover;
+  /* opacity: 0.25; */
+  overflow-clip-margin: content-box;
+  overflow-x: clip;
+  overflow-y: clip;
+  position: absolute;
+  /* right: 0px; */
+  text-align: start;
+  text-decoration-color: rgb(255, 255, 255);
+  text-decoration-line: none;
+  text-decoration-style: solid;
+  text-size-adjust: 100%;
+  /* top: 0px; */
+  transform: none;
+  width: 788px;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0.5;
+  transform: none;
 }

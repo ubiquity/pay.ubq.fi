@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { addNetwork } from "./add-network";
-import { buttonController } from "../toaster";
+
 
 export async function switchNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   try {

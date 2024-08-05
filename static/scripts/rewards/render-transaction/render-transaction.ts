@@ -1,7 +1,7 @@
 import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
 import { networkExplorers } from "@ubiquity-dao/rpc-handler";
 import { app } from "../app-state";
-import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
+import { getMakeClaimButton, viewClaimButton } from "../toaster";
 import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { verifyCurrentNetwork } from "../web3/verify-current-network";

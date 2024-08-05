@@ -23,8 +23,8 @@ const base64encodedTxData = urlParams.get("claim");
 export async function readClaimDataFromUrl(app: AppState) {
   if (!base64encodedTxData) {
     // No claim data found
-    setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-make-claim`, "error");
+    // setClaimMessage({ type: "Notice", message: `No claim data found.` });
+    // table.setAttribute(`data-make-claim`, "error");
     return;
   }
 

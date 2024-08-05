@@ -1,7 +1,7 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { buttonController, toaster } from "../toaster";
 import { app } from "../app-state";
+import { toaster } from "../toaster";
 import { useHandler } from "../web3/use-rpc-handler";
 
 function checkMobile(a: string) {

@@ -1,23 +1,34 @@
 :root {
-  --left-table-column-width: 120px;
-  --background-color-default-brightness: 2%;
-  --background-color-light-brightness: 6%;
-  --border-brightness: 5%;
-  --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1);
-  --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
-  --border-color: hsl(225 25% var(--border-brightness) / 1);
+  /* --left-table-column-width: 120px; */
+  /* --background-color-default-brightness: 2%; */
+  /* --background-color-light-brightness: 6%; */
+  /* --border-brightness: 5%; */
+  /* --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1); */
+  /* --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1); */
+  /* --border-color: hsl(225 25% var(--border-brightness) / 1); */
 }
 #claim {
   display: flex;
 }
 main > div {
-  flex-grow: 1;
-  display: flex;
+  /* flex-grow: 1; */
+  /* display: flex; */
   flex-direction: column;
-  justify-content: center;
+  text-align: center;
+  width: 100%;
 }
 table {
   border-collapse: collapse;
+  /* width: 100vw; */
+  /* text-align: center; */
+  /* text-align: center; */
+  /* background: red; */
+  margin: 0 auto;
+  border: 1px solid #ffffff10;
+  width: 100%;
+  border-left: 0;
+  border-right: 0;
+  backdrop-filter: blur(12px);
 }
 table a:hover,
 table a:hover > div {
@@ -66,9 +77,10 @@ table hr {
 }
 svg path {
   fill: currentColor;
+  fill: #fff;#fff:;
 }
 table td div {
-  word-break: break-all;
+  /* word-break: break-all; */
 }
 table th div {
   text-align: right;
@@ -79,12 +91,16 @@ table th {
   padding: 8px;
   text-rendering: geometricPrecision;
   line-height: 1.25;
-  color: grey;
+  color: #fff;
 }
 table td div {
-  word-break: break-all;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* word-break: break-all; */
+  /* overflow: hidden; */
+  /* text-overflow: ellipsis; */
+  color: #bfbfbf;
+  letter-spacing: 8px;
+  font-size: 48px;
+  text-align: center;
 }
 table td div svg ~ div {
   width: unset;
@@ -247,7 +263,8 @@ td#owner > a {
   word-break: break-all;
 }
 table td {
-  padding-right: 32px;
+  /* padding-right: 32px; */
+  /* width: 100%; */
   width: 100%;
 }
 table th {
@@ -267,8 +284,8 @@ table th {
 }
 
 .loading-message::after {
-  content: "";
-  animation: ellipsis 1s infinite;
+  /* content: ""; */
+  /* animation: ellipsis 1s infinite; */
   position: absolute;
 }
 
@@ -308,18 +325,19 @@ table th {
 tbody,
 thead {
   background-color: var(--background-color-default);
-  position: absolute;
-  box-shadow: inset 0 0 96px #00bfff10;
-  transition: 0.25s all ease-in-out;
-  border: 1px solid var(--border-color);
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 563px;
-  overflow: hidden;
+  /* position: absolute; */
+  /* box-shadow: inset 0 0 96px #00bfff10; */
+  /* transition: 0.25s all ease-in-out; */
+  /* border: 1px solid var(--border-color); */
+  /* transform: translate(-50%, -50%); */
+  /* width: 100%; */
+  /* max-width: 563px; */
+  /* overflow: hidden; */
   /* box-shadow: 0 12px 64px #00000010; */
 }
 table * {
-  text-wrap: nowrap;
+  /* text-wrap: nowrap; */
+  /* text-align: center; */
 }
 
 @keyframes thead-fade-in {
@@ -333,4 +351,16 @@ table * {
 
 thead {
   animation: thead-fade-in 0.5s ease-in-out;
+}
+
+.slogan{
+  font-size: 24px;
+  /* font-weight: 100; */
+  color: #808080;
+  /* text-align: center; */
+  /* margin: 0; */
+  /* padding: 0; */
+  /* margin-top: 24px; */
+  /* margin-bottom: 24px; */
+  letter-spacing: 6px;
 }
