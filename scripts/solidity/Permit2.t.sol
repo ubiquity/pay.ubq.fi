@@ -355,7 +355,7 @@ contract Permit2Test is Test {
 
         // check that nonce is marked as used
         assertTrue(_isNonceUsed(botAddress, nonce));
-        
+
         // bounty hunter calls permitTransferFrom and transfers reward
         ISignatureTransfer.SignatureTransferDetails memory transferDetails = ISignatureTransfer.SignatureTransferDetails({
             to: userAddress,
@@ -384,7 +384,7 @@ contract Permit2Test is Test {
             vm.sign(signerKey, _getEIP712Hash(permit, spender));
         return abi.encodePacked(r, s, v);
     }
-    
+
     // Compute the EIP712 hash of the permit object.
     // Normally this would be implemented off-chain.
     function _getEIP712Hash(ISignatureTransfer.PermitTransferFrom memory permit, address spender)

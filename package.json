@@ -43,7 +43,7 @@
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
     "@supabase/supabase-js": "^2.44.4",
-    "@ubiquibot/permit-generation": "^1.4.1",
+    "@ubiquibot/permit-generation": "1.4.1",
     "@ubiquity-dao/rpc-handler": "^1.1.0",
     "dotenv": "^16.4.4",
     "ethers": "^5.7.2",
@@ -60,7 +60,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "cspell": "^8.4.0",
-    "cypress": "^13.7.0",
+    "cypress": "13.7.0",
     "esbuild": "^0.20.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
