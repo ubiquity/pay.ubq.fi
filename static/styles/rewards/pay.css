@@ -142,8 +142,8 @@ main {
 header {
   /* height: 140px; */
   /* width: 100%; */
-  position: absolute;
-  transform: translateY(108px);
+  /* position: absolute; */
+  /* transform: translateY(108px); */
   opacity: 0.5;
 }
 
