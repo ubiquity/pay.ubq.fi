@@ -88,7 +88,7 @@ table th div {
 }
 table td,
 table th {
-  padding: 8px;
+  /* padding: 8px; */
   text-rendering: geometricPrecision;
   line-height: 1.25;
   color: #fff;
@@ -98,9 +98,10 @@ table td div {
   /* overflow: hidden; */
   /* text-overflow: ellipsis; */
   color: #fff;
-  letter-spacing: 8px;
-  font-size: 48px;
+  letter-spacing: calc(4px   * var(--quickscale));
+  font-size: calc(48px * var(--quickscale));
   text-align: center;
+  /* border-top: 1px solid; */
 }
 table td div svg ~ div {
   width: unset;
@@ -114,7 +115,7 @@ table tr:last-child td div > div {
   vertical-align: middle;
 }
 table tr:last-of-type > * {
-  padding-bottom: 24px;
+  padding-bottom: 12px;
 }
 table tr#additional-details-border > * {
   padding: 0;
@@ -354,13 +355,16 @@ thead {
 }
 
 .slogan{
-  font-size: 24px;
+  font-size: calc(24px * var(--quickscale));
   /* font-weight: 100; */
-  color: #bfbfbf;
+  color: hsl(0 0% 66% / 1);
   /* text-align: center; */
   /* margin: 0; */
   /* padding: 0; */
   /* margin-top: 24px; */
   /* margin-bottom: 24px; */
-  letter-spacing: 6px;
+  letter-spacing: calc(4px  * var(--quickscale));
+  border-bottom: 1px solid #ffffff10;
+  /* padding-bottom: 24px; */
+  padding: 24px 0;
 }

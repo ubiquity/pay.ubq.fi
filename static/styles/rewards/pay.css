@@ -1,3 +1,6 @@
+:root{
+  --quickscale: 2;
+}
 * {
   -webkit-text-size-adjust: 100%;
   font-family:
@@ -16,7 +19,7 @@
   line-height: 1;
   padding: 0;
   margin: 0;
-  font-size: 48px;
+  /* font-size: calc(36px * var(--quickscale)); */
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -74,10 +77,10 @@ a {
 }
 
 #logo-icon > svg {
-  height: 36px;
+  height: calc(24px * var(--quickscale));
   display: block;
   margin: 0;
-  width: 36px;
+  width: calc(24px  * var(--quickscale));
   padding: 0;
   /* margin-right: 4px; */
   fill: #fff;
@@ -93,14 +96,16 @@ a {
   width: 8px;
 }
 #logo > div#logo-text > span {
-  font-size: 20px;
-  letter-spacing: 5px;
+  font-size: calc(15px * var(--quickscale));
+  letter-spacing: calc(3px  * var(--quickscale));
   text-transform: uppercase;
   text-rendering: geometricPrecision;
   color: #fff;
   /* margin-right: 8px; */
   /* font-weight: 400; */
   vertical-align: middle;
+  /* border-top: 1px solid #ffffff80; */
+  /* padding-top: 28px; */
 }
 
 div.footer > div {
@@ -272,4 +277,8 @@ video{
   height: 100vh;
   opacity: 0.5;
   transform: none;
+}
+
+body {
+  /* font-size: 300% !important; */
 }
