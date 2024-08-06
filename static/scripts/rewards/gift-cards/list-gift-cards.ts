@@ -4,11 +4,10 @@ import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
 import { attachClaimAction } from "./claim/claim-action";
 import { attachRevealAction } from "./reveal/reveal-action";
-import { getApiBaseUrl } from "./helpers";
+import { getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
-import ct from "countries-and-timezones";
 
 export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
@@ -25,11 +24,14 @@ export async function initClaimGiftCard(app: AppState) {
   }
   activateInfoSection.innerHTML = "";
 
-  const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
+  const country = await getUserCountryCode();
+  if (!country) {
+    giftCardsSection.innerHTML = `<p class="list-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
+    return;
+  }
 
-  const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const countries = ct.getCountriesForTimezone(localTimezone);
-  const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards?country=${countries[0].id}`;
+  const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
+  const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards?country=${country}`;
 
   const requestInit = {
     method: "GET",
