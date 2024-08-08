@@ -1,11 +1,11 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
-import { Permit } from "@ubiquibot/permit-generation/types";
+import { Permit, ERC20Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
+import { MetaMaskError, buttonControllers, errorToast, getMakeClaimButton, toaster, getViewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
@@ -43,9 +43,9 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
   }
 }
 
-async function checkPermitClaimability(app: AppState): Promise<boolean> {
+async function checkPermitClaimability(reward: Permit, index: number): Promise<boolean> {
   try {
-    return await checkPermitClaimable(app);
+    return await checkPermitClaimable(reward, index);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -53,12 +53,11 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
       errorToast(e, e.reason);
     }
   }
-  buttonController.hideMakeClaim();
+  buttonControllers[index].hideMakeClaim();
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, app: AppState) {
-  const reward = app.reward;
+async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit, controlsIndex: number) {
   const signer = app.signer;
   if (!signer) return null;
 
@@ -85,8 +84,8 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
       if (e.code == "ACTION_REJECTED") {
         // Handle the user rejection case
         toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
-        buttonController.hideLoader();
-        buttonController.showMakeClaim();
+        buttonControllers[controlsIndex].hideLoader();
+        buttonControllers[controlsIndex].showMakeClaim();
       } else {
         // Handle other errors
         console.error("Error in permitTransferFrom:", e);
@@ -97,17 +96,18 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   }
 }
 
-async function waitForTransaction(tx: TransactionResponse) {
+async function waitForTransaction(tx: TransactionResponse, table: Element, controlsIndex: number) {
   try {
     const receipt = await tx.wait();
+    const viewClaimButton = getViewClaimButton(table);
     viewClaimButton.onclick = () => {
       window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
     };
 
     toaster.create("success", `Claim Complete.`);
-    buttonController.showViewClaim();
-    buttonController.hideLoader();
-    buttonController.hideMakeClaim();
+    buttonControllers[controlsIndex].showViewClaim();
+    buttonControllers[controlsIndex].hideLoader();
+    buttonControllers[controlsIndex].hideMakeClaim();
     console.log(receipt.transactionHash);
 
     return receipt;
@@ -120,43 +120,44 @@ async function waitForTransaction(tx: TransactionResponse) {
   }
 }
 
-export function claimErc20PermitHandlerWrapper(app: AppState) {
+export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit, controlsIndex: number) {
   return async function claimErc20PermitHandler() {
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
-      buttonController.hideAll();
+      // If the signer is unavailable, we will disable button for each reward
+      buttonControllers.forEach((controller) => controller.hideAll());
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
 
     app.signer = signer; // update this here to be sure it's set if it wasn't before
 
-    buttonController.hideMakeClaim();
-    buttonController.showLoader();
+    buttonControllers[controlsIndex].hideMakeClaim();
+    buttonControllers[controlsIndex].showLoader();
 
-    const isPermitClaimable = await checkPermitClaimability(app);
+    const isPermitClaimable = await checkPermitClaimability(permit, controlsIndex);
     if (!isPermitClaimable) return;
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) return;
 
-    const tx = await transferFromPermit(permit2Contract, app);
+    const tx = await transferFromPermit(permit2Contract, app, controlsIndex);
     if (!tx) return;
 
-    const receipt = await waitForTransaction(tx);
+    const receipt = await waitForTransaction(tx, table, controlsIndex);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) return;
 
-    getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
+    getMakeClaimButton(table).removeEventListener("click", claimErc20PermitHandler);
   };
 }
 
-async function checkPermitClaimable(app: AppState): Promise<boolean> {
+async function checkPermitClaimable(reward: Permit, index: number): Promise<boolean> {
   let isClaimed: boolean;
   try {
-    isClaimed = await isNonceClaimed(app);
+    isClaimed = await isNonceClaimed(reward);
   } catch (error: unknown) {
     console.error("Error in isNonceClaimed: ", error);
     return false;
@@ -164,11 +165,9 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed.`);
-    buttonController.showViewClaim();
+    buttonControllers[index].showViewClaim();
     return false;
   }
-
-  const reward = app.reward;
 
   if (BigNumber.from(reward.deadline).lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
@@ -183,12 +182,12 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
 
   if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
-    buttonController.hideMakeClaim();
+    buttonControllers[index].hideMakeClaim();
     return false;
   }
   if (!isAllowed) {
     toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
-    buttonController.hideMakeClaim();
+    buttonControllers[index].hideMakeClaim();
     return false;
   }
 
@@ -204,7 +203,7 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
   const beneficiary = reward.beneficiary.toLowerCase();
   if (beneficiary !== user) {
     toaster.create("warning", `This reward is not for you.`);
-    buttonController.hideMakeClaim();
+    buttonControllers[index].hideMakeClaim();
     return false;
   }
 
@@ -216,18 +215,20 @@ export async function checkRenderMakeClaimControl(app: AppState) {
     const address = await app.signer?.getAddress();
     const user = address?.toLowerCase();
 
-    if (app.reward) {
-      const beneficiary = app.reward.beneficiary.toLowerCase();
-      if (beneficiary !== user) {
-        buttonController.hideMakeClaim();
-        return;
+    app.claims.forEach((claim, index) => {
+      if (claim) {
+        const beneficiary = claim.beneficiary.toLowerCase();
+        if (beneficiary !== user) {
+          buttonControllers[index].hideMakeClaim();
+          return;
+        }
       }
-    }
+    });
   } catch (error) {
     console.error("Error getting address from signer");
     console.error(error);
   }
-  buttonController.showMakeClaim();
+  buttonControllers.forEach((controller) => controller.showMakeClaim());
 }
 
 export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
@@ -235,54 +236,57 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
     const address = await app.signer?.getAddress();
     const user = address?.toLowerCase();
 
-    if (app.reward) {
-      const owner = app.reward.owner.toLowerCase();
-      if (owner !== user) {
-        buttonController.hideInvalidator();
-        return;
+    app.claims.forEach((claim, index) => {
+      if (claim) {
+        const owner = claim.owner.toLowerCase();
+        if (owner !== user) {
+          buttonControllers[index].hideInvalidator();
+          return;
+        }
+        buttonControllers[index].showInvalidator();
       }
-    }
+    });
   } catch (error) {
     console.error("Error getting address from signer");
     console.error(error);
   }
-  buttonController.showInvalidator();
 }
 
-const invalidateButton = document.getElementById("invalidator") as HTMLDivElement;
+const invalidateButtons = document.getElementsByClassName("invalidator") as HTMLCollectionOf<Element>;
+for (let i = 0; i < invalidateButtons.length; i++) {
+  invalidateButtons[i].addEventListener("click", async function invalidateButtonClickHandler() {
+    try {
+      const isClaimed = await isNonceClaimed(app);
+      if (isClaimed) {
+        toaster.create("error", `This reward has already been claimed or invalidated.`);
+        buttonControllers[i].hideInvalidator();
+        return;
+      }
 
-invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
-  try {
-    const isClaimed = await isNonceClaimed(app);
-    if (isClaimed) {
-      toaster.create("error", `This reward has already been claimed or invalidated.`);
-      buttonController.hideInvalidator();
-      return;
+      if (!app.signer) return;
+      await invalidateNonce(app.signer, app.claims[i].nonce);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        const e = error as unknown as MetaMaskError;
+        console.error(e);
+        errorToast(e, e.reason);
+        return;
+      }
     }
-
-    if (!app.signer) return;
-    await invalidateNonce(app.signer, app.reward.nonce);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
-      console.error(e);
-      errorToast(e, e.reason);
-      return;
-    }
-  }
-  toaster.create("info", "Nonce invalidation transaction sent");
-  buttonController.hideInvalidator();
-});
+    toaster.create("info", "Nonce invalidation transaction sent");
+    buttonControllers[i].hideInvalidator();
+  });
+}
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-async function isNonceClaimed(app: AppState): Promise<boolean> {
+async function isNonceClaimed(reward: Permit): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(reward.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(app.reward.owner, wordPos).catch((error: MetaMaskError) => {
+  const bitmap = await permit2Contract.nonceBitmap(reward.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });
@@ -312,12 +316,12 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
   return { wordPos, bitPos };
 }
 
-async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
+async function updatePermitTxHash(reward: ERC20Permit, hash: string): Promise<boolean> {
   const { error } = await supabase
     .from("permits")
     .update({ transaction: hash })
     // using only nonce in the condition as it's defined unique on db
-    .eq("nonce", app.reward.nonce.toString());
+    .eq("nonce", reward.nonce.toString());
 
   if (error !== null) {
     console.error(error);
