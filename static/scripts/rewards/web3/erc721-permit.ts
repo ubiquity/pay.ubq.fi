@@ -3,10 +3,10 @@ import { ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { buttonController, getMakeClaimButton, toaster } from "../toaster";
+import { buttonControllers, getMakeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
-export function claimErc721PermitHandler(reward: ERC721Permit) {
+export function claimErc721PermitHandler(table: Element, reward: ERC721Permit, controlsIndex: number) {
   return async function claimHandler() {
     const signer = await connectWallet();
     if (!signer) {
@@ -29,7 +29,7 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
       return;
     }
 
-    buttonController.showLoader();
+    buttonControllers[controlsIndex].showLoader();
     try {
       const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, signer);
 
@@ -45,13 +45,13 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
       );
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
-      buttonController.hideLoader();
+      buttonControllers[controlsIndex].hideLoader();
       toaster.create("success", `Claim Complete.`);
-      buttonController.showViewClaim();
-      buttonController.hideMakeClaim();
+      buttonControllers[controlsIndex].showViewClaim();
+      buttonControllers[controlsIndex].hideMakeClaim();
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      getMakeClaimButton().removeEventListener("click", claimHandler);
+      getMakeClaimButton(table).removeEventListener("click", claimHandler);
 
       // app.nextPermit();
       // renderTransaction().catch((error) => {
