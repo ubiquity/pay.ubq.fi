@@ -14,9 +14,9 @@ describe("Claims Portal Non-Web3", () => {
       cy.visit(`/${claimUrl}`);
       cy.wait(2000);
 
-      cy.get("#invalidator").should("not.be.visible");
-      cy.get("#claim-loader").should("not.be.visible");
-      cy.get("#view-claim").should("not.be.visible");
+      cy.get(".invalidator").should("not.be.visible");
+      cy.get(".claim-loader").should("not.be.visible");
+      cy.get(".view-claim").should("not.be.visible");
 
       cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a web3 enabled browser to collect this reward.");
     });
@@ -79,9 +79,9 @@ function testUserAgent(userAgent: string) {
   });
 
   cy.wait(2000);
-  cy.get("#invalidator").should("not.be.visible");
-  cy.get("#claim-loader").should("not.be.visible");
-  cy.get("#view-claim").should("not.be.visible");
+  cy.get(".invalidator").should("not.be.visible");
+  cy.get(".claim-loader").should("not.be.visible");
+  cy.get(".view-claim").should("not.be.visible");
 
   cy.get("body", { timeout: 3000 }).should("contain.text", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward");
 }
