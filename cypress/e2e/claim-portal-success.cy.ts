@@ -19,7 +19,10 @@ describe("Claims Portal Success", () => {
     it("should successfully claim a permit", () => {
       cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get('table[data-make-claim="ok"]').first().should("exist").and("include.text", " WXDAI");
+      cy.get('table[data-make-claim="ok"]')
+        .first()
+        .should("exist")
+        .and("match", /^[0-9]+(\.[0-9]+)? WXDAI$/);
 
       cy.get("button[class='make-claim']").first().invoke("click");
 
