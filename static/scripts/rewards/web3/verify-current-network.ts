@@ -6,7 +6,8 @@ import { notOnCorrectNetwork } from "./not-on-correct-network";
 // verifyCurrentNetwork checks if the user is on the correct network and displays an error if not
 export async function verifyCurrentNetwork(desiredNetworkId: number) {
   if (!window.ethereum) {
-    buttonControllers.forEach((controller) => controller.hideAll());
+    // Display error for each permit
+    Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
     return;
   }
 
