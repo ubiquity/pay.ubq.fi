@@ -124,7 +124,7 @@ export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit) {
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       // If the signer is unavailable, we will disable button for each reward
-      Object.keys(buttonControllers[table.id]).forEach((key) => buttonControllers[key].hideAll());
+      Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
