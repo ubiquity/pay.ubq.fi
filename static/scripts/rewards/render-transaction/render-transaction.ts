@@ -39,8 +39,8 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
       requestedAmountElement,
     });
 
-    // const toElement = table.querySelector(`.reward-recipient`) as Element;
-    // renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
+    const toElement = table.querySelector(`.reward-recipient`) as Element;
+    renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
 
     if (app.provider) {
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
@@ -68,10 +68,10 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
       requestedAmountElement,
     }).catch(console.error);
 
-    // const toElement = document.getElementById(`reward-recipient`) as Element;
-    // renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
+    const toElement = document.getElementById(`reward-recipient`) as Element;
+    renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
 
-    getMakeClaimButton(table).addEventListener("click", claimErc721PermitHandler(table, claim, buttonControllers[claim.nonce]));
+    getMakeClaimButton(table).addEventListener("click", claimErc721PermitHandler(table, claim));
   }
 
   return true;
