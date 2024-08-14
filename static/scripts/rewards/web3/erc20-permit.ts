@@ -256,19 +256,25 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
   }
 }
 
-const invalidateButtons = document.getElementsByClassName("invalidator") as HTMLCollectionOf<Element>;
-for (let i = 0; i < invalidateButtons.length; i++) {
-  invalidateButtons[i].addEventListener("click", async function invalidateButtonClickHandler() {
+for (let i = 0; i < app.claims.length; i++) {
+  const claim = app.claims[i];
+  const table = document.getElementById(claim.nonce) as HTMLElement;
+  const invalidateButton = table.querySelector(".invalidateButton");
+  if (!invalidateButton) {
+    console.log("Error initializing invalidator");
+    break;
+  }
+  invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
     try {
-      const isClaimed = await isNonceClaimed(app);
+      const isClaimed = await isNonceClaimed(claim);
       if (isClaimed) {
         toaster.create("error", `This reward has already been claimed or invalidated.`);
-        buttonControllers[i].hideInvalidator();
+        buttonControllers[claim.nonce].hideInvalidator();
         return;
       }
 
       if (!app.signer) return;
-      await invalidateNonce(app.signer, app.claims[i].nonce);
+      await invalidateNonce(app.signer, claim.nonce);
     } catch (error: unknown) {
       if (error instanceof Error) {
         const e = error as unknown as MetaMaskError;
@@ -278,7 +284,7 @@ for (let i = 0; i < invalidateButtons.length; i++) {
       }
     }
     toaster.create("info", "Nonce invalidation transaction sent");
-    buttonControllers[i].hideInvalidator();
+    buttonControllers[claim.nonce].hideInvalidator();
   });
 }
 
