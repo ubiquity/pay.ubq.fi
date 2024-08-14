@@ -8,10 +8,11 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
+import { ButtonController } from "../button-controller";
 
-export async function renderTransaction(claim: Permit, table: Element, buttonControllsIndex: number): Promise<boolean> {
+export async function renderTransaction(claim: Permit, table: Element): Promise<boolean> {
   if (!claim) {
-    buttonControllers[buttonControllsIndex].hideAll();
+    buttonControllers[claim.nonce].hideAll();
     console.log("No reward found");
     return false;
   }
@@ -27,7 +28,7 @@ export async function renderTransaction(claim: Permit, table: Element, buttonCon
     table.setAttribute(`data-additional-data-size`, "small");
 
     // insert tx data into table
-    const requestedAmountElement = insertErc20PermitTableData(claim, table, treasury, buttonControllsIndex);
+    const requestedAmountElement = insertErc20PermitTableData(claim, table, treasury);
 
     await renderTokenSymbol({
       tokenAddress: claim.tokenAddress,
@@ -38,21 +39,21 @@ export async function renderTransaction(claim: Permit, table: Element, buttonCon
       requestedAmountElement,
     });
 
-    const toElement = table.querySelector(`.reward-recipient`) as Element;
-    renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
+    // const toElement = table.querySelector(`.reward-recipient`) as Element;
+    // renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
 
     if (app.provider) {
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
     }
 
     if (app.claimTxs[claim.nonce.toString()] !== undefined) {
-      buttonControllers[buttonControllsIndex].showViewClaim();
+      buttonControllers[claim.nonce].showViewClaim();
       const viewClaimButton = getViewClaimButton(table);
       viewClaimButton.addEventListener("click", () => window.open(`${claim.currentExplorerUrl}/tx/${app.claimTxs[claim.nonce.toString()]}`));
     } else if (window.ethereum) {
       // requires wallet connection to claim
-      buttonControllers[buttonControllsIndex].showMakeClaim();
-      getMakeClaimButton(table).addEventListener("click", claimErc20PermitHandlerWrapper(table, claim, buttonControllsIndex));
+      buttonControllers[claim.nonce].showMakeClaim();
+      getMakeClaimButton(table).addEventListener("click", claimErc20PermitHandlerWrapper(table, claim));
     }
 
     table.setAttribute(`data-make-claim`, "ok");
@@ -67,10 +68,10 @@ export async function renderTransaction(claim: Permit, table: Element, buttonCon
       requestedAmountElement,
     }).catch(console.error);
 
-    const toElement = document.getElementById(`reward-recipient`) as Element;
-    renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
+    // const toElement = document.getElementById(`reward-recipient`) as Element;
+    // renderEnsName(claim, { element: toElement, address: claim.beneficiary, networkId: claim.networkId as number }).catch(console.error);
 
-    getMakeClaimButton(table).addEventListener("click", claimErc721PermitHandler(table, claim, buttonControllsIndex));
+    getMakeClaimButton(table).addEventListener("click", claimErc721PermitHandler(table, claim, buttonControllers[claim.nonce]));
   }
 
   return true;

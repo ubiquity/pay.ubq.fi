@@ -1,8 +1,8 @@
 import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { app } from "../app-state";
-import { buttonControllers } from "../toaster";
 import { ButtonController } from "../button-controller";
+import { buttonControllers } from "../toaster";
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
@@ -11,8 +11,7 @@ function shortenAddress(address: string): string {
 export function insertErc20PermitTableData(
   reward: ERC20Permit,
   table: Element,
-  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string },
-  index: number
+  treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
   renderToFields(reward.beneficiary, reward.currentExplorerUrl, table);
   renderTokenFields(reward.tokenAddress, reward.currentExplorerUrl, table);
@@ -37,7 +36,7 @@ export function insertErc20PermitTableData(
 
   // We need to update the controls after inserting the detail rows
   const controls = table.querySelector(".controls") as HTMLDivElement;
-  buttonControllers[index] = new ButtonController(controls);
+  buttonControllers[table.id] = new ButtonController(controls);
   table.setAttribute(`data-make-claim-rendered`, "true");
 
   return table.querySelector(".reward-amount") as Element;

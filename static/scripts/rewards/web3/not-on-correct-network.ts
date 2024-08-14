@@ -12,7 +12,8 @@ export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: 
     switchNetwork(web3provider, desiredNetworkId).catch((error) => {
       console.error(error);
       toaster.create("error", `Please switch to the ${networkName} network to claim this reward.`);
-      buttonControllers.forEach((controller) => controller.hideAll());
+      // Display error for each permit
+      Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
     });
   }
 }

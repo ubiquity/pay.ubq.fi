@@ -18,10 +18,10 @@ export function getViewClaimButton(table: Element) {
   return table.querySelector(".view-claim") as HTMLButtonElement;
 }
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
-export const buttonControllers: ButtonController[] = [];
+export const buttonControllers: { [key: string]: ButtonController } = {};
 
 function createToast(meaning: keyof typeof toaster.icons, text: string, timeout: number = 5000) {
-  if (meaning != "info" && buttonControllers.length) buttonControllers.forEach((controller) => controller.hideLoader());
+  if (meaning != "info" && buttonControllers.length) Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideLoader());
   const toastDetails = {
     timer: timeout,
   } as {

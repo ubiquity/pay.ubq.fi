@@ -114,23 +114,25 @@ async function displayRewardsWithDetails() {
   if (!tableEl) return;
   tableEl.id = app.claims[0].nonce;
   const controls = tableEl.querySelector(".controls") as HTMLDivElement;
-  buttonControllers.push(new ButtonController(controls));
+  const buttonController = new ButtonController(controls);
+  buttonControllers[app.claims[0].nonce] = buttonController;
 
   await Promise.all(
-    app.claims.slice(1).map(async (claim, index) => {
+    app.claims.slice(1).map(async (claim) => {
       // Create a new copy of the table
       const newTable = tableEl.cloneNode(true) as Element;
       newTable.id = claim.nonce;
       tableEl.parentElement?.appendChild(newTable);
 
       const controls = newTable.querySelector(".controls") as HTMLDivElement;
-      buttonControllers.push(new ButtonController(controls));
-      await renderTransaction(claim, newTable, index + 1);
+      const buttonController = new ButtonController(controls);
+      buttonControllers[claim.nonce] = buttonController;
+      await renderTransaction(claim, newTable);
       displayRewardDetails(newTable);
     })
   );
 
   // The first claim's table is populated last
-  await renderTransaction(app.claims[0], tableEl, 0);
+  await renderTransaction(app.claims[0], tableEl);
   displayRewardDetails(tableEl);
 }

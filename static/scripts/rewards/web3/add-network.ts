@@ -12,8 +12,10 @@ export async function addNetwork(provider: ethers.providers.Web3Provider, networ
         nativeCurrency: networkCurrencies[networkId],
       },
     ]);
+    console.log("here");
     return true;
   } catch (error: unknown) {
+    console.log(error);
     return false;
   }
 }

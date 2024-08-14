@@ -43,9 +43,9 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
   }
 }
 
-async function checkPermitClaimability(reward: Permit, index: number): Promise<boolean> {
+async function checkPermitClaimability(reward: Permit): Promise<boolean> {
   try {
-    return await checkPermitClaimable(reward, index);
+    return await checkPermitClaimable(reward);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const e = error as unknown as MetaMaskError;
@@ -53,11 +53,11 @@ async function checkPermitClaimability(reward: Permit, index: number): Promise<b
       errorToast(e, e.reason);
     }
   }
-  buttonControllers[index].hideMakeClaim();
+  buttonControllers[reward.nonce].hideMakeClaim();
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit, controlsIndex: number) {
+async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit) {
   const signer = app.signer;
   if (!signer) return null;
 
@@ -84,8 +84,8 @@ async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit
       if (e.code == "ACTION_REJECTED") {
         // Handle the user rejection case
         toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
-        buttonControllers[controlsIndex].hideLoader();
-        buttonControllers[controlsIndex].showMakeClaim();
+        buttonControllers[reward.nonce].hideLoader();
+        buttonControllers[reward.nonce].showMakeClaim();
       } else {
         // Handle other errors
         console.error("Error in permitTransferFrom:", e);
@@ -96,7 +96,7 @@ async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit
   }
 }
 
-async function waitForTransaction(tx: TransactionResponse, table: Element, controlsIndex: number) {
+async function waitForTransaction(tx: TransactionResponse, table: Element) {
   try {
     const receipt = await tx.wait();
     const viewClaimButton = getViewClaimButton(table);
@@ -105,10 +105,9 @@ async function waitForTransaction(tx: TransactionResponse, table: Element, contr
     };
 
     toaster.create("success", `Claim Complete.`);
-    buttonControllers[controlsIndex].showViewClaim();
-    buttonControllers[controlsIndex].hideLoader();
-    buttonControllers[controlsIndex].hideMakeClaim();
-    console.log(receipt.transactionHash);
+    buttonControllers[table.id].showViewClaim();
+    buttonControllers[table.id].hideLoader();
+    buttonControllers[table.id].hideMakeClaim();
 
     return receipt;
   } catch (error: unknown) {
@@ -120,31 +119,37 @@ async function waitForTransaction(tx: TransactionResponse, table: Element, contr
   }
 }
 
-export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit, controlsIndex: number) {
+export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit) {
   return async function claimErc20PermitHandler() {
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       // If the signer is unavailable, we will disable button for each reward
-      buttonControllers.forEach((controller) => controller.hideAll());
+      Object.keys(buttonControllers[table.id]).forEach((key) => buttonControllers[key].hideAll());
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
 
     app.signer = signer; // update this here to be sure it's set if it wasn't before
 
-    buttonControllers[controlsIndex].hideMakeClaim();
-    buttonControllers[controlsIndex].showLoader();
+    buttonControllers[table.id].hideMakeClaim();
+    buttonControllers[table.id].showLoader();
 
-    const isPermitClaimable = await checkPermitClaimability(permit, controlsIndex);
-    if (!isPermitClaimable) return;
+    const isPermitClaimable = await checkPermitClaimability(permit);
+    if (!isPermitClaimable) {
+      buttonControllers[table.id].hideLoader();
+      return;
+    }
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-    if (!permit2Contract) return;
+    if (!permit2Contract) {
+      buttonControllers[table.id].hideLoader();
+      return;
+    }
 
-    const tx = await transferFromPermit(permit2Contract, app, controlsIndex);
+    const tx = await transferFromPermit(permit2Contract, permit);
     if (!tx) return;
 
-    const receipt = await waitForTransaction(tx, table, controlsIndex);
+    const receipt = await waitForTransaction(tx, table);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
@@ -154,7 +159,7 @@ export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit, c
   };
 }
 
-async function checkPermitClaimable(reward: Permit, index: number): Promise<boolean> {
+async function checkPermitClaimable(reward: Permit): Promise<boolean> {
   let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(reward);
@@ -165,7 +170,7 @@ async function checkPermitClaimable(reward: Permit, index: number): Promise<bool
 
   if (isClaimed) {
     toaster.create("error", `Your reward for this task has already been claimed.`);
-    buttonControllers[index].showViewClaim();
+    buttonControllers[reward.nonce].showViewClaim();
     return false;
   }
 
@@ -176,18 +181,17 @@ async function checkPermitClaimable(reward: Permit, index: number): Promise<bool
 
   const { balance, allowance } = await fetchTreasury(reward);
   const permitted = BigNumber.from(reward.amount);
-
   const isSolvent = balance.gte(permitted);
   const isAllowed = allowance.gte(permitted);
 
   if (!isSolvent) {
     toaster.create("error", `Not enough funds on funding wallet to collect this reward. Please let the financier know.`);
-    buttonControllers[index].hideMakeClaim();
+    buttonControllers[reward.nonce].hideMakeClaim();
     return false;
   }
   if (!isAllowed) {
     toaster.create("error", `Not enough allowance on the funding wallet to collect this reward. Please let the financier know.`);
-    buttonControllers[index].hideMakeClaim();
+    buttonControllers[reward.nonce].hideMakeClaim();
     return false;
   }
 
@@ -203,7 +207,7 @@ async function checkPermitClaimable(reward: Permit, index: number): Promise<bool
   const beneficiary = reward.beneficiary.toLowerCase();
   if (beneficiary !== user) {
     toaster.create("warning", `This reward is not for you.`);
-    buttonControllers[index].hideMakeClaim();
+    buttonControllers[reward.nonce].hideMakeClaim();
     return false;
   }
 
@@ -215,11 +219,11 @@ export async function checkRenderMakeClaimControl(app: AppState) {
     const address = await app.signer?.getAddress();
     const user = address?.toLowerCase();
 
-    app.claims.forEach((claim, index) => {
+    app.claims.forEach((claim) => {
       if (claim) {
         const beneficiary = claim.beneficiary.toLowerCase();
         if (beneficiary !== user) {
-          buttonControllers[index].hideMakeClaim();
+          buttonControllers[claim.nonce].hideMakeClaim();
           return;
         }
       }
@@ -228,7 +232,7 @@ export async function checkRenderMakeClaimControl(app: AppState) {
     console.error("Error getting address from signer");
     console.error(error);
   }
-  buttonControllers.forEach((controller) => controller.showMakeClaim());
+  Object.keys(buttonControllers).forEach((key) => buttonControllers[key].showMakeClaim());
 }
 
 export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
@@ -236,14 +240,14 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
     const address = await app.signer?.getAddress();
     const user = address?.toLowerCase();
 
-    app.claims.forEach((claim, index) => {
+    app.claims.forEach((claim) => {
       if (claim) {
         const owner = claim.owner.toLowerCase();
         if (owner !== user) {
-          buttonControllers[index].hideInvalidator();
+          buttonControllers[claim.nonce].hideInvalidator();
           return;
         }
-        buttonControllers[index].showInvalidator();
+        buttonControllers[claim.nonce].showInvalidator();
       }
     });
   } catch (error) {
