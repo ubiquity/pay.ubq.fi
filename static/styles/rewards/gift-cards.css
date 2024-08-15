@@ -15,13 +15,6 @@
   text-align: center;
 }
 
-main:has(#gift-cards .gift-card) {
-  height: auto;
-}
-
-main:has(#gift-cards .gift-card) div:has(table.receipt) {
-  padding-top: 50px;
-}
 .redeem-info-wrapper[data-show="false"] {
   display: none;
 }

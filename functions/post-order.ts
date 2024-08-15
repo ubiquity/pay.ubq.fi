@@ -2,7 +2,7 @@ import { TransactionReceipt, TransactionResponse } from "@ethersproject/provider
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
-import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
+import { getFastestRpcUrl, getGiftCardOrderId, isGiftCardAvailable } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
@@ -66,6 +66,11 @@ export async function onRequest(ctx: Context): Promise<Response> {
       const exchangeRateResponse = await getExchangeRate(1, giftCard.recipientCurrencyCode, accessToken);
       exchangeRate = exchangeRateResponse.senderAmount;
     }
+
+    if (!isGiftCardAvailable(giftCard, amountDaiWei)) {
+      throw new Error(`The ordered gift card does not meet available criteria: ${JSON.stringify(giftCard)}`);
+    }
+
     const giftCardValue = getGiftCardValue(giftCard, amountDaiWei, exchangeRate);
 
     const orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);

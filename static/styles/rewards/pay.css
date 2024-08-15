@@ -136,7 +136,11 @@ header a:hover #logo {
 main {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* adjust this according to your needs */
+}
+
+main div.receipt-container {
+  height: 120px;
+  margin-bottom: 32px;
 }
 
 header {
@@ -161,7 +165,6 @@ footer {
   /* display: none; */
   opacity: 0;
   transition: opacity 1s;
-  /* padding-top: 80px; */
   text-align: center;
 }
 #carousel > div {
