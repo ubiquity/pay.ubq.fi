@@ -20,7 +20,7 @@ describe("Claims Portal Failures", () => {
     it("should handle no connected signer", () => {
       cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get("button[class='make-claim']").first().should("be.visible").click();
+      cy.get("button.make-claim").first().should("be.visible").click();
       cy.get(".invalidator").should("not.be.visible");
       cy.get(".claim-loader").should("not.be.visible");
       cy.get(".view-claim").should("not.be.visible").and("include.text", "View Claim");
