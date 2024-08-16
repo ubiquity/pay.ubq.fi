@@ -21,6 +21,11 @@ table {
   max-width: 563px;
   width: 100%;
 }
+@media only screen and (max-width: 600px) {
+  table {
+    max-width: 90%;
+  }
+}
 table a:hover,
 table a:hover > div {
   color: #fff;
@@ -317,9 +322,6 @@ thead {
   transition: 0.25s all ease-in-out;
   overflow: hidden;
   /* box-shadow: 0 12px 64px #00000010; */
-}
-table * {
-  text-wrap: nowrap;
 }
 @keyframes thead-fade-in {
   0% {
