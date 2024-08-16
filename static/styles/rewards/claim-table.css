@@ -96,7 +96,8 @@ table td div {
 table td div svg ~ div {
   width: unset;
 }
-table tr:first-of-type > *, table .amount > * {
+table tr:first-of-type > *,
+table .amount > * {
   padding-top: 24px;
 }
 table tr:last-child td div > div {
@@ -189,7 +190,7 @@ table[data-details-visible="true"] .detail,
 table[data-details-visible="false"] .additional-detail {
   opacity: 0;
   pointer-events: all;
-  visibility:collapse ;
+  visibility: collapse;
 }
 table[data-contract-loaded] .token {
   display: none;
@@ -333,7 +334,9 @@ thead {
 }
 
 tr {
-  transition: visibility 0s, opacity 0.5s linear;
+  transition:
+    visibility 0s,
+    opacity 0.5s linear;
 }
 
 thead {
