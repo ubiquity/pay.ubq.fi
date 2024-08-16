@@ -14,7 +14,7 @@ main > div {
   justify-content: center;
   align-items: center;
   width: 100%;
-  gap: 4rem;
+  gap: 64px;
 }
 table {
   border-collapse: collapse;
