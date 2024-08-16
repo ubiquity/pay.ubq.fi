@@ -48,7 +48,7 @@ describe("Claims Portal Failures", () => {
     it("should handle feedback for a failed wallet provider transaction", () => {
       cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get("button[class='make-claim']").first().should("be.visible").click();
+      cy.get("button.make-claim").first().should("be.visible").click();
       cy.get(".claim-loader").first().should("be.visible");
       cy.get(".invalidator").first().should("not.be.visible");
       // cy.get("#claim-loader").should("not.be.visible"); // gets stuck here
