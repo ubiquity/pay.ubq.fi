@@ -8,7 +8,6 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-import { ButtonController } from "../button-controller";
 
 export async function renderTransaction(claim: Permit, table: Element): Promise<boolean> {
   if (!claim) {

@@ -1,5 +1,5 @@
-import { app } from "../app-state";
 import { Permit } from "@ubiquibot/permit-generation/types";
+import { app } from "../app-state";
 import { ensLookup } from "../cirip/ens-lookup";
 
 type EnsParams =

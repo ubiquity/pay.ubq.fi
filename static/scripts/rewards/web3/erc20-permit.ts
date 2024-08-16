@@ -1,9 +1,9 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { Permit, ERC20Permit } from "@ubiquibot/permit-generation/types";
+import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { MetaMaskError, buttonControllers, errorToast, getMakeClaimButton, toaster, getViewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
