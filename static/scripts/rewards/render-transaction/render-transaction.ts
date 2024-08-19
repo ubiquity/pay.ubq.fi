@@ -48,7 +48,7 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
     if (app.claimTxs[claim.nonce.toString()] !== undefined) {
       buttonControllers[claim.nonce].showViewClaim();
       const viewClaimButton = getViewClaimButton(table);
-      viewClaimButton.addEventListener("click", () => window.open(`${claim.currentExplorerUrl}/tx/${app.claimTxs[claim.nonce.toString()]}`));
+      viewClaimButton.addEventListener("click", () => window.open(`${app.getCurrentExplorerUrl(claim)}/tx/${app.claimTxs[claim.nonce.toString()]}`));
     } else if (window.ethereum) {
       // requires wallet connection to claim
       buttonControllers[claim.nonce].showMakeClaim();

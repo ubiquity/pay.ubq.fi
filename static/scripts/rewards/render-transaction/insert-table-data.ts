@@ -19,7 +19,14 @@ export function insertErc20PermitTableData(
     [
       {
         name: "From",
-        value: `<a target="_blank" rel="noopener noreferrer" href="${app.getCurrentExplorerUrl(reward)}/address/${reward.owner}">${reward.owner}</a>`,
+        value: `<a target="_blank" rel="noopener noreferrer" href="${app.getCurrentExplorerUrl(reward)}/address/${reward.owner}">
+                  <span class="full">
+                  <div>${reward.owner}</div>
+        </span>
+        <span class="short">
+                  <div>${shortenAddress(reward.owner)}</div>
+        </span>
+                </a>`,
       },
       {
         name: "Expiry",
@@ -44,8 +51,8 @@ export function insertErc20PermitTableData(
 
 export function insertErc721PermitTableData(reward: ERC721Permit, table: Element): Element {
   const requestedAmountElement = table.querySelector(".reward-amount") as Element;
-  renderToFields(reward.beneficiary, reward.currentExplorerUrl, table);
-  renderTokenFields(reward.tokenAddress, reward.currentExplorerUrl, table);
+  renderToFields(reward.beneficiary, app.getCurrentExplorerUrl(reward), table);
+  renderTokenFields(reward.tokenAddress, app.getCurrentExplorerUrl(reward), table);
   const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.erc721Request?.metadata || {};
   renderDetailsFields(
     [
