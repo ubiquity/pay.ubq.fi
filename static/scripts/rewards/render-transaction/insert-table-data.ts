@@ -1,4 +1,4 @@
-import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
+import { ERC20PermitReward, ERC721PermitReward } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { app } from "../app-state";
 import { ButtonController } from "../button-controller";
@@ -9,7 +9,7 @@ function shortenAddress(address: string): string {
 }
 
 export function insertErc20PermitTableData(
-  reward: ERC20Permit,
+  reward: ERC20PermitReward,
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
@@ -19,14 +19,7 @@ export function insertErc20PermitTableData(
     [
       {
         name: "From",
-        value: `<a target="_blank" rel="noopener noreferrer" href="${app.getCurrentExplorerUrl(reward)}/address/${reward.owner}">
-                  <span class="full">
-                  <div>${reward.owner}</div>
-        </span>
-        <span class="short">
-                  <div>${shortenAddress(reward.owner)}</div>
-        </span>
-                </a>`,
+        value: `<a target="_blank" rel="noopener noreferrer" href="${app.getCurrentExplorerUrl(reward)}/address/${reward.owner}">${reward.owner}</a>`,
       },
       {
         name: "Expiry",
@@ -49,7 +42,7 @@ export function insertErc20PermitTableData(
   return table.querySelector(".reward-amount") as Element;
 }
 
-export function insertErc721PermitTableData(reward: ERC721Permit, table: Element): Element {
+export function insertErc721PermitTableData(reward: ERC721PermitReward, table: Element): Element {
   const requestedAmountElement = table.querySelector(".reward-amount") as Element;
   renderToFields(reward.beneficiary, app.getCurrentExplorerUrl(reward), table);
   renderTokenFields(reward.tokenAddress, app.getCurrentExplorerUrl(reward), table);
