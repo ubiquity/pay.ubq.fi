@@ -1,5 +1,5 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
-import { Permit, ERC20Permit } from "@ubiquibot/permit-generation/types";
+import { PermitReward, ERC20PermitReward } from "@ubiquibot/permit-generation/types";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
@@ -8,7 +8,7 @@ import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { MetaMaskError, buttonControllers, errorToast, getMakeClaimButton, toaster, getViewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
-export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
   try {
@@ -43,7 +43,7 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
   }
 }
 
-async function checkPermitClaimability(reward: Permit): Promise<boolean> {
+async function checkPermitClaimability(reward: PermitReward): Promise<boolean> {
   try {
     return await checkPermitClaimable(reward);
   } catch (error: unknown) {
@@ -57,7 +57,7 @@ async function checkPermitClaimability(reward: Permit): Promise<boolean> {
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, reward: ERC20Permit) {
+async function transferFromPermit(permit2Contract: Contract, reward: ERC20PermitReward) {
   const signer = app.signer;
   if (!signer) return null;
 
@@ -119,7 +119,7 @@ async function waitForTransaction(tx: TransactionResponse, table: Element) {
   }
 }
 
-export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit) {
+export function claimErc20PermitHandlerWrapper(table: Element, permit: PermitReward) {
   return async function claimErc20PermitHandler() {
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
@@ -152,14 +152,14 @@ export function claimErc20PermitHandlerWrapper(table: Element, permit: Permit) {
     const receipt = await waitForTransaction(tx, table);
     if (!receipt) return;
 
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    const isHashUpdated = await updatePermitTxHash(permit, receipt.transactionHash);
     if (!isHashUpdated) return;
 
     getMakeClaimButton(table).removeEventListener("click", claimErc20PermitHandler);
   };
 }
 
-async function checkPermitClaimable(reward: Permit): Promise<boolean> {
+async function checkPermitClaimable(reward: PermitReward): Promise<boolean> {
   let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(reward);
@@ -289,7 +289,7 @@ for (let i = 0; i < app.claims.length; i++) {
 }
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-async function isNonceClaimed(reward: Permit): Promise<boolean> {
+async function isNonceClaimed(reward: PermitReward): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
@@ -326,7 +326,7 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
   return { wordPos, bitPos };
 }
 
-async function updatePermitTxHash(reward: ERC20Permit, hash: string): Promise<boolean> {
+async function updatePermitTxHash(reward: ERC20PermitReward, hash: string): Promise<boolean> {
   const { error } = await supabase
     .from("permits")
     .update({ transaction: hash })
