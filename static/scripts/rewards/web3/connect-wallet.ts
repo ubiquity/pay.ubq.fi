@@ -24,7 +24,7 @@ function mobileCheck() {
   return checkMobile(navigator.userAgent || navigator.vendor || (window as unknown as { opera: string }).opera);
 }
 
-export async function connectWallet(): Promise<JsonRpcSigner | null> {
+export async function connectWallet(networkId: number): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -54,7 +54,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
         // Their wallet provider will auto-prompt due to the call succeeding
         toaster.create("error", "We have detected potential issues with your in-wallet RPC. Accept the request to replace it with a more reliable one.");
       }
-      await addFastestHandlerNetwork(wallet);
+      await addFastestHandlerNetwork(wallet, networkId);
     }
 
     return signer;
@@ -63,9 +63,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   }
 }
 
-async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider) {
-  const networkId = app.networkId ?? (await wallet.getNetwork()).chainId;
-  const handler = useHandler(networkId);
+async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider, networkId: number) {
+  const handler = useHandler(networkId ?? (await wallet.getNetwork()).chainId);
   let provider = await handler.getFastestRpcProvider();
   const appUrl = app.provider?.connection?.url;
 

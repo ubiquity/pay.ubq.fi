@@ -1,15 +1,14 @@
-import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
+import { ERC20PermitReward, PermitReward, TokenType } from "@ubiquibot/permit-generation/types";
 import { networkExplorers } from "@ubiquity-dao/rpc-handler";
 import { app } from "../app-state";
 import { buttonControllers, getMakeClaimButton, getViewClaimButton } from "../toaster";
 import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
-import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 
-export async function renderTransaction(claim: Permit, table: Element): Promise<boolean> {
+export async function renderTransaction(claim: PermitReward, table: Element): Promise<boolean> {
   if (!claim) {
     buttonControllers[claim.nonce].hideAll();
     console.log("No reward found");
@@ -19,8 +18,6 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
   if (!table) {
     throw new Error("Missing transaction table");
   }
-
-  verifyCurrentNetwork(claim.networkId).catch(console.error);
 
   if (isErc20Permit(claim)) {
     const treasury = await fetchTreasury(claim);
@@ -36,6 +33,7 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
       explorerUrl: networkExplorers[claim.networkId],
       table,
       requestedAmountElement,
+      claim,
     });
 
     const toElement = table.querySelector(`.reward-recipient`) as Element;
@@ -65,6 +63,7 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
       explorerUrl: networkExplorers[claim.networkId],
       table,
       requestedAmountElement,
+      claim,
     }).catch(console.error);
 
     const toElement = document.getElementById(`reward-recipient`) as Element;
@@ -76,6 +75,6 @@ export async function renderTransaction(claim: Permit, table: Element): Promise<
   return true;
 }
 
-function isErc20Permit(permit: Permit): permit is ERC20Permit {
+function isErc20Permit(permit: PermitReward): permit is ERC20PermitReward {
   return permit.tokenType === TokenType.ERC20;
 }

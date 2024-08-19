@@ -5,10 +5,12 @@ import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
 import { buttonControllers, getMakeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { verifyCurrentNetwork } from "./verify-current-network";
 
 export function claimErc721PermitHandler(table: Element, reward: ERC721Permit) {
   return async function claimHandler() {
-    const signer = await connectWallet();
+    verifyCurrentNetwork(reward.networkId).catch(console.error);
+    const signer = await connectWallet(reward.networkId);
     if (!signer) {
       return;
     }

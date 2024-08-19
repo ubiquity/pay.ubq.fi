@@ -3,9 +3,7 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
 import { buttonControllers, toaster } from "../toaster";
-import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
-import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { setClaimMessage } from "./set-claim-message";
 import { useRpcHandler } from "../web3/use-rpc-handler";
 import { renderTransaction } from "./render-transaction";
@@ -43,12 +41,6 @@ export async function readClaimDataFromUrl(app: AppState) {
   }
 
   try {
-    app.signer = await connectWallet();
-  } catch (error) {
-    /* empty */
-  }
-
-  try {
     // this would throw on mobile browsers & non-web3 browsers
     window?.ethereum.on("accountsChanged", () => {
       checkRenderMakeClaimControl(app).catch(console.error);
@@ -62,12 +54,6 @@ export async function readClaimDataFromUrl(app: AppState) {
   }
 
   await displayRewardsWithDetails();
-
-  if (app.claims[0].networkId !== null) {
-    await verifyCurrentNetwork(app.claims[0].networkId);
-  } else {
-    throw new Error("Network ID is null");
-  }
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {

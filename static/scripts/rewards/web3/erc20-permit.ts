@@ -7,11 +7,17 @@ import { app, AppState } from "../app-state";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { MetaMaskError, buttonControllers, errorToast, getMakeClaimButton, toaster, getViewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { verifyCurrentNetwork } from "./verify-current-network";
+import { useRpcHandler } from "./use-rpc-handler";
 
 export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
   try {
+    if (app.provider.network.chainId !== permit.networkId) {
+      console.log("Different network. Switching");
+      app.provider = await useRpcHandler(permit);
+    }
     const tokenAddress = permit.tokenAddress;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
@@ -121,7 +127,8 @@ async function waitForTransaction(tx: TransactionResponse, table: Element) {
 
 export function claimErc20PermitHandlerWrapper(table: Element, permit: PermitReward) {
   return async function claimErc20PermitHandler() {
-    const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
+    verifyCurrentNetwork(permit.networkId).catch(console.error);
+    const signer = await connectWallet(permit.networkId); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       // If the signer is unavailable, we will disable button for each reward
       Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
