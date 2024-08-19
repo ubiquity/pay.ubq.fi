@@ -49260,8 +49260,8 @@
   // static/scripts/rewards/render-transaction/display-commit-hash.ts
   function displayCommitHash() {
     const buildElement = document.querySelector(`#build a`);
-    buildElement.innerHTML = "665be52";
-    buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${"665be52"}`;
+    buildElement.innerHTML = "bf4aeff";
+    buildElement.href = `https://github.com/ubiquity/pay.ubq.fi/commit/${"bf4aeff"}`;
   }
 
   // node_modules/@supabase/functions-js/dist/module/helper.js

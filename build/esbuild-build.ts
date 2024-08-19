@@ -27,8 +27,12 @@ export const esBuildContext: esbuild.BuildOptions = {
       name: "css-bundle",
       setup(build) {
         build.onEnd((result) => {
-          execSync(`cat static/styles/**/*.css > static/bundles/bundles.css`); // Updated to include subfolders
-          execSync(`cat static/styles/*.css >> static/bundles/bundles.css`); // Updated to include subfolders
+          execSync(`cat static/styles/rewards/pay.css > static/bundles/bundles.css`);
+          execSync(`cat static/styles/rewards/background.css >> static/bundles/bundles.css`);
+          execSync(`cat static/styles/toast.css >> static/bundles/bundles.css`);
+          execSync(`cat static/styles/rewards/claim-table.css >> static/bundles/bundles.css`);
+          execSync(`cat static/styles/rewards/media-queries.css >> static/bundles/bundles.css`);
+          execSync(`cat static/styles/rewards/light-mode.css >> static/bundles/bundles.css`);
         });
       },
     },
