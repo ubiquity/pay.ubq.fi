@@ -738,3 +738,156 @@ footer {
   padding: 42px;
   right: 0;
 }
+* {
+  font-family: "Proxima Nova", "Ubiquity Nova", sans-serif;
+}
+@font-face {
+  font-family: "Ubiquity Nova";
+  font-style: normal;
+  font-weight: 400;
+  src: url(./fonts/ubiquity-nova-standard.eot);
+  src:
+    url(./fonts/ubiquity-nova-standard.eot#iefix) format("embedded-opentype"),
+    url(./fonts/ubiquity-nova-standard.woff) format("woff"),
+    url(./fonts/ubiquity-nova-standard.ttf) format("truetype");
+}
+:root {
+  --toast-success: hsl(120, 50%, 50%);
+  --toast-error: hsl(0, 50%, 50%);
+  --toast-warning: hsl(50, 100%, 50%);
+  --toast-info: hsl(0, 0%, 50%);
+}
+
+.fa-circle-check {
+  color: var(--toast-success);
+}
+.fa-circle-xmark {
+  color: var(--toast-error);
+}
+.fa-triangle-exclamation {
+  color: var(--toast-warning);
+}
+.fa-circle-info {
+  color: var(--toast-info);
+}
+
+.notifications {
+  position: fixed;
+  bottom: 0;
+  /* right: 20px; */
+}
+
+.notifications :where(.toast, .column) {
+  display: flex;
+  align-items: center;
+}
+
+.notifications .toast {
+  position: relative;
+  overflow: hidden;
+  list-style: none;
+  padding: 24px;
+  margin: 12px;
+  justify-content: space-between;
+  animation: show-toast 0.5s ease-in-out;
+  /* border: 1px solid #80808020; */
+  border: 1px solid var(--border-color);
+  /* backdrop-filter: blur(24px); */
+  /* -webkit-backdrop-filter: blur(24px); */
+  background-color: var(--background-color-default);
+}
+
+@keyframes show-toast {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.notifications .toast.hide {
+  animation: hide_toast 0.5s ease-in-out;
+}
+
+@keyframes hide_toast {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.toast::before {
+  position: absolute;
+  content: "";
+  height: 3px;
+  width: 100%;
+  bottom: 0px;
+  left: 0px;
+  animation: progress 5s linear forwards;
+}
+
+@keyframes progress {
+  100% {
+    width: 0%;
+  }
+}
+
+.toast.success::before,
+.btn#success {
+  background: var(--toast-success);
+}
+
+.toast.error::before,
+.btn#error {
+  background: var(--toast-error);
+}
+
+.toast.warning::before,
+.btn#warning {
+  background: var(--toast-warning);
+}
+
+.toast.info::before,
+.btn#info {
+  background: var(--toast-info);
+}
+
+.toast .column i {
+  font-size: 1.75rem;
+}
+
+.toast.success .column i {
+  color: var(--toast-success);
+}
+
+.toast.error .column i {
+  color: var(--toast-error);
+}
+
+.toast.warning .column i {
+  color: var(--toast-warning);
+}
+
+.toast.info .column i {
+  color: var(--toast-info);
+}
+
+.toast .column span {
+  /* font-size: 1.07rem; */
+  margin-left: 12px;
+  color: #808080;
+  line-height: 1.5;
+}
+
+.toast i:last-child {
+  color: #80808080;
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.toast i:last-child:hover {
+  color: #808080;
+}

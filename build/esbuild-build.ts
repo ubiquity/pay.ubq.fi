@@ -28,6 +28,7 @@ export const esBuildContext: esbuild.BuildOptions = {
       setup(build) {
         build.onEnd((result) => {
           execSync(`cat static/styles/**/*.css > static/bundles/bundles.css`); // Updated to include subfolders
+          execSync(`cat static/styles/*.css >> static/bundles/bundles.css`); // Updated to include subfolders
         });
       },
     },
