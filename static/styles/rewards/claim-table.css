@@ -25,6 +25,11 @@ table {
   table {
     max-width: 90%;
   }
+  @media screen and (orientation: portrait) {
+    table {
+      max-width: 100%;
+    }
+  }
 }
 table a:hover,
 table a:hover > div {
