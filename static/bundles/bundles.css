@@ -1,0 +1,740 @@
+background,
+background #grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+html,
+background {
+  background-color: #000410;
+}
+
+background #grid {
+  pointer-events: none;
+}
+
+background #grid canvas {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  animation: background-grid-fade-in 2s ease-in-out forwards;
+}
+
+background .gradient {
+  width: 200vw;
+  height: 200vh;
+  position: absolute;
+  opacity: 0;
+}
+.grid-loaded background .gradient {
+  background-image: radial-gradient(#00bfff00 0%, #00bfffff 15%, #00bfff00 34%, #00bfffff 58%, #00bfff00 75%, #00bfffff 100%);
+  animation: background-gradients-fade-in 2s ease-in-out forwards;
+}
+background > :nth-child(1) {
+  transform: translateX(-100vw);
+}
+background > :nth-child(2) {
+  transform: translateY(-50vh);
+}
+
+@keyframes background-gradients-fade-in {
+  to {
+    opacity: 0.125;
+  }
+}
+@keyframes background-grid-fade-in {
+  to {
+    opacity: 0.5;
+  }
+}
+:root {
+  --left-table-column-width: 120px;
+  --background-color-default-brightness: 2%;
+  --background-color-light-brightness: 6%;
+  --border-brightness: 5%;
+  --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1);
+  --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
+  --border-color: hsl(225 25% var(--border-brightness) / 1);
+}
+#claim {
+  display: flex;
+}
+main > div {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+table {
+  border-collapse: collapse;
+}
+table a:hover,
+table a:hover > div {
+  color: #fff;
+}
+table #controls {
+  display: none;
+  color: #fff;
+  width: 100%;
+}
+table #controls > button {
+  flex: 1;
+  padding: 0 24px;
+}
+table aside {
+  text-transform: uppercase;
+  font-weight: 100;
+  letter-spacing: 2px;
+  font-size: 16px;
+  color: grey;
+  display: inline;
+  vertical-align: middle;
+  text-align: center;
+  padding: 16px;
+}
+table button {
+  user-select: none;
+  appearance: none;
+  border: none;
+  background: 0 0;
+  cursor: pointer;
+  outline: 0;
+  height: 48px;
+  color: currentColor;
+}
+table button div {
+  text-transform: uppercase;
+  word-break: break-all;
+  text-rendering: geometricPrecision;
+  color: #fff;
+}
+table hr {
+  background-color: #80808040;
+  height: 1px;
+  border: none;
+}
+svg path {
+  fill: currentColor;
+}
+table td div {
+  word-break: break-all;
+}
+table th div {
+  text-align: right;
+  color: #80808080;
+}
+table td,
+table th {
+  padding: 8px;
+  text-rendering: geometricPrecision;
+  line-height: 1.25;
+  color: grey;
+}
+table td div {
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table td div svg ~ div {
+  width: unset;
+}
+table tr:first-of-type > * {
+  padding-top: 24px;
+}
+table tr:last-child td div > div {
+  width: 50%;
+  display: inline-block;
+  vertical-align: middle;
+}
+table tr:last-of-type > * {
+  padding-bottom: 24px;
+}
+table tr#additional-details-border > * {
+  padding: 0;
+  margin: 0;
+}
+table[data-make-claim-rendered] #controls {
+  display: inline-flex;
+}
+table[data-make-claim-rendered] button {
+  opacity: 0.5;
+}
+table[data-make-claim-rendered] button.hide {
+  display: none !important;
+}
+table[data-make-claim-rendered] button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+table[data-make-claim-rendered] button:hover {
+  background-color: #80808020;
+  opacity: 1;
+}
+table[data-make-claim-rendered] button > div {
+  display: none;
+}
+table[data-make-claim-rendered] button:disabled > svg#claim-icon {
+  display: none;
+}
+table[data-make-claim-rendered] button:hover > div {
+  display: unset;
+  color: #fff;
+}
+table[data-make-claim-rendered] button:hover > svg {
+  display: none !important;
+}
+.show {
+  display: block;
+}
+table[data-make-claim-rendered] button.hide > svg#claim-loader {
+  display: none;
+}
+table[data-make-claim-rendered] button.show > svg#claim-icon {
+  display: unset;
+}
+table[data-make-claim-rendered] button.show > svg#claim-loader {
+  display: unset;
+}
+table[data-make-claim-rendered] button.hide > svg#claim-icon {
+  display: unset;
+}
+table #controls {
+  opacity: 0;
+  transition: 1s ease-in-out opacity;
+  pointer-events: none;
+}
+table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
+  opacity: 1;
+  pointer-events: unset;
+}
+table[data-make-claim-rendered] button#additionalDetails {
+  width: 100%;
+  color: #fff;
+}
+table[data-make-claim-rendered] tr#additional-details-border + tr > * {
+  padding-top: 24px;
+}
+table #additionalDetailsTable {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -90px);
+}
+table[data-additional-data-size="large"] #additionalDetailsTable {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -175px);
+}
+table[data-details-visible="true"] #additionalDetailsTable {
+  opacity: 1;
+  pointer-events: all;
+}
+table[data-contract-loaded] #Token {
+  display: none;
+}
+#rewardAmount a {
+  font-size: 24px;
+}
+#rewardAmount a,
+#rewardRecipient div,
+#rewardsCount {
+  color: #fff;
+}
+table[data-details-visible="false"] #rewardToken .full,
+table[data-details-visible="true"] #rewardToken .short {
+  display: none;
+}
+table[data-details-visible="false"] #rewardToken .short,
+table[data-details-visible="true"] #rewardToken .full {
+  display: initial;
+}
+table[data-details-visible="false"] #rewardRecipient .full,
+table[data-details-visible="true"] #rewardRecipient .short {
+  display: none;
+}
+table[data-details-visible="false"] #rewardRecipient .short,
+table[data-details-visible="true"] #rewardRecipient .full {
+  display: initial;
+}
+#To > td,
+#To > th {
+  padding-bottom: 24px;
+}
+table[data-make-claim="ok"] thead {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  /* filter: blur(4px); */
+}
+table[data-make-claim="error"] tbody {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: blur(4px);
+}
+#rewardRecipient a div {
+  opacity: 0.66;
+}
+#rewardRecipient a:hover div {
+  opacity: 1;
+}
+#rewardRecipient div {
+  color: #fff;
+}
+table[data-details-visible="true"] #additionalDetails svg.opener {
+  display: none;
+}
+table[data-details-visible="false"] #additionalDetails svg.opener {
+  display: unset;
+}
+table[data-details-visible="true"] #additionalDetails svg.closer {
+  display: unset;
+}
+table[data-details-visible="false"] #additionalDetails svg.closer {
+  display: none;
+}
+td#owner > a {
+  word-break: break-all;
+}
+table td {
+  padding-right: 32px;
+  width: 100%;
+}
+table th {
+  padding-left: 32px;
+}
+[data-loader="false"] #claim-loader {
+  display: none;
+}
+[data-make-claim="false"] #make-claim {
+  display: none;
+}
+[data-view-claim="false"] #view-claim {
+  display: none;
+}
+[data-invalidator="false"] #invalidator {
+  display: none;
+}
+
+.loading-message::after {
+  content: "";
+  animation: ellipsis 1s infinite;
+  position: absolute;
+}
+
+#claiming-message::after {
+  content: "";
+  animation: ellipsis 1s infinite;
+  position: absolute;
+}
+@keyframes ellipsis {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+#claim-loader > svg {
+  animation: rotate 1s linear infinite;
+}
+tbody,
+thead {
+  background-color: var(--background-color-default);
+  position: absolute;
+  box-shadow: inset 0 0 96px #00bfff10;
+  transition: 0.25s all ease-in-out;
+  border: 1px solid var(--border-color);
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 563px;
+  overflow: hidden;
+  /* box-shadow: 0 12px 64px #00000010; */
+}
+table * {
+  text-wrap: nowrap;
+}
+
+@keyframes thead-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+thead {
+  animation: thead-fade-in 0.5s ease-in-out;
+}
+:root {
+  --light-mode-background-color-default-brightness: calc(100% - var(--background-color-default-brightness));
+  --light-mode-background-color-dark-brightness: calc(100% - var(--background-color-light-brightness));
+  --light-mode-background-color-default: hsl(225 0% var(--light-mode-background-color-default-brightness) / 1);
+  --light-mode-background-color-dark: hsl(225 0% var(--light-mode-background-color-dark-brightness) / 1);
+  --light-mode-border-color: hsl(225 0% calc(100% - var(--border-brightness)) / 1);
+}
+@media (prefers-color-scheme: light) {
+  background {
+    background-color: #fff;
+    color: #000;
+  }
+  table a:hover > div {
+    color: #000;
+  }
+  #rewardAmount > a {
+    color: #000;
+  }
+  svg path {
+    fill: #000;
+  }
+  #logo-icon > svg {
+    fill: #000;
+  }
+  #logo > div#logo-text > span {
+    color: #000;
+  }
+  table button div {
+    color: #000;
+  }
+  table[data-make-claim-rendered] button:hover > div {
+    color: #000;
+  }
+  table[data-make-claim-rendered] button:hover {
+    background-color: #80808018;
+  }
+  table a:hover,
+  table a:hover > div {
+    color: #000;
+  }
+  div#build > a {
+    color: #000;
+  }
+  #rewardAmount div,
+  #rewardRecipient div,
+  #rewardsCount {
+    color: #000;
+  }
+  #nextTx,
+  #previousTx {
+    fill: #000;
+  }
+  html {
+    background-color: #fff;
+  }
+  background #grid {
+    filter: invert(1);
+  }
+  table tbody,
+  table thead {
+    box-shadow: inset 0 0 96px #00000008;
+  }
+  .notifications .toast {
+    border: 1px solid var(--light-mode-border-color);
+    background-color: var(--light-mode-background-color-default);
+  }
+  .grid-loaded background .gradient {
+    opacity: 0;
+    animation: none;
+  }
+
+  #carousel > div:hover {
+    color: #000;
+  }
+  tbody,
+  thead {
+    background-color: #fff;
+    border: 1px solid var(--light-mode-border-color);
+  }
+}
+header span:first-child::after {
+  /* content: " | "; */
+}
+
+@media screen and (max-width: 640px) {
+  table {
+    border-left-width: 0px;
+    border-right-width: 0px;
+  }
+}
+@media screen and (max-width: 768px) {
+  header span:first-child {
+    display: none;
+  }
+
+  header span:first-child::after {
+    content: "";
+  }
+}
+
+/*
+@media screen and (min-height: 512px) {
+  table[data-details-visible="false"] #additional-details-border ~ tr {
+    display: none;
+  }
+  table[data-details-visible="true"] #additional-details-border ~ tr {
+    display: table-row;
+  }
+} */
+
+/* Landscape */
+@media screen and (orientation: landscape) {
+  body {
+    width: 100vw; /* 100% of viewport width */
+    max-width: 100vw; /* prevents any overflow issues */
+    overflow-x: hidden; /* prevents horizontal scrolling */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+* {
+  -webkit-text-size-adjust: 100%;
+  font-family:
+    "Proxima Nova",
+    "Ubiquity Nova",
+    FT Base,
+    -apple-system,
+    system-ui,
+    BlinkMacSystemFont,
+    SF Pro Text,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+a {
+  color: #808080;
+}
+
+body {
+  /* min-height: 100vh; */
+  /* height: calc(100 * var(--vh)); */
+}
+
+body,
+main {
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+main {
+  width: 100vw;
+  position: relative;
+}
+
+a {
+  text-decoration: none;
+}
+
+#logo a {
+  display: block;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  flex-direction: row;
+}
+
+#logo {
+  letter-spacing: 2px;
+  padding: 48px 0;
+  -ms-flex-pack: justify;
+  -ms-flex-align: center;
+  line-height: 1;
+  text-align: center;
+}
+
+#logo > #logo-icon {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 4px;
+  text-rendering: geometricPrecision;
+  /* color: #fff; */
+}
+
+#logo-icon > svg {
+  height: 36px;
+  display: block;
+  margin: 0;
+  width: 36px;
+  padding: 0;
+  margin-right: 10px;
+  fill: #fff;
+}
+
+#logo > div#logo-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+#logo > div#logo-text > span::after {
+  content: " ";
+  display: inline-block;
+  width: 8px;
+}
+#logo > div#logo-text > span {
+  font-size: 20px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-rendering: geometricPrecision;
+  color: #fff;
+  /* margin-right: 8px; */
+  /* font-weight: 400; */
+}
+
+div.footer > div {
+  /* bottom: 48px; */
+  padding: 48px 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-rendering: geometricPrecision;
+  /* font-weight: 100; */
+  /* width: 48px; */
+  margin: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+footer a {
+  opacity: 0.25;
+  font-size: 12px;
+  color: #fff;
+}
+
+footer a:hover {
+  opacity: 1;
+}
+header a #logo {
+  opacity: 0.5;
+}
+header a:hover #logo {
+  opacity: 1;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* adjust this according to your needs */
+}
+
+header {
+  /* height: 140px; */
+  /* width: 100%; */
+}
+
+footer {
+  /* height: 108px; */
+  /* width: 100%; */
+  /* padding-bottom: env(safe-area-inset-bottom); */
+  width: 100%;
+  position: relative;
+}
+
+#carousel {
+  flex-direction: row;
+  align-items: center;
+  align-self: center;
+  /* margin: 12px auto; */
+  /* opacity: 0.5; */
+  /* display: none; */
+  opacity: 0;
+  transition: opacity 1s;
+  text-align: center;
+}
+#carousel > div {
+  color: #808080;
+  vertical-align: middle;
+}
+#carousel > div:hover {
+  color: #fff;
+}
+#carousel.ready {
+  opacity: 1;
+}
+#carousel > #rewardsCount {
+  pointer-events: none;
+  display: inline-block; /* vertical-align: middle; */
+}
+#prevTx,
+#nextTx {
+  padding: 3px;
+  margin: 3px;
+  border: 2px solid;
+  cursor: pointer;
+  transform: rotate(45deg);
+  border-radius: 3px;
+  width: 0px;
+  display: inline-block;
+}
+#prevTx {
+  /* border-color: transparent transparent #fff #fff; */
+  border-top-color: transparent;
+  border-right-color: transparent;
+}
+#nextTx {
+  /* border-color: #fff #fff transparent transparent; */
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+#faq-icon > a {
+  /* position: fixed; */
+  /* right: 20px; */
+  /* cursor: pointer; */
+}
+
+#faq-icon > a > div {
+  font-size: 12px;
+  color: #fff;
+}
+
+#faq-icon > a > div:hover {
+  opacity: 1;
+}
+
+.footer {
+  /* display: flex; */
+  /* align-items: center; */
+  opacity: 0;
+  transition: opacity 1s;
+  text-align: center;
+}
+
+.footer.ready {
+  opacity: 1;
+}
+
+#faq-icon {
+  position: absolute;
+  /* right: 0; */
+  /* height: 24px; */
+  /* display: inline-block; */
+  padding: 42px;
+  right: 0;
+}

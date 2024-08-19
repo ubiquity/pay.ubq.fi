@@ -17,10 +17,21 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".ttf": "dataurl",
     ".svg": "dataurl",
   },
-  outdir: "static/out",
+  outfile: "static/bundles/bundles.js",
+  entryNames: "bundles", // Ensure the CSS is named bundles.css
   define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
     commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
   }),
+  plugins: [
+    {
+      name: "css-bundle",
+      setup(build) {
+        build.onEnd((result) => {
+          execSync(`cat static/styles/**/*.css > static/bundles/bundles.css`); // Updated to include subfolders
+        });
+      },
+    },
+  ],
 };
 
 esbuild
