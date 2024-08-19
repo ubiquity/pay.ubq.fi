@@ -127,12 +127,12 @@ async function waitForTransaction(tx: TransactionResponse, table: Element) {
 
 export function claimErc20PermitHandlerWrapper(table: Element, permit: PermitReward) {
   return async function claimErc20PermitHandler() {
-    verifyCurrentNetwork(permit.networkId).catch(console.error);
     if (app.provider.network.chainId !== permit.networkId) {
       console.log("Different network. Switching");
       app.provider = await useRpcHandler(permit);
     }
     const signer = await connectWallet(permit.networkId); // we are re-testing the in-wallet rpc at this point
+    verifyCurrentNetwork(permit.networkId).catch(console.error);
     if (!signer) {
       // If the signer is unavailable, we will disable button for each reward
       Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());

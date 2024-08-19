@@ -10,12 +10,12 @@ import { useRpcHandler } from "./use-rpc-handler";
 
 export function claimErc721PermitHandler(table: Element, reward: ERC721Permit) {
   return async function claimHandler() {
-    verifyCurrentNetwork(reward.networkId).catch(console.error);
     if (app.provider.network.chainId !== reward.networkId) {
       console.log("Different network. Switching");
       app.provider = await useRpcHandler(reward);
     }
     const signer = await connectWallet(reward.networkId);
+    verifyCurrentNetwork(reward.networkId).catch(console.error);
     if (!signer) {
       return;
     }
