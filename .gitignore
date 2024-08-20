@@ -12,6 +12,7 @@ commit.txt
 .pnp.loader.mjs
 .env
 static/dist
+static/bundles
 
 cypress/screenshots
 cypress/videos
