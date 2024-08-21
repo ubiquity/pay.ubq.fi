@@ -1,6 +1,22 @@
 import { execSync } from "child_process";
 import { config } from "dotenv";
 import esbuild from "esbuild";
+import { readFileSync, appendFileSync, writeFileSync } from "fs";
+import { join } from "path";
+
+// CSS files in order
+const cssFiles: string[] = [
+  "static/styles/rewards/pay.css",
+  "static/styles/rewards/background.css",
+  "static/styles/toast.css",
+  "static/styles/rewards/claim-table.css",
+  "static/styles/rewards/media-queries.css",
+  "static/styles/rewards/light-mode.css",
+];
+
+// Output bundles file
+const outputFilePath = "static/bundles/bundles.css";
+
 const typescriptEntries = ["static/scripts/rewards/init.ts"];
 export const entries = [...typescriptEntries];
 
@@ -27,12 +43,14 @@ export const esBuildContext: esbuild.BuildOptions = {
       name: "css-bundle",
       setup(build) {
         build.onEnd((result) => {
-          execSync(`cat static/styles/rewards/pay.css > static/bundles/bundles.css`);
-          execSync(`cat static/styles/rewards/background.css >> static/bundles/bundles.css`);
-          execSync(`cat static/styles/toast.css >> static/bundles/bundles.css`);
-          execSync(`cat static/styles/rewards/claim-table.css >> static/bundles/bundles.css`);
-          execSync(`cat static/styles/rewards/media-queries.css >> static/bundles/bundles.css`);
-          execSync(`cat static/styles/rewards/light-mode.css >> static/bundles/bundles.css`);
+          // Clear the file first
+          writeFileSync(outputFilePath, "", "utf8");
+
+          // Concatenate each file into the bundles file
+          cssFiles.forEach((file) => {
+            const data = readFileSync(file, "utf8");
+            appendFileSync(outputFilePath, data, "utf8");
+          });
         });
       },
     },
