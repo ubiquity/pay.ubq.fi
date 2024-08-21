@@ -1,3 +1,5 @@
+import { GiftCard } from "../shared/types";
+import { mastercardInternationalSkus } from "./reloadly-lists";
 import { AccessToken } from "./types";
 
 export const allowedChainIds = [1, 5, 100, 31337];
@@ -51,4 +53,12 @@ export function getBaseUrl(isSandbox: boolean): string {
     return "https://giftcards.reloadly.com";
   }
   return "https://giftcards-sandbox.reloadly.com";
+}
+
+export function pickBestCard(giftCards: GiftCard[], countryCode: string): GiftCard {
+  const sku = mastercardInternationalSkus.find((sku) => sku.countryCode == countryCode);
+  const giftCard = giftCards.find((giftCard) => giftCard.productId == sku.sku);
+  if (giftCard) {
+    return giftCard;
+  }
 }

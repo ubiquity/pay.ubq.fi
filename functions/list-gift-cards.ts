@@ -1,5 +1,5 @@
 import { GiftCard } from "../shared/types";
-import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { commonHeaders, getAccessToken, getBaseUrl, pickBestCard } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
@@ -21,7 +21,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const giftCards = [...masterCards, ...visaCards];
 
     if (giftCards.length) {
-      return Response.json(giftCards, { status: 200 });
+      return Response.json([pickBestCard(giftCards, country)], { status: 200 });
     }
     return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {
