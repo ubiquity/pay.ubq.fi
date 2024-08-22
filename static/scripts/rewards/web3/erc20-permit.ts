@@ -270,7 +270,7 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
 for (let i = 0; i < app.claims.length; i++) {
   const claim = app.claims[i];
   const table = document.getElementById(claim.nonce) as HTMLElement;
-  const invalidateButton = table.querySelector(".invalidateButton");
+  const invalidateButton = table.querySelector(".invalidator");
   if (!invalidateButton) {
     console.log("Error initializing invalidator");
     break;
