@@ -1,6 +1,6 @@
 import { GiftCard } from "../shared/types";
 import { getGiftCardById } from "./post-order";
-import { countryAllowList, fallbackInternationalMastercard, fallbackInternationalVisa, mastercardInternationalSkus, visaIntlSkus } from "./reloadly-lists";
+import { countryAllowList, fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
 import { AccessToken } from "./types";
 
 export const allowedChainIds = [1, 5, 100, 31337];
@@ -62,7 +62,7 @@ export async function pickBestCard(giftCards: GiftCard[], countryCode: string, a
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
   }
 
-  const masterCardIntlSku = mastercardInternationalSkus.find((sku) => sku.countryCode == countryCode);
+  const masterCardIntlSku = masterCardIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (masterCardIntlSku) {
     const tokenizedIntlMastercard = giftCards.find((giftCard) => giftCard.productId == masterCardIntlSku.sku);
     if (tokenizedIntlMastercard) {
@@ -105,18 +105,18 @@ export async function pickBestCard(giftCards: GiftCard[], countryCode: string, a
 
 async function getFallbackIntlMasteracrd(accessToken: AccessToken): Promise<GiftCard | null> {
   try {
-    return await getGiftCardById(fallbackInternationalMastercard.sku, accessToken);
+    return await getGiftCardById(fallbackIntlMastercard.sku, accessToken);
   } catch (e) {
-    console.log(`Failed to load international US mastercard: ${JSON.stringify(fallbackInternationalMastercard)}\n${JSON.stringify(JSON.stringify)}`);
+    console.log(`Failed to load international US mastercard: ${JSON.stringify(fallbackIntlMastercard)}\n${JSON.stringify(JSON.stringify)}`);
     return null;
   }
 }
 
 async function getFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard | null> {
   try {
-    return await getGiftCardById(fallbackInternationalVisa.sku, accessToken);
+    return await getGiftCardById(fallbackIntlVisa.sku, accessToken);
   } catch (e) {
-    console.log(`Failed to load international US visa: ${JSON.stringify(fallbackInternationalVisa)}\n${JSON.stringify(JSON.stringify)}`);
+    console.log(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisa)}\n${JSON.stringify(JSON.stringify)}`);
     return null;
   }
 }

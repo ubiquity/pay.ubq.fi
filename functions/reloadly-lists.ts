@@ -1,21 +1,21 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 // Keep duplicate country names in different lists
 
-export const fallbackInternationalMastercard = {
+export const fallbackIntlMastercard = {
   country: "United States",
   countryCode: "US",
   name: "Virtual MasterCard International USD US",
   sku: 18597,
 };
 
-export const fallbackInternationalVisa = {
+export const fallbackIntlVisa = {
   country: "United States",
   countryCode: "US",
   name: "Visa International USD (Virtual) US",
   sku: 18598,
 };
 
-export const mastercardInternationalSkus = [
+export const masterCardIntlSkus = [
   {
     country: "United States",
     countryCode: "US",
@@ -234,7 +234,7 @@ export const mastercardInternationalSkus = [
   },
 ];
 
-export const visaInternationalSkus = [
+export const visaIntlSkus = [
   {
     country: "United States",
     countryCode: "US",
