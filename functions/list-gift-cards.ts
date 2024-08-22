@@ -19,9 +19,10 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", country, accessToken), getGiftCards("visa", country, accessToken)]);
 
     const giftCards = [...masterCards, ...visaCards];
+    const suitableCard = await pickBestCard(giftCards, country, accessToken);
 
-    if (giftCards.length) {
-      return Response.json([pickBestCard(giftCards, country)], { status: 200 });
+    if (suitableCard) {
+      return Response.json([suitableCard], { status: 200 });
     }
     return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {

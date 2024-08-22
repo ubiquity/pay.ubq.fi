@@ -93,7 +93,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
   }
 }
 
-async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
+export async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products/${productId}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {

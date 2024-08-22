@@ -1,5 +1,6 @@
 import { GiftCard } from "../shared/types";
-import { mastercardInternationalSkus } from "./reloadly-lists";
+import { getGiftCardById } from "./post-order";
+import { countryAllowList, fallbackInternationalMastercard, fallbackInternationalVisa, mastercardInternationalSkus } from "./reloadly-lists";
 import { AccessToken } from "./types";
 
 export const allowedChainIds = [1, 5, 100, 31337];
@@ -55,10 +56,40 @@ export function getBaseUrl(isSandbox: boolean): string {
   return "https://giftcards-sandbox.reloadly.com";
 }
 
-export function pickBestCard(giftCards: GiftCard[], countryCode: string): GiftCard {
+export async function pickBestCard(giftCards: GiftCard[], countryCode: string, accessToken: AccessToken): Promise<GiftCard | null> {
   const sku = mastercardInternationalSkus.find((sku) => sku.countryCode == countryCode);
   const giftCard = giftCards.find((giftCard) => giftCard.productId == sku.sku);
   if (giftCard) {
     return giftCard;
+  }
+
+  const supportedCountry = countryAllowList.find((listItem) => listItem.code == countryCode);
+  if (supportedCountry) {
+    const intlMastercard = await getIntlMasteracrd(accessToken);
+    if (intlMastercard) {
+      return intlMastercard;
+    }
+    const intlVisa = await getIntlVisa(accessToken);
+    if (intlVisa) {
+      return intlVisa;
+    }
+  }
+}
+
+async function getIntlMasteracrd(accessToken: AccessToken): Promise<GiftCard | null> {
+  try {
+    return await getGiftCardById(fallbackInternationalMastercard.sku, accessToken);
+  } catch (e) {
+    console.log(`Failed to load international US mastercard: ${JSON.stringify(fallbackInternationalMastercard)}\n${JSON.stringify(JSON.stringify)}`);
+    return null;
+  }
+}
+
+async function getIntlVisa(accessToken: AccessToken): Promise<GiftCard | null> {
+  try {
+    return await getGiftCardById(fallbackInternationalVisa.sku, accessToken);
+  } catch (e) {
+    console.log(`Failed to load international US visa: ${JSON.stringify(fallbackInternationalVisa)}\n${JSON.stringify(JSON.stringify)}`);
+    return null;
   }
 }
