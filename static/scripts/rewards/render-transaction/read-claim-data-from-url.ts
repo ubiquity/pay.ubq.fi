@@ -3,7 +3,7 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
 import { buttonControllers, toaster } from "../toaster";
-import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
+import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, createInvalidatorActions } from "../web3/erc20-permit";
 import { setClaimMessage } from "./set-claim-message";
 import { useRpcHandler } from "../web3/use-rpc-handler";
 import { renderTransaction } from "./render-transaction";
@@ -128,4 +128,5 @@ async function displayRewardsWithDetails() {
   // The first claim's table is populated last
   await renderTransaction(app.claims[0], tableEl);
   displayRewardDetails(tableEl);
+  createInvalidatorActions();
 }

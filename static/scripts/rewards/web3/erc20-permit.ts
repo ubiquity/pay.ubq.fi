@@ -267,36 +267,38 @@ export async function checkRenderInvalidatePermitAdminControl(app: AppState) {
   }
 }
 
-for (let i = 0; i < app.claims.length; i++) {
-  const claim = app.claims[i];
-  const table = document.getElementById(claim.nonce) as HTMLElement;
-  const invalidateButton = table.querySelector(".invalidator");
-  if (!invalidateButton) {
-    console.log("Error initializing invalidator");
-    break;
-  }
-  invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
-    try {
-      const isClaimed = await isNonceClaimed(claim);
-      if (isClaimed) {
-        toaster.create("error", `This reward has already been claimed or invalidated.`);
-        buttonControllers[claim.nonce].hideInvalidator();
-        return;
-      }
-
-      if (!app.signer) return;
-      await invalidateNonce(app.signer, claim.nonce);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        const e = error as unknown as MetaMaskError;
-        console.error(e);
-        errorToast(e, e.reason);
-        return;
-      }
+export function createInvalidatorActions() {
+  for (let i = 0; i < app.claims.length; i++) {
+    const claim = app.claims[i];
+    const table = document.getElementById(claim.nonce) as HTMLElement;
+    const invalidateButton = table.querySelector(".invalidator");
+    if (!invalidateButton) {
+      console.log("Error initializing invalidator");
+      break;
     }
-    toaster.create("info", "Nonce invalidation transaction sent");
-    buttonControllers[claim.nonce].hideInvalidator();
-  });
+    invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
+      try {
+        const isClaimed = await isNonceClaimed(claim);
+        if (isClaimed) {
+          toaster.create("error", `This reward has already been claimed or invalidated.`);
+          buttonControllers[claim.nonce].hideInvalidator();
+          return;
+        }
+
+        if (!app.signer) return;
+        await invalidateNonce(app.signer, claim.nonce);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          const e = error as unknown as MetaMaskError;
+          console.error(e);
+          errorToast(e, e.reason);
+          return;
+        }
+      }
+      toaster.create("info", "Nonce invalidation transaction sent");
+      buttonControllers[claim.nonce].hideInvalidator();
+    });
+  }
 }
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
