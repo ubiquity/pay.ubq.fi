@@ -8,6 +8,7 @@ import { setClaimMessage } from "./set-claim-message";
 import { useRpcHandler } from "../web3/use-rpc-handler";
 import { renderTransaction } from "./render-transaction";
 import { ButtonController } from "../button-controller";
+import { connectWallet } from "../web3/connect-wallet";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -38,6 +39,12 @@ export async function readClaimDataFromUrl(app: AppState) {
     } else {
       toaster.create("error", JSON.stringify(e));
     }
+  }
+
+  try {
+    app.signer = await connectWallet(app.claims[0].networkId);
+  } catch (error) {
+    /* empty */
   }
 
   try {
