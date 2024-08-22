@@ -96,16 +96,16 @@ async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider, n
   }
 
   try {
-    await addHandlerSuggested(wallet, toSuggest.url);
+    await addHandlerSuggested(wallet, toSuggest.url, networkId);
   } catch (error) {
     toaster.create("info", `${toSuggest.url}`, Infinity);
   }
 }
 
-async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url: string) {
-  const symbol = app.networkId === 1 ? "ETH" : "XDAI";
-  const altSymbol = app.networkId === 1 ? "eth" : "xdai";
-  const altSymbol2 = app.networkId === 1 ? "Eth" : "xDai";
+async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url: string, networkId: number) {
+  const symbol = networkId === 1 ? "ETH" : "XDAI";
+  const altSymbol = networkId === 1 ? "eth" : "xdai";
+  const altSymbol2 = networkId === 1 ? "Eth" : "xDai";
 
   if (mobileCheck()) {
     /**
@@ -122,7 +122,7 @@ async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url:
   // It will not work unless the symbols match, so we try them all
   for (const _symbol of [symbol, altSymbol, altSymbol2]) {
     // this does not work on mobile yet
-    await addProvider(provider, url, _symbol, app.networkId);
+    await addProvider(provider, url, _symbol, networkId);
   }
 }
 
