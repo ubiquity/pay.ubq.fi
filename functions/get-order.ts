@@ -1,5 +1,6 @@
 import { OrderTransaction } from "../shared/types";
 import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { getGiftCardById } from "./post-order";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyGetTransactionResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
@@ -22,7 +23,8 @@ export async function onRequest(ctx: Context): Promise<Response> {
     if (!reloadlyTransaction) {
       return Response.json("Order not found.", { status: 404 });
     } else if (reloadlyTransaction.status && reloadlyTransaction.status == "SUCCESSFUL") {
-      return Response.json(reloadlyTransaction, { status: 200 });
+      const product = await getGiftCardById(reloadlyTransaction.product.productId, accessToken);
+      return Response.json({ transaction: reloadlyTransaction, product: product }, { status: 200 });
     } else {
       return Response.json({ message: "There is no successful transaction for given order ID." }, { status: 404 });
     }

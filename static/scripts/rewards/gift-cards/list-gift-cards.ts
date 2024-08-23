@@ -42,13 +42,15 @@ export async function initClaimGiftCard(app: AppState) {
 
   const [retrieveOrderResponse, retrieveGiftCardsResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
 
-  const transaction = (await retrieveOrderResponse.json()) as OrderTransaction;
   const giftCards = (await retrieveGiftCardsResponse.json()) as GiftCard[];
 
   if (retrieveOrderResponse.status == 200) {
-    const giftCard = giftCards.find((giftCard) => transaction.product.productId == giftCard.productId);
-    if (giftCard) {
-      addPurchasedCardHtml(giftCard, transaction, app, giftCardsSection, activateInfoSection);
+    const { transaction, product } = (await retrieveOrderResponse.json()) as {
+      transaction: OrderTransaction;
+      product: GiftCard;
+    };
+    if (product) {
+      addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
     }
   } else if (retrieveGiftCardsResponse.status == 200) {
     const availableGiftCards = giftCards.filter((giftCard: GiftCard) => {
