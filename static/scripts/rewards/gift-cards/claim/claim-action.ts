@@ -11,23 +11,21 @@ import { OrderRequestParams, GiftCard } from "../../../../../shared/types";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
 import { initClaimGiftCard } from "../list-gift-cards";
 
-export function attachClaimAction(className: string, giftCards: GiftCard[], app: AppState) {
+export function attachClaimAction(className: string, giftCard: GiftCard, app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName(className);
   Array.from(claimButtons).forEach((claimButton: Element) => {
     (claimButton as HTMLButtonElement).addEventListener("click", async () => {
       claimButton.setAttribute("data-loading", "true");
       const productId = Number(claimButton.parentElement?.parentElement?.parentElement?.getAttribute("data-product-id"));
 
-      const product = giftCards.find((product: GiftCard) => product.productId == productId);
-      if (product) {
-        if (!isErc20Permit(app.reward)) {
-          toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
-        } else if (!isClaimableForAmount(product, app.reward.amount)) {
-          toaster.create("error", "Your reward amount is not equal to the price of available card.");
-        } else {
-          await claimGiftCard(productId, app);
-        }
+      if (!isErc20Permit(app.reward)) {
+        toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
+      } else if (!isClaimableForAmount(giftCard, app.reward.amount)) {
+        toaster.create("error", "Your reward amount is not equal to the price of available card.");
+      } else {
+        await claimGiftCard(productId, app);
       }
+
       claimButton.setAttribute("data-loading", "false");
     });
   });

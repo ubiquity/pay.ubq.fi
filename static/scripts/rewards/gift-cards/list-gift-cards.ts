@@ -40,9 +40,9 @@ export async function initClaimGiftCard(app: AppState) {
     },
   };
 
-  const [retrieveOrderResponse, retrieveGiftCardsResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
+  const [retrieveOrderResponse, retrieveGiftCardResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
 
-  const giftCards = (await retrieveGiftCardsResponse.json()) as GiftCard[];
+  const giftCard = (await retrieveGiftCardResponse.json()) as GiftCard;
 
   if (retrieveOrderResponse.status == 200) {
     const { transaction, product } = (await retrieveOrderResponse.json()) as {
@@ -52,13 +52,11 @@ export async function initClaimGiftCard(app: AppState) {
     if (product) {
       addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
     }
-  } else if (retrieveGiftCardsResponse.status == 200) {
-    const availableGiftCards = giftCards.filter((giftCard: GiftCard) => {
-      return giftCard && isGiftCardAvailable(giftCard, app.reward.amount);
-    });
+  } else if (retrieveGiftCardResponse.status == 200) {
+    const availableGiftCard = isGiftCardAvailable(giftCard, app.reward.amount) ? giftCard : null;
 
-    addAvailableCardsHtml(availableGiftCards, app, giftCardsSection, activateInfoSection);
-  } else if (retrieveGiftCardsResponse.status == 404) {
+    addAvailableCardsHtml(availableGiftCard, app, giftCardsSection, activateInfoSection);
+  } else if (retrieveGiftCardResponse.status == 404) {
     giftCardsSection.innerHTML = "<p class='list-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
   } else {
     giftCardsSection.innerHTML = "<p class='list-error'>There was a problem in fetching gift cards. Try again later.</p>";
@@ -94,26 +92,23 @@ function addPurchasedCardHtml(
   attachRevealAction(transaction, app);
 }
 
-function addAvailableCardsHtml(giftCards: GiftCard[], app: AppState, giftCardsSection: HTMLElement, activateInfoSection: HTMLElement) {
+function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement, activateInfoSection: HTMLElement) {
   const htmlParts: string[] = [];
   htmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
-  if (giftCards.length) {
-    htmlParts.push(`<div class="gift-cards-wrapper${giftCards.length < 3 ? " center" : ""}">`);
-    giftCards.forEach((giftCard: GiftCard) => {
-      htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
-    });
+  if (giftCard) {
+    htmlParts.push(`<div class="gift-cards-wrapper center">`);
+    htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     htmlParts.push(`</div>`);
+
+    giftCardsSection.innerHTML = htmlParts.join("");
+
+    const activateInfoHtmlParts: string[] = [];
+    activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
+    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
+
+    attachClaimAction("claim-gift-card-btn", giftCard, app);
   } else {
     htmlParts.push(`<p class="list-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
+    giftCardsSection.innerHTML = htmlParts.join("");
   }
-
-  giftCardsSection.innerHTML = htmlParts.join("");
-
-  const activateInfoHtmlParts: string[] = [];
-  giftCards.forEach((giftCard: GiftCard) => {
-    activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
-  });
-  activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
-
-  attachClaimAction("claim-gift-card-btn", giftCards, app);
 }

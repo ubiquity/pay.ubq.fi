@@ -22,7 +22,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const suitableCard = await pickBestCard(giftCards, country, accessToken);
 
     if (suitableCard) {
-      return Response.json([suitableCard], { status: 200 });
+      return Response.json(suitableCard, { status: 200 });
     }
     return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {
