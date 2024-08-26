@@ -44,12 +44,17 @@
 
 .gift-card {
   background-color: var(--background-color-default);
-  margin-right: 10px;
-  padding: 12px 6px;
-  text-align: center;
-  min-width: 168px;
-  width: 168px;
-  height: fit-content;
+  display: flex;
+  padding: 24px;
+}
+@media screen and (max-width: 640px) {
+  .gift-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .gift-card .details {
+    margin-left: 0;
+  }
 }
 .redeem-code {
   width: 160px;
@@ -61,9 +66,15 @@
 }
 
 .gift-card h3 {
-  color: #fff;
+  padding: 8px;
 }
 
+.gift-card .details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 24px;
+  row-gap: 12px;
+}
 .gift-card div.buttons {
   display: flex;
   flex-direction: row;
@@ -98,12 +109,21 @@
   flex-direction: column;
 }
 .gift-card .pricing .available {
-  color: #fff;
-}
-.gift-card .pricing div {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-evenly;
+}
+.gift-card .pricing .available div .currency {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.gift-card .pricing .available div .currency div {
+  font-size: 8px;
+}
+.gift-card .pricing .available div .amount {
+  font-size: 24px;
+  color: #fff;
 }
 .redeem-info-wrapper {
   position: absolute;
@@ -135,21 +155,47 @@
   color: #fff;
 }
 
-.claim-gift-card-btn[data-loading="true"] > span.action {
+.claim-gift-card-btn {
+  width: 100%;
+  flex: 1;
+  padding: 0 24px;
+  background-color: var(--background-color-default);
+  border: none;
+  color: #808080;
+}
+.claim-gift-card-btn[data-loading="false"]:hover {
+  background-color: #80808020;
+  opacity: 1;
+  cursor: pointer;
+}
+.claim-gift-card-btn[data-loading="true"] > div.icon {
   display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > span.loading {
-  display: flex;
+.claim-gift-card-btn[data-loading="true"] > div.claim-title {
+  display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > span.loading svg {
+.claim-gift-card-btn[data-loading="true"] > div.loader {
+  display: block;
+}
+.claim-gift-card-btn[data-loading="true"] > div.loader svg {
   animation: rotate 1s linear infinite;
 }
-.claim-gift-card-btn[data-loading="false"] > span.action {
-  display: flex;
+.claim-gift-card-btn[data-loading="false"] > div.icon {
+  display: block;
 }
-.claim-gift-card-btn[data-loading="false"] > span.loading {
+.claim-gift-card-btn[data-loading="false"]:hover > div.icon {
   display: none;
 }
+.claim-gift-card-btn[data-loading="false"] > div.claim-title {
+  display: none;
+}
+.claim-gift-card-btn[data-loading="false"]:hover > div.claim-title {
+  display: block;
+}
+.claim-gift-card-btn[data-loading="false"] > div.loader {
+  display: none;
+}
+
 .gift-cards-wrapper.purchased .claim-gift-card-btn {
   display: none;
 }
