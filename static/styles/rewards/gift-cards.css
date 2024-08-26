@@ -15,26 +15,17 @@
   text-align: center;
 }
 
-.redeem-info-wrapper[data-show="false"] {
-  display: none;
-}
-
 .gift-cards-wrapper {
   display: flex;
   flex-direction: row;
   overflow-x: auto;
   max-width: 563px;
   width: 100vw;
-  transform: rotateX(180deg);
-  /* Because of rotateX, some properties like padding-bottom, align-items work in reverse. */
   align-items: end;
   padding-bottom: 12px;
 }
 .gift-cards-wrapper.center {
   justify-content: center;
-}
-.gift-cards-wrapper .gift-card {
-  transform: rotateX(180deg);
 }
 
 .purchased {
@@ -46,6 +37,7 @@
   background-color: var(--background-color-default);
   display: flex;
   padding: 24px;
+  width: 100%;
 }
 @media screen and (max-width: 640px) {
   .gift-card {
@@ -67,6 +59,7 @@
 
 .gift-card h3 {
   padding: 8px;
+  text-align: center;
 }
 
 .gift-card .details {
@@ -74,6 +67,7 @@
   flex-direction: column;
   margin-left: 24px;
   row-gap: 12px;
+  flex: 1;
 }
 .gift-card div.buttons {
   display: flex;
@@ -100,8 +94,7 @@
   width: 100%;
   height: auto;
   border: 2px solid #80808020;
-  max-width: 168px;
-  height: 110px;
+  max-width: 200px;
 }
 
 .gift-card .pricing {
@@ -125,34 +118,19 @@
   font-size: 24px;
   color: #fff;
 }
-.redeem-info-wrapper {
-  position: absolute;
-  z-index: 1000;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: var(--background-color-default);
+.redeem-info-wrapper p {
+  text-transform: none;
+}
+.redeem-info-wrapper fieldset legend {
+  text-align: center;
+  padding: 0 4px;
+}
+.redeem-info-wrapper fieldset .instructions {
+  padding: 12px;
 }
 .redeem-info {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   max-width: 563px;
-  padding: 24px;
-  border-collapse: collapse;
-  border-color: gray;
-  overflow-y: auto;
-  z-index: 1;
-}
-
-.close-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  cursor: pointer;
-  color: #fff;
+  border-color: var(--light-mode-border-color);
 }
 
 .claim-gift-card-btn {
