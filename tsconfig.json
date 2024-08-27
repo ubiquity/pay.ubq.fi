@@ -1,5 +1,5 @@
 {
-  "include": ["functions", "build", "scripts/typescript", "globals.d.ts", "cypress/**/*.ts", "cypress.config.ts", "static/**/*.ts", ".github/**/*.ts", "./vitest.config.ts"],
+  "include": ["functions", "build", "scripts/typescript", "globals.d.ts", "cypress/**/*.ts", "cypress.config.ts", "static/**/*.ts", ".github/*.ts", "vitest/**/*.ts", "./vitest.config.ts", "vitest/web3.js"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */
