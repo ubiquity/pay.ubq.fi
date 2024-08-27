@@ -95,6 +95,7 @@ function addPurchasedCardHtml(
 
 function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement, activateInfoSection: HTMLElement) {
   const htmlParts: string[] = [];
+
   htmlParts.push(`<h2 class="heading-gift-card">Or mint a virtual visa/mastercard</h2>`);
   if (giftCard) {
     htmlParts.push(`<div class="gift-cards-wrapper">`);

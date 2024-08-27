@@ -16,7 +16,7 @@ export function getGiftCardHtml(giftCard: GiftCard, rewardAmount: BigNumberish) 
         <div class="pricing ${giftCard.denominationType}">
           ${giftCard.denominationType == "FIXED" ? getFixedPricesHtml(giftCard, rewardAmount) : getRangePricesHtml(giftCard, rewardAmount)}
         </div>
-        <button class="mint-btn" data-loading="false">
+        <button class="mint-btn btn" data-loading="false">
           <div class="action">Mint</div>
           <div class="icon"
             ><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="claim-icon">

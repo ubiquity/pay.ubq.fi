@@ -9,8 +9,7 @@ export function getRedeemCodeHtml(transaction: OrderTransaction) {
       <p>xxxxxxxxxxxx</p>
       <p>xxxxxxxxxxxx</p>
       <p>xxxxxxxxxxxx</p>
-      <div class="buttons">
-        <button id="reveal-btn" data-loading="false">
+        <button id="reveal-btn" class="btn" data-loading="false">
           <div class="action">Reveal</div>
           <div class="icon">
             <!--?xml version="1.0" encoding="utf-8"?-->
@@ -41,8 +40,6 @@ export function getRedeemCodeHtml(transaction: OrderTransaction) {
             </svg>
           </div>
         </button>
-        
-      </div>
     </div>
   `;
 }
