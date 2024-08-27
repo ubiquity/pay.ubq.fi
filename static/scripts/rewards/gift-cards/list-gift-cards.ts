@@ -2,7 +2,7 @@ import { isGiftCardAvailable, getGiftCardOrderId } from "../../../../shared/help
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
-import { attachClaimAction } from "./claim/claim-action";
+import { attachMintAction as attachMintAction } from "./claim/claim-action";
 import { attachRevealAction } from "./reveal/reveal-action";
 import { getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
@@ -108,7 +108,7 @@ function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCar
     activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
     activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
 
-    attachClaimAction("mint-btn", giftCard, app);
+    attachMintAction(giftCard, app);
   } else {
     htmlParts.push(`<p class="list-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
     giftCardsSection.innerHTML = htmlParts.join("");
