@@ -47,11 +47,10 @@ export async function initClaimGiftCard(app: AppState) {
   if (retrieveOrderResponse.status == 200) {
     const { transaction, product } = (await retrieveOrderResponse.json()) as {
       transaction: OrderTransaction;
-      product: GiftCard;
+      product: GiftCard | null;
     };
-    if (product) {
-      addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
-    }
+
+    addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
   } else if (retrieveGiftCardResponse.status == 200) {
     const availableGiftCard = isGiftCardAvailable(giftCard, app.reward.amount) ? giftCard : null;
 
@@ -66,28 +65,30 @@ export async function initClaimGiftCard(app: AppState) {
 }
 
 function addPurchasedCardHtml(
-  giftCard: GiftCard,
+  giftCard: GiftCard | null,
   transaction: OrderTransaction,
   app: AppState,
   giftCardsSection: HTMLElement,
   activateInfoSection: HTMLElement
 ) {
   const htmlParts: string[] = [];
-  htmlParts.push(`<h2 class="heading-gift-card">Your gift card</h2>`);
+  htmlParts.push(`<h2 class="heading-gift-card">Your virtual visa/mastercard</h2>`);
   htmlParts.push(`<div class="gift-cards-wrapper purchased">`);
 
-  htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
+  if (giftCard) {
+    htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
+  }
 
   htmlParts.push(getRedeemCodeHtml(transaction));
   htmlParts.push(`</div>`);
 
   giftCardsSection.innerHTML = htmlParts.join("");
 
-  const activateInfoHtmlParts: string[] = [];
-
-  activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
-
-  activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
+  if (giftCard) {
+    const activateInfoHtmlParts: string[] = [];
+    activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
+    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
+  }
 
   attachRevealAction(transaction, app);
 }

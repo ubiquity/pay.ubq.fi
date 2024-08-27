@@ -47,7 +47,7 @@ async function revealRedeemCode(transactionId: number, signedMessage: string, ap
 
   const redeemCodeElements = document.getElementsByClassName("redeem-code");
   if (redeemCodeElements && redeemCodeElements.length) {
-    let codesHtml = "<h3>Your redeem code</h3>";
+    let codesHtml = "<h3>Redeem code</h3>";
     responseJson.forEach((code) => {
       const keys = Object.keys(code);
       keys.forEach((key) => {

@@ -23,8 +23,12 @@ export async function onRequest(ctx: Context): Promise<Response> {
     if (!reloadlyTransaction) {
       return Response.json("Order not found.", { status: 404 });
     } else if (reloadlyTransaction.status && reloadlyTransaction.status == "SUCCESSFUL") {
-      const product = await getGiftCardById(reloadlyTransaction.product.productId, accessToken);
-      return Response.json({ transaction: reloadlyTransaction, product: product }, { status: 200 });
+      try {
+        const product = await getGiftCardById(reloadlyTransaction.product.productId, accessToken);
+        return Response.json({ transaction: reloadlyTransaction, product: product }, { status: 200 });
+      } catch (error) {
+        return Response.json({ transaction: reloadlyTransaction, product: null }, { status: 200 });
+      }
     } else {
       return Response.json({ message: "There is no successful transaction for given order ID." }, { status: 404 });
     }

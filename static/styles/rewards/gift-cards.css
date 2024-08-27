@@ -28,11 +28,6 @@
   justify-content: center;
 }
 
-.purchased {
-  flex-direction: column;
-  align-items: center;
-}
-
 .gift-card {
   background-color: var(--background-color-default);
   display: flex;
@@ -49,9 +44,12 @@
   }
 }
 .redeem-code {
-  width: 160px;
   overflow-wrap: break-word;
   text-transform: none;
+  background-color: var(--background-color-default);
+  padding: 24px;
+  width: 100%;
+  text-align: center;
 }
 .redeem-code p {
   text-transform: none;
@@ -178,16 +176,42 @@
   display: none;
 }
 
+#reveal-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--background-color-default);
+  border: none;
+  color: #808080;
+  cursor: pointer;
+}
+#reveal-btn:hover {
+  background-color: #80808020;
+  opacity: 1;
+  cursor: pointer;
+}
+
 #reveal-btn[data-loading-reveal="false"] .loading {
   display: none;
 }
 #reveal-btn[data-loading-reveal="false"] .action {
+  display: none;
+}
+#reveal-btn[data-loading-reveal="false"]:hover .icon {
+  display: none;
+}
+#reveal-btn[data-loading-reveal="false"]:hover .action {
+  display: block;
+  margin: 8px;
+}
+
+#reveal-btn[data-loading-reveal="false"] .icon {
   display: block;
 }
 
 #reveal-btn[data-loading-reveal="true"] .loading {
   display: block;
 }
+
 #reveal-btn[data-loading-reveal="true"] .loading svg {
   animation: rotate 1s linear infinite;
 }
@@ -195,6 +219,11 @@
 #reveal-btn[data-loading-reveal="true"] .action {
   display: none;
 }
+
+#reveal-btn[data-loading-reveal="true"] .icon {
+  display: none;
+}
+
 .disclaimer {
   text-align: center;
   padding-top: 24px;
