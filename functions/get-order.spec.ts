@@ -1,31 +1,17 @@
-import { env, createExecutionContext, waitOnExecutionContext, Parameters } from "cloudflare:test";
+import { env, waitOnExecutionContext } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
 import { onRequest, getTransactionFromOrderId } from "./get-order";
 import { getAccessToken } from "./helpers";
+import { createContext, DEFAULT_BASE_URL } from "../vitest/helpers";
 
-function createContext(baseUrl: string, params: Record<string, string>) {
-  const url = new URL(baseUrl);
-  url.search = new URLSearchParams(params).toString();
-  const request = new Request(url);
-  const ctx = createExecutionContext();
-  const eventCtx: Parameters<typeof onRequest>[0] = {
-    request,
-    functionPath: "",
-    waitUntil: ctx.waitUntil.bind(ctx),
-    passThroughOnException: ctx.passThroughOnException.bind(ctx),
-    env,
-  };
-  return { request, ctx, eventCtx };
-}
-
-const DEFAULT_BASE_URL = "http:/placeholder";
-
-describe("Get Orders", () => {
+describe("Get Order", () => {
   it("throws 404 for non-existent order", async () => {
     const { ctx, eventCtx } = createContext(DEFAULT_BASE_URL, { orderId: "1" });
 
     const response = await onRequest(eventCtx);
     await waitOnExecutionContext(ctx);
+    const resp = await fetch("http://localhost:3000/create-mock-app");
+    console.log(await resp.text());
 
     expect(response.status).toBe(404);
     expect(await response.text()).toContain("Order not found");
