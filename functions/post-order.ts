@@ -1,5 +1,5 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
-import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
+import { JsonRpcProvider } from "@ethersproject/providers";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getFastestRpcUrl, getGiftCardOrderId, isGiftCardAvailable } from "../shared/helpers";
@@ -93,7 +93,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
   }
 }
 
-async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
+export async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products/${productId}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {
@@ -121,7 +121,7 @@ async function getGiftCardById(productId: number, accessToken: AccessToken): Pro
   return responseJson as GiftCard;
 }
 
-async function orderGiftCard(productId: number, cardValue: number, identifier: string, accessToken: AccessToken): Promise<ReloadlyOrderResponse> {
+export async function orderGiftCard(productId: number, cardValue: number, identifier: string, accessToken: AccessToken): Promise<ReloadlyOrderResponse> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/orders`;
   console.log(`Placing order at url: ${url}`);
 
@@ -163,7 +163,7 @@ async function orderGiftCard(productId: number, cardValue: number, identifier: s
   return responseJson as ReloadlyOrderResponse;
 }
 
-async function isDuplicateOrder(orderId: string, accessToken: AccessToken): Promise<boolean> {
+export async function isDuplicateOrder(orderId: string, accessToken: AccessToken): Promise<boolean> {
   try {
     const transaction = await getTransactionFromOrderId(orderId, accessToken);
     return !!transaction.transactionId;
@@ -172,7 +172,7 @@ async function isDuplicateOrder(orderId: string, accessToken: AccessToken): Prom
   }
 }
 
-async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken): Promise<ExchangeRate> {
+export async function getExchangeRate(usdAmount: number, fromCurrency: string, accessToken: AccessToken): Promise<ExchangeRate> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/fx-rate?currencyCode=${fromCurrency}&amount=${usdAmount}`;
   console.log(`Retrieving url ${url}`);
   const options = {
