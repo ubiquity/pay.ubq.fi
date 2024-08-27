@@ -10,8 +10,6 @@ describe("Get Order", () => {
 
     const response = await onRequest(eventCtx);
     await waitOnExecutionContext(ctx);
-    const resp = await fetch("http://localhost:3000/create-mock-app");
-    console.log(await resp.text());
 
     expect(response.status).toBe(404);
     expect(await response.text()).toContain("Order not found");
