@@ -30,7 +30,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
   }
 }
 
-async function getGiftCards(productQuery: string, country: string, accessToken: AccessToken): Promise<GiftCard[]> {
+export async function getGiftCards(productQuery: string, country: string, accessToken: AccessToken): Promise<GiftCard[]> {
   // productCategoryId = 1 = Finance.
   // This should prevent mixing of other gift cards with similar keywords
   const url = `${getBaseUrl(accessToken.isSandbox)}/countries/${country}/products?productName=${productQuery}&productCategoryId=1`;
