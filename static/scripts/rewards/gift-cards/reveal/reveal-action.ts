@@ -6,7 +6,7 @@ import { getApiBaseUrl } from "../helpers";
 
 export function attachRevealAction(transaction: OrderTransaction, app: AppState) {
   const revealButton = document.getElementById("reveal-btn");
-  const loaderAttribute = "data-loading-reveal";
+  const loaderAttribute = "data-loading";
   revealButton?.addEventListener("click", async () => {
     revealButton.setAttribute(loaderAttribute, "true");
     const transactionId = document.getElementsByClassName("redeem-code")[0].getAttribute("data-transactionId");

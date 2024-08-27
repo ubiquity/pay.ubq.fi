@@ -73,13 +73,13 @@ function addPurchasedCardHtml(
 ) {
   const htmlParts: string[] = [];
   htmlParts.push(`<h2 class="heading-gift-card">Your virtual visa/mastercard</h2>`);
-  htmlParts.push(`<div class="gift-cards-wrapper purchased">`);
+  htmlParts.push(`<div class="gift-cards-wrapper">`);
+  htmlParts.push(getRedeemCodeHtml(transaction));
 
   if (giftCard) {
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
   }
 
-  htmlParts.push(getRedeemCodeHtml(transaction));
   htmlParts.push(`</div>`);
 
   giftCardsSection.innerHTML = htmlParts.join("");
@@ -97,7 +97,7 @@ function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCar
   const htmlParts: string[] = [];
   htmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
   if (giftCard) {
-    htmlParts.push(`<div class="gift-cards-wrapper center">`);
+    htmlParts.push(`<div class="gift-cards-wrapper">`);
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     htmlParts.push(`</div>`);
 

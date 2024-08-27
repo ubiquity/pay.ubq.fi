@@ -17,15 +17,12 @@
 
 .gift-cards-wrapper {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   overflow-x: auto;
   max-width: 563px;
   width: 100vw;
   align-items: end;
-  padding-bottom: 12px;
-}
-.gift-cards-wrapper.center {
-  justify-content: center;
+  row-gap: 12px;
 }
 
 .gift-card {
@@ -33,6 +30,7 @@
   display: flex;
   padding: 24px;
   width: 100%;
+  box-sizing: border-box;
 }
 @media screen and (max-width: 640px) {
   .gift-card {
@@ -50,6 +48,7 @@
   padding: 24px;
   width: 100%;
   text-align: center;
+  box-sizing: border-box;
 }
 .redeem-code p {
   text-transform: none;
@@ -133,56 +132,53 @@
 
 .claim-gift-card-btn {
   width: 100%;
-  flex: 1;
-  padding: 0 24px;
   background-color: var(--background-color-default);
   border: none;
   color: #808080;
+  opacity: 0.5;
+  height: 48px;
 }
 .claim-gift-card-btn[data-loading="false"]:hover {
   background-color: #80808020;
   opacity: 1;
   cursor: pointer;
 }
-.claim-gift-card-btn[data-loading="true"] > div.icon {
+.claim-gift-card-btn[data-loading="true"] > .icon {
   display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > div.claim-title {
+.claim-gift-card-btn[data-loading="true"] > .action {
   display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > div.loader {
+.claim-gift-card-btn[data-loading="true"] > .loader {
   display: block;
 }
-.claim-gift-card-btn[data-loading="true"] > div.loader svg {
+.claim-gift-card-btn[data-loading="true"] > .loader svg {
   animation: rotate 1s linear infinite;
 }
-.claim-gift-card-btn[data-loading="false"] > div.icon {
+.claim-gift-card-btn[data-loading="false"] > .icon {
   display: block;
 }
-.claim-gift-card-btn[data-loading="false"]:hover > div.icon {
+.claim-gift-card-btn[data-loading="false"]:hover > .icon {
   display: none;
 }
-.claim-gift-card-btn[data-loading="false"] > div.claim-title {
+.claim-gift-card-btn[data-loading="false"] > .action {
   display: none;
 }
-.claim-gift-card-btn[data-loading="false"]:hover > div.claim-title {
+.claim-gift-card-btn[data-loading="false"]:hover > .action {
   display: block;
 }
-.claim-gift-card-btn[data-loading="false"] > div.loader {
-  display: none;
-}
-
-.gift-cards-wrapper.purchased .claim-gift-card-btn {
+.claim-gift-card-btn[data-loading="false"] > .loader {
   display: none;
 }
 
 #reveal-btn {
   width: 100%;
-  padding: 12px;
   background-color: var(--background-color-default);
   border: none;
   color: #808080;
   cursor: pointer;
+  opacity: 0.5;
+  height: 48px;
 }
 #reveal-btn:hover {
   background-color: #80808020;
@@ -190,37 +186,40 @@
   cursor: pointer;
 }
 
-#reveal-btn[data-loading-reveal="false"] .loading {
-  display: none;
-}
-#reveal-btn[data-loading-reveal="false"] .action {
-  display: none;
-}
-#reveal-btn[data-loading-reveal="false"]:hover .icon {
-  display: none;
-}
-#reveal-btn[data-loading-reveal="false"]:hover .action {
-  display: block;
-  margin: 8px;
+.action {
+  color: #fff;
 }
 
-#reveal-btn[data-loading-reveal="false"] .icon {
-  display: block;
+#reveal-btn[data-loading="false"] .loader {
+  display: none;
 }
-
-#reveal-btn[data-loading-reveal="true"] .loading {
+#reveal-btn[data-loading="false"] .action {
+  display: none;
+}
+#reveal-btn[data-loading="false"]:hover .icon {
+  display: none;
+}
+#reveal-btn[data-loading="false"]:hover .action {
   display: block;
 }
 
-#reveal-btn[data-loading-reveal="true"] .loading svg {
+#reveal-btn[data-loading="false"] .icon {
+  display: block;
+}
+
+#reveal-btn[data-loading="true"] .loader {
+  display: block;
+}
+
+#reveal-btn[data-loading="true"] .loader svg {
   animation: rotate 1s linear infinite;
 }
 
-#reveal-btn[data-loading-reveal="true"] .action {
+#reveal-btn[data-loading="true"] .action {
   display: none;
 }
 
-#reveal-btn[data-loading-reveal="true"] .icon {
+#reveal-btn[data-loading="true"] .icon {
   display: none;
 }
 
