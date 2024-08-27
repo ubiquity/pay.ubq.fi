@@ -95,7 +95,7 @@ function addPurchasedCardHtml(
 
 function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement, activateInfoSection: HTMLElement) {
   const htmlParts: string[] = [];
-  htmlParts.push(`<h2 class="heading-gift-card">Or claim in virtual visa/mastercard</h2>`);
+  htmlParts.push(`<h2 class="heading-gift-card">Or mint a virtual visa/mastercard</h2>`);
   if (giftCard) {
     htmlParts.push(`<div class="gift-cards-wrapper">`);
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
@@ -107,7 +107,7 @@ function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCar
     activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
     activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
 
-    attachClaimAction("claim-gift-card-btn", giftCard, app);
+    attachClaimAction("mint-btn", giftCard, app);
   } else {
     htmlParts.push(`<p class="list-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
     giftCardsSection.innerHTML = htmlParts.join("");

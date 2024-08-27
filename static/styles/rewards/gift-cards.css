@@ -130,7 +130,7 @@
   border-color: var(--light-mode-border-color);
 }
 
-.claim-gift-card-btn {
+.mint-btn {
   width: 100%;
   background-color: var(--background-color-default);
   border: none;
@@ -138,36 +138,36 @@
   opacity: 0.5;
   height: 48px;
 }
-.claim-gift-card-btn[data-loading="false"]:hover {
+.mint-btn[data-loading="false"]:hover {
   background-color: #80808020;
   opacity: 1;
   cursor: pointer;
 }
-.claim-gift-card-btn[data-loading="true"] > .icon {
+.mint-btn[data-loading="true"] > .icon {
   display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > .action {
+.mint-btn[data-loading="true"] > .action {
   display: none;
 }
-.claim-gift-card-btn[data-loading="true"] > .loader {
+.mint-btn[data-loading="true"] > .loader {
   display: block;
 }
-.claim-gift-card-btn[data-loading="true"] > .loader svg {
+.mint-btn[data-loading="true"] > .loader svg {
   animation: rotate 1s linear infinite;
 }
-.claim-gift-card-btn[data-loading="false"] > .icon {
+.mint-btn[data-loading="false"] > .icon {
   display: block;
 }
-.claim-gift-card-btn[data-loading="false"]:hover > .icon {
+.mint-btn[data-loading="false"]:hover > .icon {
   display: none;
 }
-.claim-gift-card-btn[data-loading="false"] > .action {
+.mint-btn[data-loading="false"] > .action {
   display: none;
 }
-.claim-gift-card-btn[data-loading="false"]:hover > .action {
+.mint-btn[data-loading="false"]:hover > .action {
   display: block;
 }
-.claim-gift-card-btn[data-loading="false"] > .loader {
+.mint-btn[data-loading="false"] > .loader {
   display: none;
 }
 
