@@ -2,7 +2,7 @@ import { isGiftCardAvailable, getGiftCardOrderId } from "../../../../shared/help
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
-import { attachMintAction as attachMintAction } from "./claim/claim-action";
+import { attachMintAction } from "./mint/mint-action";
 import { attachRevealAction } from "./reveal/reveal-action";
 import { getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
