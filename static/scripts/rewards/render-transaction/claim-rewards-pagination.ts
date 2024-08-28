@@ -1,5 +1,5 @@
 import { app } from "../app-state";
-import { initClaimGiftCard } from "../gift-cards/list-gift-cards";
+import { initClaimGiftCard } from "../gift-cards/index";
 import { getMakeClaimButton } from "../toaster";
 import { table } from "./read-claim-data-from-url";
 import { renderTransaction } from "./render-transaction";

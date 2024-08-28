@@ -37,7 +37,7 @@ export async function initClaimGiftCard(app: AppState) {
   }
 
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
-  const listGiftCardsUrl = `${getApiBaseUrl()}/list-gift-cards?country=${country}`;
+  const bestCardUrl = `${getApiBaseUrl()}/get-best-card?country=${country}`;
 
   const requestInit = {
     method: "GET",
@@ -46,22 +46,22 @@ export async function initClaimGiftCard(app: AppState) {
     },
   };
 
-  const [retrieveOrderResponse, retrieveGiftCardResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(listGiftCardsUrl, requestInit)]);
+  const [orderResponse, bestCardResponse] = await Promise.all([fetch(retrieveOrderUrl, requestInit), fetch(bestCardUrl, requestInit)]);
 
-  const giftCard = (await retrieveGiftCardResponse.json()) as GiftCard;
+  const giftCard = (await bestCardResponse.json()) as GiftCard;
 
-  if (retrieveOrderResponse.status == 200) {
-    const { transaction, product } = (await retrieveOrderResponse.json()) as {
+  if (orderResponse.status == 200) {
+    const { transaction, product } = (await orderResponse.json()) as {
       transaction: OrderTransaction;
       product: GiftCard | null;
     };
 
     addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
-  } else if (retrieveGiftCardResponse.status == 200) {
+  } else if (bestCardResponse.status == 200) {
     const availableGiftCard = isGiftCardAvailable(giftCard, app.reward.amount) ? giftCard : null;
 
     addAvailableCardsHtml(availableGiftCard, app, giftCardsSection, activateInfoSection);
-  } else if (retrieveGiftCardResponse.status == 404) {
+  } else if (bestCardResponse.status == 404) {
     giftCardsSection.innerHTML = "<p class='list-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
   } else {
     giftCardsSection.innerHTML = "<p class='list-error'>There was a problem in fetching gift cards. Try again later.</p>";

@@ -57,7 +57,7 @@ export function getBaseUrl(isSandbox: boolean): string {
   return "https://giftcards-sandbox.reloadly.com";
 }
 
-export async function getSuitableCard(countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
+export async function findBestCard(countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
   const supportedCountry = allowedCountries.find((listItem) => listItem.code == countryCode);
   if (!supportedCountry) {
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);

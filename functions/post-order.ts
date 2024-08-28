@@ -7,7 +7,7 @@ import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl, getSuitableCard } from "./helpers";
+import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl, findBestCard } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
@@ -24,9 +24,9 @@ export async function onRequest(ctx: Context): Promise<Response> {
       throw new Error(`Invalid post parameters: ${JSON.stringify({ productId, txHash, chainId })}`);
     }
 
-    const suitableCard = await getSuitableCard(country, accessToken);
-    if (suitableCard.productId != productId) {
-      throw new Error(`You are not ordering the suitable card: ${JSON.stringify({ ordered: productId, suitable: suitableCard })}`);
+    const bestCard = await findBestCard(country, accessToken);
+    if (bestCard.productId != productId) {
+      throw new Error(`You are not ordering the suitable card: ${JSON.stringify({ ordered: productId, suitable: bestCard })}`);
     }
     if (!allowedChainIds.includes(chainId)) {
       throw new Error(`Unsupported chain: ${JSON.stringify({ chainId })}`);

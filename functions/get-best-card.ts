@@ -1,4 +1,4 @@
-import { getAccessToken, getSuitableCard } from "./helpers";
+import { getAccessToken, findBestCard } from "./helpers";
 import { Context } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
@@ -15,10 +15,10 @@ export async function onRequest(ctx: Context): Promise<Response> {
     }
 
     const accessToken = await getAccessToken(ctx.env);
-    const suitableCard = await getSuitableCard(country, accessToken);
+    const bestCard = await findBestCard(country, accessToken);
 
-    if (suitableCard) {
-      return Response.json(suitableCard, { status: 200 });
+    if (bestCard) {
+      return Response.json(bestCard, { status: 200 });
     }
     return Response.json({ message: "There are no gift cards available." }, { status: 404 });
   } catch (error) {

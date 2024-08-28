@@ -8,7 +8,7 @@ import { isErc20Permit } from "../../render-transaction/render-transaction";
 import { toaster } from "../../toaster";
 import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl, getUserCountryCode } from "../helpers";
-import { initClaimGiftCard } from "../list-gift-cards";
+import { initClaimGiftCard } from "../index";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
   const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName("mint-btn");
