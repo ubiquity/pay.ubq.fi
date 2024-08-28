@@ -88,6 +88,7 @@ export interface OrderRequestParams {
   productId: number;
   txHash: string;
   chainId: number;
+  country: string;
 }
 
 export interface ExchangeRate {

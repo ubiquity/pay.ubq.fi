@@ -1,14 +1,13 @@
 import { ethers } from "ethers";
+import { giftCardTreasuryAddress, permit2Address } from "../../../../../shared/constants";
+import { isClaimableForAmount } from "../../../../../shared/pricing";
+import { GiftCard, OrderRequestParams } from "../../../../../shared/types";
 import { permit2Abi } from "../../abis";
 import { AppState } from "../../app-state";
-import { permit2Address } from "../../../../../shared/constants";
-import { giftCardTreasuryAddress } from "../../../../../shared/constants";
+import { isErc20Permit } from "../../render-transaction/render-transaction";
 import { toaster } from "../../toaster";
 import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
-import { getApiBaseUrl } from "../helpers";
-import { isClaimableForAmount } from "../../../../../shared/pricing";
-import { OrderRequestParams, GiftCard } from "../../../../../shared/types";
-import { isErc20Permit } from "../../render-transaction/render-transaction";
+import { getApiBaseUrl, getUserCountryCode } from "../helpers";
 import { initClaimGiftCard } from "../list-gift-cards";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
@@ -32,6 +31,12 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
 
 async function mintGiftCard(productId: number, app: AppState) {
   if (app.signer) {
+    const country = await getUserCountryCode();
+    if (!country) {
+      toaster.create("error", "Failed to detect your location to pick a suitable card for you.");
+      return;
+    }
+
     const isClaimiablle = await checkPermitClaimable(app);
     if (isClaimiablle) {
       const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
@@ -52,6 +57,7 @@ async function mintGiftCard(productId: number, app: AppState) {
         chainId: app.signer.provider.network.chainId,
         txHash: tx.hash,
         productId,
+        country: country,
       };
       const response = await fetch(url, {
         method: "POST",
