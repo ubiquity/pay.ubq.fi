@@ -93,19 +93,18 @@
   font-size: 24px;
   color: #fff;
 }
-.redeem-info-wrapper p {
+.redeem-info {
+  border-color: var(--light-mode-border-color);
+}
+.redeem-info p {
   text-transform: none;
 }
-.redeem-info-wrapper fieldset legend {
+.redeem-info fieldset legend {
   text-align: center;
   padding: 0 4px;
 }
-.redeem-info-wrapper fieldset .instructions {
+.redeem-info fieldset .instructions {
   padding: 12px;
-}
-.redeem-info {
-  max-width: 563px;
-  border-color: var(--light-mode-border-color);
 }
 
 .btn[data-loading="true"] > .icon {
