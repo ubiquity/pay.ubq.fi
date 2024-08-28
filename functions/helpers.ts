@@ -2,7 +2,7 @@ import { GiftCard } from "../shared/types";
 import { allowedCountries } from "../shared/allowed-country-list";
 import { getGiftCardById } from "./post-order";
 import { fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
-import { AccessToken } from "./types";
+import { AccessToken, ReloadlyFailureResponse } from "./types";
 
 export const allowedChainIds = [1, 5, 100, 31337];
 
@@ -57,11 +57,14 @@ export function getBaseUrl(isSandbox: boolean): string {
   return "https://giftcards-sandbox.reloadly.com";
 }
 
-export async function pickBestCard(giftCards: GiftCard[], countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
+export async function getSuitableCard(countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
   const supportedCountry = allowedCountries.find((listItem) => listItem.code == countryCode);
   if (!supportedCountry) {
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
   }
+
+  const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", countryCode, accessToken), getGiftCards("visa", countryCode, accessToken)]);
+  const giftCards = [...masterCards, ...visaCards];
 
   const masterCardIntlSku = masterCardIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (masterCardIntlSku) {
@@ -120,4 +123,81 @@ async function getFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard |
     console.log(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisa)}\n${JSON.stringify(JSON.stringify)}`);
     return null;
   }
+}
+
+export async function getGiftCards(productQuery: string, country: string, accessToken: AccessToken): Promise<GiftCard[]> {
+  if (accessToken.isSandbox) {
+    // Load product differently on Reloadly sandbox
+    // Sandbox doesn't have mastercard, it has only 1 visa card for US.
+    // This visa card doesn't load with above url, let's use special url
+    // for this so that we have something to try on sandbox
+    return await getSandboxGiftCards(productQuery, country, accessToken);
+  }
+  // productCategoryId = 1 = Finance.
+  // This should prevent mixing of other gift cards with similar keywords
+  const url = `${getBaseUrl(accessToken.isSandbox)}/countries/${country}/products?productName=${productQuery}&productCategoryId=1`;
+
+  console.log(`Retrieving gift cards from ${url}`);
+  const options = {
+    method: "GET",
+    headers: {
+      ...commonHeaders,
+      Authorization: `Bearer ${accessToken.token}`,
+    },
+  };
+
+  const response = await fetch(url, options);
+  const responseJson = await response.json();
+
+  console.log("Response status", response.status);
+  console.log(`Response from ${url}`, responseJson);
+
+  if (response.status == 404) {
+    return [];
+  }
+
+  if (response.status != 200) {
+    throw new Error(
+      `Error from Reloadly API: ${JSON.stringify({
+        status: response.status,
+        message: (responseJson as ReloadlyFailureResponse).message,
+      })}`
+    );
+  }
+
+  return responseJson as GiftCard[];
+}
+
+async function getSandboxGiftCards(productQuery: string, country: string, accessToken: AccessToken): Promise<GiftCard[]> {
+  const url = `${getBaseUrl(accessToken.isSandbox)}/products?productName=${productQuery}&productCategoryId=1`;
+
+  console.log(`Retrieving gift cards from ${url}`);
+  const options = {
+    method: "GET",
+    headers: {
+      ...commonHeaders,
+      Authorization: `Bearer ${accessToken.token}`,
+    },
+  };
+
+  const response = await fetch(url, options);
+  const responseJson = await response.json();
+
+  console.log("Response status", response.status);
+  console.log(`Response from ${url}`, responseJson);
+
+  if (response.status == 404) {
+    return [];
+  }
+
+  if (response.status != 200) {
+    throw new Error(
+      `Error from Reloadly API: ${JSON.stringify({
+        status: response.status,
+        message: (responseJson as ReloadlyFailureResponse).message,
+      })}`
+    );
+  }
+
+  return (responseJson as { content: GiftCard[] })?.content;
 }
