@@ -37,8 +37,8 @@ async function mintGiftCard(productId: number, app: AppState) {
       return;
     }
 
-    const isClaimiablle = await checkPermitClaimable(app);
-    if (isClaimiablle) {
+    const isClaimable = await checkPermitClaimable(app);
+    if (isClaimable) {
       const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, app.signer);
       if (!permit2Contract) return;
 

@@ -74,7 +74,7 @@ export async function getSuitableCard(countryCode: string, accessToken: AccessTo
     }
   }
 
-  const fallbackMastercard = await getFallbackIntlMasteracrd(accessToken);
+  const fallbackMastercard = await getFallbackIntlMastercard(accessToken);
   if (fallbackMastercard) {
     return fallbackMastercard;
   }
@@ -107,7 +107,7 @@ export async function getSuitableCard(countryCode: string, accessToken: AccessTo
   throw new Error(`No suitable card found for country code ${countryCode}`);
 }
 
-async function getFallbackIntlMasteracrd(accessToken: AccessToken): Promise<GiftCard | null> {
+async function getFallbackIntlMastercard(accessToken: AccessToken): Promise<GiftCard | null> {
   try {
     return await getGiftCardById(fallbackIntlMastercard.sku, accessToken);
   } catch (e) {

@@ -105,6 +105,7 @@ export const allowedCountries = [
   },
   {
     code: "BV",
+    //cspell:disable-next-line
     name: "Bouvet Island",
   },
   {
@@ -405,6 +406,7 @@ export const allowedCountries = [
   },
   {
     code: "CR",
+    //cspell:disable-next-line
     name: "Costa Rica",
   },
   {
@@ -417,6 +419,7 @@ export const allowedCountries = [
   },
   {
     code: "CW",
+    //cspell:disable-next-line
     name: "Cura√ßao",
   },
   {
@@ -533,6 +536,7 @@ export const allowedCountries = [
   },
   {
     code: "CV",
+    //cspell:disable-next-line
     name: "Cabo Verde",
   },
   {
