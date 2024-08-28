@@ -2,7 +2,6 @@ import { allowedCountries } from "../../../../shared/allowed-country-list";
 import { getGiftCardOrderId, isGiftCardAvailable } from "../../../../shared/helpers";
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
-import { attachActivateInfoAction } from "./activate/activate-action";
 import { getGiftCardHtml } from "./gift-card";
 import { getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { attachMintAction } from "./mint/mint-action";
@@ -58,8 +57,6 @@ export async function initClaimGiftCard(app: AppState) {
   } else {
     giftCardsSection.innerHTML = "<p class='card-error'>There was a problem in fetching gift cards. Try again later.</p>";
   }
-
-  attachActivateInfoAction();
 }
 
 function addPurchasedCardHtml(giftCard: GiftCard | null, transaction: OrderTransaction, app: AppState, giftCardsSection: HTMLElement) {
