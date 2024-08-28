@@ -26,6 +26,7 @@
   width: 100%;
   text-align: center;
   box-sizing: border-box;
+  box-shadow: inset 0 0 96px #00bfff10;
 }
 
 .card-error {
@@ -49,6 +50,7 @@
 
 #redeem-code p {
   text-transform: none;
+  margin: 2px 0;
 }
 
 .card-section h3 {
@@ -141,11 +143,9 @@
   color: #808080;
   cursor: pointer;
   height: 48px;
-  background-color: inherit;
+  background: 0 0;
 }
-.btn .icon {
-  opacity: 0.5;
-}
+
 .btn:hover {
   cursor: pointer;
   background-color: #80808020;
@@ -160,6 +160,7 @@
 @media (prefers-color-scheme: light) {
   .card-section {
     background-color: #fff;
+    box-shadow: inset 0 0 96px #00000008;
   }
 
   .card-section img {
@@ -170,5 +171,8 @@
   }
   .btn:hover {
     color: #000;
+  }
+  .btn .icon {
+    opacity: 0.5;
   }
 }
