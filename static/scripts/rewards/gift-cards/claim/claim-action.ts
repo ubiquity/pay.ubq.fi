@@ -15,7 +15,7 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
 
   (claimButtons[0] as HTMLButtonElement).addEventListener("click", async () => {
     claimButtons[0].setAttribute("data-loading", "true");
-    const productId = Number(claimButtons[0].parentElement?.parentElement?.parentElement?.getAttribute("data-product-id"));
+    const productId = Number(document.getElementsByClassName("gift-card")[0].getAttribute("data-product-id"));
 
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
@@ -72,7 +72,7 @@ async function mintGiftCard(productId: number, app: AppState) {
         return;
       }
 
-      toaster.create("success", "Gift card claimed successfully.");
+      toaster.create("success", "Gift card minted successfully.");
       await initClaimGiftCard(app);
     }
   } else {
