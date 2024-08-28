@@ -2,6 +2,7 @@ import { BigNumberish } from "ethers";
 import { GiftCard } from "../../../../shared/types";
 import { getFixedPriceToValueMap, getGiftCardValue, isRangePriceGiftCardClaimable } from "../../../../shared/pricing";
 import { formatEther } from "ethers/lib/utils";
+import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 
 const html = String.raw;
 
@@ -41,6 +42,7 @@ export function getGiftCardHtml(giftCard: GiftCard, rewardAmount: BigNumberish) 
         </button>
       </div>
     </div>
+    ${getGiftCardActivateInfoHtml(giftCard)}
   `;
 }
 

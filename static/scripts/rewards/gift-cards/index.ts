@@ -1,14 +1,13 @@
-import { isGiftCardAvailable, getGiftCardOrderId } from "../../../../shared/helpers";
+import { allowedCountries } from "../../../../shared/allowed-country-list";
+import { getGiftCardOrderId, isGiftCardAvailable } from "../../../../shared/helpers";
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { attachActivateInfoAction } from "./activate/activate-action";
-import { attachMintAction } from "./mint/mint-action";
-import { attachRevealAction } from "./reveal/reveal-action";
-import { getApiBaseUrl, getUserCountryCode } from "./helpers";
-import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
+import { getApiBaseUrl, getUserCountryCode } from "./helpers";
+import { attachMintAction } from "./mint/mint-action";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
-import { allowedCountries } from "../../../../shared/allowed-country-list";
+import { attachRevealAction } from "./reveal/reveal-action";
 
 export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
@@ -17,13 +16,6 @@ export async function initClaimGiftCard(app: AppState) {
     return;
   }
   giftCardsSection.innerHTML = "Loading...";
-
-  const activateInfoSection = document.getElementById("activate-info");
-  if (!activateInfoSection) {
-    console.error("Missing gift cards activate info section #activate-info");
-    return;
-  }
-  activateInfoSection.innerHTML = "";
 
   const country = await getUserCountryCode();
   if (!country) {
@@ -56,11 +48,11 @@ export async function initClaimGiftCard(app: AppState) {
       product: GiftCard | null;
     };
 
-    addPurchasedCardHtml(product, transaction, app, giftCardsSection, activateInfoSection);
+    addPurchasedCardHtml(product, transaction, app, giftCardsSection);
   } else if (bestCardResponse.status == 200) {
     const availableGiftCard = isGiftCardAvailable(giftCard, app.reward.amount) ? giftCard : null;
 
-    addAvailableCardsHtml(availableGiftCard, app, giftCardsSection, activateInfoSection);
+    addAvailableCardsHtml(availableGiftCard, app, giftCardsSection);
   } else if (bestCardResponse.status == 404) {
     giftCardsSection.innerHTML = "<p class='list-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
   } else {
@@ -70,13 +62,7 @@ export async function initClaimGiftCard(app: AppState) {
   attachActivateInfoAction();
 }
 
-function addPurchasedCardHtml(
-  giftCard: GiftCard | null,
-  transaction: OrderTransaction,
-  app: AppState,
-  giftCardsSection: HTMLElement,
-  activateInfoSection: HTMLElement
-) {
+function addPurchasedCardHtml(giftCard: GiftCard | null, transaction: OrderTransaction, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
   htmlParts.push(`<h2 class="heading-gift-card">Your virtual visa/mastercard</h2>`);
   htmlParts.push(`<div class="gift-cards-wrapper">`);
@@ -90,16 +76,10 @@ function addPurchasedCardHtml(
 
   giftCardsSection.innerHTML = htmlParts.join("");
 
-  if (giftCard) {
-    const activateInfoHtmlParts: string[] = [];
-    activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
-    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
-  }
-
   attachRevealAction(transaction, app);
 }
 
-function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement, activateInfoSection: HTMLElement) {
+function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
 
   htmlParts.push(`<h2 class="heading-gift-card">Or mint a virtual visa/mastercard</h2>`);
@@ -109,10 +89,6 @@ function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCar
     htmlParts.push(`</div>`);
 
     giftCardsSection.innerHTML = htmlParts.join("");
-
-    const activateInfoHtmlParts: string[] = [];
-    activateInfoHtmlParts.push(getGiftCardActivateInfoHtml(giftCard));
-    activateInfoSection.innerHTML = activateInfoHtmlParts.join("");
 
     attachMintAction(giftCard, app);
   } else {
