@@ -8,6 +8,7 @@ import { getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { getGiftCardActivateInfoHtml } from "./activate/activate-html";
 import { getGiftCardHtml } from "./gift-card";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
+import { allowedCountries } from "../../../../shared/allowed-country-list";
 
 export async function initClaimGiftCard(app: AppState) {
   const giftCardsSection = document.getElementById("gift-cards");
@@ -27,6 +28,11 @@ export async function initClaimGiftCard(app: AppState) {
   const country = await getUserCountryCode();
   if (!country) {
     giftCardsSection.innerHTML = `<p class="list-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
+    return;
+  }
+
+  if (!allowedCountries.find((allowedCountry) => allowedCountry.code == country)) {
+    giftCardsSection.innerHTML = `<p class="list-error">Virtual cards are not available for your location.</p><p>Use other methods to claim your reward.</p>`;
     return;
   }
 

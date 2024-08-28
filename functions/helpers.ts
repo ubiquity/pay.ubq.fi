@@ -1,6 +1,7 @@
 import { GiftCard } from "../shared/types";
+import { allowedCountries } from "../shared/allowed-country-list";
 import { getGiftCardById } from "./post-order";
-import { countryAllowList, fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
+import { fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
 import { AccessToken } from "./types";
 
 export const allowedChainIds = [1, 5, 100, 31337];
@@ -57,7 +58,7 @@ export function getBaseUrl(isSandbox: boolean): string {
 }
 
 export async function pickBestCard(giftCards: GiftCard[], countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
-  const supportedCountry = countryAllowList.find((listItem) => listItem.code == countryCode);
+  const supportedCountry = allowedCountries.find((listItem) => listItem.code == countryCode);
   if (!supportedCountry) {
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
   }
