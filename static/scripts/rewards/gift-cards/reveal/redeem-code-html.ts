@@ -4,12 +4,12 @@ const html = String.raw;
 
 export function getRedeemCodeHtml(transaction: OrderTransaction) {
   return html`
-    <div class="redeem-code" data-transactionId="${transaction.transactionId}">
+    <div class="card-section" id="redeem-code" data-transaction-id="${transaction.transactionId}">
       <h3>Redeem code</h3>
       <p>xxxxxxxxxxxx</p>
       <p>xxxxxxxxxxxx</p>
       <p>xxxxxxxxxxxx</p>
-        <button id="reveal-btn" class="btn" data-loading="false">
+        <button id="reveal" class="btn" data-loading="false">
           <div class="action">Reveal</div>
           <div class="icon">
             <!--?xml version="1.0" encoding="utf-8"?-->

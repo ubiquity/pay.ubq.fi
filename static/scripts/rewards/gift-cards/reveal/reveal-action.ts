@@ -5,23 +5,23 @@ import { toaster } from "../../toaster";
 import { getApiBaseUrl } from "../helpers";
 
 export function attachRevealAction(transaction: OrderTransaction, app: AppState) {
-  const revealButton = document.getElementById("reveal-btn");
+  const revealBtn = document.getElementById("reveal");
   const loaderAttribute = "data-loading";
-  revealButton?.addEventListener("click", async () => {
-    revealButton.setAttribute(loaderAttribute, "true");
-    const transactionId = document.getElementsByClassName("redeem-code")[0].getAttribute("data-transactionId");
+  revealBtn?.addEventListener("click", async () => {
+    revealBtn.setAttribute(loaderAttribute, "true");
+    const transactionId = document.getElementById("redeem-code")?.getAttribute("data-transaction-id");
     if (app?.signer && transactionId) {
       try {
         const signedMessage = await app.signer.signMessage(getMessageToSign(Number(transactionId)));
         await revealRedeemCode(transaction.transactionId, signedMessage, app);
       } catch (error) {
         toaster.create("error", "User did not sign the message to reveal redeem code.");
-        revealButton.setAttribute(loaderAttribute, "false");
+        revealBtn.setAttribute(loaderAttribute, "false");
       }
     } else {
       toaster.create("error", "Connect your wallet to reveal the redeem code.");
     }
-    revealButton.setAttribute(loaderAttribute, "false");
+    revealBtn.setAttribute(loaderAttribute, "false");
   });
 }
 
@@ -45,8 +45,8 @@ async function revealRedeemCode(transactionId: number, signedMessage: string, ap
 
   const responseJson = (await response.json()) as RedeemCode[];
 
-  const redeemCodeElements = document.getElementsByClassName("redeem-code");
-  if (redeemCodeElements && redeemCodeElements.length) {
+  const redeemCodeElement = document.getElementById("redeem-code");
+  if (redeemCodeElement) {
     let codesHtml = "<h3>Redeem code</h3>";
     responseJson.forEach((code) => {
       const keys = Object.keys(code);
@@ -54,6 +54,6 @@ async function revealRedeemCode(transactionId: number, signedMessage: string, ap
         codesHtml += `<p>${key}: ${code[key as keyof RedeemCode]}</p>`;
       });
     });
-    redeemCodeElements[0].innerHTML = codesHtml;
+    redeemCodeElement.innerHTML = codesHtml;
   }
 }

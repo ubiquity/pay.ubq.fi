@@ -11,11 +11,11 @@ import { getApiBaseUrl, getUserCountryCode } from "../helpers";
 import { initClaimGiftCard } from "../index";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
-  const claimButtons: HTMLCollectionOf<Element> = document.getElementsByClassName("mint-btn");
+  const mintBtn: HTMLElement | null = document.getElementById("mint");
 
-  (claimButtons[0] as HTMLButtonElement).addEventListener("click", async () => {
-    claimButtons[0].setAttribute("data-loading", "true");
-    const productId = Number(document.getElementsByClassName("gift-card")[0].getAttribute("data-product-id"));
+  mintBtn?.addEventListener("click", async () => {
+    mintBtn.setAttribute("data-loading", "true");
+    const productId = Number(document.getElementById("offered-card")?.getAttribute("data-product-id"));
 
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
@@ -25,7 +25,7 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
       await mintGiftCard(productId, app);
     }
 
-    claimButtons[0].setAttribute("data-loading", "false");
+    mintBtn.setAttribute("data-loading", "false");
   });
 }
 

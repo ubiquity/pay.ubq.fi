@@ -1,4 +1,4 @@
-.heading-gift-card {
+.card-heading {
   font-size: 16px;
   text-align: center;
   position: absolute;
@@ -6,45 +6,19 @@
   display: flex;
   align-items: center;
 }
+
 #gift-cards {
   padding-top: 44px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-#gift-cards p.list-error {
-  text-align: center;
-}
-
-.gift-cards-wrapper {
-  display: flex;
-  flex-direction: column;
-  overflow-x: auto;
   max-width: 563px;
   width: 100vw;
-  align-items: end;
+  align-items: center;
   row-gap: 12px;
   position: relative;
 }
 
-.gift-card {
-  background-color: var(--background-color-default);
-  display: flex;
-  padding: 24px;
-  width: 100%;
-  box-sizing: border-box;
-}
-@media screen and (max-width: 640px) {
-  .gift-card {
-    flex-direction: column;
-    text-align: center;
-  }
-  .gift-card .details {
-    margin-left: 0;
-  }
-}
-.redeem-code {
+.card-section {
   overflow-wrap: break-word;
   text-transform: none;
   background-color: var(--background-color-default);
@@ -53,16 +27,36 @@
   text-align: center;
   box-sizing: border-box;
 }
-.redeem-code p {
+
+.card-error {
+  text-align: center;
+  padding: 0 12px;
+}
+
+#offered-card {
+  display: flex;
+}
+
+@media screen and (max-width: 640px) {
+  .card-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  .card-section .details {
+    margin-left: 0;
+  }
+}
+
+#redeem-code p {
   text-transform: none;
 }
 
-.gift-card h3 {
+.card-section h3 {
   padding: 8px;
   text-align: center;
 }
 
-.gift-card .details {
+.card-section .details {
   display: flex;
   flex-direction: column;
   margin-left: 24px;
@@ -70,7 +64,7 @@
   flex: 1;
 }
 
-.gift-card img {
+.card-section img {
   box-sizing: border-box;
   width: 100%;
   height: auto;
@@ -78,24 +72,24 @@
   max-width: 200px;
 }
 
-.gift-card .pricing {
+.card-section .pricing {
   display: flex;
   flex-direction: column;
 }
-.gift-card .pricing .available {
+.card-section .pricing .available {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
 }
-.gift-card .pricing .available div .currency {
+.card-section .pricing .available div .currency {
   display: flex;
   flex-direction: row;
   justify-content: center;
 }
-.gift-card .pricing .available div .currency div {
+.card-section .pricing .available div .currency div {
   font-size: 8px;
 }
-.gift-card .pricing .available div .amount {
+.card-section .pricing .available div .amount {
   font-size: 24px;
   color: #fff;
 }
@@ -114,31 +108,31 @@
   border-color: var(--light-mode-border-color);
 }
 
-.mint-btn[data-loading="true"] > .icon {
+.btn[data-loading="true"] > .icon {
   display: none;
 }
-.mint-btn[data-loading="true"] > .action {
+.btn[data-loading="true"] > .action {
   display: none;
 }
-.mint-btn[data-loading="true"] > .loader {
+.btn[data-loading="true"] > .loader {
   display: block;
 }
-.mint-btn[data-loading="true"] > .loader svg {
+.btn[data-loading="true"] > .loader svg {
   animation: rotate 1s linear infinite;
 }
-.mint-btn[data-loading="false"] > .icon {
+.btn[data-loading="false"] > .icon {
   display: block;
 }
-.mint-btn[data-loading="false"]:hover > .icon {
+.btn[data-loading="false"]:hover > .icon {
   display: none;
 }
-.mint-btn[data-loading="false"] > .action {
+.btn[data-loading="false"] > .action {
   display: none;
 }
-.mint-btn[data-loading="false"]:hover > .action {
+.btn[data-loading="false"]:hover > .action {
   display: block;
 }
-.mint-btn[data-loading="false"] > .loader {
+.btn[data-loading="false"] > .loader {
   display: none;
 }
 
@@ -159,55 +153,20 @@
   color: #fff;
 }
 
-#reveal-btn[data-loading="false"] .loader {
-  display: none;
-}
-#reveal-btn[data-loading="false"] .action {
-  display: none;
-}
-#reveal-btn[data-loading="false"]:hover .icon {
-  display: none;
-}
-#reveal-btn[data-loading="false"]:hover .action {
-  display: block;
-}
-
-#reveal-btn[data-loading="false"] .icon {
-  display: block;
-}
-
-#reveal-btn[data-loading="true"] .loader {
-  display: block;
-}
-
-#reveal-btn[data-loading="true"] .loader svg {
-  animation: rotate 1s linear infinite;
-}
-
-#reveal-btn[data-loading="true"] .action {
-  display: none;
-}
-
-#reveal-btn[data-loading="true"] .icon {
-  display: none;
-}
-
 .disclaimer {
   text-align: center;
-  padding-top: 24px;
+  padding: 24px 12px;
 }
 
 @media (prefers-color-scheme: light) {
-  .gift-card,
-  .redeem-info-wrapper,
-  .redeem-code {
+  .card-section {
     background-color: #fff;
   }
 
-  .gift-card img {
+  .card-section img {
     border-color: var(--light-mode-border-color);
   }
-  .gift-card .pricing .available div .amount {
+  .card-section .pricing .available div .amount {
     color: #000;
   }
   .btn:hover {

@@ -19,12 +19,12 @@ export async function initClaimGiftCard(app: AppState) {
 
   const country = await getUserCountryCode();
   if (!country) {
-    giftCardsSection.innerHTML = `<p class="list-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
+    giftCardsSection.innerHTML = `<p class="card-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
     return;
   }
 
   if (!allowedCountries.find((allowedCountry) => allowedCountry.code == country)) {
-    giftCardsSection.innerHTML = `<p class="list-error">Virtual cards are not available for your location.</p><p>Use other methods to claim your reward.</p>`;
+    giftCardsSection.innerHTML = `<p class="card-error">Virtual cards are not available for your location. Use other methods to claim your reward.</p>`;
     return;
   }
 
@@ -54,9 +54,9 @@ export async function initClaimGiftCard(app: AppState) {
 
     addAvailableCardsHtml(availableGiftCard, app, giftCardsSection);
   } else if (bestCardResponse.status == 404) {
-    giftCardsSection.innerHTML = "<p class='list-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
+    giftCardsSection.innerHTML = "<p class='card-error'>There are no Visa/Mastercard available to claim at the moment.</p>";
   } else {
-    giftCardsSection.innerHTML = "<p class='list-error'>There was a problem in fetching gift cards. Try again later.</p>";
+    giftCardsSection.innerHTML = "<p class='card-error'>There was a problem in fetching gift cards. Try again later.</p>";
   }
 
   attachActivateInfoAction();
@@ -64,35 +64,25 @@ export async function initClaimGiftCard(app: AppState) {
 
 function addPurchasedCardHtml(giftCard: GiftCard | null, transaction: OrderTransaction, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
-  htmlParts.push(`<h2 class="heading-gift-card">Your virtual visa/mastercard</h2>`);
-  htmlParts.push(`<div class="gift-cards-wrapper">`);
+  htmlParts.push(`<h2 class="card-heading">Your virtual visa/mastercard</h2>`);
   htmlParts.push(getRedeemCodeHtml(transaction));
-
   if (giftCard) {
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
   }
-
-  htmlParts.push(`</div>`);
-
   giftCardsSection.innerHTML = htmlParts.join("");
-
   attachRevealAction(transaction, app);
 }
 
 function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
 
-  htmlParts.push(`<h2 class="heading-gift-card">Or mint a virtual visa/mastercard</h2>`);
+  htmlParts.push(`<h2 class="card-heading">Or mint a virtual visa/mastercard</h2>`);
   if (giftCard) {
-    htmlParts.push(`<div class="gift-cards-wrapper">`);
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
-    htmlParts.push(`</div>`);
-
     giftCardsSection.innerHTML = htmlParts.join("");
-
     attachMintAction(giftCard, app);
   } else {
-    htmlParts.push(`<p class="list-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
+    htmlParts.push(`<p class="card-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
     giftCardsSection.innerHTML = htmlParts.join("");
   }
 }
