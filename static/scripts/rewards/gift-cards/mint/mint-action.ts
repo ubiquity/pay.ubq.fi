@@ -9,6 +9,7 @@ import { toaster } from "../../toaster";
 import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl, getUserCountryCode } from "../helpers";
 import { initClaimGiftCard } from "../index";
+import { getGiftCardOrderId } from "../../../../../shared/helpers";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
   const mintBtn: HTMLElement | null = document.getElementById("mint");
@@ -72,10 +73,37 @@ async function mintGiftCard(productId: number, app: AppState) {
         return;
       }
 
-      toaster.create("success", "Virtual card minted successfully.");
-      await initClaimGiftCard(app);
+      await checkForMintingDelay(app);
+    } else {
+      toaster.create("error", "Connect your wallet to proceed.");
     }
-  } else {
-    toaster.create("error", "Connect your wallet to proceed.");
   }
+}
+
+async function checkForMintingDelay(app: AppState) {
+  if (await hasMintingFinished(app)) {
+    await initClaimGiftCard(app);
+  } else {
+    const interval = setInterval(async () => {
+      if (await hasMintingFinished(app)) {
+        clearInterval(interval);
+        await initClaimGiftCard(app);
+      } else {
+        toaster.create("info", "Minting is in progress. Please wait...");
+      }
+    }, 10000);
+    toaster.create("info", "Minting is in progress. Please wait...");
+  }
+}
+
+async function hasMintingFinished(app: AppState): Promise<boolean> {
+  const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
+  const orderResponse = await fetch(retrieveOrderUrl, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  return orderResponse.status != 404;
 }
