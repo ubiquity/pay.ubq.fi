@@ -59,7 +59,7 @@ describe("Gift Cards", () => {
       cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Transaction confirmed. Minting your card now.");
       cy.wait("@getOrder", { timeout: 10000 });
 
-      cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercar");
+      cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercard");
 
       cy.get("#redeem-code").should("exist");
       cy.get("@giftCardName").then((name) => {
@@ -78,7 +78,7 @@ describe("Gift Cards", () => {
 
     cy.wait("@getBestCard");
 
-    cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercar");
+    cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercard");
     cy.get("#redeem-code > h3").eq(0).should("have.text", "Redeem code");
     cy.get("#redeem-code > p").eq(0).should("have.text", "xxxxxxxxxxxx");
     cy.get("#redeem-code > p").eq(1).should("have.text", "xxxxxxxxxxxx");
@@ -132,13 +132,13 @@ function setupIntercepts() {
   cy.intercept("GET", "https://ipinfo.io/json", {
     statusCode: 200,
     body: {
-      ip: "138.199.9.179",
-      hostname: "unn-138-199-9-179.datapacket.com",
+      ip: "192.158.1.38",
+      hostname: "example.com",
       city: "Los Angeles",
       region: "California",
       country: "US",
       loc: "34.0522,-118.2437",
-      org: "AS60068 Datacamp Limited",
+      org: "Example org",
       postal: "90009",
       timezone: "America/Los_Angeles",
       readme: "https://ipinfo.io/missingauth",
