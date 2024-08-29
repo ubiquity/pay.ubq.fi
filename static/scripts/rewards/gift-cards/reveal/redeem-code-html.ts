@@ -12,7 +12,6 @@ export function getRedeemCodeHtml(transaction: OrderTransaction) {
         <button id="reveal" class="btn" data-loading="false">
           <div class="action">Reveal</div>
           <div class="icon">
-            <!--?xml version="1.0" encoding="utf-8"?-->
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill-rule="evenodd"
