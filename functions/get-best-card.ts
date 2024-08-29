@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import { getAccessToken, findBestCard } from "./helpers";
 import { Context } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
@@ -9,13 +10,14 @@ export async function onRequest(ctx: Context): Promise<Response> {
 
     const { searchParams } = new URL(ctx.request.url);
     const country = searchParams.get("country");
+    const amount = searchParams.get("amount");
 
-    if (!country) {
-      throw new Error(`Invalid query parameters: ${{ country }}`);
+    if (isNaN(Number(amount)) || !(country && amount)) {
+      throw new Error(`Invalid query parameters: ${{ country, amount }}`);
     }
 
     const accessToken = await getAccessToken(ctx.env);
-    const bestCard = await findBestCard(country, accessToken);
+    const bestCard = await findBestCard(country, BigNumber.from(amount), accessToken);
 
     if (bestCard) {
       return Response.json(bestCard, { status: 200 });

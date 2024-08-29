@@ -128,7 +128,7 @@ function setupIntercepts() {
     body: {},
   });
 
-  cy.intercept({ method: "GET", url: "/get-best-card?country=US" }).as("getBestCard");
+  cy.intercept({ method: "GET", url: "/get-best-card?country=US**" }).as("getBestCard");
   cy.intercept("GET", "https://ipinfo.io/json", {
     statusCode: 200,
     body: {

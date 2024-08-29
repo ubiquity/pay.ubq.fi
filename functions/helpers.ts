@@ -1,5 +1,7 @@
-import { GiftCard } from "../shared/types";
+import { BigNumberish } from "ethers";
 import { allowedCountries } from "../shared/allowed-country-list";
+import { isGiftCardAvailable } from "../shared/helpers";
+import { GiftCard } from "../shared/types";
 import { getGiftCardById } from "./post-order";
 import { fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
 import { AccessToken, ReloadlyFailureResponse } from "./types";
@@ -57,7 +59,7 @@ export function getBaseUrl(isSandbox: boolean): string {
   return "https://giftcards-sandbox.reloadly.com";
 }
 
-export async function findBestCard(countryCode: string, accessToken: AccessToken): Promise<GiftCard> {
+export async function findBestCard(countryCode: string, amount: BigNumberish, accessToken: AccessToken): Promise<GiftCard> {
   const supportedCountry = allowedCountries.find((listItem) => listItem.code == countryCode);
   if (!supportedCountry) {
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
@@ -67,14 +69,14 @@ export async function findBestCard(countryCode: string, accessToken: AccessToken
 
   const masterCardIntlSku = masterCardIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (masterCardIntlSku) {
-    const tokenizedIntlMastercard = masterCards.find((giftCard) => giftCard.productId == masterCardIntlSku.sku);
-    if (tokenizedIntlMastercard) {
+    const tokenizedIntlMastercard = masterCards.find((masterCard) => masterCard.productId == masterCardIntlSku.sku);
+    if (tokenizedIntlMastercard && isGiftCardAvailable(tokenizedIntlMastercard, amount)) {
       return tokenizedIntlMastercard;
     }
   }
 
   const fallbackMastercard = await getFallbackIntlMastercard(accessToken);
-  if (fallbackMastercard) {
+  if (fallbackMastercard && isGiftCardAvailable(fallbackMastercard, amount)) {
     return fallbackMastercard;
   }
 
@@ -82,25 +84,27 @@ export async function findBestCard(countryCode: string, accessToken: AccessToken
   const visaIntlSku = visaIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (visaIntlSku) {
     const intlVisa = visaCards.find((visaCard) => visaCard.productId == visaIntlSku.sku);
-    if (intlVisa) {
+    if (intlVisa && isGiftCardAvailable(intlVisa, amount)) {
       return intlVisa;
     }
   }
 
   const fallbackVisa = await getFallbackIntlVisa(accessToken);
-  if (fallbackVisa) {
+  if (fallbackVisa && isGiftCardAvailable(fallbackVisa, amount)) {
     return fallbackVisa;
   }
 
-  if (masterCards.length) {
-    return masterCards[0];
+  const anyMastercard = masterCards.find((masterCard) => isGiftCardAvailable(masterCard, amount));
+  if (anyMastercard) {
+    return anyMastercard;
   }
 
-  if (visaCards.length) {
-    return visaCards[0];
+  const anyVisa = visaCards.find((visaCard) => isGiftCardAvailable(visaCard, amount));
+  if (anyVisa) {
+    return anyVisa;
   }
 
-  throw new Error(`No suitable card found for country code ${countryCode}`);
+  throw new Error(`No suitable card found for country code ${countryCode} and amount ${amount}.`);
 }
 
 async function getFallbackIntlMastercard(accessToken: AccessToken): Promise<GiftCard | null> {

@@ -28,7 +28,7 @@ export async function initClaimGiftCard(app: AppState) {
   }
 
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
-  const bestCardUrl = `${getApiBaseUrl()}/get-best-card?country=${country}`;
+  const bestCardUrl = `${getApiBaseUrl()}/get-best-card?country=${country}&amount=${app.reward.amount}`;
 
   const requestInit = {
     method: "GET",

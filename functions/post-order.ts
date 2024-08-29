@@ -1,16 +1,16 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
+import { BigNumber } from "ethers";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
-import { getFastestRpcUrl, getGiftCardOrderId, isGiftCardAvailable } from "../shared/helpers";
+import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl, findBestCard } from "./helpers";
+import { allowedChainIds, commonHeaders, findBestCard, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
-import { BigNumber } from "ethers";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -25,10 +25,6 @@ export async function onRequest(ctx: Context): Promise<Response> {
       throw new Error(`Invalid post parameters: ${JSON.stringify({ productId, txHash, chainId })}`);
     }
 
-    const bestCard = await findBestCard(country, accessToken);
-    if (bestCard.productId != productId) {
-      throw new Error(`You are not ordering the suitable card: ${JSON.stringify({ ordered: productId, suitable: bestCard })}`);
-    }
     if (!allowedChainIds.includes(chainId)) {
       throw new Error(`Unsupported chain: ${JSON.stringify({ chainId })}`);
     }
@@ -72,8 +68,9 @@ export async function onRequest(ctx: Context): Promise<Response> {
       exchangeRate = exchangeRateResponse.senderAmount;
     }
 
-    if (!isGiftCardAvailable(giftCard, amountDaiWei)) {
-      throw new Error(`The ordered gift card does not meet available criteria: ${JSON.stringify(giftCard)}`);
+    const bestCard = await findBestCard(country, amountDaiWei, accessToken);
+    if (bestCard.productId != productId) {
+      throw new Error(`You are not ordering the suitable card: ${JSON.stringify({ ordered: productId, suitable: bestCard })}`);
     }
 
     const giftCardValue = getGiftCardValue(giftCard, amountDaiWei, exchangeRate);
