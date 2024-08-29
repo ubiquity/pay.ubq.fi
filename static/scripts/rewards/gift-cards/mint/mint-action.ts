@@ -49,7 +49,7 @@ async function mintGiftCard(productId: number, app: AppState) {
 
       const tx = await transferFromPermit(permit2Contract, reward, "Processing... Please wait. Do not close this page.");
       if (!tx) return;
-      await waitForTransaction(tx, `Transaction confirmed. Loading your card now.`);
+      await waitForTransaction(tx, `Transaction confirmed. Minting your card now.`);
 
       const url = `${getApiBaseUrl()}/post-order`;
 
@@ -72,7 +72,7 @@ async function mintGiftCard(productId: number, app: AppState) {
         return;
       }
 
-      toaster.create("success", "Gift card minted successfully.");
+      toaster.create("success", "Virtual card minted successfully.");
       await initClaimGiftCard(app);
     }
   } else {
