@@ -10,6 +10,7 @@ import { getTransactionFromOrderId } from "./get-order";
 import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl, findBestCard } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { BigNumber } from "ethers";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -205,6 +206,10 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
 }
 
 function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
+  if (BigNumber.from(txParsed.args.permit.deadline).lt(Math.floor(Date.now() / 1000))) {
+    return Response.json({ message: "The reward has expired." }, { status: 403 });
+  }
+
   const rewardAmount = txParsed.args.transferDetails.requestedAmount;
 
   if (!isClaimableForAmount(giftCard, rewardAmount)) {
