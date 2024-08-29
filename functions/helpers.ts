@@ -63,12 +63,11 @@ export async function findBestCard(countryCode: string, accessToken: AccessToken
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
   }
 
-  const [masterCards, visaCards] = await Promise.all([getGiftCards("mastercard", countryCode, accessToken), getGiftCards("visa", countryCode, accessToken)]);
-  const giftCards = [...masterCards, ...visaCards];
+  const masterCards = await getGiftCards("mastercard", countryCode, accessToken);
 
   const masterCardIntlSku = masterCardIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (masterCardIntlSku) {
-    const tokenizedIntlMastercard = giftCards.find((giftCard) => giftCard.productId == masterCardIntlSku.sku);
+    const tokenizedIntlMastercard = masterCards.find((giftCard) => giftCard.productId == masterCardIntlSku.sku);
     if (tokenizedIntlMastercard) {
       return tokenizedIntlMastercard;
     }
@@ -79,9 +78,10 @@ export async function findBestCard(countryCode: string, accessToken: AccessToken
     return fallbackMastercard;
   }
 
+  const visaCards = await getGiftCards("visa", countryCode, accessToken);
   const visaIntlSku = visaIntlSkus.find((sku) => sku.countryCode == countryCode);
   if (visaIntlSku) {
-    const intlVisa = giftCards.find((giftCard) => giftCard.productId == visaIntlSku.sku);
+    const intlVisa = visaCards.find((visaCard) => visaCard.productId == visaIntlSku.sku);
     if (intlVisa) {
       return intlVisa;
     }
@@ -92,16 +92,12 @@ export async function findBestCard(countryCode: string, accessToken: AccessToken
     return fallbackVisa;
   }
 
-  if (giftCards.length) {
-    const localMastercard = giftCards.find((giftCard) => giftCard.productName.toLocaleLowerCase().includes("mastercard"));
-    if (localMastercard) {
-      return localMastercard;
-    }
+  if (masterCards.length) {
+    return masterCards[0];
+  }
 
-    const localVisa = giftCards.find((giftCard) => giftCard.productName.toLocaleLowerCase().includes("visa"));
-    if (localVisa) {
-      return localVisa;
-    }
+  if (visaCards.length) {
+    return visaCards[0];
   }
 
   throw new Error(`No suitable card found for country code ${countryCode}`);
