@@ -129,7 +129,7 @@ export async function getGiftCards(productQuery: string, country: string, access
   if (accessToken.isSandbox) {
     // Load product differently on Reloadly sandbox
     // Sandbox doesn't have mastercard, it has only 1 visa card for US.
-    // This visa card doesn't load with above url, let's use special url
+    // This visa card doesn't load with location based url, let's use special url
     // for this so that we have something to try on sandbox
     return await getSandboxGiftCards(productQuery, country, accessToken);
   }
