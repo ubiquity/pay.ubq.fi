@@ -4,7 +4,7 @@ export enum Tokens {
 }
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-export const giftCardTreasuryAddress = "0xD51B09ad92e08B962c994374F4e417d4AD435189";
+export const giftCardTreasuryAddress = "0xC14D5E02084270E1a403Bb63dBE823BfBDB49b09";
 
 export const chainIdToRewardTokenMap = {
   1: Tokens.DAI,
