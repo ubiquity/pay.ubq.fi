@@ -46,10 +46,6 @@
   .rewards-count {
     color: #000;
   }
-  #nextTx,
-  #previousTx {
-    fill: #000;
-  }
   html {
     background-color: #fff;
   }
@@ -69,9 +65,6 @@
     animation: none;
   }
 
-  #carousel > div:hover {
-    color: #000;
-  }
   tbody,
   thead {
     background-color: #fff;

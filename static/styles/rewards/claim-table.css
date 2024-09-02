@@ -21,16 +21,6 @@ table {
   max-width: 563px;
   width: 100%;
 }
-@media only screen and (max-width: 600px) {
-  table {
-    max-width: 90%;
-  }
-  @media screen and (orientation: portrait) {
-    table {
-      max-width: 100%;
-    }
-  }
-}
 table a:hover,
 table a:hover > div {
   color: #fff;
