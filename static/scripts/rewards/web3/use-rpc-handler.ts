@@ -22,7 +22,7 @@ export async function useRpcHandler(claim: Permit) {
     throw new Error("Network ID not set");
   }
 
-  const handler = await useHandler(networkId);
+  const handler = useHandler(networkId);
   const provider = await handler.getFastestRpcProvider();
   const url = provider.connection.url;
   if (!url) {
