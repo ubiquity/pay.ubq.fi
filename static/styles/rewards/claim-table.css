@@ -237,6 +237,7 @@ table[data-make-claim="error"] tbody {
   opacity: 0;
   pointer-events: none;
   filter: blur(4px);
+  display: none;
 }
 .reward-recipient a div {
   opacity: 0.66;
