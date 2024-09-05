@@ -1,566 +1,153 @@
-/**
- * There are separate allow list for visa & mastercard
- * But right now, both lists contain same countries
- */
-export const allowedCountries = [
-  {
-    code: "GP",
-    name: "Guadeloupe",
-  },
-  {
-    code: "AO",
-    name: "Angola",
-  },
-  {
-    code: "KI",
-    name: "Kiribati",
-  },
-  {
-    code: "CA",
-    name: "Canada",
-  },
-  {
-    code: "CM",
-    name: "Cameroon",
-  },
-  {
-    code: "QA",
-    name: "Qatar",
-  },
-  {
-    code: "VU",
-    name: "Vanuatu",
-  },
-  {
-    code: "EC",
-    name: "Ecuador",
-  },
-  {
-    code: "AE",
-    name: "United Arab Emirates",
-  },
-  {
-    code: "KZ",
-    name: "Kazakhstan",
-  },
-  {
-    code: "GI",
-    name: "Gibraltar",
-  },
-  {
-    code: "ID",
-    name: "Indonesia",
-  },
-  {
-    code: "BG",
-    name: "Bulgaria",
-  },
-  {
-    code: "BE",
-    name: "Belgium",
-  },
-  {
-    code: "CO",
-    name: "Colombia",
-  },
-  {
-    code: "BR",
-    name: "Brazil",
-  },
-  {
-    code: "IT",
-    name: "Italy",
-  },
-  {
-    code: "EG",
-    name: "Egypt",
-  },
-  {
-    code: "KR",
-    name: "South Korea",
-  },
-  {
-    code: "ZA",
-    name: "South Africa",
-  },
-  {
-    code: "OM",
-    name: "Oman",
-  },
-  {
-    code: "NF",
-    name: "Norfolk Island",
-  },
-  {
-    code: "SI",
-    name: "Slovak Republic",
-  },
-  {
-    code: "SB",
-    name: "Solomon Islands",
-  },
-  {
-    code: "LU",
-    name: "Luxembourg",
-  },
-  {
-    code: "BV",
+export function isAllowed(countryCode: string): boolean {
+  /**
+   * There are separate allow list for visa & mastercard
+   * But right now, both lists contain same countries
+   */
+  const allowedCountries: Record<string, string> = {
+    GP: "Guadeloupe",
+    AO: "Angola",
+    KI: "Kiribati",
+    CA: "Canada",
+    CM: "Cameroon",
+    QA: "Qatar",
+    VU: "Vanuatu",
+    EC: "Ecuador",
+    AE: "United Arab Emirates",
+    KZ: "Kazakhstan",
+    GI: "Gibraltar",
+    ID: "Indonesia",
+    BG: "Bulgaria",
+    BE: "Belgium",
+    CO: "Colombia",
+    BR: "Brazil",
+    IT: "Italy",
+    EG: "Egypt",
+    KR: "South Korea",
+    ZA: "South Africa",
+    OM: "Oman",
+    NF: "Norfolk Island",
+    SK: "Slovak Republic",
+    SB: "Solomon Islands",
+    LU: "Luxembourg",
     //cspell:disable-next-line
-    name: "Bouvet Island",
-  },
-  {
-    code: "GG",
-    name: "Guernsey",
-  },
-  {
-    code: "GD",
-    name: "Grenada",
-  },
-  {
-    code: "AW",
-    name: "Aruba",
-  },
-  {
-    code: "JM",
-    name: "Jamaica",
-  },
-  {
-    code: "GF",
-    name: "French Guiana",
-  },
-  {
-    code: "NO",
-    name: "Norway",
-  },
-  {
-    code: "LI",
-    name: "Liechtenstein",
-  },
-  {
-    code: "HK",
-    name: "Hong Kong",
-  },
-  {
-    code: "HU",
-    name: "Hungary",
-  },
-  {
-    code: "PE",
-    name: "Peru",
-  },
-  {
-    code: "AM",
-    name: "Armenia",
-  },
-  {
-    code: "NL",
-    name: "Netherlands",
-  },
-  {
-    code: "BN",
-    name: "Brunei Darussalam",
-  },
-  {
-    code: "BM",
-    name: "Bermuda",
-  },
-  {
-    code: "VI",
-    name: "Virgin Islands (U.S.)",
-  },
-  {
-    code: "MS",
-    name: "Montserrat",
-  },
-  {
-    code: "GY",
-    name: "Guyana",
-  },
-  {
-    code: "DJ",
-    name: "Djibouti",
-  },
-  {
-    code: "PL",
-    name: "Poland",
-  },
-  {
-    code: "DK",
-    name: "Denmark",
-  },
-  {
-    code: "FM",
-    name: "Federated States of Micronesia",
-  },
-  {
-    code: "GH",
-    name: "Ghana",
-  },
-  {
-    code: "AD",
-    name: "Andorra",
-  },
-  {
-    code: "PF",
-    name: "French Polynesia",
-  },
-  {
-    code: "LV",
-    name: "Latvia",
-  },
-  {
-    code: "AZ",
-    name: "Azerbaijan",
-  },
-  {
-    code: "TO",
-    name: "Tonga",
-  },
-  {
-    code: "CC",
-    name: "Cocos (Keeling) Islands",
-  },
-  {
-    code: "MR",
-    name: "Mauritania",
-  },
-  {
-    code: "IL",
-    name: "Israel",
-  },
-  {
-    code: "GB",
-    name: "UK",
-  },
-  {
-    code: "LT",
-    name: "Lithuania",
-  },
-  {
-    code: "CL",
-    name: "Chile",
-  },
-  {
-    code: "DE",
-    name: "Germany",
-  },
-  {
-    code: "IN",
-    name: "India",
-  },
-  {
-    code: "BW",
-    name: "Botswana",
-  },
-  {
-    code: "IS",
-    name: "Iceland",
-  },
-  {
-    code: "FI",
-    name: "Finland",
-  },
-  {
-    code: "BH",
-    name: "Bahrain",
-  },
-  {
-    code: "US",
-    name: "USA",
-  },
-  {
-    code: "AI",
-    name: "Anguilla",
-  },
-  {
-    code: "CZ",
-    name: "Czech Republic",
-  },
-  {
-    code: "ES",
-    name: "Spain",
-  },
-  {
-    code: "MT",
-    name: "Malta",
-  },
-  {
-    code: "SG",
-    name: "Singapore",
-  },
-  {
-    code: "DZ",
-    name: "Algeria",
-  },
-  {
-    code: "CY",
-    name: "Cyprus",
-  },
-  {
-    code: "YT",
-    name: "Mayotte",
-  },
-  {
-    code: "MP",
-    name: "Northern Mariana Islands",
-  },
-  {
-    code: "HR",
-    name: "Croatia",
-  },
-  {
-    code: "CK",
-    name: "Cook Islands",
-  },
-  {
-    code: "GL",
-    name: "Greenland",
-  },
-  {
-    code: "SA",
-    name: "Saudi Arabia",
-  },
-  {
-    code: "GT",
-    name: "Guatemala",
-  },
-  {
-    code: "MY",
-    name: "Malaysia",
-  },
-  {
-    code: "JO",
-    name: "Jordan",
-  },
-  {
-    code: "IE",
-    name: "Ireland",
-  },
-  {
-    code: "CX",
-    name: "Christmas Island",
-  },
-  {
-    code: "RO",
-    name: "Romania",
-  },
-  {
-    code: "NZ",
-    name: "New Zealand",
-  },
-  {
-    code: "SV",
-    name: "El Salvador",
-  },
-  {
-    code: "FR",
-    name: "France",
-  },
-  {
-    code: "KE",
-    name: "Kenya",
-  },
-  {
-    code: "DM",
-    name: "Dominica",
-  },
-  {
-    code: "MA",
-    name: "Morocco",
-  },
-  {
-    code: "TW",
-    name: "Taiwan",
-  },
-  {
-    code: "NU",
-    name: "Niue",
-  },
-  {
-    code: "JP",
-    name: "Japan",
-  },
-  {
-    code: "PH",
-    name: "Philippines",
-  },
-  {
-    code: "GE",
-    name: "Georgia",
-  },
-  {
-    code: "GU",
-    name: "Guam",
-  },
-  {
-    code: "PW",
-    name: "Palau",
-  },
-  {
-    code: "AU",
-    name: "Australia",
-  },
-  {
-    code: "AS",
-    name: "American Samoa",
-  },
-  {
-    code: "CR",
+    BV: "Bouvet Island",
+    GG: "Guernsey",
+    GD: "Grenada",
+    AW: "Aruba",
+    JM: "Jamaica",
+    GF: "French Guiana",
+    NO: "Norway",
+    LI: "Liechtenstein",
+    HK: "Hong Kong",
+    HU: "Hungary",
+    PE: "Peru",
+    AM: "Armenia",
+    NL: "Netherlands",
+    BN: "Brunei Darussalam",
+    BM: "Bermuda",
+    VI: "Virgin Islands (U.S.)",
+    MS: "Montserrat",
+    GY: "Guyana",
+    DJ: "Djibouti",
+    PL: "Poland",
+    DK: "Denmark",
+    FM: "Federated States of Micronesia",
+    GH: "Ghana",
+    AD: "Andorra",
+    PF: "French Polynesia",
+    LV: "Latvia",
+    AZ: "Azerbaijan",
+    TO: "Tonga",
+    CC: "Cocos (Keeling) Islands",
+    MR: "Mauritania",
+    IL: "Israel",
+    GB: "UK",
+    LT: "Lithuania",
+    CL: "Chile",
+    DE: "Germany",
+    IN: "India",
+    BW: "Botswana",
+    IS: "Iceland",
+    FI: "Finland",
+    BH: "Bahrain",
+    US: "USA",
+    AI: "Anguilla",
+    CZ: "Czech Republic",
+    ES: "Spain",
+    MT: "Malta",
+    SG: "Singapore",
+    DZ: "Algeria",
+    CY: "Cyprus",
+    YT: "Mayotte",
+    MP: "Northern Mariana Islands",
+    HR: "Croatia",
+    CK: "Cook Islands",
+    GL: "Greenland",
+    SA: "Saudi Arabia",
+    GT: "Guatemala",
+    MY: "Malaysia",
+    JO: "Jordan",
+    IE: "Ireland",
+    CX: "Christmas Island",
+    RO: "Romania",
+    NZ: "New Zealand",
+    SV: "El Salvador",
+    FR: "France",
+    KE: "Kenya",
+    DM: "Dominica",
+    MA: "Morocco",
+    TW: "Taiwan",
+    NU: "Niue",
+    JP: "Japan",
+    PH: "Philippines",
+    GE: "Georgia",
+    GU: "Guam",
+    PW: "Palau",
+    AU: "Australia",
+    AS: "American Samoa",
     //cspell:disable-next-line
-    name: "Costa Rica",
-  },
-  {
-    code: "GM",
-    name: "Gambia",
-  },
-  {
-    code: "TH",
-    name: "Thailand",
-  },
-  {
-    code: "CW",
+    CR: "Costa Rica",
+    GM: "Gambia",
+    TH: "Thailand",
     //cspell:disable-next-line
-    name: "Cura√ßao",
-  },
-  {
-    code: "MQ",
-    name: "Martinique",
-  },
-  {
-    code: "PR",
-    name: "Puerto Rico",
-  },
-  {
-    code: "BQ",
-    name: "Caribbean Netherlands",
-  },
-  {
-    code: "BZ",
-    name: "Belize",
-  },
-  {
-    code: "MW",
-    name: "Malawi",
-  },
-  {
-    code: "NE",
-    name: "Niger",
-  },
-  {
-    code: "SI",
-    name: "Slovenia",
-  },
-  {
-    code: "AT",
-    name: "Austria",
-  },
-  {
-    code: "MX",
-    name: "Mexico",
-  },
-  {
-    code: "LK",
-    name: "Sri lanka",
-  },
-  {
-    code: "PT",
-    name: "Portugal",
-  },
-  {
-    code: "FK",
-    name: "Falkland Islands",
-  },
-  {
-    code: "UY",
-    name: "Uruguay",
-  },
-  {
-    code: "IO",
-    name: "British Indian Ocean Territory",
-  },
-  {
-    code: "GR",
-    name: "Greece",
-  },
-  {
-    code: "VA",
-    name: "Vatican City",
-  },
-  {
-    code: "AQ",
-    name: "Antarctica",
-  },
-  {
-    code: "FO",
-    name: "Faroe Islands",
-  },
-  {
-    code: "EE",
-    name: "Estonia",
-  },
-  {
-    code: "TV",
-    name: "Tuvalu",
-  },
-  {
-    code: "TF",
-    name: "French Southern Territories",
-  },
-  {
-    code: "SE",
-    name: "Sweden",
-  },
-  {
-    code: "AG",
-    name: "Antigua and Barbuda",
-  },
-  {
-    code: "BO",
-    name: "Bolivia",
-  },
-  {
-    code: "GA",
-    name: "Gabon",
-  },
-  {
-    code: "TM",
-    name: "Turkmenistan",
-  },
-  {
-    code: "AR",
-    name: "Argentina",
-  },
-  {
-    code: "JE",
-    name: "Jersey",
-  },
-  {
-    code: "CV",
+    CW: "Cura√ßao",
+    MQ: "Martinique",
+    PR: "Puerto Rico",
+    BQ: "Caribbean Netherlands",
+    BZ: "Belize",
+    MW: "Malawi",
+    NE: "Niger",
+    SI: "Slovenia",
+    AT: "Austria",
+    MX: "Mexico",
+    LK: "Sri lanka",
+    PT: "Portugal",
+    FK: "Falkland Islands",
+    UY: "Uruguay",
+    IO: "British Indian Ocean Territory",
+    GR: "Greece",
+    VA: "Vatican City",
+    AQ: "Antarctica",
+    FO: "Faroe Islands",
+    EE: "Estonia",
+    TV: "Tuvalu",
+    TF: "French Southern Territories",
+    SE: "Sweden",
+    AG: "Antigua and Barbuda",
+    BO: "Bolivia",
+    GA: "Gabon",
+    TM: "Turkmenistan",
+    AR: "Argentina",
+    JE: "Jersey",
     //cspell:disable-next-line
-    name: "Cabo Verde",
-  },
-  {
-    code: "HM",
-    name: "Heard Island and McDonald Islands",
-  },
-  {
-    code: "BD",
-    name: "Bangladesh",
-  },
-  {
-    code: "BT",
-    name: "Bhutan",
-  },
-  {
-    code: "FJ",
-    name: "Fiji",
-  },
-  {
-    code: "CH",
-    name: "Switzerland",
-  },
-  {
-    code: "MC",
-    name: "Monaco",
-  },
-];
+    CV: "Cabo Verde",
+    HM: "Heard Island and McDonald Islands",
+    BD: "Bangladesh",
+    BT: "Bhutan",
+    FJ: "Fiji",
+    CH: "Switzerland",
+    MC: "Monaco",
+  };
+
+  return Object.hasOwn(allowedCountries, countryCode);
+}

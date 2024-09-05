@@ -1,4 +1,4 @@
-import { allowedCountries } from "../../../../shared/allowed-country-list";
+import { isAllowed } from "../../../../shared/allowed-country-list";
 import { getGiftCardOrderId, isGiftCardAvailable } from "../../../../shared/helpers";
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
@@ -16,19 +16,19 @@ export async function initClaimGiftCard(app: AppState) {
   }
   giftCardsSection.innerHTML = "Loading...";
 
-  const country = await getUserCountryCode();
-  if (!country) {
+  const countryCode = await getUserCountryCode();
+  if (!countryCode) {
     giftCardsSection.innerHTML = `<p class="card-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
     return;
   }
 
-  if (!allowedCountries.find((allowedCountry) => allowedCountry.code == country)) {
+  if (!isAllowed(countryCode)) {
     giftCardsSection.innerHTML = `<p class="card-error">Virtual cards are not available for your location. Use other methods to claim your reward.</p>`;
     return;
   }
 
   const retrieveOrderUrl = `${getApiBaseUrl()}/get-order?orderId=${getGiftCardOrderId(app.reward.beneficiary, app.reward.signature)}`;
-  const bestCardUrl = `${getApiBaseUrl()}/get-best-card?country=${country}&amount=${app.reward.amount}`;
+  const bestCardUrl = `${getApiBaseUrl()}/get-best-card?country=${countryCode}&amount=${app.reward.amount}`;
 
   const requestInit = {
     method: "GET",

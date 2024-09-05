@@ -1,5 +1,5 @@
 import { BigNumberish } from "ethers";
-import { allowedCountries } from "../shared/allowed-country-list";
+import { isAllowed } from "../shared/allowed-country-list";
 import { isGiftCardAvailable } from "../shared/helpers";
 import { GiftCard } from "../shared/types";
 import { getGiftCardById } from "./post-order";
@@ -60,8 +60,7 @@ export function getBaseUrl(isSandbox: boolean): string {
 }
 
 export async function findBestCard(countryCode: string, amount: BigNumberish, accessToken: AccessToken): Promise<GiftCard> {
-  const supportedCountry = allowedCountries.find((listItem) => listItem.code == countryCode);
-  if (!supportedCountry) {
+  if (!isAllowed(countryCode)) {
     throw new Error(`Country ${countryCode} is not in the allowed country list.`);
   }
 
