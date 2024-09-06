@@ -91,15 +91,14 @@ yarn start
 
 Virtual cards are subject to regulations and are not available for all countries. Moreover, each virtual card is available for specific amounts. If you are unable to see an available virtual card it is either because of your location or the amount of your permit.
 
-If you are not getting any available card, you can perform a few extra steps to get a virtual card for testing purpose. You can set permit amount `AMOUNT_IN_ETH` to be
-50 WXDAI in the `.env` file and mock your location as United States. To set your location to United States, you can follow one of the steps given below:
+If you are not getting an available card, you can perform a few extra steps to get a virtual card for testing purposes. You can set the permit amount `AMOUNT_IN_ETH` to be 50 WXDAI in the `.env` file and mock your location as United States. To set your location to United States, you can follow one of the steps given below:
 
 - Use a USA VPN
 - Set your timezone to `Eastern Time (ET) New York` and block the ajax request to `https://ipinfo.io/json` so that your timezone is used to detect your location.
 
-One of these steps should get you a virtual card to try both on Reloadly sandbox and production. Please note that if you are minting a virtual card with mock location on Reloadly production, you will get redeem code but you may not able to use the card due to restrictions on the card, and there is not refund or replacement. Use your real location if you want to use the virtual card.
+One of these steps should get you a virtual card to try both on Reloadly sandbox and production. Please note that if you are minting a virtual card with a mock location on Reloadly production, you will get a redeem code but you may not able to use the card due to restrictions on the card, and there is no refund or replacement. Use your real location if you want to use the virtual card.
 
-If you are using mainnet with your local enviorments, you may want to change the `giftCardTreasuryAddress` to a wallet that you own in the file `shared/constants.ts`. It is the wallet where payments for the virtual cards are sent.
+If you are using mainnet with your local environments, you may want to change the `giftCardTreasuryAddress` to a wallet that you own in the file `shared/constants.ts`. It is the wallet where payments for the virtual cards are sent.
 
 ## How to generate a permit2 URL using the script
 
