@@ -137,9 +137,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const tx: TransactionResponse = await transferFromPermit(permit2Contract, app);
     if (!tx) return;
 
-    viewClaimButton.onclick = () => {
-      window.open(`https://blockscan.com/tx/${tx.hash}`, "_blank");
-    };
+    viewClaimButton.onclick = () => window.open(`https://blockscan.com/tx/${tx.hash}`, "_blank");
 
     buttonController.showViewClaim();
     buttonController.hideLoader();
