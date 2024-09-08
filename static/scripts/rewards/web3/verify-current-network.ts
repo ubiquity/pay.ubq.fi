@@ -10,7 +10,7 @@ export async function verifyCurrentNetwork(desiredNetworkId: number) {
     return;
   }
 
-  const web3provider = new ethers.providers.Web3Provider(window.ethereum);
+  const web3provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
   const network = await web3provider.getNetwork();
   const currentNetworkId = network.chainId;
