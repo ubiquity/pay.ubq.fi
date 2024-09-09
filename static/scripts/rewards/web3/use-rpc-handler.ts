@@ -1,5 +1,5 @@
 import { RPCHandler } from "@ubiquity-dao/rpc-handler";
-import { Permit } from "@ubiquibot/permit-generation/types";
+import { AppState } from "../app-state";
 
 export function useHandler(networkId: number) {
   const config = {
@@ -16,13 +16,13 @@ export function useHandler(networkId: number) {
   return new RPCHandler(config);
 }
 
-export async function useRpcHandler(claim: Permit) {
-  const networkId = claim.networkId;
+export async function useRpcHandler(app: AppState) {
+  const networkId = app.networkId;
   if (!networkId) {
     throw new Error("Network ID not set");
   }
 
-  const handler = useHandler(networkId);
+  const handler = await useHandler(networkId);
   const provider = await handler.getFastestRpcProvider();
   const url = provider.connection.url;
   if (!url) {
