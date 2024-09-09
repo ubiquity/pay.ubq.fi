@@ -17,6 +17,10 @@ export class AppState {
     this._signer = value;
   }
 
+  get networkId(): number | null {
+    return this.reward?.networkId || null;
+  }
+
   get provider(): JsonRpcProvider {
     return this._provider;
   }
@@ -29,11 +33,29 @@ export class AppState {
     return this._currentIndex;
   }
 
-  getCurrentExplorerUrl(claim: Permit): string {
-    if (!claim) {
+  get reward(): Permit {
+    return this.rewardIndex < this.claims.length ? this.claims[this.rewardIndex] : this.claims[0];
+  }
+
+  get permitNetworkId() {
+    return this.reward?.networkId;
+  }
+
+  get currentExplorerUrl(): string {
+    if (!this.reward) {
       return "https://blockscan.com";
     }
-    return networkExplorers[claim.networkId] || "https://blockscan.com";
+    return networkExplorers[this.reward.networkId] || "https://blockscan.com";
+  }
+
+  nextPermit(): Permit | null {
+    this._currentIndex = Math.min(this.claims.length - 1, this.rewardIndex + 1);
+    return this.reward;
+  }
+
+  previousPermit(): Permit | null {
+    this._currentIndex = Math.max(0, this._currentIndex - 1);
+    return this.reward;
   }
 }
 
