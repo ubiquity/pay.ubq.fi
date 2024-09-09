@@ -3,12 +3,19 @@ import { ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { buttonController, getMakeClaimButton, toaster } from "../toaster";
+import { buttonControllers, getMakeClaimButton, toaster } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { verifyCurrentNetwork } from "./verify-current-network";
+import { useRpcHandler } from "./use-rpc-handler";
 
-export function claimErc721PermitHandler(reward: ERC721Permit) {
+export function claimErc721PermitHandler(table: Element, reward: ERC721Permit) {
   return async function claimHandler() {
-    const signer = await connectWallet();
+    if (app.provider.network.chainId !== reward.networkId) {
+      console.log("Different network. Switching");
+      app.provider = await useRpcHandler(reward);
+    }
+    const signer = await connectWallet(reward.networkId);
+    verifyCurrentNetwork(reward.networkId).catch(console.error);
     if (!signer) {
       return;
     }
@@ -29,7 +36,7 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
       return;
     }
 
-    buttonController.showLoader();
+    buttonControllers[table.id].showLoader();
     try {
       const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, signer);
 
@@ -45,13 +52,13 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
       );
       toaster.create("info", `Transaction sent. Waiting for confirmation...`);
       const receipt = await tx.wait();
-      buttonController.hideLoader();
+      buttonControllers[table.id].hideLoader();
       toaster.create("success", `Claim Complete.`);
-      buttonController.showViewClaim();
-      buttonController.hideMakeClaim();
+      buttonControllers[table.id].showViewClaim();
+      buttonControllers[table.id].hideMakeClaim();
       console.log(receipt.transactionHash); // @TODO: post to database
 
-      getMakeClaimButton().removeEventListener("click", claimHandler);
+      getMakeClaimButton(table).removeEventListener("click", claimHandler);
 
       // app.nextPermit();
       // renderTransaction().catch((error) => {

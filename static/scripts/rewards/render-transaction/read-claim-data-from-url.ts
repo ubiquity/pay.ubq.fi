@@ -2,14 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
-import { toaster } from "../toaster";
-import { connectWallet } from "../web3/connect-wallet";
-import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
-import { verifyCurrentNetwork } from "../web3/verify-current-network";
-import { claimRewardsPagination } from "./claim-rewards-pagination";
-import { renderTransaction } from "./render-transaction";
+import { buttonControllers, toaster } from "../toaster";
+import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, createInvalidatorActions } from "../web3/erc20-permit";
 import { setClaimMessage } from "./set-claim-message";
 import { useRpcHandler } from "../web3/use-rpc-handler";
+import { renderTransaction } from "./render-transaction";
+import { ButtonController } from "../button-controller";
+import { connectWallet } from "../web3/connect-wallet";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -23,6 +22,7 @@ const base64encodedTxData = urlParams.get("claim");
 export async function readClaimDataFromUrl(app: AppState) {
   if (!base64encodedTxData) {
     // No claim data found
+    // A single table shows the error message
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
     table.setAttribute(`data-make-claim`, "error");
     return;
@@ -32,7 +32,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useRpcHandler(app);
+    app.provider = await useRpcHandler(app.claims[0]);
   } catch (e) {
     if (e instanceof Error) {
       toaster.create("error", e.message);
@@ -42,7 +42,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   }
 
   try {
-    app.signer = await connectWallet();
+    app.signer = await connectWallet(app.claims[0].networkId);
   } catch (error) {
     /* empty */
   }
@@ -60,15 +60,7 @@ export async function readClaimDataFromUrl(app: AppState) {
      */
   }
 
-  displayRewardDetails();
-  displayRewardPagination();
-
-  await renderTransaction();
-  if (app.networkId !== null) {
-    await verifyCurrentNetwork(app.networkId);
-  } else {
-    throw new Error("Network ID is null");
-  }
+  await displayRewardsWithDetails();
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
@@ -97,23 +89,44 @@ function decodeClaimData(base64encodedTxData: string): Permit[] {
   }
 }
 
-function displayRewardPagination() {
-  const rewardsCount = document.getElementById("rewardsCount");
-  if (rewardsCount) {
-    if (!app.claims || app.claims.length <= 1) {
-      // already hidden
-    } else {
-      claimRewardsPagination(rewardsCount);
-    }
-  }
-}
-
-function displayRewardDetails() {
+function displayRewardDetails(table: Element) {
   let isDetailsVisible = false;
   table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
-  const additionalDetails = document.getElementById(`additionalDetails`) as HTMLElement;
+  const additionalDetails = table.querySelector(`.additional-details`) as HTMLElement;
   additionalDetails.addEventListener("click", () => {
     isDetailsVisible = !isDetailsVisible;
     table.setAttribute(`data-details-visible`, isDetailsVisible.toString());
   });
+}
+
+/**
+ * @summary Create a separate table element for each claim
+ */
+async function displayRewardsWithDetails() {
+  const tableEl = document.getElementsByTagName("table")[0];
+  if (!tableEl) return;
+  tableEl.id = app.claims[0].nonce;
+  const controls = tableEl.querySelector(".controls") as HTMLDivElement;
+  const buttonController = new ButtonController(controls);
+  buttonControllers[app.claims[0].nonce] = buttonController;
+
+  await Promise.all(
+    app.claims.slice(1).map(async (claim) => {
+      // Create a new copy of the table
+      const newTable = tableEl.cloneNode(true) as Element;
+      newTable.id = claim.nonce;
+      tableEl.parentElement?.appendChild(newTable);
+
+      const controls = newTable.querySelector(".controls") as HTMLDivElement;
+      const buttonController = new ButtonController(controls);
+      buttonControllers[claim.nonce] = buttonController;
+      await renderTransaction(claim, newTable);
+      displayRewardDetails(newTable);
+    })
+  );
+
+  // The first claim's table is populated last
+  await renderTransaction(app.claims[0], tableEl);
+  displayRewardDetails(tableEl);
+  createInvalidatorActions();
 }

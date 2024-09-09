@@ -7,28 +7,30 @@
   --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
   --border-color: hsl(225 25% var(--border-brightness) / 1);
 }
-#claim {
-  display: flex;
-}
 main > div {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 64px;
 }
 table {
   border-collapse: collapse;
+  max-width: 563px;
+  width: 100%;
 }
 table a:hover,
 table a:hover > div {
   color: #fff;
 }
-table #controls {
+table .controls {
   display: none;
   color: #fff;
   width: 100%;
 }
-table #controls > button {
+table .controls > button {
   flex: 1;
   padding: 0 24px;
 }
@@ -89,7 +91,8 @@ table td div {
 table td div svg ~ div {
   width: unset;
 }
-table tr:first-of-type > * {
+table tr:first-of-type > *,
+table .amount > * {
   padding-top: 24px;
 }
 table tr:last-child td div > div {
@@ -100,11 +103,11 @@ table tr:last-child td div > div {
 table tr:last-of-type > * {
   padding-bottom: 24px;
 }
-table tr#additional-details-border > * {
+table tr.additional-details-border > * {
   padding: 0;
   margin: 0;
 }
-table[data-make-claim-rendered] #controls {
+table[data-make-claim-rendered] .controls {
   display: inline-flex;
 }
 table[data-make-claim-rendered] button {
@@ -124,7 +127,7 @@ table[data-make-claim-rendered] button:hover {
 table[data-make-claim-rendered] button > div {
   display: none;
 }
-table[data-make-claim-rendered] button:disabled > svg#claim-icon {
+table[data-make-claim-rendered] button:disabled > svg.claim-icon {
   display: none;
 }
 table[data-make-claim-rendered] button:hover > div {
@@ -137,113 +140,117 @@ table[data-make-claim-rendered] button:hover > svg {
 .show {
   display: block;
 }
-table[data-make-claim-rendered] button.hide > svg#claim-loader {
+table[data-make-claim-rendered] button.hide > svg.claim-loader {
   display: none;
 }
-table[data-make-claim-rendered] button.show > svg#claim-icon {
+table[data-make-claim-rendered] button.show > svg.claim-icon {
   display: unset;
 }
-table[data-make-claim-rendered] button.show > svg#claim-loader {
+table[data-make-claim-rendered] button.show > svg.claim-loader {
   display: unset;
 }
-table[data-make-claim-rendered] button.hide > svg#claim-icon {
+table[data-make-claim-rendered] button.hide > svg.claim-icon {
   display: unset;
 }
-table #controls {
+table .controls {
   opacity: 0;
   transition: 1s ease-in-out opacity;
   pointer-events: none;
 }
-table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
+table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] .controls {
   opacity: 1;
   pointer-events: unset;
 }
-table[data-make-claim-rendered] button#additionalDetails {
+table[data-make-claim-rendered] button.additional-details {
   width: 100%;
   color: #fff;
 }
-table[data-make-claim-rendered] tr#additional-details-border + tr > * {
+table[data-make-claim-rendered] tr.additional-details-border + tr > * {
   padding-top: 24px;
 }
-table #additionalDetailsTable {
+table .additional-detail {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -90px);
 }
-table[data-additional-data-size="large"] #additionalDetailsTable {
+table[data-additional-data-size="large"] .additional-detail {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -175px);
 }
-table[data-details-visible="true"] #additionalDetailsTable {
+table[data-details-visible="true"] .additional-detail,
+table[data-details-visible="false"] .detail {
   opacity: 1;
   pointer-events: all;
 }
-table[data-contract-loaded] #Token {
+table[data-details-visible="true"] .detail,
+table[data-details-visible="false"] .additional-detail {
+  opacity: 0;
+  pointer-events: all;
+  visibility: collapse;
+}
+table[data-contract-loaded] .token {
   display: none;
 }
-#rewardAmount a {
+.reward-amount a {
   font-size: 24px;
 }
-#rewardAmount a,
-#rewardRecipient div,
-#rewardsCount {
+.reward-amount a,
+.reward-recipient div,
+.rewards-count {
   color: #fff;
 }
-table[data-details-visible="false"] #rewardToken .full,
-table[data-details-visible="true"] #rewardToken .short {
+table[data-details-visible="false"] .reward-token .full,
+table[data-details-visible="true"] .reward-token .short {
   display: none;
 }
-table[data-details-visible="false"] #rewardToken .short,
-table[data-details-visible="true"] #rewardToken .full {
+table[data-details-visible="false"] .reward-token .short,
+table[data-details-visible="true"] .reward-token .full {
   display: initial;
 }
-table[data-details-visible="false"] #rewardRecipient .full,
-table[data-details-visible="true"] #rewardRecipient .short {
+table[data-details-visible="false"] .reward-recipient .full,
+table[data-details-visible="true"] .reward-recipient .short {
   display: none;
 }
-table[data-details-visible="false"] #rewardRecipient .short,
-table[data-details-visible="true"] #rewardRecipient .full {
+table[data-details-visible="false"] .reward-recipient .short,
+table[data-details-visible="true"] .reward-recipient .full {
   display: initial;
 }
-#To > td,
-#To > th {
+.to > td,
+.to > th {
   padding-bottom: 24px;
 }
 table[data-make-claim="ok"] thead {
-  opacity: 0;
+  visibility: collapse;
   pointer-events: none;
-  transform: translate(-50%, -50%);
   /* filter: blur(4px); */
 }
 table[data-make-claim="error"] tbody {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%);
   filter: blur(4px);
+  display: none;
 }
-#rewardRecipient a div {
+.reward-recipient a div {
   opacity: 0.66;
 }
-#rewardRecipient a:hover div {
+.reward-recipient a:hover div {
   opacity: 1;
 }
-#rewardRecipient div {
+.reward-recipient div {
   color: #fff;
 }
-table[data-details-visible="true"] #additionalDetails svg.opener {
+table[data-details-visible="true"] .additional-details svg.opener {
   display: none;
 }
-table[data-details-visible="false"] #additionalDetails svg.opener {
+table[data-details-visible="false"] .additional-details svg.opener {
   display: unset;
 }
-table[data-details-visible="true"] #additionalDetails svg.closer {
+table[data-details-visible="true"] .additional-details svg.closer {
   display: unset;
 }
-table[data-details-visible="false"] #additionalDetails svg.closer {
+table[data-details-visible="false"] .additional-details svg.closer {
   display: none;
 }
-td#owner > a {
+td.owner > a {
   word-break: break-all;
 }
 table td {
@@ -253,16 +260,16 @@ table td {
 table th {
   padding-left: 32px;
 }
-[data-loader="false"] #claim-loader {
+[data-loader="false"] .claim-loader {
   display: none;
 }
-[data-make-claim="false"] #make-claim {
+[data-make-claim="false"] .make-claim {
   display: none;
 }
-[data-view-claim="false"] #view-claim {
+[data-view-claim="false"] .view-claim {
   display: none;
 }
-[data-invalidator="false"] #invalidator {
+[data-invalidator="false"] .invalidator {
   display: none;
 }
 
@@ -272,7 +279,7 @@ table th {
   position: absolute;
 }
 
-#claiming-message::after {
+.claiming-message::after {
   content: "";
   animation: ellipsis 1s infinite;
   position: absolute;
@@ -302,26 +309,17 @@ table th {
     transform: rotate(360deg);
   }
 }
-#claim-loader > svg {
+.claim-loader > svg {
   animation: rotate 1s linear infinite;
 }
 tbody,
 thead {
   background-color: var(--background-color-default);
-  position: absolute;
   box-shadow: inset 0 0 96px #00bfff10;
   transition: 0.25s all ease-in-out;
-  border: 1px solid var(--border-color);
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 563px;
   overflow: hidden;
   /* box-shadow: 0 12px 64px #00000010; */
 }
-table * {
-  text-wrap: nowrap;
-}
-
 @keyframes thead-fade-in {
   0% {
     opacity: 0;
@@ -329,6 +327,12 @@ table * {
   100% {
     opacity: 1;
   }
+}
+
+tr {
+  transition:
+    visibility 0s,
+    opacity 0.5s linear;
 }
 
 thead {

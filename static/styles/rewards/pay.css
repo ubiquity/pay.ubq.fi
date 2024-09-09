@@ -36,7 +36,6 @@ main {
   max-width: 100vw;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
 }
 
@@ -102,7 +101,7 @@ a {
   /* font-weight: 400; */
 }
 
-div.footer > div {
+footer > div {
   /* bottom: 48px; */
   padding: 48px 0;
   text-align: center;
@@ -213,7 +212,7 @@ footer {
   opacity: 1;
 }
 
-.footer {
+footer {
   /* display: flex; */
   /* align-items: center; */
   opacity: 0;
@@ -221,7 +220,7 @@ footer {
   text-align: center;
 }
 
-.footer.ready {
+footer.ready {
   opacity: 1;
 }
 
