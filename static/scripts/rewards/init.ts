@@ -1,5 +1,5 @@
 import { app } from "./app-state";
-import { initClaimGiftCard } from "./gift-cards/list-gift-cards";
+import { initClaimGiftCard } from "./gift-cards/index";
 import { displayCommitHash } from "./render-transaction/display-commit-hash";
 import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-url";
 import { grid } from "./the-grid";

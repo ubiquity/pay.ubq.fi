@@ -1,7 +1,7 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { Wallet } from "ethers";
-import { PermitConfig, generateERC20Permit } from "../../scripts/typescript/generate-erc20-permit-url";
+import { PermitConfig, generateErc20Permit } from "../../scripts/typescript/generate-erc20-permit-url";
 
 const beneficiary = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // anvil
 const SENDER_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // anvil
@@ -16,25 +16,18 @@ describe("Gift Cards", () => {
     setupIntercepts();
   });
 
-  it("should show/hide activation info", () => {
+  it.only("should show redeem info", () => {
     const permitConfig = Cypress.env("permitConfig");
     void cy.getPermitUrl(permitConfig).then((permitUrl) => {
       cy.visit(`${permitUrl as string}`);
+
+      cy.wait("@getBestCard");
       cy.wait(2000);
 
-      cy.wait("@listGiftCards");
-
-      cy.get("#gift-cards").should("exist").and("include.text", "Or claim in virtual visa/mastercard");
-      cy.get(".gift-card").should("have.length.above", 0);
-
-      cy.get(".gift-card.purchased").should("not.exist");
-
-      cy.get('#activate-info .redeem-info-wrapper[data-show="true"]').should("not.exist");
-      cy.get(".gift-card").eq(0).find(".activate-btn").invoke("click");
-
-      cy.get('#activate-info .redeem-info-wrapper[data-show="true"]').should("exist");
-      cy.get("#activate-info .close-btn").invoke("click");
-      cy.get('#activate-info .redeem-info-wrapper[data-show="true"]').should("not.exist");
+      cy.get("#gift-cards").should("exist").and("include.text", "Or mint a virtual visa/mastercard");
+      cy.get(".card-section").should("have.length.above", 0);
+      cy.get(".redeem-info").should("exist");
+      cy.get(".redeem-info").eq(0).should("include.text", "How to use redeem code?");
     });
   });
 
@@ -47,34 +40,30 @@ describe("Gift Cards", () => {
       cy.visit(permitUrl);
       cy.wait(2000);
 
-      cy.wait("@listGiftCards");
-      cy.get(".gift-card").should("have.length.above", 0);
-      cy.get(".gift-card .available").should("have.length.above", 0);
-      cy.get(".gift-card .available")
-        .eq(0)
-        .parent()
-        .parent()
-        .find("h3")
-        .eq(0)
-        .then(($name) => {
-          const giftCardName = $name;
-          cy.wrap(giftCardName).as("giftCardName");
-        });
+      cy.wait("@getBestCard");
+      cy.get(".card-section").should("have.length.above", 0);
+      cy.get("#offered-card").should("exist");
+      cy.get("#offered-card .details h3").then(($name) => {
+        const giftCardName = $name;
+        cy.wrap(giftCardName).as("giftCardName");
+      });
 
-      cy.intercept({ method: "POST", url: "/post-order" }).as("postOrder");
+      cy.intercept({ method: "POST", url: "/post-order?country=US" }).as("postOrder");
 
-      cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").should("have.length", 1);
-
+      cy.get("#offered-card .details #mint").should("exist");
       cy.intercept({ method: "GET", url: "/get-order**" }).as("getOrder");
-      cy.get(".gift-card .available").eq(0).parent().parent().find(".claim-gift-card-btn").invoke("click");
+
+      cy.get("#offered-card .details #mint").invoke("click");
+
       cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Processing... Please wait. Do not close this page.");
-      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Transaction confirmed. Loading your card now.");
+      cy.get(".notifications", { timeout: 10000 }).should("contain.text", "Transaction confirmed. Minting your card now.");
       cy.wait("@getOrder", { timeout: 10000 });
 
-      cy.get("#gift-cards").should("exist").and("include.text", "Your gift card");
+      cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercard");
 
+      cy.get("#redeem-code").should("exist");
       cy.get("@giftCardName").then((name) => {
-        cy.get(".gift-card h3")
+        cy.get("#offered-card .details h3")
           .eq(0)
           .should("have.text", name.text() as string);
       });
@@ -87,18 +76,18 @@ describe("Gift Cards", () => {
     );
     cy.wait(2000);
 
-    cy.wait("@listGiftCards");
+    cy.wait("@getBestCard");
 
-    cy.get("#gift-cards").should("exist").and("include.text", "Your gift card");
-    cy.get(".gift-card.redeem-code > h3").eq(0).should("have.text", "Your redeem code");
-    cy.get(".gift-card.redeem-code > p").eq(0).should("have.text", "xxxxxxxxxxxx");
-    cy.get(".gift-card.redeem-code > p").eq(1).should("have.text", "xxxxxxxxxxxx");
-    cy.get(".gift-card.redeem-code > p").eq(2).should("have.text", "xxxxxxxxxxxx");
-    cy.get(".gift-card.redeem-code > .buttons > #reveal-btn").invoke("click");
+    cy.get("#gift-cards").should("exist").and("include.text", "Your virtual visa/mastercard");
+    cy.get("#redeem-code > h3").eq(0).should("have.text", "Redeem code");
+    cy.get("#redeem-code > p").eq(0).should("have.text", "xxxxxxxxxxxx");
+    cy.get("#redeem-code > p").eq(1).should("have.text", "xxxxxxxxxxxx");
+    cy.get("#redeem-code > p").eq(2).should("have.text", "xxxxxxxxxxxx");
+    cy.get("#redeem-code > #reveal").invoke("click");
 
-    cy.get(".gift-card.redeem-code > h3").eq(0).should("have.text", "Your redeem code");
-    cy.get(".gift-card.redeem-code > p").should("exist");
-    cy.get(".gift-card.redeem-code > p").eq(0).should("not.have.text", "xxxxxxxxxxxx");
+    cy.get("#redeem-code > h3").eq(0).should("have.text", "Redeem code");
+    cy.get("#redeem-code > p").should("exist");
+    cy.get("#redeem-code > p").eq(0).should("not.have.text", "xxxxxxxxxxxx");
   });
 });
 
@@ -139,7 +128,22 @@ function setupIntercepts() {
     body: {},
   });
 
-  cy.intercept({ method: "GET", url: "/list-gift-cards" }).as("listGiftCards");
+  cy.intercept({ method: "GET", url: "/get-best-card?country=US**" }).as("getBestCard");
+  cy.intercept("GET", "https://ipinfo.io/json", {
+    statusCode: 200,
+    body: {
+      ip: "192.158.1.38",
+      hostname: "example.com",
+      city: "Los Angeles",
+      region: "California",
+      country: "US",
+      loc: "34.0522,-118.2437",
+      org: "Example org",
+      postal: "90009",
+      timezone: "America/Los_Angeles",
+      readme: "https://ipinfo.io/missingauth",
+    },
+  });
 }
 
 function stubEthereum(signer: JsonRpcSigner) {
@@ -192,5 +196,5 @@ function providerFunctions(method: string) {
 }
 
 Cypress.Commands.add("getPermitUrl", (customPermitConfig: PermitConfig) => {
-  return generateERC20Permit(customPermitConfig);
+  return generateErc20Permit(customPermitConfig);
 });

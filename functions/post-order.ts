@@ -1,13 +1,14 @@
 import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
+import { BigNumber } from "ethers";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
-import { getFastestRpcUrl, getGiftCardOrderId, isGiftCardAvailable } from "../shared/helpers";
+import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { allowedChainIds, commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
+import { allowedChainIds, commonHeaders, findBestCard, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 
@@ -18,9 +19,9 @@ export async function onRequest(ctx: Context): Promise<Response> {
 
     const accessToken = await getAccessToken(ctx.env);
 
-    const { productId, txHash, chainId } = (await ctx.request.json()) as OrderRequestParams;
+    const { productId, txHash, chainId, country } = (await ctx.request.json()) as OrderRequestParams;
 
-    if (isNaN(productId) || isNaN(chainId) || !(productId && txHash && chainId)) {
+    if (isNaN(productId) || isNaN(chainId) || !(productId && txHash && chainId && country)) {
       throw new Error(`Invalid post parameters: ${JSON.stringify({ productId, txHash, chainId })}`);
     }
 
@@ -67,8 +68,9 @@ export async function onRequest(ctx: Context): Promise<Response> {
       exchangeRate = exchangeRateResponse.senderAmount;
     }
 
-    if (!isGiftCardAvailable(giftCard, amountDaiWei)) {
-      throw new Error(`The ordered gift card does not meet available criteria: ${JSON.stringify(giftCard)}`);
+    const bestCard = await findBestCard(country, amountDaiWei, accessToken);
+    if (bestCard.productId != productId) {
+      throw new Error(`You are not ordering the suitable card: ${JSON.stringify({ ordered: productId, suitable: bestCard })}`);
     }
 
     const giftCardValue = getGiftCardValue(giftCard, amountDaiWei, exchangeRate);
@@ -93,7 +95,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
   }
 }
 
-async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
+export async function getGiftCardById(productId: number, accessToken: AccessToken): Promise<GiftCard> {
   const url = `${getBaseUrl(accessToken.isSandbox)}/products/${productId}`;
   console.log(`Retrieving gift cards from ${url}`);
   const options = {
@@ -201,6 +203,10 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
 }
 
 function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
+  if (BigNumber.from(txParsed.args.permit.deadline).lt(Math.floor(Date.now() / 1000))) {
+    return Response.json({ message: "The reward has expired." }, { status: 403 });
+  }
+
   const rewardAmount = txParsed.args.transferDetails.requestedAmount;
 
   if (!isClaimableForAmount(giftCard, rewardAmount)) {
