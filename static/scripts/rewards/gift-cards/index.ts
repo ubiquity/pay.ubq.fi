@@ -73,7 +73,7 @@ function addPurchasedCardHtml(giftCard: GiftCard | null, transaction: OrderTrans
 function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
 
-  htmlParts.push(`<h2 class="card-heading">Or mint a virtual visa/mastercard</h2>`);
+  htmlParts.push(`<h2 class="card-heading">Or mint a payment card</h2>`);
   if (giftCard) {
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
     giftCardsSection.innerHTML = htmlParts.join("");
