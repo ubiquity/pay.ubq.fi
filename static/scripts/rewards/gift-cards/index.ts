@@ -61,7 +61,7 @@ export async function initClaimGiftCard(app: AppState) {
 
 function addPurchasedCardHtml(giftCard: GiftCard | null, transaction: OrderTransaction, app: AppState, giftCardsSection: HTMLElement) {
   const htmlParts: string[] = [];
-  htmlParts.push(`<h2 class="card-heading">Your virtual visa/mastercard</h2>`);
+  htmlParts.push(`<h2 class="card-heading">Your virtual card</h2>`);
   htmlParts.push(getRedeemCodeHtml(transaction));
   if (giftCard) {
     htmlParts.push(getGiftCardHtml(giftCard, app.reward.amount));
