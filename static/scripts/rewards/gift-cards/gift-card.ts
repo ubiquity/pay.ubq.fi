@@ -82,7 +82,7 @@ function getRangePricesHtml(giftCard: GiftCard, rewardAmount: BigNumberish) {
   const giftCardValue = getGiftCardValue(giftCard, rewardAmount);
   const isAvailable = isRangePriceGiftCardClaimable(giftCard, rewardAmount);
   if (isAvailable) {
-    _html += html` <div class="available">
+    _html += html`<div class="available">
       <div>
         <div class="amount">${giftCardValue.toFixed(2)} ${giftCard.recipientCurrencyCode}</div>
         <div class="currency">
