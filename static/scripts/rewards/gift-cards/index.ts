@@ -79,7 +79,7 @@ function addAvailableCardsHtml(giftCard: GiftCard | null, app: AppState, giftCar
     giftCardsSection.innerHTML = htmlParts.join("");
     attachMintAction(giftCard, app);
   } else {
-    htmlParts.push(`<p class="card-error">There are no Visa/Mastercard available to claim at the moment.</p>`);
+    htmlParts.push(`<p class="card-error">There are no cards available to mint at the moment.</p>`);
     giftCardsSection.innerHTML = htmlParts.join("");
   }
 }
