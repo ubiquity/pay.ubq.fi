@@ -55,7 +55,7 @@ export async function initClaimGiftCard(app: AppState) {
   } else if (bestCardResponse.status == 404) {
     giftCardsSection.innerHTML = "<p class='card-error'>There are no card available to claim at the moment.</p>";
   } else {
-    giftCardsSection.innerHTML = "<p class='card-error'>There was a problem in fetching gift cards. Try again later.</p>";
+    giftCardsSection.innerHTML = "<p class='card-error'>There was a problem in fetching gift cards. Please try again later.</p>";
   }
 }
 
