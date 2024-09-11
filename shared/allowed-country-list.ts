@@ -110,7 +110,7 @@ export function isAllowed(countryCode: string): boolean {
     GM: "Gambia",
     TH: "Thailand",
     //cspell:disable-next-line
-    CW: "Cura√ßao",
+    CW: "Curaçao",
     MQ: "Martinique",
     PR: "Puerto Rico",
     BQ: "Caribbean Netherlands",
