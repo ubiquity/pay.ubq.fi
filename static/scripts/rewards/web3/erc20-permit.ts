@@ -100,8 +100,14 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
 async function waitForTransaction(tx: TransactionResponse) {
   try {
     const receipt = await tx.wait();
+    viewClaimButton.onclick = () => {
+      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
+    };
 
     toaster.create("success", `Claim Complete.`);
+    buttonController.showViewClaim();
+    buttonController.hideLoader();
+    buttonController.hideMakeClaim();
     console.log(receipt.transactionHash);
 
     return receipt;
@@ -134,14 +140,8 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) return;
 
-    const tx: TransactionResponse = await transferFromPermit(permit2Contract, app);
+    const tx = await transferFromPermit(permit2Contract, app);
     if (!tx) return;
-
-    viewClaimButton.onclick = () => window.open(`https://blockscan.com/tx/${tx.hash}`, "_blank");
-
-    buttonController.showViewClaim();
-    buttonController.hideLoader();
-    buttonController.hideMakeClaim();
 
     const receipt = await waitForTransaction(tx);
     if (!receipt) return;
