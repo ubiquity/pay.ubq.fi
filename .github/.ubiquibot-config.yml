@@ -1,0 +1,92 @@
+plugins:
+  - skipBotEvents: false
+    uses:
+      - plugin: ubiquibot/conversation-rewards@development
+        # we don't skip bot events so conversation rewards triggered by the bot also run
+        with:
+          evmNetworkId: 100
+          evmPrivateEncrypted: "bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw" # https://github.com/ubiquibot/conversation-rewards/pull/111#issuecomment-2348639931
+          erc20RewardToken: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          incentives:
+            contentEvaluator:
+              enabled: true
+            userExtractor:
+              enabled: true
+              redeemTask: true
+            dataPurge:
+              enabled: true
+            formattingEvaluator:
+              multipliers:
+                - role: [ ISSUE_SPECIFICATION ]
+                  multiplier: 3
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                    html:
+                      br: 0
+                      code: 5
+                      p: 1
+                      em: 0
+                      img: 5
+                      strong: 0
+                      blockquote: 0
+                      h1: 1
+                      h2: 1
+                      h3: 1
+                      h4: 1
+                      h5: 1
+                      h6: 1
+                      a: 5
+                      li: 1
+                      td: 1
+                      hr: 0
+                - role: [ ISSUE_AUTHOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.2
+                - role: [ ISSUE_ASSIGNEE ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ ISSUE_COLLABORATOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ ISSUE_CONTRIBUTOR ]
+                  multiplier: 0.25
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_SPECIFICATION ]
+                  multiplier: 0
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0
+                - role: [ PULL_AUTHOR ]
+                  multiplier: 0
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.2
+                - role: [ PULL_ASSIGNEE ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_COLLABORATOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_CONTRIBUTOR ]
+                  multiplier: 0.25
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+            permitGeneration:
+              enabled: true
+            githubComment:
+              post: true
+              debug: false
