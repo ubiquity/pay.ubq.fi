@@ -28,6 +28,7 @@
     "mswjs",
     "Numberish",
     "outdir",
+    "outfile",
     "Rpcs",
     "scalarmult",
     "servedir",
