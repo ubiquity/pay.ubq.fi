@@ -1,4 +1,3 @@
-import { fetchEns } from "./fetch-ens";
 import { queryReverseEns } from "./query-reverse-ens";
 
 // addEventListener("fetch", event => {
@@ -25,21 +24,21 @@ export async function ensLookup(addr: string, networkId: number) {
     //   throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;
   }
 
-  const allDomains = await fetchEns(address);
+  // const allDomains = await fetchEns(address);
 
   if (reverseRecord == "") {
     reverseRecord = null;
   }
 
   // if reverse record is set, validate addr owns this domain.
-  if (reverseRecord != null && !allDomains.includes(reverseRecord)) {
-    console.warn("Failed to validate! Reverse record set to " + reverseRecord + ", but user does not own this name.");
-    reverseRecord = null;
-  }
+  // if (reverseRecord != null && !allDomains.includes(reverseRecord)) {
+  //   console.warn("Failed to validate! Reverse record set to " + reverseRecord + ", but user does not own this name.");
+  //  reverseRecord = null;
+  // }
 
   return {
     reverseRecord: reverseRecord,
-    domains: allDomains,
+    domains: [],
   };
   //  new Response(JSON.stringify(response), {
   //   headers: {
