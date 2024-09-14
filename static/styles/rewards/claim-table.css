@@ -259,6 +259,11 @@ table td {
 }
 table td#rewardRecipient {
   width: 60%;
+} 
+table td#rewardRecipient > a{
+  display: block;
+  width: 100%;
+  overflow-x: scroll;
 }
 table th {
   padding-left: 32px;
