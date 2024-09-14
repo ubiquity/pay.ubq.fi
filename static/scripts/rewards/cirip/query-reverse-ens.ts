@@ -1,6 +1,8 @@
 import { app } from "../app-state";
 import { useRpcHandler } from "../web3/use-rpc-handler";
-import { reverseEnsInterface } from "./ens-lookup";
+import { ethers } from "ethers";
+
+const mainnetRpcUrl = "https://eth.api.onfinality.io/public";
 
 export async function queryReverseEns(address: string, networkId: number) {
   // Try to get the ENS name from localStorage
@@ -17,27 +19,13 @@ export async function queryReverseEns(address: string, networkId: number) {
     return cachedEnsName;
   } else {
     // If the ENS name is not in localStorage, fetch it from the API
-    const data = reverseEnsInterface.encodeFunctionData("getNames", [[address.substring(2)]]);
+    const web3Provider = new ethers.providers.JsonRpcProvider(mainnetRpcUrl);
+    const ensName = await web3Provider.lookupAddress(address);
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "1",
-        method: "eth_call",
-        params: [{ to: "0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C", data: data }, "latest"],
-      }),
-    });
-
-    if (!response.ok) {
+    if (ensName === null) {
       console.error("ENS lookup failed: API request failed");
       return "";
     }
-
-    const ensName = await response.text();
 
     // Store the ENS name in localStorage for future use
     localStorage.setItem(address, ensName);
