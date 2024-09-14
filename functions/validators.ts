@@ -1,4 +1,4 @@
-export function validateRequestMethod(expectedMethod: string, receivedMethod: string) {
+export function validateRequestMethod(receivedMethod: string, expectedMethod: string) {
   if (receivedMethod !== expectedMethod) {
     console.error(
       "Invalid request method.",
