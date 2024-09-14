@@ -36,6 +36,7 @@ export async function renderEnsName({ element, address, tokenAddress, tokenView,
       } else {
         href = `${app.currentExplorerUrl}/address/${address}"`;
       }
+      ensName?.length > 42 && ensName.slice(0, 39).concat("...");
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }
   } catch (error) {
