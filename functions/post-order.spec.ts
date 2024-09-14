@@ -1,9 +1,11 @@
 import { waitOnExecutionContext, env } from "cloudflare:test";
-import { describe, it, expect, beforeAll } from "vitest";
-import { onRequest /*getGiftCardById, orderGiftCard, isDuplicateOrder, getExchangeRate, validateTransaction*/ } from "./post-order";
-import { createContext, DEFAULT_BASE_URL } from "../vitest/helpers";
+import { describe, it, expect, beforeAll, vi } from "vitest";
+import { onRequest, getGiftCardById /*orderGiftCard, isDuplicateOrder, getExchangeRate, validateTransaction*/ } from "./post-order";
 import { getGiftCards } from "./list-gift-cards";
 import { getAccessToken } from "./helpers";
+import { createContext, createMockResponse } from "../vitest/helpers";
+import { MOCK_TX_HASH, DEFAULT_BASE_URL } from "../vitest/constants";
+import { JsonRpcProvider, TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 
 let giftCards = [];
 
@@ -17,38 +19,43 @@ describe("Post Order", () => {
     const cards = await getGiftCards(productQuery, country, accessToken);
     expect(cards.length, `No cards for ${country} country`).toBeGreaterThan(0);
     giftCards = cards;
-
-    // Create mock permits
-    const response = await fetch("http://localhost:3000/create-mock-app");
-    const resp = (await response.json()) as { success: boolean };
-    expect(resp.success).toBe(true);
   });
 
   it("simple order", async () => {
     const { productId } = giftCards[0];
-    const chainId = "1";
-    let response;
+    const chainId = 100;
 
-    response = await fetch("/create-mock-permit");
-    // const permit = await response.json();
+    const { ctx, eventCtx } = createContext(DEFAULT_BASE_URL, { productId, txHash: MOCK_TX_HASH, chainId }, "POST");
 
-    response = await fetch("/create-mock-transfer");
-    const resp = (await response.json()) as { txHash: string };
+    const { transaction, transactionReceipt } = createMockResponse("OK_TRANSFER_TO_TREASURY");
 
-    const { ctx, eventCtx } = createContext(DEFAULT_BASE_URL, { productId, txHash: resp.txHash, chainId });
+    vi.spyOn(JsonRpcProvider.prototype, "getTransactionReceipt").mockImplementation(
+      async (transactionHash: string | Promise<string>): Promise<TransactionReceipt> => {
+        await transactionHash;
 
-    response = await onRequest(eventCtx);
+        return transactionReceipt as unknown as TransactionReceipt;
+      }
+    );
+
+    vi.spyOn(JsonRpcProvider.prototype, "getTransaction").mockImplementation(
+      async (transactionHash: string | Promise<string>): Promise<TransactionResponse> => {
+        await transactionHash;
+
+        return transaction as unknown as TransactionResponse;
+      }
+    );
+
+    const response = await onRequest(eventCtx);
     await waitOnExecutionContext(ctx);
 
-    expect(response.status).toBe(404);
-    expect(await response.text()).toContain("Order not found");
+    expect(response.status).toBe(200);
   });
 });
 
 describe("Post order helpers", () => {
-  it("wrong credentials", async () => {
-    // void expect(() => getTransactionFromOrderId("asd", { token: "token", isSandbox: true })).rejects.toThrowError(
-    //   'Error from Reloadly API: {"status":401,"message":"Full authentication is required to access this resource"}'
-    // );
+  it("", async () => {
+    const accessToken = await getAccessToken(env);
+    const resp = await getGiftCardById(1, accessToken);
+    expect(resp).toBeDefined();
   });
 });
