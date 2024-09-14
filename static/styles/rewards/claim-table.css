@@ -89,6 +89,13 @@ table td div {
 table td div svg ~ div {
   width: unset;
 }
+table tr {
+  display: block;
+  width: 100%;
+}
+table tr > * {
+  display: inline-block;
+}
 table tr:first-of-type > * {
   padding-top: 24px;
 }
@@ -249,6 +256,9 @@ td#owner > a {
 table td {
   padding-right: 32px;
   width: 100%;
+}
+table td#rewardRecipient {
+  width: 60%;
 }
 table th {
   padding-left: 32px;
