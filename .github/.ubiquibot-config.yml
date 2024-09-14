@@ -1,4 +1,31 @@
 plugins:
+  - uses:
+    - plugin: https://ubiquibot-command-wallet-development.ubiquity.workers.dev
+  - uses:
+    - plugin: https://ubiquibot-command-query-user-development.ubiquity.workers.dev
+      with:
+        allowPublicQuery: true
+  - uses:
+    - plugin: https://ubiquibot-assistive-pricing-development.ubiquity.workers.dev
+      with:
+        labels:
+          time:
+            - "Time: <1 Hour"
+            - "Time: <2 Hours"
+            - "Time: <4 Hours"
+            - "Time: <1 Day"
+            - "Time: <1 Week"
+            - "Time: <1 Month"
+          priority:
+            - "Priority: 1 (Normal)"
+            - "Priority: 2 (Medium)"
+            - "Priority: 3 (High)"
+            - "Priority: 4 (Urgent)"
+            - "Priority: 5 (Emergency)"
+        basePriceMultiplier: 2
+        publicAccessControl:
+          setLabel: true
+          fundExternalClosedIssue: false
   - skipBotEvents: false
     uses:
       - plugin: ubiquibot/conversation-rewards@development
@@ -90,3 +117,33 @@ plugins:
             githubComment:
               post: true
               debug: false
+  - uses:
+    - plugin: ubiquibot/user-activity-watcher@development
+      with:
+        watch:
+          optOut:
+            - ubiquibot
+            - launch-party
+            - staging
+            - production
+  - uses:
+    - plugin: ubiquibot/automated-merging@development
+      with:
+        approvalsRequired:
+          collaborator: 1
+        mergeTimeout:
+          collaborator: "3.5 days"
+        repos:
+          ignore:
+            - ubiquibot
+            - launch-party
+            - staging
+            - production
+  - uses:
+    - plugin: https://ubiquibot-command-start-stop-development.ubiquity.workers.dev
+      with:
+        reviewDelayTolerance: "3 Days"
+        taskStaleTimeoutDuration: "30 Days"
+        startRequiresWallet: true # default is true
+  - uses:
+    - plugin: ubiquibot/issue-comment-embeddings@development
