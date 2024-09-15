@@ -263,7 +263,7 @@ table td#rewardRecipient {
 table td#rewardRecipient > a{
   display: block;
   width: 100%;
-  overflow-x: scroll;
+  overflow-x: hidden;
 }
 table th {
   padding-left: 32px;
