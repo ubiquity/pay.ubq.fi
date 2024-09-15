@@ -20,6 +20,7 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
+  box-sizing: border-box;
 }
 
 a {
