@@ -22,7 +22,7 @@ header span:first-child::after {
   #rewardRecipient > a {
     display: inline-block;
     width: 100%;
-    max-width: calc(0.8*100vw);
+    max-width: calc(0.5*100vw);
     text-overflow: ellipsis;
     overflow: hidden;
   }
@@ -32,7 +32,7 @@ header span:first-child::after {
   #rewardRecipient > a {
     display: inline-block;
     width: 100%;
-    max-width: calc(0.64*565px);
+    max-width: calc(0.7*565px);
     text-overflow: ellipsis;
     overflow: hidden;
   }
