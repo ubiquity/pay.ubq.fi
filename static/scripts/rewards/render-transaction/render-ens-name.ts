@@ -20,16 +20,7 @@ type EnsParams =
 export async function renderEnsName({ element, address, tokenAddress, tokenView, networkId }: EnsParams): Promise<void> {
   let href: string = "";
   try {
-    const resolved = await ensLookup(address, networkId);
-    let ensName: undefined | string;
-    if (resolved.reverseRecord) {
-      ensName = resolved.reverseRecord;
-    } else if (resolved.domains.length) {
-      const domain = resolved.domains.shift();
-      if (domain) {
-        ensName = domain;
-      }
-    }
+    const ensName = await ensLookup(address, networkId);
     if (ensName) {
       if (tokenView) {
         href = `${app.currentExplorerUrl}/token/${tokenAddress}?a=${address}`;
