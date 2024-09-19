@@ -1,8 +1,4 @@
-import { ethers } from "ethers";
-import abi from "../abis/cirip.json";
 import { queryReverseEns } from "./query-reverse-ens";
-
-export const reverseEnsInterface = new ethers.utils.Interface(abi);
 
 // addEventListener("fetch", event => {
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
