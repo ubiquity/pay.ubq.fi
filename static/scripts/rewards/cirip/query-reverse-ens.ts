@@ -14,7 +14,8 @@ export async function queryReverseEns(address: string, networkId: number) {
     if (cachedEnsName) return cachedEnsName;
   }
 
-  if (cachedEnsName) {
+  // Let's drop the old cache on the first run!
+  if (cachedEnsName && !cachedEnsName.trim().startsWith("{")) {
     // If the ENS name is in localStorage, return it
     return cachedEnsName;
   } else {
