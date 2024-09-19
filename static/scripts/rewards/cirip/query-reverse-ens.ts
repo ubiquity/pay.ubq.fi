@@ -2,7 +2,7 @@ import { app } from "../app-state";
 import { useRpcHandler } from "../web3/use-rpc-handler";
 import { ethers } from "ethers";
 
-const mainnetRpcUrl = "https://eth.api.onfinality.io/public";
+const mainnetRpcUrl = "https://eth.drpc.org";
 
 export async function queryReverseEns(address: string, networkId: number) {
   // Try to get the ENS name from localStorage
