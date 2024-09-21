@@ -20,6 +20,18 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
+  box-sizing: border-box;
+}
+
+html {
+  display:block;
+  width: 100%;
+  height: 100%;
+}
+
+body, main {
+  width: 100%;
+  height: 100%;
 }
 
 a {
@@ -29,11 +41,12 @@ a {
 body {
   /* min-height: 100vh; */
   /* height: calc(100 * var(--vh)); */
+  overflow: hidden;
 }
 
 body,
 main {
-  max-width: 100vw;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -41,7 +54,7 @@ main {
 }
 
 main {
-  width: 100vw;
+  width: 100%;
   position: relative;
 }
 
@@ -135,7 +148,7 @@ header a:hover #logo {
 main {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* adjust this according to your needs */
+  height: 100%; /* adjust this according to your needs */
 }
 
 header {
