@@ -1,0 +1,149 @@
+plugins:
+  - uses:
+    - plugin: https://ubiquibot-command-wallet-development.ubiquity.workers.dev
+  - uses:
+    - plugin: https://ubiquibot-command-query-user-development.ubiquity.workers.dev
+      with:
+        allowPublicQuery: true
+  - uses:
+    - plugin: https://ubiquibot-assistive-pricing-development.ubiquity.workers.dev
+      with:
+        labels:
+          time:
+            - "Time: <1 Hour"
+            - "Time: <2 Hours"
+            - "Time: <4 Hours"
+            - "Time: <1 Day"
+            - "Time: <1 Week"
+            - "Time: <1 Month"
+          priority:
+            - "Priority: 1 (Normal)"
+            - "Priority: 2 (Medium)"
+            - "Priority: 3 (High)"
+            - "Priority: 4 (Urgent)"
+            - "Priority: 5 (Emergency)"
+        basePriceMultiplier: 2
+        publicAccessControl:
+          setLabel: true
+          fundExternalClosedIssue: false
+  - skipBotEvents: false
+    uses:
+      - plugin: ubiquibot/conversation-rewards@development
+        # we don't skip bot events so conversation rewards triggered by the bot also run
+        with:
+          evmNetworkId: 100
+          evmPrivateEncrypted: "bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw" # https://github.com/ubiquibot/conversation-rewards/pull/111#issuecomment-2348639931
+          erc20RewardToken: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          incentives:
+            contentEvaluator:
+              enabled: true
+            userExtractor:
+              enabled: true
+              redeemTask: true
+            dataPurge:
+              enabled: true
+            formattingEvaluator:
+              multipliers:
+                - role: [ ISSUE_SPECIFICATION ]
+                  multiplier: 3
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                    html:
+                      br: 0
+                      code: 5
+                      p: 1
+                      em: 0
+                      img: 5
+                      strong: 0
+                      blockquote: 0
+                      h1: 1
+                      h2: 1
+                      h3: 1
+                      h4: 1
+                      h5: 1
+                      h6: 1
+                      a: 5
+                      li: 1
+                      td: 1
+                      hr: 0
+                - role: [ ISSUE_AUTHOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.2
+                - role: [ ISSUE_ASSIGNEE ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ ISSUE_COLLABORATOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ ISSUE_CONTRIBUTOR ]
+                  multiplier: 0.25
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_SPECIFICATION ]
+                  multiplier: 0
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0
+                - role: [ PULL_AUTHOR ]
+                  multiplier: 0
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.2
+                - role: [ PULL_ASSIGNEE ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_COLLABORATOR ]
+                  multiplier: 1
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+                - role: [ PULL_CONTRIBUTOR ]
+                  multiplier: 0.25
+                  rewards:
+                    regex:
+                      "\\b\\w+\\b": 0.1
+            permitGeneration:
+              enabled: true
+            githubComment:
+              post: true
+              debug: false
+  - uses:
+    - plugin: ubiquibot/user-activity-watcher@development
+      with:
+        watch:
+          optOut:
+            - ubiquibot
+            - launch-party
+            - staging
+            - production
+  - uses:
+    - plugin: ubiquibot/automated-merging@development
+      with:
+        approvalsRequired:
+          collaborator: 1
+        mergeTimeout:
+          collaborator: "3.5 days"
+        repos:
+          ignore:
+            - ubiquibot
+            - launch-party
+            - staging
+            - production
+  - uses:
+    - plugin: https://ubiquibot-command-start-stop-development.ubiquity.workers.dev
+      with:
+        reviewDelayTolerance: "3 Days"
+        taskStaleTimeoutDuration: "30 Days"
+        startRequiresWallet: true # default is true
+  - uses:
+    - plugin: ubiquibot/issue-comment-embeddings@development
