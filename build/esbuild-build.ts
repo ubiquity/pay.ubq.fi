@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 import { config } from "dotenv";
 import esbuild from "esbuild";
-const typescriptEntries = ["static/scripts/rewards/init.ts"];
+const typescriptEntries = ["static/scripts/rewards/init.ts", "static/scripts/ubiquity-dollar/init.ts"];
 export const entries = [...typescriptEntries];
 
 export const esBuildContext: esbuild.BuildOptions = {

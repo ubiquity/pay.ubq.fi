@@ -1,10 +1,11 @@
 import { verifyMessage } from "ethers/lib/utils";
 import { getGiftCardOrderId, getMessageToSign } from "../shared/helpers";
-import { RedeemCode } from "../shared/types";
+import { getRedeemCodeParamsSchema } from "../shared/api-types";
 import { getTransactionFromOrderId } from "./get-order";
 import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyRedeemCodeResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { RedeemCode } from "../shared/types";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -14,21 +15,17 @@ export async function onRequest(ctx: Context): Promise<Response> {
     const accessToken = await getAccessToken(ctx.env);
 
     const { searchParams } = new URL(ctx.request.url);
-    const transactionId = Number(searchParams.get("transactionId"));
-    const signedMessage = searchParams.get("signedMessage");
-    const wallet = searchParams.get("wallet");
-    const permitSig = searchParams.get("permitSig");
 
-    if (isNaN(transactionId) || !(transactionId && signedMessage && wallet && permitSig)) {
-      throw new Error(
-        `Invalid query parameters: ${{
-          transactionId,
-          signedMessage,
-          wallet,
-          permitSig,
-        }}`
-      );
+    const result = getRedeemCodeParamsSchema.safeParse({
+      transactionId: searchParams.get("transactionId"),
+      signedMessage: searchParams.get("signedMessage"),
+      wallet: searchParams.get("wallet"),
+      permitSig: searchParams.get("permitSig"),
+    });
+    if (!result.success) {
+      throw new Error(`Invalid parameters: ${JSON.stringify(result.error.errors)}`);
     }
+    const { transactionId, signedMessage, wallet, permitSig } = result.data;
 
     const errorResponse = Response.json({ message: "Given details are not valid to redeem code." }, { status: 403 });
 

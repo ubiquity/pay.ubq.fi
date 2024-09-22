@@ -3,6 +3,7 @@ import { commonHeaders, getAccessToken, getBaseUrl } from "./helpers";
 import { getGiftCardById } from "./post-order";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyGetTransactionResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { getOrderParamsSchema } from "../shared/api-types";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -10,11 +11,13 @@ export async function onRequest(ctx: Context): Promise<Response> {
     validateEnvVars(ctx);
 
     const { searchParams } = new URL(ctx.request.url);
-    const orderId = searchParams.get("orderId");
-
-    if (!orderId) {
-      throw new Error(`Invalid query parameters: ${{ orderId }}`);
+    const result = getOrderParamsSchema.safeParse({
+      orderId: searchParams.get("orderId"),
+    });
+    if (!result.success) {
+      throw new Error(`Invalid parameters: ${JSON.stringify(result.error.errors)}`);
     }
+    const { orderId } = result.data;
 
     const accessToken = await getAccessToken(ctx.env);
 

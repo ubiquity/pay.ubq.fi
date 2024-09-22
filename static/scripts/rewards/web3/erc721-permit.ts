@@ -3,7 +3,8 @@ import { ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { buttonController, getMakeClaimButton, toaster } from "../toaster";
+import { toaster } from "../toaster";
+import { buttonController, getMakeClaimButton } from "../button-controller";
 import { connectWallet } from "./connect-wallet";
 
 export function claimErc721PermitHandler(reward: ERC721Permit) {

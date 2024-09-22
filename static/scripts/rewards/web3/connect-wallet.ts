@@ -1,6 +1,7 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { buttonController, toaster } from "../toaster";
+import { toaster } from "../toaster";
+import { buttonController } from "../button-controller";
 import { app } from "../app-state";
 import { useHandler } from "../web3/use-rpc-handler";
 
