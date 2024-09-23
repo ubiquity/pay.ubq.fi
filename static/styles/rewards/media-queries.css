@@ -19,17 +19,17 @@ header span:first-child::after {
 }
 
 @media screen and (max-width: 565px){
-  #rewardRecipient > a {
+  #additionalDetailsTable  a {
     display: inline-block;
     width: 100%;
-    max-width: calc(0.8*100vw);
+    max-width: calc(50vw);
     text-overflow: ellipsis;
     overflow: hidden;
   }
 }
 
 @media screen and (min-width: 565px) {
-  #rewardRecipient > a {
+  #additionalDetailsTable a {
     display: inline-block;
     width: 100%;
     max-width: calc(0.64*565px);
