@@ -17,6 +17,11 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   RPC_PROVIDER_URL="http://127.0.0.1:8545"
   PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
 
+  # Storing tx data is not required to test locally although you do need to fill these with valid values
+  # unless working on this feature specifically you won't need to build a supabase instance
+  SUPABASE_URL=https://<yourSupabaseInstance>.supabase.co # used for storing permit tx data
+  SUPABASE_ANON_KEY="...." # used for storing permit tx data
+
   # Variables depending on spender (bounty hunter)
   AMOUNT_IN_ETH="1"
   BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
