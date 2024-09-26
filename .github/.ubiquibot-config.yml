@@ -1,31 +1,31 @@
 plugins:
   - uses:
-    - plugin: https://ubiquibot-command-wallet-development.ubiquity.workers.dev
+      - plugin: https://ubiquibot-command-wallet-development.ubiquity.workers.dev
   - uses:
-    - plugin: https://ubiquibot-command-query-user-development.ubiquity.workers.dev
-      with:
-        allowPublicQuery: true
+      - plugin: https://ubiquibot-command-query-user-development.ubiquity.workers.dev
+        with:
+          allowPublicQuery: true
   - uses:
-    - plugin: https://ubiquibot-assistive-pricing-development.ubiquity.workers.dev
-      with:
-        labels:
-          time:
-            - "Time: <1 Hour"
-            - "Time: <2 Hours"
-            - "Time: <4 Hours"
-            - "Time: <1 Day"
-            - "Time: <1 Week"
-            - "Time: <1 Month"
-          priority:
-            - "Priority: 1 (Normal)"
-            - "Priority: 2 (Medium)"
-            - "Priority: 3 (High)"
-            - "Priority: 4 (Urgent)"
-            - "Priority: 5 (Emergency)"
-        basePriceMultiplier: 2
-        publicAccessControl:
-          setLabel: true
-          fundExternalClosedIssue: false
+      - plugin: https://ubiquibot-assistive-pricing-development.ubiquity.workers.dev
+        with:
+          labels:
+            time:
+              - "Time: <1 Hour"
+              - "Time: <2 Hours"
+              - "Time: <4 Hours"
+              - "Time: <1 Day"
+              - "Time: <1 Week"
+              - "Time: <1 Month"
+            priority:
+              - "Priority: 1 (Normal)"
+              - "Priority: 2 (Medium)"
+              - "Priority: 3 (High)"
+              - "Priority: 4 (Urgent)"
+              - "Priority: 5 (Emergency)"
+          basePriceMultiplier: 2
+          publicAccessControl:
+            setLabel: true
+            fundExternalClosedIssue: false
   - skipBotEvents: false
     uses:
       - plugin: ubiquibot/conversation-rewards@development
@@ -44,7 +44,7 @@ plugins:
               enabled: true
             formattingEvaluator:
               multipliers:
-                - role: [ ISSUE_SPECIFICATION ]
+                - role: [ISSUE_SPECIFICATION]
                   multiplier: 3
                   rewards:
                     regex:
@@ -67,47 +67,47 @@ plugins:
                       li: 1
                       td: 1
                       hr: 0
-                - role: [ ISSUE_AUTHOR ]
+                - role: [ISSUE_AUTHOR]
                   multiplier: 1
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.2
-                - role: [ ISSUE_ASSIGNEE ]
+                - role: [ISSUE_ASSIGNEE]
                   multiplier: 1
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.1
-                - role: [ ISSUE_COLLABORATOR ]
+                - role: [ISSUE_COLLABORATOR]
                   multiplier: 1
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.1
-                - role: [ ISSUE_CONTRIBUTOR ]
+                - role: [ISSUE_CONTRIBUTOR]
                   multiplier: 0.25
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.1
-                - role: [ PULL_SPECIFICATION ]
+                - role: [PULL_SPECIFICATION]
                   multiplier: 0
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0
-                - role: [ PULL_AUTHOR ]
+                - role: [PULL_AUTHOR]
                   multiplier: 0
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.2
-                - role: [ PULL_ASSIGNEE ]
+                - role: [PULL_ASSIGNEE]
                   multiplier: 1
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.1
-                - role: [ PULL_COLLABORATOR ]
+                - role: [PULL_COLLABORATOR]
                   multiplier: 1
                   rewards:
                     regex:
                       "\\b\\w+\\b": 0.1
-                - role: [ PULL_CONTRIBUTOR ]
+                - role: [PULL_CONTRIBUTOR]
                   multiplier: 0.25
                   rewards:
                     regex:
@@ -118,32 +118,32 @@ plugins:
               post: true
               debug: false
   - uses:
-    - plugin: ubiquibot/user-activity-watcher@development
-      with:
-        watch:
-          optOut:
-            - ubiquibot
-            - launch-party
-            - staging
-            - production
+      - plugin: ubiquibot/user-activity-watcher@development
+        with:
+          watch:
+            optOut:
+              - ubiquibot
+              - launch-party
+              - staging
+              - production
   - uses:
-    - plugin: ubiquibot/automated-merging@development
-      with:
-        approvalsRequired:
-          collaborator: 1
-        mergeTimeout:
-          collaborator: "3.5 days"
-        repos:
-          ignore:
-            - ubiquibot
-            - launch-party
-            - staging
-            - production
+      - plugin: ubiquibot/automated-merging@development
+        with:
+          approvalsRequired:
+            collaborator: 1
+          mergeTimeout:
+            collaborator: "3.5 days"
+          repos:
+            ignore:
+              - ubiquibot
+              - launch-party
+              - staging
+              - production
   - uses:
-    - plugin: https://ubiquibot-command-start-stop-development.ubiquity.workers.dev
-      with:
-        reviewDelayTolerance: "3 Days"
-        taskStaleTimeoutDuration: "30 Days"
-        startRequiresWallet: true # default is true
+      - plugin: https://ubiquibot-command-start-stop-development.ubiquity.workers.dev
+        with:
+          reviewDelayTolerance: "3 Days"
+          taskStaleTimeoutDuration: "30 Days"
+          startRequiresWallet: true # default is true
   - uses:
-    - plugin: ubiquibot/issue-comment-embeddings@development
+      - plugin: ubiquibot/issue-comment-embeddings@development
