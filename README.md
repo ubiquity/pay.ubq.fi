@@ -25,6 +25,10 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   # Variables depending on spender (bounty hunter)
   AMOUNT_IN_ETH="1"
   BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+
+  # Legacy env vars (only used when invalidating **REAL** permits via /scripts/solidity/getInvalidateNonceParams.ts)
+  NONCE="0"
+  NONCE_SIGNER_ADDRESS="0x"
   ```
 
 ## Local Testing
