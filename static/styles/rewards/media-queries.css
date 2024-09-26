@@ -18,6 +18,26 @@ header span:first-child::after {
   }
 }
 
+@media screen and (max-width: 565px){
+  #rewardRecipient > a {
+    display: inline-block;
+    width: 100%;
+    max-width: 50vw;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}
+
+@media screen and (min-width: 565px) {
+  #rewardRecipient > a {
+    display: inline-block;
+    width: 100%;
+    max-width: calc(0.7*565px);
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}
+
 /*
 @media screen and (min-height: 512px) {
   table[data-details-visible="false"] #additional-details-border ~ tr {
