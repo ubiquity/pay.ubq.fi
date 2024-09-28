@@ -14,7 +14,7 @@ import { app } from "./app-state";
 import { ubiquityDollarAllowedChainIds } from "../../../shared/constants";
 import { getGiftCardHtml } from "../rewards/gift-cards/gift-card";
 import { showTransactionHistory } from "./transaction-history";
-import { getOrder, postOrder, getBestCard, getReedemCode } from "../shared/api";
+import { getOrder, postOrder, getBestCard, getRedeemCode } from "../shared/api";
 import { toaster } from "../rewards/toaster";
 
 const loaderAttribute = "data-loading";
@@ -247,7 +247,7 @@ export function attachRevealAction(transaction: OrderTransaction) {
 }
 
 async function revealRedeemCode(transactionId: number, wallet: string, txHash: string, signedMessage: string) {
-  const redeemCodes = await getReedemCode({
+  const redeemCodes = await getRedeemCode({
     transactionId: transactionId,
     signedMessage: signedMessage,
     wallet: wallet,

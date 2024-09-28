@@ -60,7 +60,7 @@ export async function postOrder(params: PostOrderParams) {
   return (await response.json()) as ReloadlyOrderResponse;
 }
 
-export async function getReedemCode(params: GetRedeemCodeParams) {
+export async function getRedeemCode(params: GetRedeemCodeParams) {
   const response = await fetch(
     `${getApiBaseUrl()}/get-redeem-code?transactionId=${params.transactionId}&signedMessage=${params.signedMessage}&wallet=${params.wallet}&permitSig=${params.permitSig}`,
     {
