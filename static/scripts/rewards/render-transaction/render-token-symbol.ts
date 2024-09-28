@@ -1,6 +1,9 @@
 import { BigNumberish, ethers, utils } from "ethers";
+import { PermitReward } from "@ubiquibot/permit-generation/types";
 import { erc20Abi } from "../abis/erc20-abi";
 import { app } from "../app-state";
+import { useRpcHandler } from "../web3/use-rpc-handler";
+
 export async function renderTokenSymbol({
   table,
   requestedAmountElement,
@@ -8,6 +11,7 @@ export async function renderTokenSymbol({
   ownerAddress,
   amount,
   explorerUrl,
+  claim,
 }: {
   table: Element;
   requestedAmountElement: Element;
@@ -15,7 +19,13 @@ export async function renderTokenSymbol({
   ownerAddress: string;
   amount: BigNumberish;
   explorerUrl: string;
+  claim: PermitReward;
 }): Promise<void> {
+  // If the reward is on a different chain we need a new provider
+  if (app.provider.network.chainId !== claim.networkId) {
+    console.log("Different network. Switching");
+    app.provider = await useRpcHandler(claim);
+  }
   const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
   let symbol, decimals;
@@ -57,12 +67,18 @@ export async function renderNftSymbol({
   requestedAmountElement,
   tokenAddress,
   explorerUrl,
+  claim,
 }: {
   table: Element;
   requestedAmountElement: Element;
   tokenAddress: string;
   explorerUrl: string;
+  claim: PermitReward;
 }): Promise<void> {
+  if (app.provider.network.chainId !== claim.networkId) {
+    console.log("Different network. Switching");
+    app.provider = await useRpcHandler(claim);
+  }
   const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
   let symbol: string;

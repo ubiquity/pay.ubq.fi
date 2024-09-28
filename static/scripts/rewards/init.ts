@@ -7,7 +7,7 @@ displayCommitHash();
 grid(document.getElementById("grid") as HTMLElement, gridLoadedCallback); // @DEV: display grid background
 readClaimDataFromUrl(app).catch(console.error); // @DEV: read claim data from URL
 
-const footer = document.querySelector(".footer") as Element;
+const footer = document.querySelector("footer") as Element;
 footer.classList.add("ready");
 
 // cSpell:ignore llback

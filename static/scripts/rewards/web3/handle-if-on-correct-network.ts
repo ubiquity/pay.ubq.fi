@@ -1,9 +1,10 @@
-import { buttonController } from "../toaster";
+import { buttonControllers } from "../toaster";
 
 export function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number) {
+  // Show or hide claim action for each permit
   if (desiredNetworkId === currentNetworkId) {
-    buttonController.showMakeClaim();
+    Object.keys(buttonControllers).forEach((key) => buttonControllers[key].showMakeClaim());
   } else {
-    buttonController.hideMakeClaim();
+    Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideMakeClaim());
   }
 }

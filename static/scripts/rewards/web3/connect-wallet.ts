@@ -1,6 +1,6 @@
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "ethers";
-import { buttonController, toaster } from "../toaster";
+import { buttonControllers, toaster } from "../toaster";
 import { app } from "../app-state";
 import { useHandler } from "../web3/use-rpc-handler";
 
@@ -24,7 +24,7 @@ function mobileCheck() {
   return checkMobile(navigator.userAgent || navigator.vendor || (window as unknown as { opera: string }).opera);
 }
 
-export async function connectWallet(): Promise<JsonRpcSigner | null> {
+export async function connectWallet(networkId: number): Promise<JsonRpcSigner | null> {
   try {
     const wallet = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -40,7 +40,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
     const address = await signer.getAddress();
 
     if (!address) {
-      buttonController.hideAll();
+      Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
       console.error("Wallet not connected");
       return null;
     }
@@ -54,7 +54,7 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
         // Their wallet provider will auto-prompt due to the call succeeding
         toaster.create("error", "We have detected potential issues with your in-wallet RPC. Accept the request to replace it with a more reliable one.");
       }
-      await addFastestHandlerNetwork(wallet);
+      await addFastestHandlerNetwork(wallet, networkId);
     }
 
     return signer;
@@ -63,9 +63,8 @@ export async function connectWallet(): Promise<JsonRpcSigner | null> {
   }
 }
 
-async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider) {
-  const networkId = app.networkId ?? (await wallet.getNetwork()).chainId;
-  const handler = useHandler(networkId);
+async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider, networkId: number) {
+  const handler = useHandler(networkId ?? (await wallet.getNetwork()).chainId);
   let provider = await handler.getFastestRpcProvider();
   const appUrl = app.provider?.connection?.url;
 
@@ -97,16 +96,16 @@ async function addFastestHandlerNetwork(wallet: ethers.providers.Web3Provider) {
   }
 
   try {
-    await addHandlerSuggested(wallet, toSuggest.url);
+    await addHandlerSuggested(wallet, toSuggest.url, networkId);
   } catch (error) {
     toaster.create("info", `${toSuggest.url}`, Infinity);
   }
 }
 
-async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url: string) {
-  const symbol = app.networkId === 1 ? "ETH" : "XDAI";
-  const altSymbol = app.networkId === 1 ? "eth" : "xdai";
-  const altSymbol2 = app.networkId === 1 ? "Eth" : "xDai";
+async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url: string, networkId: number) {
+  const symbol = networkId === 1 ? "ETH" : "XDAI";
+  const altSymbol = networkId === 1 ? "eth" : "xdai";
+  const altSymbol2 = networkId === 1 ? "Eth" : "xDai";
 
   if (mobileCheck()) {
     /**
@@ -123,7 +122,7 @@ async function addHandlerSuggested(provider: ethers.providers.Web3Provider, url:
   // It will not work unless the symbols match, so we try them all
   for (const _symbol of [symbol, altSymbol, altSymbol2]) {
     // this does not work on mobile yet
-    await addProvider(provider, url, _symbol, app.networkId);
+    await addProvider(provider, url, _symbol, networkId);
   }
 }
 
@@ -192,7 +191,7 @@ function connectErrorHandler(error: unknown) {
         toaster.create("warning", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward", Infinity);
       } else if (!window.ethereum) {
         toaster.create("warning", "Please use a web3 enabled browser to collect this reward.", Infinity);
-        buttonController.hideAll();
+        Object.keys(buttonControllers).forEach((key) => buttonControllers[key].hideAll());
       }
     } else {
       toaster.create("error", error.message);

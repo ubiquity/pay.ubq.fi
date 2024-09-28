@@ -13,7 +13,7 @@
   table a:hover > div {
     color: #000;
   }
-  #rewardAmount > a {
+  .reward-amount > a {
     color: #000;
   }
   svg path {
@@ -41,14 +41,10 @@
   div#build > a {
     color: #000;
   }
-  #rewardAmount div,
-  #rewardRecipient div,
-  #rewardsCount {
+  .reward-amount div,
+  .reward-recipient div,
+  .rewards-count {
     color: #000;
-  }
-  #nextTx,
-  #previousTx {
-    fill: #000;
   }
   html {
     background-color: #fff;
@@ -69,9 +65,6 @@
     animation: none;
   }
 
-  #carousel > div:hover {
-    color: #000;
-  }
   tbody,
   thead {
     background-color: #fff;

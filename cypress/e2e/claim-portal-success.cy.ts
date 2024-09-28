@@ -17,21 +17,21 @@ describe("Claims Portal Success", () => {
   });
   describe("Success", () => {
     it("should successfully claim a permit", () => {
-      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+      cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get('table[data-make-claim="ok"]').should("exist").and("include.text", "337888.4 WXDAI");
+      cy.get('table[data-make-claim="ok"]').first().should("exist").and("include.text", "337888.4 WXDAI");
 
-      cy.get("button[id='make-claim']").invoke("click");
+      cy.get("button[class='make-claim']").first().invoke("click");
 
-      cy.get("#invalidator").should("not.be.visible");
+      cy.get(".invalidator").first().should("not.be.visible");
 
-      cy.get("#claim-loader").should("be.visible").as("loader");
+      cy.get(".claim-loader").first().should("be.visible").as("loader");
 
       cy.wait(5000); // required for the action to complete
 
-      cy.get("@loader").should("not.be.visible");
+      cy.get("@loader").first().should("not.be.visible");
 
-      cy.get("#view-claim").should("be.visible").and("include.text", "View Claim");
+      cy.get(".view-claim").first().should("be.visible").and("include.text", "View Claim");
 
       // anvil confirms it instantly so there is two notifications
       cy.get("body", { timeout: 15000 }).should("contain.text", "Transaction sent");
@@ -41,10 +41,13 @@ describe("Claims Portal Success", () => {
         win.open = cy.stub().as("open");
       });
 
-      cy.get("#view-claim")
+      cy.get(".view-claim")
+        .first()
         .invoke("click")
         .then(() => {
-          cy.get("@open").should("be.calledWithMatch", /https:\/\/blockscan.com\/tx/);
+          cy.get("@open")
+            .first()
+            .should("be.calledWithMatch", /https:\/\/blockscan.com\/tx/);
         });
     });
   });
@@ -54,17 +57,17 @@ describe("Claims Portal Success", () => {
       cy.visit(`/${notMeantForYouPermit}`).then(() => {
         cy.wait(2000);
       });
-      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+      cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get('table[data-make-claim="ok"]').should("exist");
+      cy.get('table[data-make-claim="ok"]').first().should("exist");
 
-      cy.get("button[id='make-claim']").invoke("click");
+      cy.get("button[class='make-claim']").first().invoke("click");
 
-      cy.get("#invalidator").should("not.be.visible");
+      cy.get(".invalidator").first().should("not.be.visible");
 
-      cy.get("#claim-loader").should("be.visible");
+      cy.get(".claim-loader").first().should("be.visible");
 
-      cy.get("#view-claim").should("not.be.visible");
+      cy.get(".view-claim").first().should("not.be.visible");
 
       cy.get("body", { timeout: 15000 }).should("contain.text", "This reward is not for you");
     });
@@ -79,16 +82,16 @@ describe("Claims Portal Success", () => {
       cy.visit(`/${notMeantForYouPermit}`).then(() => {
         cy.wait(2000);
       });
-      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+      cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get('table[data-make-claim="ok"]').should("exist");
+      cy.get('table[data-make-claim="ok"]').first().should("exist");
 
-      cy.get("#invalidator").should("be.visible").invoke("click");
+      cy.get(".invalidator").should("be.visible").first().invoke("click");
 
-      cy.get("#claim-loader").should("not.be.visible");
-      cy.get("#view-claim").should("not.be.visible");
+      cy.get(".claim-loader").first().should("not.be.visible");
+      cy.get(".view-claim").first().should("not.be.visible");
 
-      cy.get("body", { timeout: 15000 }).should("contain.text", "Nonce invalidation transaction sent");
+      cy.get("body", { timeout: 15000 }).first().should("contain.text", "Nonce invalidation transaction sent");
     });
   });
 });

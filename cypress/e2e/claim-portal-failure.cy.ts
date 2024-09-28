@@ -18,12 +18,12 @@ describe("Claims Portal Failures", () => {
     });
 
     it("should handle no connected signer", () => {
-      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+      cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get("button[id='make-claim']").should("be.visible").click();
-      cy.get("#invalidator").should("not.be.visible");
-      cy.get("#claim-loader").should("not.be.visible");
-      cy.get("#view-claim").should("not.be.visible").and("include.text", "View Claim");
+      cy.get("button.make-claim").first().should("be.visible").click();
+      cy.get(".invalidator").should("not.be.visible");
+      cy.get(".claim-loader").should("not.be.visible");
+      cy.get(".view-claim").should("not.be.visible").and("include.text", "View Claim");
 
       cy.get("body").should("contain.text", "Please connect your wallet to claim this reward.");
     });
@@ -46,11 +46,11 @@ describe("Claims Portal Failures", () => {
     });
 
     it("should handle feedback for a failed wallet provider transaction", () => {
-      cy.get("#additionalDetails", { timeout: 15000 }).should("be.visible").invoke("click");
+      cy.get(".additional-details", { timeout: 15000 }).first().should("be.visible").invoke("click");
 
-      cy.get("button[id='make-claim']").should("be.visible").click();
-      cy.get("#claim-loader").should("be.visible");
-      cy.get("#invalidator").should("not.be.visible");
+      cy.get("button.make-claim").first().should("be.visible").click();
+      cy.get(".claim-loader").first().should("be.visible");
+      cy.get(".invalidator").first().should("not.be.visible");
       // cy.get("#claim-loader").should("not.be.visible"); // gets stuck here
     });
   });
