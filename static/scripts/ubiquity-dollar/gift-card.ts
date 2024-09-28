@@ -9,9 +9,9 @@ import { BigNumberish, ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import { erc20Abi } from "../rewards/abis";
 import { TransactionResponse } from "@ethersproject/providers";
-import { giftCardTreasuryAddress, ubiquityDollarErc20Address } from "../../../shared/constants";
+import { giftCardTreasuryAddress, ubiquityDollarChainAddresses } from "../../../shared/constants";
 import { app } from "./app-state";
-import { ubiquityDollarAllowedChainIds } from "../../../functions/helpers";
+import { ubiquityDollarAllowedChainIds } from "../../../shared/constants";
 import { getGiftCardHtml } from "../rewards/gift-cards/gift-card";
 import { showTransactionHistory } from "./transaction-history";
 import { getOrder, postOrder, getBestCard, getReedemCode } from "../shared/api";
@@ -167,6 +167,7 @@ async function mintGiftCard(productId: number) {
     return;
   }
 
+  const ubiquityDollarErc20Address = ubiquityDollarChainAddresses[chainId];
   const erc20Contract = new ethers.Contract(ubiquityDollarErc20Address, erc20Abi, signer);
 
   const tx: TransactionResponse = await erc20Contract.transfer(giftCardTreasuryAddress, amount);

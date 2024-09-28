@@ -6,10 +6,6 @@ import { getGiftCardById } from "./post-order";
 import { fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
 import { AccessToken, ReloadlyFailureResponse } from "./types";
 
-export const permitAllowedChainIds = [1, 5, 100, 31337];
-
-export const ubiquityDollarAllowedChainIds = [1, 31337];
-
 export const commonHeaders = {
   "Content-Type": "application/json",
   Accept: "application/com.reloadly.giftcards-v1+json",
