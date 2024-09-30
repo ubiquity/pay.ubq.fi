@@ -8,8 +8,7 @@ import { toaster } from "../rewards/toaster";
 export function showTransactionHistory() {
   const transactionHistory = document.getElementById("transaction-history");
   if (!transactionHistory) {
-    console.error("Missing check div #transaction-history");
-    return;
+    throw new Error("Could not find transaction-history element");
   }
   const txs = Storage.loadTransactions().filter((tx) => tx.date.getTime() > Date.now() - 1000 * 60 * 60 * 24 * 7);
   if (txs.length === 0) {
@@ -31,11 +30,11 @@ export function showTransactionHistory() {
 
   txs.forEach((tx) => {
     if (!tx.txHash) {
-      return;
+      throw new Error("Could not find txHash");
     }
     const button = document.getElementById(tx.txHash);
     if (!button) {
-      return;
+      throw new Error("Could not find button");
     }
     button.addEventListener("click", async () => {
       button.setAttribute("data-loading", "true");
@@ -77,7 +76,7 @@ function transactionRowHtml(transaction: Transaction) {
 
 async function checkTransaction(transaction: Transaction) {
   if (!transaction.txHash || !transaction.walletAddress || !transaction.chainId || !transaction.country || !transaction.productId) {
-    return;
+    throw new Error("Unexpected error");
   }
   const orderId = getGiftCardOrderId(transaction.walletAddress, transaction.txHash);
   const response = await getOrder({ orderId });
