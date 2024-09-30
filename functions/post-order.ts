@@ -2,17 +2,18 @@ import { TransactionReceipt, TransactionResponse } from "@ethersproject/provider
 import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
 import { BigNumber } from "ethers";
 import { Interface, TransactionDescription } from "ethers/lib/utils";
-import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address, ubiquityDollarErc20Address } from "../shared/constants";
+import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { erc20Abi } from "../static/scripts/rewards/abis/erc20-abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { permitAllowedChainIds, commonHeaders, findBestCard, getAccessToken, getBaseUrl, ubiquityDollarAllowedChainIds } from "./helpers";
+import { commonHeaders, findBestCard, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
 import { postOrderParamsSchema } from "../shared/api-types";
+import { permitAllowedChainIds, ubiquityDollarAllowedChainIds, ubiquityDollarChainAddresses } from "../shared/constants";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -230,6 +231,7 @@ function validateTransferTransaction(txParsed: TransactionDescription, txReceipt
     return Response.json({ message: "Given transaction is not a token transfer" }, { status: 403 });
   }
 
+  const ubiquityDollarErc20Address = ubiquityDollarChainAddresses[chainId];
   if (txReceipt.to.toLowerCase() != ubiquityDollarErc20Address.toLowerCase()) {
     return Response.json({ message: "Given transaction is not a Ubiquity Dollar transfer" }, { status: 403 });
   }

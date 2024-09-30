@@ -3,7 +3,7 @@ export enum Tokens {
   WXDAI = "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
 }
 
-export const permitAllowedChainIds = [1, 5, 100, 31337];
+export const permitAllowedChainIds = [1, 5, 10, 100, 31337];
 
 export const ubiquityDollarAllowedChainIds = [1, 100, 31337];
 
@@ -25,6 +25,7 @@ export const chainIdToRewardTokenMap: Record<number, string> = {
 export const chainIdToNameMap: Record<number, string> = {
   1: "Ethereum",
   5: "Goerli Testnet",
+  10: "Optimism",
   100: "Gnosis",
   31337: "Local Testnet",
 };
