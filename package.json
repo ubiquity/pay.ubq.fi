@@ -12,7 +12,7 @@
     "start": "run-s start:sign start:ui",
     "watch": "nodemon -e ts,tsx --exec yarn start",
     "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
-    "format": "run-s format:lint format:prettier format:cspell",
+    "format": "yarn format:lint && yarn format:prettier && yarn format:cspell",
     "build": "run-s utils:build",
     "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
@@ -82,7 +82,7 @@
       "eslint --fix",
       "bash .github/workflows/scripts/kebab-case.sh"
     ],
-    "src/**.{ts,json}": [
+    "src/**/*.{ts,json}": [
       "cspell"
     ]
   },
