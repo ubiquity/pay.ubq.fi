@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { giftCardTreasuryAddress, permit2Address } from "../../../../../shared/constants";
 import { isClaimableForAmount } from "../../../../../shared/pricing";
-import { GiftCard, OrderRequestParams } from "../../../../../shared/types";
+import { GiftCard } from "../../../../../shared/types";
 import { permit2Abi } from "../../abis";
 import { AppState } from "../../app-state";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
@@ -10,6 +10,7 @@ import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "..
 import { getApiBaseUrl, getUserCountryCode } from "../helpers";
 import { initClaimGiftCard } from "../index";
 import { getGiftCardOrderId } from "../../../../../shared/helpers";
+import { postOrder } from "../../../shared/api";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
   const mintBtn: HTMLElement | null = document.getElementById("mint");
@@ -52,23 +53,14 @@ async function mintGiftCard(productId: number, app: AppState) {
       if (!tx) return;
       await waitForTransaction(tx, `Transaction confirmed. Minting your card now.`);
 
-      const url = `${getApiBaseUrl()}/post-order`;
-
-      const orderParams: OrderRequestParams = {
+      const order = await postOrder({
+        type: "permit",
         chainId: app.signer.provider.network.chainId,
         txHash: tx.hash,
         productId,
         country: country,
-      };
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: JSON.stringify(orderParams),
       });
-
-      if (response.status != 200) {
+      if (!order) {
         toaster.create("error", "Order failed. Try again later.");
         return;
       }

@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { getNetworkName } from "@ubiquity-dao/rpc-handler";
-import { buttonController, toaster } from "../toaster";
+import { buttonController } from "../button-controller";
+import { toaster } from "../toaster";
 import { switchNetwork } from "./switch-network";
 
 export function notOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number, web3provider: ethers.providers.Web3Provider) {

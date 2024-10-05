@@ -2,6 +2,7 @@ import { BigNumber } from "ethers";
 import { getAccessToken, findBestCard } from "./helpers";
 import { Context } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { getBestCardParamsSchema } from "../shared/api-types";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -9,12 +10,14 @@ export async function onRequest(ctx: Context): Promise<Response> {
     validateEnvVars(ctx);
 
     const { searchParams } = new URL(ctx.request.url);
-    const country = searchParams.get("country");
-    const amount = searchParams.get("amount");
-
-    if (isNaN(Number(amount)) || !(country && amount)) {
-      throw new Error(`Invalid query parameters: ${{ country, amount }}`);
+    const result = getBestCardParamsSchema.safeParse({
+      country: searchParams.get("country"),
+      amount: searchParams.get("amount"),
+    });
+    if (!result.success) {
+      throw new Error(`Invalid parameters: ${JSON.stringify(result.error.errors)}`);
     }
+    const { country, amount } = result.data;
 
     const accessToken = await getAccessToken(ctx.env);
     const bestCard = await findBestCard(country, BigNumber.from(amount), accessToken);

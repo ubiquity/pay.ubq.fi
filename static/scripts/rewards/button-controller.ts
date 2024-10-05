@@ -89,3 +89,10 @@ export class ButtonController {
     this.hideInvalidator();
   }
 }
+
+const controls = document.getElementById("controls") as HTMLDivElement;
+export function getMakeClaimButton() {
+  return document.getElementById("make-claim") as HTMLButtonElement;
+}
+export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
+export const buttonController = new ButtonController(controls);

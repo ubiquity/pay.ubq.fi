@@ -5,12 +5,15 @@ import { Interface, TransactionDescription } from "ethers/lib/utils";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
-import { ExchangeRate, GiftCard, OrderRequestParams } from "../shared/types";
+import { ExchangeRate, GiftCard } from "../shared/types";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
+import { erc20Abi } from "../static/scripts/rewards/abis/erc20-abi";
 import { getTransactionFromOrderId } from "./get-order";
-import { allowedChainIds, commonHeaders, findBestCard, getAccessToken, getBaseUrl } from "./helpers";
+import { commonHeaders, findBestCard, getAccessToken, getBaseUrl } from "./helpers";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./types";
 import { validateEnvVars, validateRequestMethod } from "./validators";
+import { postOrderParamsSchema } from "../shared/api-types";
+import { permitAllowedChainIds, ubiquityDollarAllowedChainIds, ubiquityDollarChainAddresses } from "../shared/constants";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -19,15 +22,11 @@ export async function onRequest(ctx: Context): Promise<Response> {
 
     const accessToken = await getAccessToken(ctx.env);
 
-    const { productId, txHash, chainId, country } = (await ctx.request.json()) as OrderRequestParams;
-
-    if (isNaN(productId) || isNaN(chainId) || !(productId && txHash && chainId && country)) {
-      throw new Error(`Invalid post parameters: ${JSON.stringify({ productId, txHash, chainId })}`);
+    const result = postOrderParamsSchema.safeParse(await ctx.request.json());
+    if (!result.success) {
+      throw new Error(`Invalid post parameters: ${JSON.stringify(result.error.errors)}`);
     }
-
-    if (!allowedChainIds.includes(chainId)) {
-      throw new Error(`Unsupported chain: ${JSON.stringify({ chainId })}`);
-    }
+    const { type, productId, txHash, chainId, country } = result.data;
 
     const fastestRpcUrl = await getFastestRpcUrl(chainId);
 
@@ -49,18 +48,35 @@ export async function onRequest(ctx: Context): Promise<Response> {
       throw new Error(`Given transaction has not been mined yet. Please wait for it to be mined.`);
     }
 
-    const iface = new Interface(permit2Abi);
+    let amountDaiWei;
+    let orderId;
 
-    const txParsed = iface.parseTransaction({ data: tx.data });
+    if (type === "ubiquity-dollar") {
+      const iface = new Interface(erc20Abi);
+      const txParsed = iface.parseTransaction({ data: tx.data });
+      console.log("Parsed transaction data: ", JSON.stringify(txParsed));
 
-    console.log("Parsed transaction data: ", JSON.stringify(txParsed));
+      const errorResponse = validateTransferTransaction(txParsed, txReceipt, chainId, giftCard);
+      if (errorResponse) {
+        return errorResponse;
+      }
 
-    const errorResponse = validateTransaction(txParsed, txReceipt, chainId, giftCard);
-    if (errorResponse) {
-      return errorResponse;
+      orderId = getGiftCardOrderId(txReceipt.from, txHash);
+      amountDaiWei = txParsed.args[1];
+    } else if (type === "permit") {
+      const iface = new Interface(permit2Abi);
+
+      const txParsed = iface.parseTransaction({ data: tx.data });
+      console.log("Parsed transaction data: ", JSON.stringify(txParsed));
+
+      const errorResponse = validatePermitTransaction(txParsed, txReceipt, chainId, giftCard);
+      if (errorResponse) {
+        return errorResponse;
+      }
+
+      amountDaiWei = txParsed.args.transferDetails.requestedAmount;
+      orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);
     }
-
-    const amountDaiWei = txParsed.args.transferDetails.requestedAmount;
 
     let exchangeRate = 1;
     if (giftCard.recipientCurrencyCode != "USD") {
@@ -74,8 +90,6 @@ export async function onRequest(ctx: Context): Promise<Response> {
     }
 
     const giftCardValue = getGiftCardValue(giftCard, amountDaiWei, exchangeRate);
-
-    const orderId = getGiftCardOrderId(txReceipt.from, txParsed.args.signature);
 
     const isDuplicate = await isDuplicateOrder(orderId, accessToken);
     if (isDuplicate) {
@@ -202,7 +216,36 @@ async function getExchangeRate(usdAmount: number, fromCurrency: string, accessTo
   return responseJson as ExchangeRate;
 }
 
-function validateTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
+function validateTransferTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
+  const transferAmount = txParsed.args[1];
+
+  if (!ubiquityDollarAllowedChainIds.includes(chainId)) {
+    return Response.json({ message: "Unsupported chain" }, { status: 403 });
+  }
+
+  if (!isClaimableForAmount(giftCard, transferAmount)) {
+    return Response.json({ message: "Your reward amount is either too high or too low to buy this card." }, { status: 403 });
+  }
+
+  if (txParsed.functionFragment.name != "transfer") {
+    return Response.json({ message: "Given transaction is not a token transfer" }, { status: 403 });
+  }
+
+  const ubiquityDollarErc20Address = ubiquityDollarChainAddresses[chainId];
+  if (txReceipt.to.toLowerCase() != ubiquityDollarErc20Address.toLowerCase()) {
+    return Response.json({ message: "Given transaction is not a Ubiquity Dollar transfer" }, { status: 403 });
+  }
+
+  if (txParsed.args[0].toLowerCase() != giftCardTreasuryAddress.toLowerCase()) {
+    return Response.json({ message: "Given transaction is not a token transfer to treasury address" }, { status: 403 });
+  }
+}
+
+function validatePermitTransaction(txParsed: TransactionDescription, txReceipt: TransactionReceipt, chainId: number, giftCard: GiftCard): Response | void {
+  if (!permitAllowedChainIds.includes(chainId)) {
+    return Response.json({ message: "Unsupported chain" }, { status: 403 });
+  }
+
   if (BigNumber.from(txParsed.args.permit.deadline).lt(Math.floor(Date.now() / 1000))) {
     return Response.json({ message: "The reward has expired." }, { status: 403 });
   }

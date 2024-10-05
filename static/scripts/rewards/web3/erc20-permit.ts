@@ -5,7 +5,8 @@ import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
+import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
+import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {

@@ -6,8 +6,6 @@ import { getGiftCardById } from "./post-order";
 import { fallbackIntlMastercard, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
 import { AccessToken, ReloadlyFailureResponse } from "./types";
 
-export const allowedChainIds = [1, 5, 100, 31337];
-
 export const commonHeaders = {
   "Content-Type": "application/json",
   Accept: "application/com.reloadly.giftcards-v1+json",
@@ -110,7 +108,7 @@ async function getFallbackIntlMastercard(accessToken: AccessToken): Promise<Gift
   try {
     return await getGiftCardById(fallbackIntlMastercard.sku, accessToken);
   } catch (e) {
-    console.log(`Failed to load international US mastercard: ${JSON.stringify(fallbackIntlMastercard)}\n${JSON.stringify(JSON.stringify)}`);
+    console.error(`Failed to load international US mastercard: ${JSON.stringify(fallbackIntlMastercard)}`, e);
     return null;
   }
 }
@@ -119,7 +117,7 @@ async function getFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard |
   try {
     return await getGiftCardById(fallbackIntlVisa.sku, accessToken);
   } catch (e) {
-    console.log(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisa)}\n${JSON.stringify(JSON.stringify)}`);
+    console.error(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisa)}\n${e}`);
     return null;
   }
 }
