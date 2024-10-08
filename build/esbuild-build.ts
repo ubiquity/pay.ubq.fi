@@ -1,8 +1,7 @@
 import { execSync } from "child_process";
 import { config } from "dotenv";
 import esbuild from "esbuild";
-import { readFileSync, appendFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { appendFileSync, readFileSync, writeFileSync } from "fs";
 
 // CSS files in order
 const cssFiles: string[] = [
