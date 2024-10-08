@@ -1913,7 +1913,7 @@
     "@typescript-eslint/types" "7.0.1"
     eslint-visitor-keys "^3.4.1"
 
-"@ubiquibot/permit-generation@^1.4.1":
+"@ubiquibot/permit-generation@1.4.1":
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/@ubiquibot/permit-generation/-/permit-generation-1.4.1.tgz#1492f2608e36bcd845cfb1574d20b044e5f25fc1"
   integrity sha512-Ek9vw2Lsc+57rVh0bdA9fkwbE8dthqqQfyLV+sx6jCwUnqZvopKwJtDZuS2wL7Dkl1fIFodVxNo37biNu5gCpw==
@@ -2769,10 +2769,10 @@ cspell@^8.4.0:
     strip-ansi "^7.1.0"
     vscode-uri "^3.0.8"
 
-cypress@^13.7.0:
-  version "13.13.1"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-13.13.1.tgz#860c1142a6e58ea412a764f0ce6ad07567721129"
-  integrity sha512-8F9UjL5MDUdgC/S5hr8CGLHbS5gGht5UOV184qc2pFny43fnkoaKxlzH/U6//zmGu/xRTaKimNfjknLT8+UDFg==
+cypress@13.7.0:
+  version "13.7.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-13.7.0.tgz#19e53c0bd6eca5e3bde0d6ac9e98fbf1782e3a9e"
+  integrity sha512-UimjRSJJYdTlvkChcdcfywKJ6tUYuwYuk/n1uMMglrvi+ZthNhoRYcxnWgTqUtkl17fXrPAsD5XT2rcQYN1xKA==
   dependencies:
     "@cypress/request" "^3.0.0"
     "@cypress/xvfb" "^1.2.4"
@@ -2813,7 +2813,7 @@ cypress@^13.7.0:
     request-progress "^3.0.0"
     semver "^7.5.3"
     supports-color "^8.1.1"
-    tmp "~0.2.3"
+    tmp "~0.2.1"
     untildify "^4.0.0"
     yauzl "^2.10.0"
 
@@ -6132,7 +6132,7 @@ tiny-invariant@^1.1.0:
   resolved "https://registry.yarnpkg.com/tiny-invariant/-/tiny-invariant-1.3.3.tgz#46680b7a873a0d5d10005995eb90a70d74d60127"
   integrity sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==
 
-tmp@~0.2.3:
+tmp@~0.2.1:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/tmp/-/tmp-0.2.3.tgz#eb783cc22bc1e8bebd0671476d46ea4eb32a79ae"
   integrity sha512-nZD7m9iCPC5g0pYmcaxogYKggSfLsdxl8of3Q/oIbqCqLLIO9IAF0GWjX1z9NZRHPiXv8Wex4yDCaZsgEw0Y8w==

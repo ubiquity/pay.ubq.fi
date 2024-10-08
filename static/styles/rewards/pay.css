@@ -82,38 +82,35 @@ a {
 #logo > #logo-icon {
   display: inline-block;
   vertical-align: middle;
-  padding: 4px;
+  /* padding: 4px; */
   text-rendering: geometricPrecision;
   /* color: #fff; */
 }
 
 #logo-icon > svg {
-  height: 36px;
+  height: 28px;
   display: block;
   margin: 0;
-  width: 36px;
+  width: 28px;
   padding: 0;
-  margin-right: 10px;
-  fill: #fff;
+  margin-right: 6px;
+  /* fill: #fff; */
+  color: #fff;
 }
 
 #logo > div#logo-text {
   display: inline-block;
   vertical-align: middle;
 }
-#logo > div#logo-text > span::after {
-  content: " ";
-  display: inline-block;
-  width: 8px;
-}
+
 #logo > div#logo-text > span {
-  font-size: 20px;
-  letter-spacing: 5px;
+  line-height: 1;
+  font-size: 16px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   text-rendering: geometricPrecision;
   color: #fff;
-  /* margin-right: 8px; */
-  /* font-weight: 400; */
+  font-weight: 400;
 }
 
 div.footer > div {
