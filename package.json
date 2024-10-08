@@ -1,12 +1,12 @@
 {
   "name": "pay.ubq.fi",
   "version": "1.0.0",
-  "description": "Claim your DevPool rewards.",
+  "description": "Claim your UbiquityOS rewards.",
   "main": "build/index.ts",
   "author": "Ubiquity DAO",
   "license": "MIT",
   "engines": {
-    "node": ">=20.10.0"
+    "node": "20.10.0"
   },
   "scripts": {
     "start": "run-s start:sign start:ui",
