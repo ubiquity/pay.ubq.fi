@@ -35,22 +35,23 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-          # Fetch the template repository
           git remote add template https://github.com/ubiquity/ts-template.git
           git fetch template
 
-          # Create a new branch for the sync
           git checkout -b "$pr_branch"
 
-          # Get the last successful sync commit (if any)
           last_sync=$(git log --grep="Sync template" --format="%H" -n 1)
 
           if [ -n "$last_sync" ]; then
-            # If there's a previous sync, cherry-pick new changes
-            git cherry-pick $last_sync..template/main
+            # If there's a previous sync, try to cherry-pick new changes
+            if ! git cherry-pick $last_sync..template/main; then
+              # If cherry-pick fails, abort and try a merge instead
+              git cherry-pick --abort
+              git merge template/main --no-commit
+            fi
           else
             # If it's the first sync, merge the template
-            git merge template/main --allow-unrelated-histories -X theirs
+            git merge template/main --allow-unrelated-histories --no-commit
           fi
 
           # Remove ignored files
@@ -64,12 +65,12 @@ jobs:
             exit 0
           fi
 
-          # Commit changes
-          git commit -am "chore: sync template"
+          # Commit changes, even if there are conflicts
+          git commit -am "chore: sync template (with potential conflicts)" || true
 
           # Push changes and create PR
           git push -f "$original_remote" "$pr_branch"
-          gh pr create --title "Sync branch to template" \
-                       --body "This pull request merges changes from the template repository." \
-                       --head "$pr_branch" \
-                       --base "$branch_name" || true
+          gh pr create --title "Sync branch to template (manual resolution required)" \
+                      --body "This pull request merges changes from the template repository. There may be conflicts that require manual resolution." \
+                      --head "$pr_branch" \
+                      --base "$branch_name" || true
