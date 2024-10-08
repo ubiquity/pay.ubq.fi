@@ -1,12 +1,12 @@
 {
   "name": "ts-template",
   "version": "1.0.0",
-  "description": "Claim your UbiquityOS rewards.",
+  "description": "Template repository with TypeScript support.",
   "main": "build/index.ts",
   "author": "Ubiquity DAO",
   "license": "MIT",
   "engines": {
-    "node": "20.10.0"
+    "node": ">=20.10.0"
   },
   "scripts": {
     "start": "tsx build/esbuild-server.ts",
