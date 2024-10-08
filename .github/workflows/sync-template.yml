@@ -34,21 +34,40 @@ jobs:
           pr_branch="sync-template/${branch_name}"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
+
+          # Fetch the template repository
+          git remote add template https://github.com/ubiquity/ts-template.git
+          git fetch template
+
+          # Create a new branch for the sync
           git checkout -b "$pr_branch"
-          git clone https://github.com/ubiquity/ts-template
+
+          # Get the last successful sync commit (if any)
+          last_sync=$(git log --grep="Sync template" --format="%H" -n 1)
+
+          if [ -n "$last_sync" ]; then
+            # If there's a previous sync, cherry-pick new changes
+            git cherry-pick $last_sync..template/main
+          else
+            # If it's the first sync, merge the template
+            git merge template/main --allow-unrelated-histories -X theirs
+          fi
+
+          # Remove ignored files
           for file in $IGNORE_FILES; do
-            rm -rf "ts-template/$file"
+            git rm -rf "$file" || true
           done
-          cp -rf ts-template/* .
-          rm -rf ts-template/
-          git add .
-          if git diff --staged --quiet; then
+
+          # Check if there are any changes
+          if git diff --staged --quiet && git diff --quiet; then
             echo "No changes to sync from template."
             exit 0
           fi
-          git commit -m "chore: sync template"
-          git fetch origin "$pr_branch" || true
-          git pull origin "$branch_name" --rebase
+
+          # Commit changes
+          git commit -am "chore: sync template"
+
+          # Push changes and create PR
           git push -f "$original_remote" "$pr_branch"
           gh pr create --title "Sync branch to template" \
                        --body "This pull request merges changes from the template repository." \
