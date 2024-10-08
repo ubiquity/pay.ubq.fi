@@ -27,13 +27,12 @@ jobs:
       - name: Sync branch to template
         env:
           GH_TOKEN: ${{ steps.get_installation_token.outputs.token }}
-          IGNORE_FILES: "README.md another-file.txt"
         run: |
           branch_name=$(git rev-parse --abbrev-ref HEAD)
           original_remote=$(git remote get-url origin)
           pr_branch="sync-template/${branch_name}"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+          git config --global user.email "ubiquity-os[bot]@users.noreply.github.com"
+          git config --global user.name "ubiquity-os[bot]"
 
           git remote add template https://github.com/ubiquity/ts-template.git
           git fetch template
@@ -53,11 +52,6 @@ jobs:
             # If it's the first sync, merge the template
             git merge template/main --allow-unrelated-histories --no-commit
           fi
-
-          # Remove ignored files
-          for file in $IGNORE_FILES; do
-            git rm -rf "$file" || true
-          done
 
           # Check if there are any changes
           if git diff --staged --quiet && git diff --quiet; then
