@@ -1,35 +1,19 @@
-
-
 @media screen and (max-width: 640px) {
   table {
-    border-left-width: 0px;
-    border-right-width: 0px;
+    border-left-width: 0;
+    border-right-width: 0;
   }
 }
 @media screen and (max-width: 768px) {
   header span:first-child {
     display: none;
   }
-
-
 }
-
-/*
-@media screen and (min-height: 512px) {
-  table[data-details-visible="false"] #additional-details-border ~ tr {
-    display: none;
-  }
-  table[data-details-visible="true"] #additional-details-border ~ tr {
-    display: table-row;
-  }
-} */
-
-/* Landscape */
 @media screen and (orientation: landscape) {
   body {
-    width: 100%; /* 100% of viewport width */
-    max-width: 100%; /* prevents any overflow issues */
-    overflow-x: hidden; /* prevents horizontal scrolling */
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
