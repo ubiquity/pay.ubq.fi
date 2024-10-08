@@ -1,35 +1,24 @@
 {
-  "name": "pay.ubq.fi",
+  "name": "ts-template",
   "version": "1.0.0",
-  "description": "Claim your UbiquityOS rewards.",
+  "description": "Template repository with TypeScript support.",
   "main": "build/index.ts",
   "author": "Ubiquity DAO",
   "license": "MIT",
   "engines": {
-    "node": "20.10.0"
+    "node": ">=20.10.0"
   },
   "scripts": {
-    "start": "run-s start:sign start:ui",
-    "watch": "nodemon -e ts,tsx --exec yarn start",
-    "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
+    "start": "tsx build/esbuild-server.ts",
+    "build": "tsx build/esbuild-build.ts",
     "format": "run-s format:lint format:prettier format:cspell",
-    "build": "run-s utils:build",
-    "start:ui": "tsx build/esbuild-server.ts",
-    "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
-    "utils:build": "tsx build/esbuild-build.ts",
-    "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol",
     "format:lint": "eslint --fix .",
     "format:prettier": "prettier --write .",
     "format:cspell": "cspell **/*",
-    "prepare": "husky install",
-    "postinstall": "git submodule update --init --recursive",
-    "test:anvil": "tsx cypress/scripts/anvil.ts",
-    "test:start": "yarn start",
-    "test:run": "cypress run",
-    "test:open": "cypress open",
-    "test:fund": "tsx cypress/scripts/funding.ts",
     "knip": "knip --config .github/knip.ts",
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
+    "prepare": "husky install",
+    "test": "jest --setupFiles dotenv/config --coverage",
     "cy:open": "cypress open",
     "cy:run": "cypress run"
   },
@@ -41,13 +30,7 @@
     "open-source"
   ],
   "dependencies": {
-    "@ethersproject/providers": "^5.7.2",
-    "@supabase/supabase-js": "^2.44.4",
-    "@ubiquibot/permit-generation": "1.4.1",
-    "@ubiquity-dao/rpc-handler": "^1.1.0",
-    "dotenv": "^16.4.4",
-    "ethers": "^5.7.2",
-    "npm-run-all": "^4.1.5"
+    "dotenv": "^16.4.4"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.1",
@@ -55,12 +38,14 @@
     "@cspell/dict-node": "^4.0.3",
     "@cspell/dict-software-terms": "^3.3.18",
     "@cspell/dict-typescript": "^3.1.2",
-    "@types/ethereum-protocol": "^1.0.5",
+    "@jest/globals": "29.7.0",
+    "@mswjs/data": "0.16.1",
+    "@types/jest": "29.5.12",
     "@types/node": "^20.11.19",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "cspell": "^8.4.0",
-    "cypress": "13.7.0",
+    "cypress": "13.6.6",
     "esbuild": "^0.20.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
@@ -68,19 +53,21 @@
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-sonarjs": "^0.24.0",
     "husky": "^9.0.11",
+    "jest": "29.7.0",
+    "jest-junit": "16.0.0",
+    "jest-md-dashboard": "0.8.0",
     "knip": "^5.0.1",
     "lint-staged": "^15.2.2",
-    "nodemon": "^3.0.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.2.5",
+    "ts-jest": "29.1.2",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
   "lint-staged": {
     "*.ts": [
       "yarn prettier --write",
-      "eslint --fix",
-      "bash .github/workflows/scripts/kebab-case.sh"
+      "eslint --fix"
     ],
     "src/**.{ts,json}": [
       "cspell"
