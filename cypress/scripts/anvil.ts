@@ -1,14 +1,13 @@
+import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { spawnSync } from "child_process";
 import { useHandler } from "../../static/scripts/rewards/web3/use-rpc-handler";
-// @ts-expect-error - Missing types
-import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
 class Anvil {
   rpcs: string[] = [];
   rpcHandler: RPCHandler | null = null;
 
   async init() {
-    this.rpcHandler = await useHandler(100);
+    this.rpcHandler = useHandler(100);
     console.log(`[RPCHandler] Fetching RPCs...`);
     await this.rpcHandler.testRpcPerformance();
     const latencies: Record<string, number> = this.rpcHandler.getLatencies();
