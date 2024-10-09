@@ -21,14 +21,14 @@ export async function queryReverseEns(address: string, networkId: number) {
     const mainnetProvider = await useHandler(1).getFirstAvailableRpcProvider();
     if (mainnetProvider === null) {
       console.error("ENS lookup failed: no available mainnet RPC providers");
-      return "";
+      return null;
     }
     const web3Provider = new ethers.providers.JsonRpcProvider(mainnetProvider.connection.url);
     const ensName = await web3Provider.lookupAddress(address);
 
     if (ensName === null) {
       console.error("ENS lookup failed: API request failed");
-      return "";
+      return null;
     }
 
     // Store the ENS name in localStorage for future use
