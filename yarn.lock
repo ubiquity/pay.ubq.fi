@@ -1999,7 +1999,7 @@
     "@octokit/types" "^13.1.0"
     universal-user-agent "^6.0.0"
 
-"@octokit/rest@^20.0.2":
+"@octokit/rest@^20.0.2", "@octokit/rest@^20.1.0":
   version "20.1.1"
   resolved "https://registry.yarnpkg.com/@octokit/rest/-/rest-20.1.1.tgz#ec775864f53fb42037a954b9a40d4f5275b3dc95"
   integrity sha512-MB4AYDsM5jhIHro/dq4ix1iWTLGToIGk6cWF5L6vanFaMble5jTX/UBQyiv05HsWnwUtY8JrfHy2LWfKwihqMw==
@@ -2028,7 +2028,7 @@
   resolved "https://registry.yarnpkg.com/@octokit/webhooks-methods/-/webhooks-methods-5.1.0.tgz#13b6c08f89902c1ab0ddf31c6eeeec9c2772cfe6"
   integrity sha512-yFZa3UH11VIxYnnoOYCVoJ3q4ChuSOk2IVBBQ0O3xtKX4x9bmKb/1t+Mxixv2iUhzMdOl1qeWJqEhouXXzB3rQ==
 
-"@octokit/webhooks@^13.1.0":
+"@octokit/webhooks@^13.1.0", "@octokit/webhooks@^13.3.0":
   version "13.3.0"
   resolved "https://registry.yarnpkg.com/@octokit/webhooks/-/webhooks-13.3.0.tgz#fd5d54d47c789c75d60a00eb04e982152d7c654a"
   integrity sha512-TUkJLtI163Bz5+JK0O+zDkQpn4gKwN+BovclUvCj6pI/6RXrFqQvUMRS2M+Rt8Rv0qR3wjoMoOPmpJKeOh0nBg==
@@ -2546,7 +2546,7 @@
     ethers "6.11.1"
     libsodium-wrappers "^0.7.13"
 
-"@ubiquity-dao/rpc-handler@^1.1.0":
+"@ubiquity-dao/rpc-handler@1.3.0", "@ubiquity-dao/rpc-handler@^1.1.0":
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/@ubiquity-dao/rpc-handler/-/rpc-handler-1.3.0.tgz#d6d26dda525a572539e969353070562c4cc0237c"
   integrity sha512-BoN3IENjJWaMHSk3tC2I48e0Bz8NbwmjymLQ9EamN3lMf9djTEdWbmD2baRr9pIZJ6Sh5HzgYdCN+i7I1lZbVw==
@@ -2554,6 +2554,23 @@
     "@ethersproject/providers" "5.7.2"
     axios "^1.7.1"
     node-fetch "^3.3.2"
+
+"@ubiquity-os/permit-generation@^2.0.4":
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/@ubiquity-os/permit-generation/-/permit-generation-2.0.4.tgz#dbdc546eca1f647968128b2613028e3b7f5b286b"
+  integrity sha512-05M4QLOHf+B5rXgmaR+fEUEZIhCKeQXFJFvTCr/eRGb34hdJFAR0Z8ZGTeCjrcP60KdQ9HfMk8lp+eBcZpeLBg==
+  dependencies:
+    "@actions/core" "^1.10.1"
+    "@actions/github" "^6.0.0"
+    "@octokit/rest" "^20.1.0"
+    "@octokit/webhooks" "^13.3.0"
+    "@sinclair/typebox" "^0.32.5"
+    "@supabase/supabase-js" "2.42.0"
+    "@ubiquity-dao/rpc-handler" "1.3.0"
+    "@uniswap/permit2-sdk" "^1.2.0"
+    dotenv "^16.4.4"
+    ethers "^5.7.2"
+    libsodium-wrappers "^0.7.13"
 
 "@ungap/structured-clone@^1.2.0":
   version "1.2.0"

@@ -4,7 +4,7 @@ import { queryReverseEns } from "./query-reverse-ens";
 //   event.respondWith(handleRequest(event.request).catch(err => new Response(err.stack, { status: 500 })));
 // });
 
-export async function ensLookup(addr: string, networkId: number) {
+export async function ensLookup(addr: string) {
   const _address = "/".concat(addr); // quick adapter
 
   // try {
@@ -18,7 +18,7 @@ export async function ensLookup(addr: string, networkId: number) {
   let reverseRecord = null as null | string;
   // let response = "";
   try {
-    reverseRecord = await queryReverseEns(address, networkId);
+    reverseRecord = await queryReverseEns(address);
   } catch (e) {
     console.error(e);
     //   throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;

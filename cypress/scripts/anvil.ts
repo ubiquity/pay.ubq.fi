@@ -1,14 +1,14 @@
-import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { spawnSync } from "child_process";
+import { RpcHandler } from "../../static/scripts/rewards/web3/rpc-handler/rpc-handler";
 import { useHandler } from "../../static/scripts/rewards/web3/use-rpc-handler";
 
 class Anvil {
   rpcs: string[] = [];
-  rpcHandler: RPCHandler | null = null;
+  rpcHandler: RpcHandler | null = null;
 
   async init() {
     this.rpcHandler = useHandler(100);
-    console.log(`[RPCHandler] Fetching RPCs...`);
+    console.log(`[RpcHandler] Fetching RPCs...`);
     await this.rpcHandler.testRpcPerformance();
     const latencies: Record<string, number> = this.rpcHandler.getLatencies();
     const sorted = Object.entries(latencies).sort(([, a], [, b]) => a - b);

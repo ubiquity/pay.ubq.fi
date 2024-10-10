@@ -7,21 +7,19 @@ type EnsParams =
       address: string;
       tokenAddress: string;
       tokenView: true;
-      networkId: number;
     }
   | {
       element: Element;
       address: string;
       tokenAddress?: undefined;
       tokenView?: false;
-      networkId: number;
     };
 
-export async function renderEnsName({ element, address, tokenAddress, tokenView, networkId }: EnsParams): Promise<void> {
-  let href: string = "";
+export async function renderEnsName({ element, address, tokenAddress, tokenView }: EnsParams): Promise<void> {
   try {
-    const ensName = await ensLookup(address, networkId);
+    const ensName = await ensLookup(address);
     if (ensName) {
+      let href;
       if (tokenView) {
         href = `${app.currentExplorerUrl}/token/${tokenAddress}?a=${address}`;
       } else {

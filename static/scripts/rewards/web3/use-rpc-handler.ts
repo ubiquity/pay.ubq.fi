@@ -1,6 +1,5 @@
-import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { AppState } from "../app-state";
-
+import { RpcHandler } from "./rpc-handler/rpc-handler";
 export function useHandler(networkId: number) {
   const config = {
     networkId: networkId,
@@ -13,7 +12,7 @@ export function useHandler(networkId: number) {
   };
 
   // No RPCs are tested at this point
-  return new RPCHandler(config);
+  return new RpcHandler(config);
 }
 
 export async function useRpcHandler(app: AppState) {

@@ -4,13 +4,13 @@ import { ethers } from "ethers";
 
 const mainnetRpcUrl = "https://eth.drpc.org";
 
-export async function queryReverseEns(address: string, networkId: number) {
+export async function queryReverseEns(address: string) {
   // Try to get the ENS name from localStorage
   const cachedEnsName = localStorage.getItem(address);
   const endpoint = app.provider?.connection.url || (await useRpcHandler(app)).connection.url;
 
   if (!endpoint) {
-    console.error("ENS lookup failed: No endpoint found for network ID", networkId);
+    console.error("ENS lookup failed: No endpoint found for network ID");
     if (cachedEnsName) return cachedEnsName;
   }
 

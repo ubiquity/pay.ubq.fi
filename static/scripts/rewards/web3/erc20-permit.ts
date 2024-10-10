@@ -1,14 +1,17 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
-import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
-import { app, AppState } from "../app-state";
-import { permit2Address } from "@ubiquity-dao/rpc-handler";
+import { AppState, app } from "../app-state";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { PermitReward } from "./rpc-handler/permit-reward";
 
-export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+
+const NO_REWARD_FOUND = "No reward found";
+
+export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
   try {
@@ -23,12 +26,12 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
       const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
       decimals = storedDecimals;
       symbol = storedSymbol;
-      [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, permit2Address)]);
+      [balance, allowance] = await Promise.all([tokenContract.balanceOf(permit.owner), tokenContract.allowance(permit.owner, PERMIT2_ADDRESS)]);
     } else {
       // If the token info is not in localStorage, fetch it from the blockchain
       [balance, allowance, decimals, symbol] = await Promise.all([
         tokenContract.balanceOf(permit.owner),
-        tokenContract.allowance(permit.owner, permit2Address),
+        tokenContract.allowance(permit.owner, PERMIT2_ADDRESS),
         tokenContract.decimals(),
         tokenContract.symbol(),
       ]);
@@ -59,6 +62,11 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
 
 async function transferFromPermit(permit2Contract: Contract, app: AppState) {
   const reward = app.reward;
+
+  if (!reward) {
+    throw new Error(NO_REWARD_FOUND);
+  }
+
   const signer = app.signer;
   if (!signer) return null;
 
@@ -137,7 +145,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) return;
 
-    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+    const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, permit2Abi, signer);
     if (!permit2Contract) return;
 
     const tx = await transferFromPermit(permit2Contract, app);
@@ -169,6 +177,10 @@ async function checkPermitClaimable(app: AppState): Promise<boolean> {
   }
 
   const reward = app.reward;
+
+  if (!reward) {
+    throw new Error(NO_REWARD_FOUND);
+  }
 
   if (BigNumber.from(reward.deadline).lt(Math.floor(Date.now() / 1000))) {
     toaster.create("error", `This reward has expired.`);
@@ -261,6 +273,10 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
     }
 
     if (!app.signer) return;
+    if (!app.reward) {
+      throw new Error(NO_REWARD_FOUND);
+    }
+
     await invalidateNonce(app.signer, app.reward.nonce);
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -278,7 +294,11 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 async function isNonceClaimed(app: AppState): Promise<boolean> {
   const provider = app.provider;
 
-  const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
+  const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, permit2Abi, provider);
+
+  if (!app.reward) {
+    throw new Error(NO_REWARD_FOUND);
+  }
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.nonce));
 
@@ -294,7 +314,7 @@ async function isNonceClaimed(app: AppState): Promise<boolean> {
 }
 
 async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
-  const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+  const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, permit2Abi, signer);
   const { wordPos, bitPos } = nonceBitmap(nonce);
   // mimics https://github.com/ubiquity/pay.ubq.fi/blob/c9e7ed90718fe977fd9f348db27adf31d91d07fb/scripts/solidity/test/Permit2.t.sol#L428
   const bit = BigNumber.from(1).shl(bitPos);
@@ -313,9 +333,14 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
 }
 
 async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
+  if (!app.reward) {
+    throw new Error(NO_REWARD_FOUND);
+  }
+
   const { error } = await supabase
     .from("permits")
     .update({ transaction: hash })
+
     // using only nonce in the condition as it's defined unique on db
     .eq("nonce", app.reward.nonce.toString());
 

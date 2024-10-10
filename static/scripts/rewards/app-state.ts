@@ -1,9 +1,9 @@
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
-import { Permit } from "@ubiquibot/permit-generation/types";
-import { networkExplorers } from "@ubiquity-dao/rpc-handler";
+import { networkExplorers } from "./web3/rpc-handler/rpc-handler";
+import { PermitReward } from "./web3/rpc-handler/permit-reward";
 
 export class AppState {
-  public claims: Permit[] = [];
+  public claims: PermitReward[] = [];
   public claimTxs: Record<string, string> = {};
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
@@ -33,7 +33,7 @@ export class AppState {
     return this._currentIndex;
   }
 
-  get reward(): Permit {
+  get reward(): PermitReward | null {
     return this.rewardIndex < this.claims.length ? this.claims[this.rewardIndex] : this.claims[0];
   }
 
@@ -48,12 +48,12 @@ export class AppState {
     return networkExplorers[this.reward.networkId] || "https://blockscan.com";
   }
 
-  nextPermit(): Permit | null {
+  nextPermit(): PermitReward | null {
     this._currentIndex = Math.min(this.claims.length - 1, this.rewardIndex + 1);
     return this.reward;
   }
 
-  previousPermit(): Permit | null {
+  previousPermit(): PermitReward | null {
     this._currentIndex = Math.max(0, this._currentIndex - 1);
     return this.reward;
   }

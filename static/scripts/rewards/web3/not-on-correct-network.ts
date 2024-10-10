@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getNetworkName } from "@ubiquity-dao/rpc-handler";
+import { getNetworkName } from "./rpc-handler/rpc-handler";
 import { buttonController, toaster } from "../toaster";
 import { switchNetwork } from "./switch-network";
 

@@ -1,5 +1,5 @@
-import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
-import { networkExplorers } from "@ubiquity-dao/rpc-handler";
+import { PermitReward, TokenType } from "@ubiquity-os/permit-generation";
+import { networkExplorers } from "../web3/rpc-handler/rpc-handler";
 import { app } from "../app-state";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../toaster";
 import { checkRenderInvalidatePermitAdminControl, claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
@@ -8,7 +8,7 @@ import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-
+import { Erc20PermitReward } from "../web3/rpc-handler/permit-reward";
 const carousel = document.getElementById("carousel") as Element;
 const table = document.querySelector(`table`) as HTMLTableElement;
 type Success = boolean;
@@ -45,7 +45,7 @@ export async function renderTransaction(): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.reward.beneficiary, networkId: app.networkId }).catch(console.error);
+    renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
 
     if (app.provider) {
       checkRenderInvalidatePermitAdminControl(app).catch(console.error);
@@ -53,7 +53,10 @@ export async function renderTransaction(): Promise<Success> {
 
     if (app.claimTxs[app.reward.nonce.toString()] !== undefined) {
       buttonController.showViewClaim();
-      viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`));
+      viewClaimButton.addEventListener("click", () => {
+        if (!app.reward) throw new Error("No reward found");
+        window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`);
+      });
     } else if (window.ethereum) {
       // requires wallet connection to claim
       buttonController.showMakeClaim();
@@ -73,7 +76,12 @@ export async function renderTransaction(): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.reward.beneficiary, networkId: app.networkId }).catch(console.error);
+    renderEnsName({
+      element: toElement,
+      address: app.reward.beneficiary,
+      tokenAddress: app.reward.tokenAddress,
+      tokenView: true,
+    }).catch(console.error);
 
     getMakeClaimButton().addEventListener("click", claimErc721PermitHandler(app.reward));
   }
@@ -81,6 +89,6 @@ export async function renderTransaction(): Promise<Success> {
   return true;
 }
 
-function isErc20Permit(permit: Permit): permit is ERC20Permit {
+function isErc20Permit(permit: PermitReward): permit is Erc20PermitReward {
   return permit.tokenType === TokenType.ERC20;
 }
