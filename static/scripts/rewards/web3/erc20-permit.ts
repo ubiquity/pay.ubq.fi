@@ -1,6 +1,6 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
 import { permit2Address } from "@ubiquity-dao/rpc-handler";
-import { Permit } from "@ubiquity-os/permit-generation/types";
+
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { AppState, app } from "../app-state";

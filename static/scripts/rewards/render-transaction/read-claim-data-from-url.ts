@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { decodePermits } from "@ubiquity-os/permit-generation/handlers";
-import { Permit } from "@ubiquity-os/permit-generation/types";
+
 import { app, AppState } from "../app-state";
 import { toaster } from "../toaster";
 import { connectWallet } from "../web3/connect-wallet";

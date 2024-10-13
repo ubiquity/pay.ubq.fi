@@ -1,5 +1,4 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
-import { ERC721Permit } from "@ubiquity-os/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";

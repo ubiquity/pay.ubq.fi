@@ -1,4 +1,3 @@
-import { ERC20Permit, ERC721Permit } from "@ubiquity-os/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { AppState, app } from "../app-state";
 
