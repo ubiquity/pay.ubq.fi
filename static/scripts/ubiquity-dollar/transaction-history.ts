@@ -49,7 +49,7 @@ function transactionRowHtml(transaction: Transaction) {
     <tr>
       <td><a href="https://etherscan.io/tx/${transaction.txHash}">${transaction.txHash?.slice(0, 16)}...</a></td>
       <td>${transaction.date.toISOString().split("T")[0]}</td>
-      <td>${transaction.amount ? formatUnits(transaction.amount, 18) : 0} uAD</td>
+      <td>${transaction.amount ? formatUnits(transaction.amount, 18) : 0} UUSD</td>
       <td>
         <button id="${transaction.txHash}" class="btn" data-loading="false">
           <div class="action">Open</div>
