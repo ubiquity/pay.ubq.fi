@@ -16,7 +16,7 @@ const cssFiles: string[] = [
 // Output bundles file
 const outputFilePath = "static/bundles/bundles.css";
 
-const typescriptEntries = ["static/scripts/rewards/init.ts"];
+const typescriptEntries = ["static/scripts/rewards/init.ts", "static/scripts/ubiquity-dollar/init.ts"];
 export const entries = [...typescriptEntries];
 
 export const esBuildContext: esbuild.BuildOptions = {

@@ -1,5 +1,5 @@
 import { app } from "../app-state";
-import { ensLookup } from "../cirip/ens-lookup";
+import { queryReverseEns } from "../cirip/query-reverse-ens";
 
 type EnsParams =
   | {
@@ -18,14 +18,15 @@ type EnsParams =
     };
 
 export async function renderEnsName({ element, address, tokenAddress, tokenView, networkId }: EnsParams): Promise<void> {
-  let href: string = "";
+  let href = "";
   try {
-    const ensName = await ensLookup(address, networkId);
+    const ensName = await queryReverseEns(address, networkId);
+
     if (ensName) {
       if (tokenView) {
         href = `${app.currentExplorerUrl}/token/${tokenAddress}?a=${address}`;
       } else {
-        href = `${app.currentExplorerUrl}/address/${address}"`;
+        href = `${app.currentExplorerUrl}/address/${address}`;
       }
       element.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${href}">${ensName}</a>`;
     }

@@ -1,6 +1,6 @@
-import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
+import { ERC20Permit, ERC721Permit } from "@ubiquity-os/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
-import { app, AppState } from "../app-state";
+import { AppState, app } from "../app-state";
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;

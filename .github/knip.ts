@@ -1,7 +1,7 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  entry: ["build/esbuild-build.ts", "static/scripts/rewards/init.ts"],
+  entry: ["build/esbuild-build.ts", "static/scripts/rewards/init.ts", "static/scripts/ubiquity-dollar/init.ts"],
   project: ["src/**/*.ts", "static/scripts/**/*.ts"],
   ignore: ["src/types/config.ts", "**/__mocks__/**", "**/__fixtures__/**", "lib/**/*"],
   ignoreExportsUsedInFile: true,
