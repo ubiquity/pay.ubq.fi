@@ -1,6 +1,24 @@
 import { execSync } from "child_process";
 import { config } from "dotenv";
 import esbuild from "esbuild";
+import { appendFileSync, readFileSync, writeFileSync } from "fs";
+
+// CSS files in order
+const cssFiles: string[] = [
+  "static/styles/rewards/background.css",
+  "static/styles/rewards/claim-table.css",
+  "static/styles/rewards/gift-cards.css",
+  "static/styles/rewards/light-mode.css",
+  "static/styles/rewards/media-queries.css",
+  "static/styles/rewards/pay.css",
+  "static/styles/rewards/ubiquity-dollar.css",
+  "static/styles/proxima.css",
+  "static/styles/toast.css",
+];
+
+// Output bundles file
+const outputFilePath = "static/bundles/bundles.css";
+
 const typescriptEntries = ["static/scripts/rewards/init.ts", "static/scripts/ubiquity-dollar/init.ts"];
 export const entries = [...typescriptEntries];
 
@@ -17,10 +35,28 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".ttf": "dataurl",
     ".svg": "dataurl",
   },
-  outdir: "static/out",
+  outfile: "static/bundles/bundles.js",
+  entryNames: "bundles", // Ensure the CSS is named bundles.css
   define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
     commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
   }),
+  plugins: [
+    {
+      name: "css-bundle",
+      setup(build) {
+        build.onEnd((result) => {
+          // Clear the file first
+          writeFileSync(outputFilePath, "", "utf8");
+
+          // Concatenate each file into the bundles file
+          cssFiles.forEach((file) => {
+            const data = readFileSync(file, "utf8");
+            appendFileSync(outputFilePath, data, "utf8");
+          });
+        });
+      },
+    },
+  ],
 };
 
 esbuild
