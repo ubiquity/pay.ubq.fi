@@ -13,7 +13,6 @@ const cssFiles: string[] = [
   "static/styles/rewards/ubiquity-dollar.css",
   "static/styles/rewards/media-queries.css",
   "static/styles/rewards/light-mode.css",
-  "static/styles/proxima.css",
 ];
 
 // Output bundles file
