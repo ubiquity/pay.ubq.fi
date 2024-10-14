@@ -11,7 +11,7 @@ jobs:
     name: Automatic Cloudflare Deploy
     runs-on: ubuntu-22.04
     steps:
-      - name: Verify Runner's Identity
+      - name: Verify Runner's Identity 
         id: verify-runner
         run: |
           echo "Runner name: $RUNNER_NAME"
