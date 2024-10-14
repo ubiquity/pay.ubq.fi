@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { queryReverseEns } from "./query-reverse-ens";
 
 // addEventListener("fetch", event => {
@@ -19,6 +20,9 @@ export async function ensLookup(addr: string, networkId: number) {
   // let response = "";
   try {
     reverseRecord = await queryReverseEns(address, networkId);
+    const responseParsed = JSON.parse(reverseRecord).result;
+    const _reverseRecord = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], responseParsed);
+    reverseRecord = _reverseRecord[0][0];
   } catch (e) {
     console.error(e);
     //   throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + response;

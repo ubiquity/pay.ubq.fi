@@ -1,4 +1,5 @@
 {
+  "include": ["functions", "build", "scripts/typescript", "globals.d.ts", "cypress/**/*.ts", "cypress.config.ts", "static/**/*.ts", ".github/**/*.ts"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 

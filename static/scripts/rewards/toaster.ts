@@ -1,5 +1,3 @@
-import { ButtonController } from "./button-controller";
-
 export const toaster = {
   create: createToast,
   error: errorToast,
@@ -11,16 +9,10 @@ export const toaster = {
   },
 };
 
-const controls = document.getElementById("controls") as HTMLDivElement;
-export function getMakeClaimButton() {
-  return document.getElementById("make-claim") as HTMLButtonElement;
-}
-export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
 const notifications = document.querySelector(".notifications") as HTMLUListElement;
-export const buttonController = new ButtonController(controls);
 
 function createToast(meaning: keyof typeof toaster.icons, text: string, timeout: number = 5000) {
-  if (meaning != "info") buttonController.hideLoader();
+  //if (meaning != "info") buttonController.hideLoader();
   const toastDetails = {
     timer: timeout,
   } as {

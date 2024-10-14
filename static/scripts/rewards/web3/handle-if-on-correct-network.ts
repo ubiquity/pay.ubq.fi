@@ -1,4 +1,4 @@
-import { buttonController } from "../toaster";
+import { buttonController } from "../button-controller";
 
 export function handleIfOnCorrectNetwork(currentNetworkId: number, desiredNetworkId: number) {
   if (desiredNetworkId === currentNetworkId) {
