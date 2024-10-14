@@ -6,6 +6,24 @@ function shortenAddress(address: string): string {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
 }
 
+function formatLargeNumber(value: BigNumber, decimals: number): string {
+  const num = parseFloat(ethers.utils.formatUnits(value, decimals));
+
+  if (num >= 1_000_000_000_000_000) {
+    return "Unlimited"; // we can consider quintillion and above basically unlimited 
+  } else if (num >= 1_000_000_000_000) {
+    return `${(num / 1_000_000_000_000).toFixed(1)}T`; // i.e: 1.2T
+  } else if (num >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(1)}B`; // i.e: 3.5B
+  } else if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1)}M`; // i.e: 1.2M
+  } else if (num >= 1_000) {
+    return `${(num / 1_000).toFixed(1)}K`; // i.e: 341.1K
+  } else {
+    return num.toFixed(2); // keep two decimals for smaller numbers
+  }
+}
+
 export function insertErc20PermitTableData(
   app: AppState,
   table: Element,
@@ -24,8 +42,14 @@ export function insertErc20PermitTableData(
         return deadline.lte(Number.MAX_SAFE_INTEGER.toString()) ? new Date(deadline.toNumber()).toLocaleString() : undefined;
       })(),
     },
-    { name: "Balance", value: treasury.balance.gte(0) ? `${ethers.utils.formatUnits(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
-    { name: "Allowance", value: treasury.allowance.gte(0) ? `${ethers.utils.formatUnits(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A" },
+    {
+      name: "Balance",
+      value: treasury.balance.gte(0) ? `${formatLargeNumber(treasury.balance, treasury.decimals)} ${treasury.symbol}` : "N/A",
+    },
+    {
+      name: "Allowance",
+      value: treasury.allowance.gte(0) ? `${formatLargeNumber(treasury.allowance, treasury.decimals)} ${treasury.symbol}` : "N/A",
+    },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
   return requestedAmountElement;
