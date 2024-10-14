@@ -24,11 +24,39 @@ jobs:
           path: ./pr-number.txt
           trim: true
 
-      - name: Report knip results to pull request
+      - name: Get or create comment ID for Knip Report
+        id: get-comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = ${{ steps.pr-number.outputs.content }};
+            
+            // Fetch all comments on the PR
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            // Look for an existing Knip report comment
+            let knipComment = comments.data.find(comment =>
+              comment.body.startsWith("| Knip Report |")
+            );
+
+            if (knipComment) {
+              console.log('Found existing Knip report comment:', knipComment.id);
+              core.setOutput('comment_id', knipComment.id); // Set the comment ID output
+            } else {
+              console.log('No existing Knip report comment found.');
+              core.setOutput('comment_id', ''); // No existing comment
+            }
+
+      - name: Report Knip results to pull request
         uses: gitcoindev/knip-reporter@main
         with:
           verbose: true
-          comment_id: ${{ github.workflow }}-reporter
+          comment_id: ${{ steps.get-comment.outputs.comment_id || github.workflow }}-knip-report
           command_script_name: knip-ci
           annotations: true
           ignore_results: false
