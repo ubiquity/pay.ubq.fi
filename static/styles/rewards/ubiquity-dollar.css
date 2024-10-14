@@ -1,8 +1,8 @@
-#transaction-history {
+#ubiquity-dollar-page #transaction-history {
     margin-top: 50px;
 }
 
-.amount-input {
+#ubiquity-dollar-page .amount-input {
     height: 20px;
     width: 150px;
     appearance: none;
@@ -13,16 +13,16 @@
     border-radius: 5px;
 }
 
-tbody {
+#ubiquity-dollar-page tbody {
     position: inherit;
     transform: none;
 }
 
-table th {
+#ubiquity-dollar-page table th {
     padding-left: 0px;
     padding: 12px;
 }
 
-table td {
+#ubiquity-dollar-page table td {
     padding: 12px;
 }

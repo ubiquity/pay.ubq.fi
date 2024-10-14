@@ -5,15 +5,15 @@ import { appendFileSync, readFileSync, writeFileSync } from "fs";
 
 // CSS files in order
 const cssFiles: string[] = [
+  "static/styles/rewards/pay.css",
   "static/styles/rewards/background.css",
+  "static/styles/toast.css",
   "static/styles/rewards/claim-table.css",
   "static/styles/rewards/gift-cards.css",
-  "static/styles/rewards/light-mode.css",
-  "static/styles/rewards/media-queries.css",
-  "static/styles/rewards/pay.css",
   "static/styles/rewards/ubiquity-dollar.css",
+  "static/styles/rewards/media-queries.css",
+  "static/styles/rewards/light-mode.css",
   "static/styles/proxima.css",
-  "static/styles/toast.css",
 ];
 
 // Output bundles file
