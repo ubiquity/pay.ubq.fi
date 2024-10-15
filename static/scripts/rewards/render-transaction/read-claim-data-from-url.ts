@@ -68,7 +68,7 @@ async function updateButtonVisibility(app: AppState) {
       buttonController.hideAll(); // Hide all buttons if the network is incorrect
       toaster.create("error", `This dApp currently does not support payouts for network ID ${currentNetworkId}`);
 
-      // Try switching to the propper network id
+      // Try switching to the proper network id
       switchNetwork(new ethers.providers.Web3Provider(window.ethereum), app.reward.networkId).catch((error) => {
         console.error(error);
         if (app.networkId !== null) {
