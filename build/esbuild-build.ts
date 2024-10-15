@@ -9,14 +9,16 @@ const cssFiles: string[] = [
   "static/styles/rewards/background.css",
   "static/styles/toast.css",
   "static/styles/rewards/claim-table.css",
+  "static/styles/rewards/gift-cards.css",
+  "static/styles/rewards/ubiquity-dollar.css",
   "static/styles/rewards/media-queries.css",
   "static/styles/rewards/light-mode.css",
 ];
 
 // Output bundles file
-const outputFilePath = "static/bundles/bundles.css";
+const outputFilePath = "static/out/bundles.css";
 
-const typescriptEntries = ["static/scripts/rewards/init.ts"];
+const typescriptEntries = ["static/scripts/rewards/init.ts", "static/scripts/ubiquity-dollar/init.ts"];
 export const entries = [...typescriptEntries];
 
 export const esBuildContext: esbuild.BuildOptions = {
@@ -32,8 +34,8 @@ export const esBuildContext: esbuild.BuildOptions = {
     ".ttf": "dataurl",
     ".svg": "dataurl",
   },
-  outfile: "static/bundles/bundles.js",
-  entryNames: "bundles", // Ensure the CSS is named bundles.css
+  outdir: "static/out",
+  entryNames: "[dir]", // Ensure the CSS is named bundles.css
   define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
     commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
   }),

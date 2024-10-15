@@ -5,42 +5,44 @@ import { BigNumber, ethers } from "ethers";
 import { log } from "./utils";
 dotenv.config();
 
+export type PermitConfig = NodeJS.ProcessEnv;
+
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // same on all chains
 
-function createProviderAndWallet() {
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
-  const myWallet = new ethers.Wallet(process.env.UBIQUIBOT_PRIVATE_KEY, provider);
+function createProviderAndWallet(permitConfig: PermitConfig) {
+  const provider = new ethers.providers.JsonRpcProvider(permitConfig.RPC_PROVIDER_URL);
+  const myWallet = new ethers.Wallet(permitConfig.UBIQUIBOT_PRIVATE_KEY, provider);
   return { provider, myWallet };
 }
 
-async function createPermitTransferFromData(amount: string) {
+async function createPermitTransferFromData(permitConfig: PermitConfig) {
   // get payment token decimals
-  const { provider } = createProviderAndWallet();
+  const { provider } = createProviderAndWallet(permitConfig);
   const erc20Abi = ["function decimals() public view returns (uint8)"];
-  const tokenContract = new ethers.Contract(process.env.PAYMENT_TOKEN_ADDRESS, erc20Abi, provider);
+  const tokenContract = new ethers.Contract(permitConfig.PAYMENT_TOKEN_ADDRESS, erc20Abi, provider);
   const tokenDecimals = await tokenContract.decimals();
 
   return {
     permitted: {
-      token: process.env.PAYMENT_TOKEN_ADDRESS || "",
-      amount: ethers.utils.parseUnits(amount || "", tokenDecimals),
+      token: permitConfig.PAYMENT_TOKEN_ADDRESS || "",
+      amount: ethers.utils.parseUnits(permitConfig.AMOUNT_IN_ETH || "", tokenDecimals),
     },
-    spender: process.env.BENEFICIARY_ADDRESS,
+    spender: permitConfig.BENEFICIARY_ADDRESS,
     nonce: BigNumber.from(`0x${randomBytes(32).toString("hex")}`),
     deadline: MaxUint256,
   };
 }
 
-async function signTypedData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom) {
+async function signTypedData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom, permitConfig: PermitConfig) {
   const { domain, types, values } = SignatureTransfer.getPermitData(
     permitTransferFromData,
     PERMIT2_ADDRESS,
-    process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : 1
+    permitConfig.CHAIN_ID ? Number(permitConfig.CHAIN_ID) : 1
   );
   return await myWallet._signTypedData(domain, types, values);
 }
 
-function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom, signature: string) {
+function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTransferFrom, signature: string, permitConfig: PermitConfig) {
   return {
     type: "erc20-permit",
     permit: {
@@ -57,25 +59,30 @@ function createTxData(myWallet: ethers.Wallet, permitTransferFromData: PermitTra
     },
     owner: myWallet.address,
     signature: signature,
-    networkId: Number(process.env.CHAIN_ID),
+    networkId: Number(permitConfig.CHAIN_ID),
   };
 }
 
-export async function generateErc20Permit() {
-  const { myWallet } = createProviderAndWallet();
+export async function generateErc20Permit(permitConfig: PermitConfig) {
+  const { myWallet } = createProviderAndWallet(permitConfig);
 
-  const permitTransferFromData = await createPermitTransferFromData(process.env.AMOUNT_IN_ETH);
-  const signature = await signTypedData(myWallet, permitTransferFromData);
+  const permitTransferFromData = await createPermitTransferFromData(permitConfig);
+  const signature = await signTypedData(myWallet, permitTransferFromData, permitConfig);
 
-  const permitTransferFromData2 = await createPermitTransferFromData("9");
-  const sig = await signTypedData(myWallet, permitTransferFromData);
+  const permitTransferFromData2 = await createPermitTransferFromData({ ...permitConfig, AMOUNT_IN_ETH: "9" });
+  const sig = await signTypedData(myWallet, permitTransferFromData, permitConfig);
 
-  const txData = [createTxData(myWallet, permitTransferFromData, signature), createTxData(myWallet, permitTransferFromData2, sig)];
+  const txData = [createTxData(myWallet, permitTransferFromData, signature, permitConfig), createTxData(myWallet, permitTransferFromData2, sig, permitConfig)];
 
   const base64encodedTxData = Buffer.from(JSON.stringify(txData)).toString("base64");
 
+  return `${permitConfig.FRONTEND_URL}?claim=${base64encodedTxData}`;
+}
+
+export async function logErc20Permit(permitConfig: PermitConfig) {
+  const erc20Permit = await generateErc20Permit(permitConfig);
   log.ok("ERC20 Local URL:");
-  log.info(`${process.env.FRONTEND_URL}?claim=${base64encodedTxData}`);
+  log.info(erc20Permit);
 }
 
 /* eslint-disable @typescript-eslint/no-namespace */

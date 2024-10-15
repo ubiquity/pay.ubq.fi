@@ -10,7 +10,7 @@ function formatLargeNumber(value: BigNumber, decimals: number): string {
   const num = parseFloat(ethers.utils.formatUnits(value, decimals));
 
   if (num >= 1_000_000_000_000_000) {
-    return "Unlimited"; // we can consider quintillion and above basically unlimited 
+    return "Unlimited"; // we can consider quintillion and above basically unlimited
   } else if (num >= 1_000_000_000_000) {
     return `${(num / 1_000_000_000_000).toFixed(1)}T`; // i.e: 1.2T
   } else if (num >= 1_000_000_000) {

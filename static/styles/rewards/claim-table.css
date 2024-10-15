@@ -15,6 +15,7 @@ main > div {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
 }
 table {
   border-collapse: collapse;
@@ -257,6 +258,9 @@ table th {
   display: none;
 }
 [data-make-claim="false"] #make-claim {
+  display: none;
+}
+[data-collect-gift-card="false"] #collect-gift-card {
   display: none;
 }
 [data-view-claim="false"] #view-claim {
