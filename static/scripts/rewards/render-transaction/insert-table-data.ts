@@ -5,7 +5,7 @@ import { app, AppState } from "../app-state";
 // dinamically shortens a string by slicing and elipsing it's middle
 function shortenAddress(address: string): string {
   const initialLength = 42; // address has 42 chars
-  const maxWidth = 520; // with to trigger shortning
+  const maxWidth = 570; // with to trigger shortning
 
   if (window.innerWidth >= maxWidth) {
     return address;
@@ -15,7 +15,7 @@ function shortenAddress(address: string): string {
   const charsToRemove = Math.floor((maxWidth - window.innerWidth) / 6);
 
   // limit shortening
-  const newLength = Math.max(initialLength - charsToRemove, 10);
+  const newLength = Math.max(initialLength - charsToRemove, 20);
 
   const frontChars = Math.ceil(newLength / 2);
   const backChars = newLength - frontChars;
@@ -38,9 +38,6 @@ function updateAddresses() {
     element.innerHTML = shortenAddress(fullAddress);
   });
 }
-
-// shortens address on load
-updateAddresses();
 
 // triggers shortening on resize
 window.addEventListener("resize", updateAddresses);
@@ -94,6 +91,8 @@ export function insertErc20PermitTableData(
     },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
+  // shortens addresses if necessary
+  updateAddresses();
   return requestedAmountElement;
 }
 
