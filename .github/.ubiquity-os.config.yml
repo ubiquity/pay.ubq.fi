@@ -10,6 +10,7 @@ plugins:
         with:
           labels:
             time:
+              - "Time: <15 Minutes"
               - "Time: <1 Hour"
               - "Time: <2 Hours"
               - "Time: <4 Hours"
