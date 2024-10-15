@@ -16,5 +16,6 @@ static/bundles
 
 cypress/screenshots
 cypress/videos
+.wrangler
 coverage
 junit.xml

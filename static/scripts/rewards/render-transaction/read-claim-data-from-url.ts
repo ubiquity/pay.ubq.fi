@@ -2,7 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
-import { buttonController, toaster } from "../toaster";
+import { toaster } from "../toaster";
+import { buttonController } from "../button-controller";
+
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
@@ -66,7 +68,7 @@ async function updateButtonVisibility(app: AppState) {
       buttonController.hideAll(); // Hide all buttons if the network is incorrect
       toaster.create("error", `This dApp currently does not support payouts for network ID ${currentNetworkId}`);
 
-      // Try switching to the propper network id
+      // Try switching to the proper network id
       switchNetwork(new ethers.providers.Web3Provider(window.ethereum), app.reward.networkId).catch((error) => {
         console.error(error);
         if (app.networkId !== null) {
