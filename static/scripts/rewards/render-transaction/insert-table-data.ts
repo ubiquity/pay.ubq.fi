@@ -2,10 +2,10 @@ import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { app, AppState } from "../app-state";
 
-// dinamically shortens a string by slicing and elipsing it's middle
+// dynamically shortens a string by slicing and hiding the middle part
 function shortenAddress(address: string): string {
   const initialLength = 42; // address has 42 chars
-  const maxWidth = 570; // with to trigger shortning
+  const maxWidth = 570; // width to trigger shortening
 
   if (window.innerWidth >= maxWidth) {
     return address;
