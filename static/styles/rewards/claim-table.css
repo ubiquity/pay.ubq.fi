@@ -198,14 +198,6 @@ table[data-details-visible="false"] #rewardToken .short,
 table[data-details-visible="true"] #rewardToken .full {
   display: initial;
 }
-table[data-details-visible="false"] #rewardRecipient .full,
-table[data-details-visible="true"] #rewardRecipient .short {
-  display: none;
-}
-table[data-details-visible="false"] #rewardRecipient .short,
-table[data-details-visible="true"] #rewardRecipient .full {
-  display: initial;
-}
 #To > td,
 #To > th {
   padding-bottom: 24px;
