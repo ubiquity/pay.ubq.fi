@@ -39,7 +39,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const issue_number = ${{ steps.pr-number.outputs.content }};
-            
+
             // Fetch all comments on the PR
             const comments = await github.rest.issues.listComments({
               owner,
