@@ -23,16 +23,16 @@ function shortenEnsName(ensName: string): string {
   const smallScreenLimit = 20; // max length in chars for small screens
   const maxWidth = 570; // width trigger
 
-  const parts = ensName.split('.'); 
-  const mainPart = parts.slice(0, -1).join('.'); 
-  const ending = `.${parts[parts.length - 1]}`; 
+  const parts = ensName.split(".");
+  const mainPart = parts.slice(0, -1).join(".");
+  const ending = `.${parts[parts.length - 1]}`;
 
   const maxLength = window.innerWidth >= maxWidth ? largeScreenLimit : smallScreenLimit;
 
   if (ensName.length <= maxLength) return ensName;
 
   const maxMainLength = maxLength - ending.length - 3; // subtract space for '...'
-  
+
   const frontChars = Math.ceil(maxMainLength / 2);
   const backChars = maxMainLength - frontChars;
 
