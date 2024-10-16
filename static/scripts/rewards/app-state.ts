@@ -42,10 +42,11 @@ export class AppState {
   }
 
   get currentExplorerUrl(): string {
-    if (!this.reward) {
+    if (!this.reward || !networkExplorers[this.reward.networkId]) {
       return "https://blockscan.com";
     }
-    return networkExplorers[this.reward.networkId] || "https://blockscan.com";
+
+    return networkExplorers[this.reward.networkId][0].url;
   }
 
   nextPermit(): Permit | null {
