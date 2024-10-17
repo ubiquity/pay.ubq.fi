@@ -29,7 +29,7 @@ plugins:
             fundExternalClosedIssue: false
   - skipBotEvents: false
     uses:
-      - plugin: ubiquibot/conversation-rewards@development
+      - plugin: ubiquity-os-marketplace/text-conversation-rewards@main
         # we don't skip bot events so conversation rewards triggered by the bot also run
         with:
           evmNetworkId: 100
@@ -119,7 +119,7 @@ plugins:
               post: true
               debug: false
   - uses:
-      - plugin: ubiquibot/user-activity-watcher@development
+      - plugin: ubiquity-os-marketplace/daemon-disqualifier@main
         with:
           watch:
             optOut:
@@ -128,7 +128,7 @@ plugins:
               - staging
               - production
   - uses:
-      - plugin: ubiquibot/automated-merging@development
+      - plugin: ubiquity-os-marketplace/daemon-merging@main
         with:
           approvalsRequired:
             collaborator: 1
@@ -147,4 +147,4 @@ plugins:
           taskStaleTimeoutDuration: "30 Days"
           startRequiresWallet: true # default is true
   - uses:
-      - plugin: ubiquibot/issue-comment-embeddings@development
+      - plugin: ubiquity-os-marketplace/text-vector-embeddings@development
