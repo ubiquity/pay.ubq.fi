@@ -1,4 +1,4 @@
-# [pay.ubq.fi](https://pay.ubq.fi)
+# [pay.ubq.fi](https://pay.ubq.fi)!
 
 A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools for generating and invalidating permits and can be used to claim both ERC20 and ERC721 tokens.
 
