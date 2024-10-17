@@ -1,6 +1,8 @@
 plugins:
   - uses:
       - plugin: https://ubiquibot-command-wallet-development.ubiquity.workers.dev
+        with:
+          registerWalletWithVerification: false
   - uses:
       - plugin: https://ubiquibot-command-query-user-development.ubiquity.workers.dev
         with:
