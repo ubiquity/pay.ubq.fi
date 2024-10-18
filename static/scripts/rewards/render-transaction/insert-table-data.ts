@@ -2,46 +2,6 @@ import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, ethers } from "ethers";
 import { app, AppState } from "../app-state";
 
-// dynamically shortens a string by slicing and hiding the middle part
-function shortenAddress(address: string): string {
-  const initialLength = 42; // address has 42 chars
-  const maxWidth = 570; // width to trigger shortening
-
-  if (window.innerWidth >= maxWidth) {
-    return address;
-  }
-
-  // remove 1 letter for every 6px below 520px
-  const charsToRemove = Math.floor((maxWidth - window.innerWidth) / 6);
-
-  // limit shortening
-  const newLength = Math.max(initialLength - charsToRemove, 20);
-
-  const frontChars = Math.ceil(newLength / 2);
-  const backChars = newLength - frontChars;
-
-  return `${address.slice(0, frontChars)}...${address.slice(-backChars)}`;
-}
-
-// function to update addresses based on the current window size
-function updateAddresses() {
-  const addressElements = document.getElementsByClassName("address");
-
-  Array.from(addressElements).forEach((element) => {
-    // get or store the original address as an attribute
-    let fullAddress = element.getAttribute("data-full-address");
-    if (!fullAddress) {
-      fullAddress = element.innerHTML;
-      element.setAttribute("data-full-address", fullAddress);
-    }
-
-    element.innerHTML = shortenAddress(fullAddress);
-  });
-}
-
-// triggers shortening on resize
-window.addEventListener("resize", updateAddresses);
-
 function formatLargeNumber(value: BigNumber, decimals: number): string {
   const num = parseFloat(ethers.utils.formatUnits(value, decimals));
 
@@ -72,7 +32,9 @@ export function insertErc20PermitTableData(
   renderDetailsFields([
     {
       name: "From",
-      value: `<a class="address" target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">${reward.owner}</a>`,
+      value: `<a class="address" target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">
+          <span data-content-start="${reward.owner.slice(0, 23)}" data-content-end="${reward.owner.slice(24, 42)}"></span>
+      </a>`,
     },
     {
       name: "Expiry",
@@ -91,8 +53,6 @@ export function insertErc20PermitTableData(
     },
   ]);
   table.setAttribute(`data-make-claim-rendered`, "true");
-  // shortens addresses if necessary
-  updateAddresses();
   return requestedAmountElement;
 }
 
@@ -151,7 +111,7 @@ function renderTokenFields(tokenAddress: string, explorerUrl: string) {
   const tokenShort = document.querySelector("#Token .short") as Element;
 
   tokenFull.innerHTML = `<div>${tokenAddress}</div>`;
-  tokenShort.innerHTML = `<div>${shortenAddress(tokenAddress)}</div>`;
+  tokenShort.innerHTML = `<div>${tokenAddress}</div>`;
 
   const tokenBoth = document.getElementById(`rewardToken`) as Element;
   tokenBoth.innerHTML = `<a target="_blank" rel="noopener noreferrer" href="${explorerUrl}/token/${tokenAddress}">${tokenBoth.innerHTML}</a>`;
@@ -159,5 +119,8 @@ function renderTokenFields(tokenAddress: string, explorerUrl: string) {
 
 function renderToFields(receiverAddress: string, explorerUrl: string) {
   const rewardRecipient = document.getElementById(`rewardRecipient`) as Element;
-  rewardRecipient.innerHTML = `<a class="address" target="_blank" rel="noopener noreferrer" href="${explorerUrl}/address/${receiverAddress}">${receiverAddress}</a>`;
+  rewardRecipient.innerHTML = `
+  <a class="address" target="_blank" rel="noopener noreferrer" href="${explorerUrl}/address/${receiverAddress}">
+    <span data-content-start="${receiverAddress.slice(0, 23)}" data-content-end="${receiverAddress.slice(24, 42)}"></span>
+  </a>`;
 }

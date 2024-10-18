@@ -326,3 +326,21 @@ table * {
 thead {
   animation: thead-fade-in 0.5s ease-in-out;
 }
+
+span::before, span::after {
+  display: inline-block;
+  max-width: 50%;
+  overflow: hidden;
+  white-space: pre;
+}
+
+span::before {
+  content: attr(data-content-start);
+  text-overflow: ellipsis;
+}
+
+span::after {
+  content: attr(data-content-end);
+  text-overflow: '';
+  direction: rtl;
+}
