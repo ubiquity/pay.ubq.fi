@@ -1,6 +1,6 @@
 import { RPCHandler, HandlerConstructorConfig, NetworkId } from "@ubiquity-dao/rpc-handler";
 
-function convertToNetworkId(network: number): NetworkId {
+export function convertToNetworkId(network: number): NetworkId {
   return String(network) as NetworkId;
 }
 
