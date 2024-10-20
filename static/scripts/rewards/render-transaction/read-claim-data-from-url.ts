@@ -36,7 +36,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useRpcHandler(app);
+    app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
   } catch (e) {
     if (e instanceof Error) {
       toaster.create("error", e.message);

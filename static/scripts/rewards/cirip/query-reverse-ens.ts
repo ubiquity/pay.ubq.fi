@@ -1,18 +1,18 @@
-import { app } from "../app-state";
-import { useRpcHandler } from "../web3/use-rpc-handler";
 import { ethers } from "ethers";
+import { useHandler } from "../web3/use-rpc-handler";
 
-const mainnetRpcUrl = "https://eth.drpc.org";
-
-export async function queryReverseEns(address: string, networkId: number) {
+export async function queryReverseEns(address: string) {
   // Try to get the ENS name from localStorage
   const cachedEnsName = localStorage.getItem(address);
-  const endpoint = app.provider?.connection.url || (await useRpcHandler(app)).connection.url;
 
-  if (!endpoint) {
-    console.error("ENS lookup failed: No endpoint found for network ID", networkId);
-    if (cachedEnsName) return cachedEnsName;
+  const handler = useHandler(1);
+  // todo fix .getFirstAvailableRpcProvider() can return wss:// in error
+  const provider = await handler.getFastestRpcProvider();
+  if (!provider) {
+    console.error("ENS lookup failed: No provider found");
+    return "";
   }
+  const endpoint = provider.connection.url;
 
   // Let's drop the old cache.
   if (cachedEnsName && !cachedEnsName.trim().startsWith("{")) {
@@ -20,7 +20,7 @@ export async function queryReverseEns(address: string, networkId: number) {
     return cachedEnsName;
   } else {
     // If the ENS name is not in localStorage, fetch it from the API
-    const web3Provider = new ethers.providers.JsonRpcProvider(mainnetRpcUrl);
+    const web3Provider = new ethers.providers.JsonRpcProvider(endpoint);
     const ensName = await web3Provider.lookupAddress(address);
 
     if (ensName === null) {

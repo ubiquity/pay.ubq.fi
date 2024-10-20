@@ -1,28 +1,28 @@
 #ubiquity-dollar-page #transaction-history {
-    margin-top: 50px;
+  margin-top: 50px;
 }
 
 #ubiquity-dollar-page .amount-input {
-    height: 20px;
-    width: 150px;
-    appearance: none;
-    margin-bottom: 15px;
-    margin-right: 5px;
-    padding: 5px;
-    border: none;
-    border-radius: 5px;
+  height: 20px;
+  width: 150px;
+  appearance: none;
+  margin-bottom: 15px;
+  margin-right: 5px;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
 }
 
 #ubiquity-dollar-page tbody {
-    position: inherit;
-    transform: none;
+  position: inherit;
+  transform: none;
 }
 
 #ubiquity-dollar-page table th {
-    padding-left: 0px;
-    padding: 12px;
+  padding-left: 0px;
+  padding: 12px;
 }
 
 #ubiquity-dollar-page table td {
-    padding: 12px;
+  padding: 12px;
 }
