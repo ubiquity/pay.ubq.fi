@@ -4,12 +4,13 @@ import { convertToNetworkId } from "./use-rpc-handler";
 
 export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   const networkIdTyped = convertToNetworkId(networkId);
+  const rpcUrls = networkId === 31337 ? ["http://localhost:8545"] : getNetworkRpcs(networkIdTyped).rpcs.map((rpc) => rpc.url);
   try {
     await provider.send("wallet_addEthereumChain", [
       {
         chainId: "0x" + networkId.toString(16),
         chainName: getNetworkName(networkIdTyped),
-        rpcUrls: getNetworkRpcs(networkIdTyped).rpcs.map((rpc) => rpc.url),
+        rpcUrls,
         blockExplorerUrls: getNetworkExplorer(networkIdTyped).map((explorer) => explorer.url),
         nativeCurrency: getNetworkCurrency(networkIdTyped),
       },
