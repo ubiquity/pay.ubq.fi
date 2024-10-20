@@ -1,6 +1,7 @@
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { Permit } from "@ubiquibot/permit-generation/types";
-import { networkExplorers } from "@ubiquity-dao/rpc-handler";
+import { getNetworkExplorer } from "@ubiquity-dao/rpc-handler";
+import { convertToNetworkId } from "./web3/use-rpc-handler";
 
 export class AppState {
   public claims: Permit[] = [];
@@ -42,11 +43,12 @@ export class AppState {
   }
 
   get currentExplorerUrl(): string {
-    if (!this.reward || !networkExplorers[this.reward.networkId]) {
+    const networkId = convertToNetworkId(this.reward.networkId);
+    if (!this.reward || !getNetworkExplorer(networkId)) {
       return "https://blockscan.com";
     }
 
-    return networkExplorers[this.reward.networkId][0].url;
+    return getNetworkExplorer(networkId)[0].url;
   }
 
   nextPermit(): Permit | null {
