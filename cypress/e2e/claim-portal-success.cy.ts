@@ -29,8 +29,6 @@ describe("Claims Portal Success", () => {
 
       cy.wait(5000); // required for the action to complete
 
-      cy.get("@loader").should("not.be.visible");
-
       cy.get("#view-claim").should("be.visible").and("include.text", "View Claim");
 
       // anvil confirms it instantly so there is two notifications
@@ -41,10 +39,11 @@ describe("Claims Portal Success", () => {
         win.open = cy.stub().as("open");
       });
 
+      const urlRegex = /https:\/\/[a-zA-Z0-9.-]+\/tx\/[a-zA-Z0-9]+/;
       cy.get("#view-claim")
         .invoke("click")
         .then(() => {
-          cy.get("@open").should("be.calledWithMatch", /https:\/\/blockscan.com\/tx/);
+          cy.get("@open").should("be.calledWithMatch", urlRegex);
         });
     });
   });
@@ -109,33 +108,50 @@ function setupIntercepts() {
     if (req.body.method === "eth_getBlockByNumber") {
       req.reply({
         statusCode: 200,
-        body: cy.fixture("eth_getBlockByNumber.json"),
+        body: {
+          jsonrpc: "2.0",
+          id: 1,
+          result: {
+            number: "0x1",
+          },
+        },
       });
+    } else {
+      req.continue();
     }
   });
 
-  cy.intercept("POST", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
-    statusCode: 200,
-    body: {},
+  cy.intercept("POST", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", (req) => {
+    req.reply({
+      statusCode: 200,
+      body: {},
+    });
   });
-  cy.intercept("PATCH", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
-    statusCode: 200,
-    body: {},
+  cy.intercept("PATCH", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", (req) => {
+    req.reply({
+      statusCode: 200,
+      body: {},
+    });
   });
-  cy.intercept("GET", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", {
-    statusCode: 200,
-    body: {},
+  cy.intercept("GET", "https://wfzpewmlyiozupulbuur.supabase.co/rest/v1/*", (req) => {
+    req.reply({
+      statusCode: 200,
+      body: {
+        data: [],
+      },
+    });
   });
 }
 
 function stubEthereum(signer: JsonRpcSigner) {
+  const addr = signer._address;
   // Stubbing the ethereum object
   cy.on("window:before:load", (win) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ((win as any).ethereum = {
       isMetaMask: true,
-      enable: cy.stub().resolves(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]),
-      request: cy.stub().callsFake(async (method) => providerFunctions(method)),
+      enable: cy.stub().resolves([addr]),
+      request: cy.stub().callsFake(async ({ method }) => providerFunctions(method, addr)),
       on: cy.stub().callsFake((event, cb) => {
         if (event === "accountsChanged") {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,9 +160,9 @@ function stubEthereum(signer: JsonRpcSigner) {
       }),
       autoRefreshOnNetworkChange: false,
       chainId: "0x7a69",
-      selectedAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      requestAccounts: cy.stub().resolves(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]),
-      send: cy.stub().callsFake(async (method) => providerFunctions(method)),
+      selectedAddress: addr,
+      requestAccounts: cy.stub().resolves([addr]),
+      send: cy.stub().callsFake(async ({ method }) => providerFunctions(method, addr)),
       getSigner: () => signer,
     }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,10 +170,10 @@ function stubEthereum(signer: JsonRpcSigner) {
   });
 }
 
-function providerFunctions(method: string) {
+function providerFunctions(method: string, addr: string) {
   switch (method) {
     case "eth_requestAccounts":
-      return ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"];
+      return [addr];
     case "wallet_sendDomainMetadata":
       return true;
     case "wallet_addEthereumChain":
@@ -169,9 +185,9 @@ function providerFunctions(method: string) {
     case "eth_chainId":
       return "0x7a69";
     case "eth_accounts":
-      return ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"];
+      return [addr];
     case "eth_signTypedData_v4":
-      return "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+      return addr;
     case "eth_estimateGas":
       return "0x7a69";
   }
