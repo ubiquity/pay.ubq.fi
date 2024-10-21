@@ -3,7 +3,7 @@ import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { getNetworkExplorer, networkExplorers, permit2Address } from "@ubiquity-dao/rpc-handler";
+import { getNetworkExplorer, permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { toaster, errorToast, MetaMaskError } from "../toaster";
@@ -331,7 +331,6 @@ async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean>
 
   if (error !== null) {
     console.error(error);
-    throw error;
   }
 
   return true;

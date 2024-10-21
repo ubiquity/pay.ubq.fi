@@ -22,7 +22,7 @@ export function useHandler(networkId: number) {
       logTier: "error",
       retryCount: 3,
       retryDelay: 50,
-      strictLogs: true,
+      strictLogs: true, // Set to false to see all log tiers
     },
   };
 
