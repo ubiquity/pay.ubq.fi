@@ -51,7 +51,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           build: yarn run build
-          start: yarn test
+          start: yarn start
 
         env:
           SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
