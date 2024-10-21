@@ -25,7 +25,7 @@ export async function queryReverseEns(address: string) {
 
     if (ensName === null) {
       console.error("ENS lookup failed: API request failed");
-      return "";
+      return null;
     }
 
     // Store the ENS name in localStorage for future use
