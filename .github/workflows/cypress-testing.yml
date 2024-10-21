@@ -38,6 +38,9 @@ jobs:
             sleep 1
           done || exit 1
 
+      - name: Funding
+        run: yarn test:fund
+
       - name: Start Cloudflare Wrangler
         run: npx wrangler pages dev static --port 8080 --binding USE_RELOADLY_SANDBOX=true RELOADLY_API_CLIENT_ID="$RELOADLY_SANDBOX_API_CLIENT_ID" RELOADLY_API_CLIENT_SECRET="$RELOADLY_SANDBOX_API_CLIENT_SECRET" &
         env:
@@ -48,7 +51,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           build: yarn run build
-          start: yarn test:fund
+          start: yarn test
 
         env:
           SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
