@@ -16,8 +16,16 @@ const permitConfig = {
   FRONTEND_URL: "http://localhost:8080",
 };
 
+async function createPermitUrl(config: PermitConfig) {
+  const permit = await generateErc20Permit(config);
+  cy.wrap(permit).as("permitUrl");
+  return permit;
+}
+
 describe("Gift Cards", () => {
-  beforeEach(() => {
+  let permitUrl: string;
+
+  beforeEach(async () => {
     cy.clearAllCookies();
     cy.clearAllLocalStorage();
     cy.clearAllSessionStorage();
@@ -26,8 +34,9 @@ describe("Gift Cards", () => {
   });
 
   it("should show redeem info", async () => {
-    const permitUrl = await generateErc20Permit(permitConfig);
-    cy.visit(`/${permitUrl.split("?")[1]}`);
+    permitUrl = await createPermitUrl(permitConfig);
+    expect(permitUrl).to.be.a("string");
+    cy.visit(`/?${permitUrl.split("?")[1]}`);
 
     cy.wait("@getBestCard");
     cy.wait(2000);
@@ -39,10 +48,12 @@ describe("Gift Cards", () => {
   });
 
   it("should claim a gift card", async () => {
-    const customPermitConfig = { ...permitConfig, AMOUNT_IN_ETH: "30.0" };
+    const testPermitConfig = { ...permitConfig, AMOUNT_IN_ETH: "30.0" };
+    permitUrl = await createPermitUrl(testPermitConfig);
+    expect(permitUrl).to.be.a("string");
 
-    const permitUrl = await generateErc20Permit(customPermitConfig);
-    cy.visit(`/${permitUrl.split("?")[1]}`);
+    cy.wrap(permitUrl).as("permitUrl");
+    cy.visit(`/?${permitUrl.split("?")[1]}`);
     cy.wait(2000);
 
     cy.wait("@getBestCard");
@@ -75,10 +86,12 @@ describe("Gift Cards", () => {
   });
 
   it("should reveal a redeem code after claim", () => {
-    cy.visit(
-      "/?claim=W3sidHlwZSI6ImVyYzIwLXBlcm1pdCIsInBlcm1pdCI6eyJwZXJtaXR0ZWQiOnsidG9rZW4iOiIweGU5MUQxNTNFMGI0MTUxOEEyQ2U4RGQzRDc5NDRGYTg2MzQ2M2E5N2QiLCJhbW91bnQiOiIzMDAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjczMDU2NzU0MjU1ODU4ODMxMzQ0NTMzNDgxMDc0Njg5NTE1ODEyNzIzNDE5NTkwNjMwOTY2MTUwOTIxNzk3ODEzMzExMDE4NjgyMDMzIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhmMzlGZDZlNTFhYWQ4OEY2RjRjZTZhQjg4MjcyNzljZmZGYjkyMjY2IiwicmVxdWVzdGVkQW1vdW50IjoiMzAwMDAwMDAwMDAwMDAwMDAwMDAifSwib3duZXIiOiIweDcwOTk3OTcwQzUxODEyZGMzQTAxMEM3ZDAxYjUwZTBkMTdkYzc5QzgiLCJzaWduYXR1cmUiOiIweDdkYWYxMTNhNTA0ZjYxYzk5MDg0ZGM2ZGFlZTZkZDFkZjhhM2I4YjM5ZTU0N2VkYWIxMjNhNzQxNjBhNWVhNDYwZDgyODdmYWM1MDlhYTc5M2ZhNjc5M2RlOTg5YmVhOTg4Y2M3NDAyNGE5ZmQyNjAyMjY2YTQzZjg1MDlhYTJkMWIiLCJuZXR3b3JrSWQiOjMxMzM3fSx7InR5cGUiOiJlcmMyMC1wZXJtaXQiLCJwZXJtaXQiOnsicGVybWl0dGVkIjp7InRva2VuIjoiMHhlOTFEMTUzRTBiNDE1MThBMkNlOERkM0Q3OTQ0RmE4NjM0NjNhOTdkIiwiYW1vdW50IjoiOTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJub25jZSI6IjYyOTc2MjY4MDU3NjQ1MTA0ODc3MTI4NDU3MTU1NDgwNTU5NzU1OTQwMjA4MzExMDQ3Mjc1Njc2NjAyNDI3NzQwODY1NzE0MDkxMzAwIiwiZGVhZGxpbmUiOiIxMTU3OTIwODkyMzczMTYxOTU0MjM1NzA5ODUwMDg2ODc5MDc4NTMyNjk5ODQ2NjU2NDA1NjQwMzk0NTc1ODQwMDc5MTMxMjk2Mzk5MzUifSwidHJhbnNmZXJEZXRhaWxzIjp7InRvIjoiMHhmMzlGZDZlNTFhYWQ4OEY2RjRjZTZhQjg4MjcyNzljZmZGYjkyMjY2IiwicmVxdWVzdGVkQW1vdW50IjoiOTAwMDAwMDAwMDAwMDAwMDAwMCJ9LCJvd25lciI6IjB4NzA5OTc5NzBDNTE4MTJkYzNBMDEwQzdkMDFiNTBlMGQxN2RjNzlDOCIsInNpZ25hdHVyZSI6IjB4N2RhZjExM2E1MDRmNjFjOTkwODRkYzZkYWVlNmRkMWRmOGEzYjhiMzllNTQ3ZWRhYjEyM2E3NDE2MGE1ZWE0NjBkODI4N2ZhYzUwOWFhNzkzZmE2NzkzZGU5ODliZWE5ODhjYzc0MDI0YTlmZDI2MDIyNjZhNDNmODUwOWFhMmQxYiIsIm5ldHdvcmtJZCI6MzEzMzd9XQ=="
-    );
-    cy.wait("@getBestCard");
+    expect(permitUrl).to.be.a("string");
+    cy.get("@permitUrl").then((url: JQuery<HTMLElement>) => {
+      cy.visit(`/?${url.text().split("?")[1]}`);
+      cy.wait(2000);
+      cy.wait("@getBestCard");
+    });
 
     cy.get("#gift-cards").should("exist").and("include.text", "Your virtual card");
     cy.get("#redeem-code > h3").eq(0).should("have.text", "Redeem code");
