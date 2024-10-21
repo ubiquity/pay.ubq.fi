@@ -5,7 +5,7 @@ import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 class Anvil {
   rpcs: string[] = [];
   rpcHandler: RPCHandler | null = null;
-  networkIdToFork = 137;
+  networkIdToFork = 100;
   networkIdForAnvilToForkAs = 31337;
 
   async init() {
