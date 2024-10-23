@@ -41,7 +41,7 @@ export async function renderTransaction(): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.reward.beneficiary, networkId: app.networkId }).catch(console.error);
+    renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
 
     if (app.claimTxs[app.reward.nonce.toString()] !== undefined) {
       buttonController.showViewClaim();
@@ -63,7 +63,7 @@ export async function renderTransaction(): Promise<Success> {
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;
-    renderEnsName({ element: toElement, address: app.reward.beneficiary, networkId: app.networkId }).catch(console.error);
+    renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
 
     getMakeClaimButton().addEventListener("click", claimErc721PermitHandler(app.reward));
   }

@@ -3,11 +3,12 @@ import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { permit2Address } from "@ubiquity-dao/rpc-handler";
+import { getNetworkExplorer, permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { convertToNetworkId } from "./use-rpc-handler";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -97,12 +98,21 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
   }
 }
 
-export async function waitForTransaction(tx: TransactionResponse, successMessage: string) {
+export async function waitForTransaction(tx: TransactionResponse, successMessage: string, networkId: number) {
   try {
     const receipt = await tx.wait();
-    viewClaimButton.onclick = () => {
-      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
-    };
+    const networkExplorers = getNetworkExplorer(convertToNetworkId(networkId));
+
+    if (networkExplorers.length === 0) {
+      viewClaimButton.onclick = () => {
+        window.open(`https://blockscan/com/tx/${receipt.transactionHash}`, "_blank");
+      };
+      toaster.create("info", "We had to use a fallback block explorer which may take longer to populate your transaction.");
+    } else {
+      viewClaimButton.onclick = () => {
+        window.open(`${networkExplorers[0].url}/tx/${receipt.transactionHash}`, "_blank");
+      };
+    }
 
     toaster.create("success", successMessage);
     buttonController.showViewClaim();
@@ -143,7 +153,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const tx = await transferFromPermit(permit2Contract, app.reward);
     if (!tx) return;
 
-    const receipt = await waitForTransaction(tx, `Claim Complete.`);
+    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
@@ -321,7 +331,6 @@ async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean>
 
   if (error !== null) {
     console.error(error);
-    throw error;
   }
 
   return true;

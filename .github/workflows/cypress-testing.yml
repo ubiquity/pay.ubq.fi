@@ -38,19 +38,18 @@ jobs:
             sleep 1
           done || exit 1
 
-      - name: Start Cloudflare Wrangler
-        run: npx wrangler pages dev static --port 8080 --binding USE_RELOADLY_SANDBOX=true RELOADLY_API_CLIENT_ID="$RELOADLY_SANDBOX_API_CLIENT_ID" RELOADLY_API_CLIENT_SECRET="$RELOADLY_SANDBOX_API_CLIENT_SECRET" &
-        env:
-          RELOADLY_SANDBOX_API_CLIENT_ID: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_ID }}
-          RELOADLY_SANDBOX_API_CLIENT_SECRET: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_SECRET }}
+      - name: Funding
+        run: yarn test:fund
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
           build: yarn run build
-          start: yarn test:fund
+          start: npx wrangler pages dev static --port 8080 --binding USE_RELOADLY_SANDBOX=true RELOADLY_API_CLIENT_ID="$RELOADLY_SANDBOX_API_CLIENT_ID" RELOADLY_API_CLIENT_SECRET="$RELOADLY_SANDBOX_API_CLIENT_SECRET" &
 
         env:
+          RELOADLY_SANDBOX_API_CLIENT_ID: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_ID }}
+          RELOADLY_SANDBOX_API_CLIENT_SECRET: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_SECRET }}
           SUPABASE_URL: "https://wfzpewmlyiozupulbuur.supabase.co"
           SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmenBld21seWlvenVwdWxidXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU2NzQzMzksImV4cCI6MjAxMTI1MDMzOX0.SKIL3Q0NOBaMehH0ekFspwgcu3afp3Dl9EDzPqs1nKs"
           AMOUNT_IN_ETH: "0.1"
@@ -67,10 +66,4 @@ jobs:
         with:
           name: cypress-screenshots
           path: cypress/screenshots
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: cypress-videos
-          path: cypress/videos
           if-no-files-found: ignore

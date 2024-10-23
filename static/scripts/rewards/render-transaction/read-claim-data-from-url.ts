@@ -36,7 +36,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useRpcHandler(app);
+    app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
   } catch (e) {
     if (e instanceof Error) {
       toaster.create("error", e.message);
@@ -59,20 +59,22 @@ export async function readClaimDataFromUrl(app: AppState) {
   await renderTransaction();
 }
 
-async function updateButtonVisibility(app: AppState) {
+export async function updateButtonVisibility(app: AppState) {
   try {
     const currentNetworkId = parseInt(await window.ethereum.request({ method: "eth_chainId" }), 16);
 
-    if (currentNetworkId !== app.networkId) {
-      console.warn(`Incorrect network. Expected ${app.networkId}, but got ${currentNetworkId}.`);
+    const appId = app.networkId ?? app.reward.networkId;
+
+    if (currentNetworkId !== appId) {
+      console.warn(`Incorrect network. Expected ${appId}, but got ${currentNetworkId}.`);
       buttonController.hideAll(); // Hide all buttons if the network is incorrect
       toaster.create("error", `This dApp currently does not support payouts for network ID ${currentNetworkId}`);
 
       // Try switching to the proper network id
-      switchNetwork(new ethers.providers.Web3Provider(window.ethereum), app.reward.networkId).catch((error) => {
+      switchNetwork(new ethers.providers.Web3Provider(window.ethereum), appId).catch((error) => {
         console.error(error);
         if (app.networkId !== null) {
-          toaster.create("error", `Please switch to the ${getNetworkName(String(app.networkId) as NetworkId)} network to claim this reward.`);
+          toaster.create("error", `Please switch to the ${getNetworkName(String(appId) as NetworkId)} network to claim this reward.`);
         }
       });
 

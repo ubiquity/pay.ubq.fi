@@ -11,6 +11,7 @@ commit.txt
 .pnp.cjs
 .pnp.loader.mjs
 .env
+.dev.vars
 static/dist
 static/bundles
 

@@ -70,7 +70,7 @@ export async function generateErc20Permit(permitConfig: PermitConfig) {
   const signature = await signTypedData(myWallet, permitTransferFromData, permitConfig);
 
   const permitTransferFromData2 = await createPermitTransferFromData({ ...permitConfig, AMOUNT_IN_ETH: "9" });
-  const sig = await signTypedData(myWallet, permitTransferFromData, permitConfig);
+  const sig = await signTypedData(myWallet, permitTransferFromData2, permitConfig);
 
   const txData = [createTxData(myWallet, permitTransferFromData, signature, permitConfig), createTxData(myWallet, permitTransferFromData2, sig, permitConfig)];
 
@@ -79,10 +79,28 @@ export async function generateErc20Permit(permitConfig: PermitConfig) {
   return `${permitConfig.FRONTEND_URL}?claim=${base64encodedTxData}`;
 }
 
+export async function generateMultipleErc20Permits(permitConfig: PermitConfig, count: number = 3) {
+  const { myWallet } = createProviderAndWallet(permitConfig);
+  const txDataArray = [];
+
+  console.log("Generating multiple ERC20 permits...");
+
+  for (let i = 0; i < count; i++) {
+    const permitTransferFromData = await createPermitTransferFromData(permitConfig);
+    const signature = await signTypedData(myWallet, permitTransferFromData, permitConfig);
+    const txData = createTxData(myWallet, permitTransferFromData, signature, permitConfig);
+    txDataArray.push(txData);
+  }
+
+  const base64encodedTxData = Buffer.from(JSON.stringify(txDataArray)).toString("base64");
+
+  return `${permitConfig.FRONTEND_URL}?claim=${base64encodedTxData}`;
+}
+
 export async function logErc20Permit(permitConfig: PermitConfig) {
-  const erc20Permit = await generateErc20Permit(permitConfig);
+  const erc20Permits = await generateMultipleErc20Permits(permitConfig);
   log.ok("ERC20 Local URL:");
-  log.info(erc20Permit);
+  log.info(erc20Permits);
 }
 
 /* eslint-disable @typescript-eslint/no-namespace */
