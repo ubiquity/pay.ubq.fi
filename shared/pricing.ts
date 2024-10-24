@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish } from "ethers";
-import { formatEther, parseEther } from "ethers/lib/utils";
+import { formatEther, parseEther } from "@ethersproject/units";
 import { PriceToValueMap, GiftCard } from "./types";
 
 /**

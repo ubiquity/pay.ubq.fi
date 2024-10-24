@@ -1,7 +1,7 @@
-import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
-import { JsonRpcProvider } from "@ethersproject/providers/lib/json-rpc-provider";
+import { JsonRpcProvider, TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
+
 import { BigNumber } from "ethers";
-import { Interface, TransactionDescription } from "ethers/lib/utils";
+import { Interface, TransactionDescription } from "@ethersproject/abi";
 import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
 import { getFastestRpcUrl, getGiftCardOrderId } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
