@@ -2,6 +2,7 @@
   "include": [
     "functions",
     "build",
+    "tests",
     "scripts/typescript",
     "globals.d.ts",
     "cypress/**/*.ts",
