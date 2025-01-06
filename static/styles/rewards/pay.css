@@ -141,7 +141,8 @@ main div.receipt-container {
 
 footer {
   width: 100%;
-  position: relative;
+  position: fixed;
+  bottom: 0;
 }
 
 #carousel {
