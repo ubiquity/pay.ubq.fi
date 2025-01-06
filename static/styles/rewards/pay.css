@@ -49,6 +49,12 @@ a {
   text-decoration: none;
 }
 
+header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
 #logo a {
   display: block;
   border: 1px solid transparent;
