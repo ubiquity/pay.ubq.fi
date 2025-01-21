@@ -7,13 +7,15 @@ plugins:
           startRequiresWallet: true # default is true
           requiredLabelsToStart:
             - name: "Priority: 1 (Normal)"
+              role: ['collaborator', 'contributor']
             - name: "Priority: 2 (Medium)"
+              role: ['collaborator', 'contributor']            
             - name: "Priority: 3 (High)"
-              role: ['collaborator', 'admin']
+              role: ['collaborator']
             - name: "Priority: 4 (Urgent)"
-              role: ['collaborator', 'admin']
+              role: ['collaborator']
             - name: "Priority: 5 (Emergency)"
-              role: ['collaborator', 'admin']
+              role: ['collaborator']
   - uses:
       - plugin: https://ubiquity-os-command-wallet-main.ubiquity.workers.dev
         with:
