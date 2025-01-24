@@ -88,7 +88,7 @@ plugins:
           logLevel: debug
           evmNetworkId: 100
           evmPrivateEncrypted: bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw
-          erc20RewardToken: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+          erc20RewardToken: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
           incentives:
             contentEvaluator:
               enabled: true
