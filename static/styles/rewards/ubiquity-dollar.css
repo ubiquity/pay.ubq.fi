@@ -13,16 +13,16 @@
   border-radius: 5px;
 }
 
-#ubiquity-dollar-page tbody {
+#ubiquity-dollar-page .body {
   position: inherit;
   transform: none;
 }
 
-#ubiquity-dollar-page table th {
+#ubiquity-dollar-page .receipt .cell {
   padding-left: 0px;
   padding: 12px;
 }
 
-#ubiquity-dollar-page table td {
+#ubiquity-dollar-page .receipt .cell {
   padding: 12px;
 }

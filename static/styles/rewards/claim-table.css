@@ -17,23 +17,23 @@ main > div {
   justify-content: center;
   align-items: center;
 }
-table {
+.receipt {
   border-collapse: collapse;
 }
-table a:hover,
-table a:hover > div {
+.receipt a:hover,
+.receipt a:hover > div {
   color: #fff;
 }
-table #controls {
+.receipt #controls {
   display: none;
   color: #fff;
   width: 100%;
 }
-table #controls > button {
+.receipt #controls > button {
   flex: 1;
   padding: 0 24px;
 }
-table aside {
+.receipt aside {
   text-transform: uppercase;
   font-weight: 100;
   letter-spacing: 2px;
@@ -44,7 +44,7 @@ table aside {
   text-align: center;
   padding: 16px;
 }
-table button {
+.receipt button {
   user-select: none;
   appearance: none;
   border: none;
@@ -54,13 +54,13 @@ table button {
   height: 48px;
   color: currentColor;
 }
-table button div {
+.receipt button div {
   text-transform: uppercase;
   word-break: break-all;
   text-rendering: geometricPrecision;
   color: #fff;
 }
-table hr {
+.receipt hr {
   background-color: #80808040;
   height: 1px;
   border: none;
@@ -68,119 +68,119 @@ table hr {
 svg path {
   fill: currentColor;
 }
-table td div {
+.receipt .cell div {
   word-break: break-all;
 }
-table th div {
+.receipt .cell div {
   text-align: right;
   color: #80808080;
 }
-table td,
-table th {
+.receipt .cell,
+.receipt .cell {
   padding: 8px;
   text-rendering: geometricPrecision;
   line-height: 1.25;
   color: grey;
 }
-table td div {
+.receipt .cell div {
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-table td div svg ~ div {
+.receipt .cell div svg ~ div {
   width: unset;
 }
-table tr:first-of-type > * {
+.receipt .row:first-of-type > * {
   padding-top: 24px;
 }
-table tr:last-child td div > div {
+.receipt .row:last-child .cell div > div {
   width: 50%;
   display: inline-block;
   vertical-align: middle;
 }
-table tr:last-of-type > * {
+.receipt .row:last-of-type > * {
   padding-bottom: 24px;
 }
-table tr#additional-details-border > * {
+.receipt .row#additional-details-border > * {
   padding: 0;
   margin: 0;
 }
-table[data-make-claim-rendered] #controls {
+.receipt[data-make-claim-rendered] #controls {
   display: inline-flex;
 }
-table[data-make-claim-rendered] button {
+.receipt[data-make-claim-rendered] button {
   opacity: 0.5;
 }
-table[data-make-claim-rendered] button.hide {
+.receipt[data-make-claim-rendered] button.hide {
   display: none !important;
 }
-table[data-make-claim-rendered] button:disabled {
+.receipt[data-make-claim-rendered] button:disabled {
   opacity: 0.5;
   pointer-events: none;
 }
-table[data-make-claim-rendered] button:hover {
+.receipt[data-make-claim-rendered] button:hover {
   background-color: #80808020;
   opacity: 1;
 }
-table[data-make-claim-rendered] button > div {
+.receipt[data-make-claim-rendered] button > div {
   display: none;
 }
-table[data-make-claim-rendered] button:disabled > svg#claim-icon {
+.receipt[data-make-claim-rendered] button:disabled > svg#claim-icon {
   display: none;
 }
-table[data-make-claim-rendered] button:hover > div {
+.receipt[data-make-claim-rendered] button:hover > div {
   display: unset;
   color: #fff;
 }
-table[data-make-claim-rendered] button:hover > svg {
+.receipt[data-make-claim-rendered] button:hover > svg {
   display: none !important;
 }
 .show {
   display: block;
 }
-table[data-make-claim-rendered] button.hide > svg#claim-loader {
+.receipt[data-make-claim-rendered] button.hide > svg#claim-loader {
   display: none;
 }
-table[data-make-claim-rendered] button.show > svg#claim-icon {
+.receipt[data-make-claim-rendered] button.show > svg#claim-icon {
   display: unset;
 }
-table[data-make-claim-rendered] button.show > svg#claim-loader {
+.receipt[data-make-claim-rendered] button.show > svg#claim-loader {
   display: unset;
 }
-table[data-make-claim-rendered] button.hide > svg#claim-icon {
+.receipt[data-make-claim-rendered] button.hide > svg#claim-icon {
   display: unset;
 }
-table #controls {
+.receipt #controls {
   opacity: 0;
   transition: 1s ease-in-out opacity;
   pointer-events: none;
 }
-table[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
+.receipt[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
   opacity: 1;
   pointer-events: unset;
 }
-table[data-make-claim-rendered] button#additionalDetails {
+.receipt[data-make-claim-rendered] button#additionalDetails {
   width: 100%;
   color: #fff;
 }
-table[data-make-claim-rendered] tr#additional-details-border + tr > * {
+.receipt[data-make-claim-rendered] .row#additional-details-border + .row > * {
   padding-top: 24px;
 }
-table #additionalDetailsTable {
+.receipt #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -90px);
 }
-table[data-additional-data-size="large"] #additionalDetailsTable {
+.receipt[data-additional-data-size="large"] #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -175px);
 }
-table[data-details-visible="true"] #additionalDetailsTable {
+.receipt[data-details-visible="true"] #additionalDetailsTable {
   opacity: 1;
   pointer-events: all;
 }
-table[data-contract-loaded] #Token {
+.receipt[data-contract-loaded] #Token {
   display: none;
 }
 #rewardAmount a {
@@ -191,33 +191,33 @@ table[data-contract-loaded] #Token {
 #rewardsCount {
   color: #fff;
 }
-table[data-details-visible="false"] #rewardToken .full,
-table[data-details-visible="true"] #rewardToken .short {
+.receipt[data-details-visible="false"] #rewardToken .full,
+.receipt[data-details-visible="true"] #rewardToken .short {
   display: none;
 }
-table[data-details-visible="false"] #rewardToken .short,
-table[data-details-visible="true"] #rewardToken .full {
+.receipt[data-details-visible="false"] #rewardToken .short,
+.receipt[data-details-visible="true"] #rewardToken .full {
   display: initial;
 }
-table[data-details-visible="false"] #rewardRecipient .full,
-table[data-details-visible="true"] #rewardRecipient .short {
+.receipt[data-details-visible="false"] #rewardRecipient .full,
+.receipt[data-details-visible="true"] #rewardRecipient .short {
   display: none;
 }
-table[data-details-visible="false"] #rewardRecipient .short,
-table[data-details-visible="true"] #rewardRecipient .full {
+.receipt[data-details-visible="false"] #rewardRecipient .short,
+.receipt[data-details-visible="true"] #rewardRecipient .full {
   display: initial;
 }
-#To > td,
-#To > th {
+#To > .cell,
+#To > .cell {
   padding-bottom: 24px;
 }
-table[data-make-claim="ok"] thead {
+.receipt[data-make-claim="ok"] .head {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -50%);
   /* filter: blur(4px); */
 }
-table[data-make-claim="error"] tbody {
+.receipt[data-make-claim="error"] .body {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -232,26 +232,26 @@ table[data-make-claim="error"] tbody {
 #rewardRecipient div {
   color: #fff;
 }
-table[data-details-visible="true"] #additionalDetails svg.opener {
+.receipt[data-details-visible="true"] #additionalDetails svg.opener {
   display: none;
 }
-table[data-details-visible="false"] #additionalDetails svg.opener {
+.receipt[data-details-visible="false"] #additionalDetails svg.opener {
   display: unset;
 }
-table[data-details-visible="true"] #additionalDetails svg.closer {
+.receipt[data-details-visible="true"] #additionalDetails svg.closer {
   display: unset;
 }
-table[data-details-visible="false"] #additionalDetails svg.closer {
+.receipt[data-details-visible="false"] #additionalDetails svg.closer {
   display: none;
 }
-td#owner > a {
+.cell#owner > a {
   word-break: break-all;
 }
-table td {
+.receipt .cell {
   padding-right: 32px;
   width: 100%;
 }
-table th {
+.receipt .cell {
   padding-left: 32px;
 }
 [data-loader="false"] #claim-loader {
@@ -312,8 +312,8 @@ table th {
 #claim-loader > svg {
   animation: rotate 1s linear infinite;
 }
-tbody,
-thead {
+.body,
+.head {
   background-color: var(--background-color-default);
   position: absolute;
   box-shadow: inset 0 0 96px #00bfff10;
@@ -325,11 +325,11 @@ thead {
   overflow: hidden;
   /* box-shadow: 0 12px 64px #00000010; */
 }
-table * {
+.receipt * {
   text-wrap: nowrap;
 }
 
-@keyframes thead-fade-in {
+@keyframes head-fade-in {
   0% {
     opacity: 0;
   }
@@ -338,6 +338,6 @@ table * {
   }
 }
 
-thead {
-  animation: thead-fade-in 0.5s ease-in-out;
+.head {
+  animation: head-fade-in 0.5s ease-in-out;
 }

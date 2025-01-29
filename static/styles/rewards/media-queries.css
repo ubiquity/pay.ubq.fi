@@ -1,5 +1,5 @@
 @media screen and (max-width: 640px) {
-  table {
+  .receipt {
     border-left-width: 0;
     border-right-width: 0;
   }

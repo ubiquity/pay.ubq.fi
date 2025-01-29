@@ -50,44 +50,36 @@
         </a>
       </header>
       <div class="receipt-container">
-        <table class="receipt" data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
-          <thead>
-            <tr>
-              <th>
-                <div>Notice</div>
-              </th>
-              <td>
+        <div class="receipt" data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
+          <div class="head">
+            <div class="row">
+              <div class="cell head">Notice</div>
+              <div class="cell">
                 <div class="loading-message">Loading</div>
-              </td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr id="Amount">
-              <th>
-                <div>Amount</div>
-              </th>
-              <td id="rewardAmount">
+              </div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="row" id="Amount">
+              <div class="cell head">Amount</div>
+              <div class="cell" id="rewardAmount">
                 <div class="loading-message">Loading</div>
-              </td>
-            </tr>
-            <tr id="Token">
-              <th>
-                <div>Token</div>
-              </th>
-              <td id="rewardToken">
+              </div>
+            </div>
+            <div class="row" id="Token">
+              <div class="cell head">Token</div>
+              <div class="cell" id="rewardToken">
                 <span class="full">
                   <div></div>
                 </span>
                 <span class="short">
                   <div class="loading-message">Loading</div>
                 </span>
-              </td>
-            </tr>
-            <tr id="To">
-              <th>
-                <div>For</div>
-              </th>
-              <td id="rewardRecipient">
+              </div>
+            </div>
+            <div class="row" id="To">
+              <div class="cell head">For</div>
+              <div class="cell" id="rewardRecipient">
                 <span class="full">
                   <div></div>
                 </span>
@@ -97,10 +89,10 @@
                 <span class="ens">
                   <div></div>
                 </span>
-              </td>
-            </tr>
-            <tr id="additional-details-border">
-              <th>
+              </div>
+            </div>
+            <div class="row" id="additional-details-border">
+              <div class="cell head">
                 <div>
                   <button id="additionalDetails">
                     <div>Details</div>
@@ -116,8 +108,8 @@
                     </svg>
                   </button>
                 </div>
-              </th>
-              <td>
+              </div>
+              <div class="cell">
                 <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false" data-collect-gift-card="false">
                   <button id="claim-loader">
                     <svg
@@ -170,11 +162,11 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-          <tbody id="additionalDetailsTable"></tbody>
-        </table>
+              </div>
+            </div>
+          </div>
+          <div class="body" id="additionalDetailsTable"></div>
+        </div>
       </div>
       <figure id="carousel">
         <div id="prevTx"></div>
