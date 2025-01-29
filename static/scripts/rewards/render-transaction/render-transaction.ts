@@ -1,6 +1,6 @@
 import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
 import { app } from "../app-state";
-import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
+import { buttonController, getClaimCardButton, getMakeClaimButton, openCardContainer, toggleCardContainer, viewClaimButton } from "../button-controller";
 import { claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
@@ -48,6 +48,7 @@ export async function renderTransaction(): Promise<Success> {
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`));
     } else if (window.ethereum) {
       getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));
+      getClaimCardButton().addEventListener("click", openCardContainer);
     }
 
     table.setAttribute(`data-make-claim`, "ok");

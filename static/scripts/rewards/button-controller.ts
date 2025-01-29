@@ -1,3 +1,5 @@
+import { handleDrag } from "./render-transaction/card-container-drag";
+
 const LOADER = "data-loader";
 const MAKE_CLAIM = "data-make-claim";
 const VIEW_CLAIM = "data-view-claim";
@@ -94,5 +96,27 @@ const controls = document.getElementById("controls") as HTMLDivElement;
 export function getMakeClaimButton() {
   return document.getElementById("make-claim") as HTMLButtonElement;
 }
+export function getClaimCardButton() {
+  return document.getElementById("test-claim2") as HTMLButtonElement;
+}
+export function getCardContainer() {
+  return document.getElementById("card-container") as HTMLDivElement;
+}
+
+export function openCardContainer() {
+  cardContainer.style.transform = "translateY(0)";
+  cardContainer.classList.add("visible");
+}
+
+const claimCardButton = getClaimCardButton();
+if (claimCardButton) {
+  claimCardButton.addEventListener("click", openCardContainer);
+}
+
+const cardContainer = document.getElementById("card-container") as HTMLDivElement;
+const dragHandle = cardContainer.querySelector(".drag-handle") as HTMLDivElement;
+
+handleDrag(cardContainer, dragHandle);
+
 export const viewClaimButton = document.getElementById("view-claim") as HTMLButtonElement;
 export const buttonController = new ButtonController(controls);
