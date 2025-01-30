@@ -142,7 +142,7 @@ svg path {
   pointer-events: none;
 }
 .receipt[data-make-claim="error"] {
-  background: linear-gradient(45deg, var(--background-color-light) 40%, var(--shimmer-color) 50%, var(--background-color-light) 60%);  
+  background: linear-gradient(45deg, var(--background-color-default) 40%, var(--background-color-light) 50%, var(--background-color-default) 60%);  
   display: inline-block;
   animation: shimmer 1s infinite linear;
   background-size: 300%;
@@ -360,12 +360,16 @@ svg path {
 }
 
 .head {
-  width: 25%;
-  min-width: 25%;
-  justify-content: center;
+  min-width: 120px;
+  width: 120px;
+  justify-content: right;
+  margin-right: 8px;
 }
 
 .body {
   transition: 1s ease-in-out opacity;
   height: 125px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
