@@ -68,7 +68,7 @@ svg path {
   line-height: 1.25;
   color: grey;
 }
-.receipt .cell div {
+a, .cell, div {
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -201,20 +201,12 @@ svg path {
 #rewardsCount {
   color: #fff;
 }
-.receipt[data-details-visible="false"] #rewardToken .full,
-.receipt[data-details-visible="true"] #rewardToken .short {
+.receipt #rewardToken .short,
+.receipt #rewardRecipient .short {
   display: none;
 }
-.receipt[data-details-visible="false"] #rewardToken .short,
-.receipt[data-details-visible="true"] #rewardToken .full {
-  display: initial;
-}
-.receipt[data-details-visible="false"] #rewardRecipient .full,
-.receipt[data-details-visible="true"] #rewardRecipient .short {
-  display: none;
-}
-.receipt[data-details-visible="false"] #rewardRecipient .short,
-.receipt[data-details-visible="true"] #rewardRecipient .full {
+.receipt #rewardToken .full,
+.receipt #rewardRecipient .full {
   display: initial;
 }
 #To > .cell,
@@ -352,16 +344,19 @@ svg path {
 
 .cell {
   animation: head-fade-in 0.5s ease-in-out;
-  width: 75%;
   display: flex;
   flex-direction: row;
   justify-content: left;
   align-items: center;
 }
 
+.full > div, .ens > div {
+  padding-right: 24px;
+}
+
 .head {
-  min-width: 120px;
-  width: 120px;
+  min-width: 110px;
+  width: 110px;
   justify-content: right;
   margin-right: 8px;
 }
