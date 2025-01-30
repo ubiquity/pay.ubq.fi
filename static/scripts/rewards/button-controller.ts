@@ -99,9 +99,6 @@ export function getMakeClaimButton() {
 export function getClaimCardButton() {
   return document.getElementById("claim-card") as HTMLButtonElement;
 }
-export function getCardContainer() {
-  return document.getElementById("card-container") as HTMLDivElement;
-}
 
 export function openCardContainer() {
   cardContainer.style.transform = "translateY(0)";
