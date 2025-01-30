@@ -96,10 +96,10 @@ function renderDetailsFields(additionalDetails: { name: string; value: string | 
   let additionalDetailsHtml = "";
   for (const { name, value } of additionalDetails) {
     if (!value) continue;
-    additionalDetailsHtml += `<tr>
-      <th><div>${name}</div></th>
-      <td><div>${value}</div></td>
-    </tr>`;
+    additionalDetailsHtml += `<div class="row">
+      <div class="cell head">${name}</div>
+      <div class="cell">${value}</div>
+    </div>`;
   }
 
   additionalDetailsDiv.innerHTML = additionalDetailsHtml;

@@ -56,8 +56,7 @@
   background #grid {
     filter: invert(1);
   }
-  .receipt .body,
-  .receipt .head {
+  .receipt {
     box-shadow: inset 0 0 96px #00000008;
   }
   .notifications .toast {
@@ -72,9 +71,27 @@
   #carousel > div:hover {
     color: #000;
   }
-  .body,
-  .head {
+
+  .receipt[data-make-claim="error"] {
+    background: linear-gradient(45deg, var(--light-mode-background-color-default) 40%, var(--light-mode-background-color-dark) 50%, var(--light-mode-background-color-default) 60%);  
+    background-size: 300%;
+    background-position-x: 100%;
+  }
+    
+  @keyframes shimmer {
+    to {
+      background-position-x: 0%
+    }
+  }
+
+  .receipt-container {
+    box-shadow: inset 0 0 96px #00000010;
     background-color: #fff;
     border: 1px solid var(--light-mode-border-color);
+  }
+
+
+  #card-container {
+    background-color: var(--light-mode-background-color-default);
   }
 }

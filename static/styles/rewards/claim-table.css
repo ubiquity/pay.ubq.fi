@@ -2,9 +2,11 @@
   --left-table-column-width: 120px;
   --background-color-default-brightness: 2%;
   --background-color-light-brightness: 6%;
+  --shimmer-brightness: 10%;
   --border-brightness: 5%;
   --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1);
   --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
+  --shimmer-color: hsl(225 50% var(--shimmer-brightness) / 1);
   --border-color: hsl(225 25% var(--border-brightness) / 1);
 }
 #claim {
@@ -147,6 +149,20 @@ svg path {
   transition: 1s ease-in-out opacity;
   pointer-events: none;
 }
+.receipt[data-make-claim="error"] {
+  background: linear-gradient(45deg, var(--background-color-light) 40%, var(--shimmer-color) 50%, var(--background-color-light) 60%);  
+  display: inline-block;
+  animation: shimmer 1s infinite linear;
+  background-size: 300%;
+  background-position-x: 100%;
+}
+  
+@keyframes shimmer {
+  to {
+    background-position-x: 0%
+  }
+}
+
 .receipt[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
   opacity: 1;
   pointer-events: unset;
@@ -161,7 +177,7 @@ svg path {
 .receipt #additionalDetailsTable {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -90px);
+  height: 0px;
 }
 .receipt[data-additional-data-size="large"] #additionalDetailsTable {
   opacity: 0;
@@ -237,11 +253,8 @@ svg path {
   word-break: break-all;
 }
 .receipt {
+  padding-top: 12px;
   width: 100%;
-}
-.receipt .cell {
-  padding-right: 32px;
-  padding-left: 32px;
 }
 [data-loader="false"] #claim-loader {
   display: none;
@@ -324,7 +337,6 @@ svg path {
   width: 100%;
   max-width: 563px;
   overflow: hidden;
-  padding: 10px 0;
   /* box-shadow: 0 12px 64px #00000010; */
 }
 
