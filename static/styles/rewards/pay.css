@@ -133,12 +133,14 @@ main {
   display: flex;
   flex-direction: column;
 }
-
-main div.receipt-container {
-  height: 120px;
-  margin-bottom: 32px;
+.receipt-carrousel-wrapper{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
 }
-
 footer {
   width: 100%;
   position: fixed;

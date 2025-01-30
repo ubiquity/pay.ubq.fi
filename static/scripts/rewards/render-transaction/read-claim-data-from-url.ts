@@ -20,7 +20,7 @@ declare const SUPABASE_ANON_KEY: string;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export const table = document.getElementsByTagName(`table`)[0];
+export const table = document.getElementsByClassName(`receipt`)[0];
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
 

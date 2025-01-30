@@ -1,6 +1,6 @@
 import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
 import { app } from "../app-state";
-import { buttonController, getClaimCardButton, getMakeClaimButton, openCardContainer, toggleCardContainer, viewClaimButton } from "../button-controller";
+import { buttonController, getClaimCardButton, getMakeClaimButton, openCardContainer, viewClaimButton } from "../button-controller";
 import { claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
 import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
@@ -8,7 +8,7 @@ import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 
 const carousel = document.getElementById("carousel") as Element;
-const table = document.querySelector(`table`) as HTMLTableElement;
+const table = document.getElementsByClassName("receipt")[0];
 type Success = boolean;
 
 export async function renderTransaction(): Promise<Success> {

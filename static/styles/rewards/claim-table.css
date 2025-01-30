@@ -17,9 +17,6 @@ main > div {
   justify-content: center;
   align-items: center;
 }
-.receipt {
-  border-collapse: collapse;
-}
 .receipt a:hover,
 .receipt a:hover > div {
   color: #fff;
@@ -59,11 +56,6 @@ main > div {
   word-break: break-all;
   text-rendering: geometricPrecision;
   color: #fff;
-}
-.receipt hr {
-  background-color: #80808040;
-  height: 1px;
-  border: none;
 }
 svg path {
   fill: currentColor;
@@ -212,15 +204,12 @@ svg path {
   padding-bottom: 24px;
 }
 .receipt[data-make-claim="ok"] .head {
-  opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%);
   /* filter: blur(4px); */
 }
 .receipt[data-make-claim="error"] .body {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%);
   filter: blur(4px);
 }
 #rewardRecipient a div {
@@ -247,11 +236,11 @@ svg path {
 .cell#owner > a {
   word-break: break-all;
 }
-.receipt .cell {
-  padding-right: 32px;
+.receipt {
   width: 100%;
 }
 .receipt .cell {
+  padding-right: 32px;
   padding-left: 32px;
 }
 [data-loader="false"] #claim-loader {
@@ -260,7 +249,7 @@ svg path {
 [data-make-claim="false"] #make-claim {
   display: none;
 }
-[data-make-claim="false"] #make-claim {
+[data-make-claim="false"] #claim-card {
   display: none;
 }
 [data-collect-gift-card="false"] #collect-gift-card {
@@ -312,19 +301,7 @@ svg path {
 #claim-loader > svg {
   animation: rotate 1s linear infinite;
 }
-.body,
-.head {
-  background-color: var(--background-color-default);
-  position: absolute;
-  box-shadow: inset 0 0 96px #00bfff10;
-  transition: 0.25s all ease-in-out;
-  border: 1px solid var(--border-color);
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 563px;
-  overflow: hidden;
-  /* box-shadow: 0 12px 64px #00000010; */
-}
+
 .receipt * {
   text-wrap: nowrap;
 }
@@ -338,6 +315,39 @@ svg path {
   }
 }
 
+
+.receipt-container {
+  background-color: var(--background-color-default);
+  box-shadow: inset 0 0 96px #00bfff10;
+  transition: 0.25s all ease-in-out;
+  border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 563px;
+  overflow: hidden;
+  padding: 10px 0;
+  /* box-shadow: 0 12px 64px #00000010; */
+}
+
+.loading-message {
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.cell {
+  flex: 2;
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+}
+
 .head {
   animation: head-fade-in 0.5s ease-in-out;
+  flex: 1;
+  justify-content: center;
 }
