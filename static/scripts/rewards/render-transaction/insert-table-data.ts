@@ -34,7 +34,10 @@ export function insertErc20PermitTableData(
   renderToFields(reward.beneficiary, app.currentExplorerUrl);
   renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
   renderDetailsFields([
-    { name: "From", value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}">${reward.owner}</a>` },
+    {
+      name: "From",
+      value: `<a target="_blank" rel="noopener noreferrer" href="${app.currentExplorerUrl}/address/${reward.owner}"><span class="full"><div>${reward.owner}</div></span></a>`,
+    },
     {
       name: "Expiry",
       value: (() => {
