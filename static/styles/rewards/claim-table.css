@@ -62,14 +62,6 @@ main > div {
 svg path {
   fill: currentColor;
 }
-.receipt .cell div {
-  word-break: break-all;
-}
-.receipt .cell div {
-  text-align: right;
-  color: #80808080;
-}
-.receipt .cell,
 .receipt .cell {
   padding: 8px;
   text-rendering: geometricPrecision;
@@ -176,8 +168,18 @@ svg path {
 }
 .receipt #additionalDetailsTable {
   opacity: 0;
+  display: none;
   pointer-events: none;
-  height: 0px;
+}
+.receipt[data-details-visible="true"] #additionalDetailsTable {
+  opacity: 1;
+  display: block;
+  pointer-events: all;
+}
+.receipt[data-details-visible="true"] #mainDetailsTable{
+  opacity: 0;
+  display: none;
+  pointer-events: none;
 }
 .receipt[data-additional-data-size="large"] #additionalDetailsTable {
   opacity: 0;
@@ -248,9 +250,6 @@ svg path {
 }
 .receipt[data-details-visible="false"] #additionalDetails svg.closer {
   display: none;
-}
-.cell#owner > a {
-  word-break: break-all;
 }
 .receipt {
   padding-top: 12px;
@@ -348,10 +347,12 @@ svg path {
   display: flex;
   flex-direction: row;
   align-items: center;
+  width: 100%;
 }
 
 .cell {
-  flex: 2;
+  animation: head-fade-in 0.5s ease-in-out;
+  width: 75%;
   display: flex;
   flex-direction: row;
   justify-content: left;
@@ -359,7 +360,12 @@ svg path {
 }
 
 .head {
-  animation: head-fade-in 0.5s ease-in-out;
-  flex: 1;
+  width: 25%;
+  min-width: 25%;
   justify-content: center;
+}
+
+.body {
+  transition: 1s ease-in-out opacity;
+  height: 125px;
 }

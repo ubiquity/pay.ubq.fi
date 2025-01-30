@@ -52,7 +52,7 @@
       <div class="receipt-carrousel-wrapper">
         <div class="receipt-container">
           <div class="receipt" data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
-            <div class="body">
+            <div class="body" id="mainDetailsTable">
               <div class="row" id="Amount">
                 <div class="cell head">Amount</div>
                 <div class="cell" id="rewardAmount">
@@ -84,77 +84,75 @@
                   </span>
                 </div>
               </div>
-              <div class="row" id="additional-details-border">
-                <div class="cell">
-                  <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false" data-collect-gift-card="false">
-                    <button id="additionalDetails">
-                      <div>Details</div>
-                      <svg class="opener" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-                        <path
-                          d="M480-134.616 313.078-301.539l43.383-43.383L480-221.384l123.539-123.538 43.383 43.383L480-134.616Zm-123.539-478L313.078-656 480-822.922 646.922-656l-43.383 43.384L480-736.155 356.461-612.616Z"
-                        />
-                      </svg>
-                      <svg class="closer" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-                        <path
-                          d="M356-173.847 313.847-216 480-382.153 646.153-216 604-173.847l-124-124-124 124Zm124-404L313.847-744 356-786.153l124 124 124-124L646.153-744 480-577.847Z"
-                        />
-                      </svg>
-                    </button>
-                    <button id="claim-loader">
-                      <svg
-                        version="1.1"
-                        id="L9"
-                        xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                        width="33.33"
-                        height="33.33"
-                        viewBox="0 0 100 100"
-                        enable-background="new 0 0 0 0"
-                        xml:space="preserve"
-                      >
-                        <path fill="#fff" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50"></path>
-                      </svg>
-                      <div id="claiming-message">Loading</div>
-                    </button>
-                    <button id="make-claim">
-                      <div class="claim-title">Collect</div>
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="claim-icon">
-                        <path
-                          d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"
-                        />
-                      </svg>
-                    </button>
-
-                    <button id="claim-card">
-                      <div class="claim-title">Mint Debit Card</div>
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24px" id="card-icon">
-                        <path 
-                          d="M880-720v480q0 33-23.5 56.5T800-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720Zm-720 80h640v-80H160v80Zm0 160v240h640v-240H160Zm0 240v-480 480Z"
-                        />
-                      </svg>
-                    </button>
-
-                    <button id="view-claim">
-                      <div class="claim-title">View Claim</div>
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="link-icon">
-                        <path
-                          d="M212.309-140.001q-30.308 0-51.308-21t-21-51.308v-535.382q0-30.308 21-51.308t51.308-21h252.305V-760H212.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v535.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h535.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-252.305h59.999v252.305q0 30.308-21 51.308t-51.308 21H212.309Zm176.46-206.615-42.153-42.153L717.847-760H560v-59.999h259.999V-560H760v-157.847L388.769-346.616Z"
-                        />
-                      </svg>
-                    </button>
-                    <button id="invalidator">
-                      <div>Void</div>
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-                        <path
-                          d="M256-213.847 213.847-256l224-224-224-224L256-746.153l224 224 224-224L746.153-704l-224 224 224 224L704-213.847l-224-224-224 224Z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
             <div class="body" id="additionalDetailsTable"></div>
+            <div class="row" id="additional-details-border">
+              <div id="controls" data-loader="false" data-make-claim="false" data-view-claim="false" data-collect-gift-card="false">
+                <button id="additionalDetails">
+                  <div>Details</div>
+                  <svg class="opener" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path
+                      d="M480-134.616 313.078-301.539l43.383-43.383L480-221.384l123.539-123.538 43.383 43.383L480-134.616Zm-123.539-478L313.078-656 480-822.922 646.922-656l-43.383 43.384L480-736.155 356.461-612.616Z"
+                    />
+                  </svg>
+                  <svg class="closer" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path
+                      d="M356-173.847 313.847-216 480-382.153 646.153-216 604-173.847l-124-124-124 124Zm124-404L313.847-744 356-786.153l124 124 124-124L646.153-744 480-577.847Z"
+                    />
+                  </svg>
+                </button>
+                <button id="claim-loader">
+                  <svg
+                    version="1.1"
+                    id="L9"
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    width="33.33"
+                    height="33.33"
+                    viewBox="0 0 100 100"
+                    enable-background="new 0 0 0 0"
+                    xml:space="preserve"
+                  >
+                    <path fill="#fff" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50"></path>
+                  </svg>
+                  <div id="claiming-message">Loading</div>
+                </button>
+                <button id="make-claim">
+                  <div class="claim-title">Collect</div>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="claim-icon">
+                    <path
+                      d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"
+                    />
+                  </svg>
+                </button>
+
+                <button id="claim-card">
+                  <div class="claim-title">Mint Debit Card</div>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24px" id="card-icon">
+                    <path 
+                      d="M880-720v480q0 33-23.5 56.5T800-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720Zm-720 80h640v-80H160v80Zm0 160v240h640v-240H160Zm0 240v-480 480Z"
+                    />
+                  </svg>
+                </button>
+
+                <button id="view-claim">
+                  <div class="claim-title">View Claim</div>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" id="link-icon">
+                    <path
+                      d="M212.309-140.001q-30.308 0-51.308-21t-21-51.308v-535.382q0-30.308 21-51.308t51.308-21h252.305V-760H212.309q-4.616 0-8.463 3.846-3.846 3.847-3.846 8.463v535.382q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h535.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463v-252.305h59.999v252.305q0 30.308-21 51.308t-51.308 21H212.309Zm176.46-206.615-42.153-42.153L717.847-760H560v-59.999h259.999V-560H760v-157.847L388.769-346.616Z"
+                    />
+                  </svg>
+                </button>
+                <button id="invalidator">
+                  <div>Void</div>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                    <path
+                      d="M256-213.847 213.847-256l224-224-224-224L256-746.153l224 224 224-224L746.153-704l-224 224 224 224L704-213.847l-224-224-224 224Z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <figure id="carousel">
