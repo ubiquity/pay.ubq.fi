@@ -97,7 +97,7 @@ export function getMakeClaimButton() {
   return document.getElementById("make-claim") as HTMLButtonElement;
 }
 export function getClaimCardButton() {
-  return document.getElementById("test-claim2") as HTMLButtonElement;
+  return document.getElementById("claim-card") as HTMLButtonElement;
 }
 export function getCardContainer() {
   return document.getElementById("card-container") as HTMLDivElement;
