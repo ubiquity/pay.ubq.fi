@@ -8,6 +8,4 @@ async function watch() {
 }
 
 // The following expression MUST NOT be awaited.
-void watch().catch((err) => {
-  console.error("Error watching:", err);
-});
+void watch();
