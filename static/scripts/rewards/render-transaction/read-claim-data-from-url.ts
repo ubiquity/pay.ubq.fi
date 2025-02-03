@@ -29,10 +29,15 @@ export async function readClaimDataFromUrl(app: AppState) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
     table.setAttribute(`data-make-claim`, "error");
+  } else {
+    app.claims.push(...decodeClaimData(base64encodedTxData));
+  }
+
+  // If no claim data from url or metadata quit
+  if (!app.claims) {
     return;
   }
 
-  app.claims = decodeClaimData(base64encodedTxData);
   app.claimTxs = await getClaimedTxs(app);
 
   try {
