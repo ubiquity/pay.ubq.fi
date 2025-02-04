@@ -147,13 +147,19 @@ a, .cell, div {
   animation: shimmer 1s infinite linear;
   background-size: 300%;
   background-position-x: 100%;
-}
-  
+} 
 @keyframes shimmer {
   to {
     background-position-x: 0%
   }
 }
+
+#notice {
+  color: #404040;
+}
+.receipt[data-make-claim="empty"] #mainDetailsTable{
+  text-align: center;
+} 
 
 .receipt[data-make-claim-rendered="true"][data-contract-loaded="true"][data-make-claim="ok"] #controls {
   opacity: 1;

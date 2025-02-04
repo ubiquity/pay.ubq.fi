@@ -28,7 +28,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   if (!base64encodedTxData) {
     // No claim data found
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-make-claim`, "error");
+    table.setAttribute(`data-make-claim`, "empty");
     return;
   }
 
@@ -125,7 +125,7 @@ function decodeClaimData(base64encodedTxData: string): Permit[] {
   } catch (error) {
     console.error(error);
     setClaimMessage({ type: "Error", message: `Invalid claim data passed in URL` });
-    table.setAttribute(`data-make-claim`, "error");
+    table.setAttribute(`data-make-claim`, "empty");
     throw error;
   }
 }
