@@ -19,8 +19,8 @@
   svg path {
     fill: #000;
   }
-  #logo-icon > svg {
-    fill: #000;
+  #logo-icon {
+    color: #000;
   }
   #logo > div#logo-text > span {
     color: #000;

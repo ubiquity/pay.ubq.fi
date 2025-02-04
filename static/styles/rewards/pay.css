@@ -77,6 +77,10 @@ header {
   text-rendering: geometricPrecision;
 }
 
+#logo-icon {
+  color: #fff;
+}
+
 #logo-icon > svg {
   height: 28px;
   display: block;
@@ -84,7 +88,6 @@ header {
   width: 28px;
   padding: 0;
   margin-right: 6px;
-  fill: #fff;
 }
 
 #logo > div#logo-text {
