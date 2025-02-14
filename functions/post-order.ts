@@ -150,7 +150,7 @@ async function orderGiftCard(
   const requestBody = JSON.stringify({
     productId: productId,
     quantity: 1,
-    unitPrice: cardValue.toFixed(2),
+    unitPrice: cardValue,
     customIdentifier: identifier,
     preOrder: false,
     productAdditionalRequirements: {
