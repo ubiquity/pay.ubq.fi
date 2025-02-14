@@ -21,8 +21,6 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
     mintBtn.setAttribute("data-loading", "true");
     const productId = Number(document.getElementById("offered-card")?.getAttribute("data-product-id"));
 
-    console.log("app.networkId || app.reward.networkId", app.networkId, app.reward.networkId);
-
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
     } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMinterToken[app.reward.networkId].toLowerCase()) {
