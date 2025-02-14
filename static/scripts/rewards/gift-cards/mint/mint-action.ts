@@ -21,12 +21,12 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
     mintBtn.setAttribute("data-loading", "true");
     const productId = Number(document.getElementById("offered-card")?.getAttribute("data-product-id"));
 
-    if (!app.networkId) {
-      toaster.create("error", "Connect to a correct network.");
-    } else if (!isErc20Permit(app.reward)) {
+    console.log("app.networkId || app.reward.networkId", app.networkId, app.reward.networkId);
+
+    if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
-    } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMintTokens[app.networkId].toLowerCase()) {
-      toaster.create("error", "A payment card can be minted only with a UUSD reward permit.");
+    } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMintTokens[app.reward.networkId].toLowerCase()) {
+      toaster.create("error", "Payment card can be minted only with a UUSD reward permit.");
     } else if (!isClaimableForAmount(giftCard, app.reward.amount)) {
       toaster.create("error", "Your reward amount is not equal to the price of available card.");
     } else {
