@@ -4,7 +4,6 @@ import { verifyMessage } from "@ethersproject/wallet";
 import { BigNumber } from "ethers";
 import { PostOrderParams, postOrderParamsSchema } from "../shared/api-types";
 import {
-  Tokens,
   chainIdToRewardTokenMap,
   giftCardTreasuryAddress,
   permit2Address,
@@ -15,9 +14,9 @@ import {
 import { getGiftCardOrderId, getMintMessageToSign } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard } from "../shared/types";
+import { useRpcHandler } from "../shared/use-rpc-handler";
 import { erc20Abi } from "../static/scripts/rewards/abis/erc20-abi";
 import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
-import { useRpcHandler } from "../shared/use-rpc-handler";
 import { getTransactionFromOrderId } from "./get-order";
 import { findBestCard } from "./utils/best-card-finder";
 import { commonHeaders, getAccessToken, getReloadlyApiBaseUrl } from "./utils/shared";
@@ -325,7 +324,7 @@ function validatePermitTransaction(
       "Given transaction hash is not transferring the required ERC20 token.",
       JSON.stringify({
         transferredToken: txParsed.args.permit[0].token,
-        requiredToken: Tokens.WXDAI.toLowerCase(),
+        requiredToken: chainIdToRewardTokenMap[postOrderParams.chainId],
       })
     );
     return wrongContractErr;
