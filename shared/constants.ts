@@ -11,7 +11,7 @@ export const ubiquityDollarChainAddresses: Record<number, string> = {
   31337: "0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6",
 };
 
-export const networkToCardMintTokens: Record<number, string> = {
+export const networkToCardMinterToken: Record<number, string> = {
   1: "0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103",
   100: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068",
   31337: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068",

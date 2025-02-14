@@ -1,6 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { SpawnSyncOptionsWithStringEncoding, spawnSync } from "child_process";
-import { networkToCardMintTokens } from "../../shared/constants";
+import { networkToCardMinterToken } from "../../shared/constants";
 
 /**
  * Handles the async funding of the testing environment
@@ -17,7 +17,7 @@ class TestFunder {
   fundingWallet = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
   beneficiary = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   permit2 = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-  rewardToken = networkToCardMintTokens[100];
+  rewardToken = networkToCardMinterToken[100];
   whale = "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd";
   expected = {
     allowance: "999999999999999111119999999999999999",

@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { giftCardTreasuryAddress, permit2Address, networkToCardMintTokens } from "../../../../../shared/constants";
+import { giftCardTreasuryAddress, permit2Address, networkToCardMinterToken } from "../../../../../shared/constants";
 import { isClaimableForAmount } from "../../../../../shared/pricing";
 import { GiftCard } from "../../../../../shared/types";
 import { permit2Abi } from "../../abis";
@@ -25,7 +25,7 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
 
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
-    } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMintTokens[app.reward.networkId].toLowerCase()) {
+    } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMinterToken[app.reward.networkId].toLowerCase()) {
       toaster.create("error", "Payment card can be minted only with a UUSD reward permit.");
     } else if (!isClaimableForAmount(giftCard, app.reward.amount)) {
       toaster.create("error", "Your reward amount is not equal to the price of available card.");
