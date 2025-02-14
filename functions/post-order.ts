@@ -4,7 +4,7 @@ import { verifyMessage } from "@ethersproject/wallet";
 import { BigNumber } from "ethers";
 import { PostOrderParams, postOrderParamsSchema } from "../shared/api-types";
 import {
-  chainIdToRewardTokenMap,
+  networkToCardMintTokens,
   giftCardTreasuryAddress,
   permit2Address,
   permitAllowedChainIds,
@@ -319,12 +319,12 @@ function validatePermitTransaction(
     return wrongContractErr;
   }
 
-  if (txParsed.args.permit[0].token.toLowerCase() != chainIdToRewardTokenMap[postOrderParams.chainId].toLowerCase()) {
+  if (txParsed.args.permit[0].token.toLowerCase() != networkToCardMintTokens[postOrderParams.chainId].toLowerCase()) {
     console.error(
       "Given transaction hash is not transferring the required ERC20 token.",
       JSON.stringify({
         transferredToken: txParsed.args.permit[0].token,
-        requiredToken: chainIdToRewardTokenMap[postOrderParams.chainId],
+        requiredToken: networkToCardMintTokens[postOrderParams.chainId],
       })
     );
     return wrongContractErr;
