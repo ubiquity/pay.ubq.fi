@@ -24,7 +24,7 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
     } else if (app.reward.tokenAddress.toLowerCase() !== networkToCardMinterToken[app.reward.networkId].toLowerCase()) {
-      toaster.create("error", "Payment card can be minted only with Ubiquity Dollar permit.");
+      toaster.create("error", `<a href="https://dao.ubq.fi/card-minting" target="_blank">Payment card can be minted only with Ubiquity Dollar permit.</a>`);
     } else if (!isClaimableForAmount(giftCard, app.reward.amount)) {
       toaster.create("error", "Your reward amount is not equal to the price of available card.");
     } else {
