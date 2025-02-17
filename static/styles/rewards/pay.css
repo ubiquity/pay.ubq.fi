@@ -250,6 +250,10 @@ footer {
   text-align: center;
 }
 
+.content div {
+  word-break: normal;
+}
+
 .drag-handle {
   position: absolute;
   top: 1rem;
