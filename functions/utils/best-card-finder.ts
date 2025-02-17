@@ -1,10 +1,18 @@
 import { BigNumberish } from "ethers";
 import { isAllowed } from "../../shared/allowed-country-list";
+import { isRestricted } from "../../shared/restricted-country-list";
 import { isGiftCardAvailable } from "../../shared/helpers";
 import { GiftCard } from "../../shared/types";
 import { commonHeaders, getGiftCards, getReloadlyApiBaseUrl } from "./shared";
 import { getGiftCardById } from "../post-order";
-import { fallbackIntlMastercardFirst, fallbackIntlMastercardSecond, fallbackIntlVisa, masterCardIntlSkus, visaIntlSkus } from "./reloadly-lists";
+import {
+  fallbackIntlMastercardFirst,
+  fallbackIntlMastercardSecond,
+  fallbackIntlVisaFirst,
+  fallbackIntlVisaSecond,
+  masterCardIntlSkus,
+  visaIntlSkus,
+} from "./reloadly-lists";
 import { AccessToken, ReloadlyFailureResponse } from "./types";
 
 export async function findBestCard(countryCode: string, amount: BigNumberish, accessToken: AccessToken): Promise<GiftCard | null> {
@@ -77,10 +85,16 @@ async function findBestVisaCard(visaCards: GiftCard[], countryCode: string, amou
     }
   }
 
-  const fallbackVisa = await getFallbackIntlVisa(accessToken);
-  if (fallbackVisa && isGiftCardAvailable(fallbackVisa, amount)) {
-    return fallbackVisa;
+  const fallbackVisaFirst = await getFirstFallbackIntlVisa(accessToken);
+  if (fallbackVisaFirst && isGiftCardAvailable(fallbackVisaFirst, amount)) {
+    return fallbackVisaFirst;
   }
+
+  const fallbackVisaSecond = await getSecondFallbackIntlVisa(accessToken);
+  if (fallbackVisaSecond && !isRestricted(countryCode, fallbackVisaSecond.productId) && isGiftCardAvailable(fallbackVisaSecond, amount)) {
+    return fallbackVisaSecond;
+  }
+
   return null;
 }
 async function getFirstFallbackIntlMastercard(accessToken: AccessToken): Promise<GiftCard | null> {
@@ -101,11 +115,20 @@ async function getSecondFallbackIntlMastercard(accessToken: AccessToken): Promis
   }
 }
 
-async function getFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard | null> {
+async function getFirstFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard | null> {
   try {
-    return await getGiftCardById(fallbackIntlVisa.sku, accessToken);
+    return await getGiftCardById(fallbackIntlVisaFirst.sku, accessToken);
   } catch (e) {
-    console.error(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisa)}\n${e}`);
+    console.error(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisaFirst)}\n${e}`);
+    return null;
+  }
+}
+
+async function getSecondFallbackIntlVisa(accessToken: AccessToken): Promise<GiftCard | null> {
+  try {
+    return await getGiftCardById(fallbackIntlVisaSecond.sku, accessToken);
+  } catch (e) {
+    console.error(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisaSecond)}\n${e}`);
     return null;
   }
 }
