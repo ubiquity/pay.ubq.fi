@@ -15,11 +15,18 @@ export const fallbackIntlMastercardSecond = {
   sku: 18597,
 };
 
-export const fallbackIntlVisa = {
+export const fallbackIntlVisaFirst = {
   country: "United States",
   countryCode: "US",
   name: "Visa International USD (Virtual) US",
   sku: 18598,
+};
+
+export const fallbackIntlVisaSecond = {
+  country: "United States",
+  countryCode: "US",
+  name: "Virtual Visa Globe Pay US",
+  sku: 18736,
 };
 
 export const masterCardIntlSkus = [
@@ -253,6 +260,12 @@ export const visaIntlSkus = [
     countryCode: "US",
     name: "Visa International USD (Virtual) US",
     sku: 18598,
+  },
+  {
+    country: "United States",
+    countryCode: "US",
+    name: "Virtual Visa Globe Pay US",
+    sku: 18736,
   },
   {
     country: "Algeria",
