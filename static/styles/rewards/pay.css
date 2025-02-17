@@ -255,6 +255,7 @@ footer {
 }
 
 .drag-handle {
+  z-index: 100;
   position: absolute;
   top: 1rem;
   width: 20%;  
