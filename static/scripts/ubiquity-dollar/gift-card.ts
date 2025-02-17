@@ -1,4 +1,3 @@
-import { isAllowed } from "../../../shared/allowed-country-list";
 import { getGiftCardOrderId, getRevealMessageToSign, isGiftCardAvailable } from "../../../shared/helpers";
 import { GiftCard, OrderTransaction, RedeemCode } from "../../../shared/types";
 import { getUserCountryCode } from "../rewards/gift-cards/helpers";
@@ -16,6 +15,7 @@ import { getGiftCardHtml } from "../rewards/gift-cards/gift-card";
 import { showTransactionHistory } from "./transaction-history";
 import { getOrder, postOrder, getBestCard, getRedeemCode } from "../shared/api";
 import { toaster } from "../rewards/toaster";
+import { isRestricted } from "../../../shared/restricted-country-list";
 
 const loaderAttribute = "data-loading";
 
@@ -62,8 +62,8 @@ export async function showBestCard() {
     return;
   }
 
-  if (!isAllowed(countryCode)) {
-    giftCardsSection.innerHTML = `<p class="card-error">Virtual cards are not available for your location. Use other methods to claim your reward.</p>`;
+  if (isRestricted(countryCode)) {
+    giftCardsSection.innerHTML = `<p class="card-error">Payment cards are not available for your location. Use other methods to claim your reward.</p>`;
     return;
   }
 

@@ -1,5 +1,5 @@
-import { isAllowed } from "../../../../shared/allowed-country-list";
 import { getGiftCardOrderId, isGiftCardAvailable } from "../../../../shared/helpers";
+import { isRestricted } from "../../../../shared/restricted-country-list";
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { getGiftCardHtml } from "./gift-card";
@@ -25,8 +25,8 @@ export async function initClaimGiftCard(app: AppState) {
     return;
   }
 
-  if (!isAllowed(countryCode)) {
-    giftCardsSection.innerHTML = `<p class="card-error">Virtual cards are not available for your location. Use other methods to claim your reward.</p>`;
+  if (isRestricted(countryCode)) {
+    giftCardsSection.innerHTML = `<p class="card-error">Payment cards are not available for your location. Use other methods to claim your reward.</p>`;
     return;
   }
 

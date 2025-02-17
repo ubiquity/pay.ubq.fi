@@ -1,8 +1,7 @@
-export function isRestricted(countryCode: string, sku: number): boolean {
-  // The restricted list only available for 18736 at this time
-  if (sku != 18736) {
-    throw new Error("Invalid SKU");
-  }
+export function isRestricted(countryCode: string): boolean {
+  // The restricted list is only for visa 18736
+  // But the list is superset of other country lists for all other cards
+  // That is why we treat it as a general restricted list for all cards
   const restrictedCountries: Record<string, string> = {
     AF: "Afghanistan",
     BY: "Belarus",

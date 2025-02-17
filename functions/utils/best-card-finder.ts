@@ -16,7 +16,7 @@ import {
 import { AccessToken, ReloadlyFailureResponse } from "./types";
 
 export async function findBestCard(countryCode: string, amount: BigNumberish, accessToken: AccessToken): Promise<GiftCard | null> {
-  if (!isAllowed(countryCode)) {
+  if (isRestricted(countryCode)) {
     console.error(`Country ${countryCode} is not in the allowed country list.`);
     return null;
   }
@@ -64,12 +64,12 @@ async function findBestMastercard(masterCards: GiftCard[], countryCode: string, 
   }
 
   const fallbackMastercardFirst = await getFirstFallbackIntlMastercard(accessToken);
-  if (fallbackMastercardFirst && isGiftCardAvailable(fallbackMastercardFirst, amount)) {
+  if (fallbackMastercardFirst && isAllowed(countryCode) && isGiftCardAvailable(fallbackMastercardFirst, amount)) {
     return fallbackMastercardFirst;
   }
 
   const fallbackMastercardSecond = await getSecondFallbackIntlMastercard(accessToken);
-  if (fallbackMastercardSecond && isGiftCardAvailable(fallbackMastercardSecond, amount)) {
+  if (fallbackMastercardSecond && isAllowed(countryCode) && isGiftCardAvailable(fallbackMastercardSecond, amount)) {
     return fallbackMastercardSecond;
   }
 
@@ -86,12 +86,12 @@ async function findBestVisaCard(visaCards: GiftCard[], countryCode: string, amou
   }
 
   const fallbackVisaFirst = await getFirstFallbackIntlVisa(accessToken);
-  if (fallbackVisaFirst && isGiftCardAvailable(fallbackVisaFirst, amount)) {
+  if (fallbackVisaFirst && isAllowed(countryCode) && isGiftCardAvailable(fallbackVisaFirst, amount)) {
     return fallbackVisaFirst;
   }
 
   const fallbackVisaSecond = await getSecondFallbackIntlVisa(accessToken);
-  if (fallbackVisaSecond && !isRestricted(countryCode, fallbackVisaSecond.productId) && isGiftCardAvailable(fallbackVisaSecond, amount)) {
+  if (fallbackVisaSecond && isGiftCardAvailable(fallbackVisaSecond, amount)) {
     return fallbackVisaSecond;
   }
 
