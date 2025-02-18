@@ -1,5 +1,3 @@
-export const permitAllowedChainIds = [1, 5, 10, 100, 31337];
-
 export const ubiquityDollarAllowedChainIds = [1, 100, 31337];
 
 export const permit2Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
