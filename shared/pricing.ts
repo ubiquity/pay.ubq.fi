@@ -97,7 +97,7 @@ export function getUsdValueForRangePrice(giftCard: GiftCard, price: BigNumberish
 }
 
 export function isRangePriceGiftCardClaimable(giftCard: GiftCard, rewardAmount: BigNumberish) {
-  const value = Number(getGiftCardValue(giftCard, rewardAmount).toFixed(2));
+  const value = getGiftCardValue(giftCard, rewardAmount);
   return value >= giftCard.minRecipientDenomination && value <= giftCard.maxRecipientDenomination;
 }
 
@@ -138,5 +138,5 @@ export function getGiftCardValue(giftCard: GiftCard, reward: BigNumberish, excha
       })}`
     );
   }
-  return giftCardValue;
+  return Math.floor(giftCardValue * 100) / 100;
 }
