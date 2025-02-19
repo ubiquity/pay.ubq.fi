@@ -3,14 +3,7 @@ import { TransactionReceipt, TransactionResponse } from "@ethersproject/provider
 import { verifyMessage } from "@ethersproject/wallet";
 import { BigNumber } from "ethers";
 import { PostOrderParams, postOrderParamsSchema } from "../shared/api-types";
-import {
-  networkToCardMinterToken,
-  giftCardTreasuryAddress,
-  permit2Address,
-  permitAllowedChainIds,
-  ubiquityDollarAllowedChainIds,
-  ubiquityDollarChainAddresses,
-} from "../shared/constants";
+import { giftCardTreasuryAddress, permit2Address, ubiquityDollarAllowedChainIds, ubiquityDollarChainAddresses } from "../shared/constants";
 import { getGiftCardOrderId, getMintMessageToSign } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard } from "../shared/types";
@@ -259,7 +252,7 @@ function validatePermitTransaction(
   postOrderParams: PostOrderParams,
   giftCard: GiftCard
 ): string | null {
-  if (!permitAllowedChainIds.includes(postOrderParams.chainId)) {
+  if (!ubiquityDollarAllowedChainIds.includes(postOrderParams.chainId)) {
     return "Unsupported chain";
   }
 
@@ -319,12 +312,12 @@ function validatePermitTransaction(
     return wrongContractErr;
   }
 
-  if (txParsed.args.permit[0].token.toLowerCase() != networkToCardMinterToken[postOrderParams.chainId].toLowerCase()) {
+  if (txParsed.args.permit[0].token.toLowerCase() != ubiquityDollarChainAddresses[postOrderParams.chainId].toLowerCase()) {
     console.error(
       "Given transaction hash is not transferring the required ERC20 token.",
       JSON.stringify({
         transferredToken: txParsed.args.permit[0].token,
-        requiredToken: networkToCardMinterToken[postOrderParams.chainId],
+        requiredToken: ubiquityDollarChainAddresses[postOrderParams.chainId],
       })
     );
     return wrongContractErr;
