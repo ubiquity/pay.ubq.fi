@@ -1,5 +1,5 @@
 import { TransactionDescription } from "@ethersproject/abi";
-import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
+import { JsonRpcProvider, TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { setupServer, SetupServerApi } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from "vitest";
@@ -459,7 +459,14 @@ describe("Post order for a payment card", () => {
 });
 
 async function initMocks(receipt: object = receiptGeneric, minedTx: object = minedTxGeneric, parsedTx?: object) {
+  const rpcHandler = await import("../../shared/use-rpc-handler");
+
+  vi.spyOn(rpcHandler, "useRpcHandler").mockImplementationOnce(async () => {
+    return new JsonRpcProvider("http://127.0.0.1:8545/");
+  });
+
   const providers = await import("@ethersproject/providers");
+
   vi.spyOn(providers.JsonRpcProvider.prototype, "getTransactionReceipt").mockImplementationOnce(async () => {
     return receipt as TransactionReceipt;
   });

@@ -103,4 +103,13 @@ export const httpMocks = [
   http.get(`${RELOADLY_SANDBOX_API_URL}/reports/transactions`, () => {
     return HttpResponse.json(noTransaction, { status: 200 });
   }),
+  http.post(`http://127.0.0.1:8545/`, ({ request }) => {
+    if (request.method == "eth_chainId") {
+      return HttpResponse.json("0x7a69", { status: 200 });
+    } else if (request.method == "net_version") {
+      return HttpResponse.json("0x1", { status: 200 });
+    } else if (request.method == "eth_getBlockByNumber") {
+      return HttpResponse.json("0x1", { status: 200 });
+    }
+  }),
 ];
