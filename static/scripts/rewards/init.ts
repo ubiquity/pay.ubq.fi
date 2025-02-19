@@ -1,7 +1,7 @@
 import { app } from "./app-state";
 import { initClaimGiftCard } from "./gift-cards/index";
 import { displayCommitHash } from "./render-transaction/display-commit-hash";
-import { fetchPermits } from "./render-transaction/read-claim-data-from-url";
+import { fetchPermits } from "./render-transaction/fetch-permits";
 import { grid } from "./the-grid";
 
 displayCommitHash();

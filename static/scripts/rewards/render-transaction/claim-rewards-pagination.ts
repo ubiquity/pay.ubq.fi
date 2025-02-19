@@ -1,7 +1,7 @@
 import { app } from "../app-state";
 import { initClaimGiftCard } from "../gift-cards/index";
 import { getMakeClaimButton } from "../button-controller";
-import { table, updateButtonVisibility } from "./read-claim-data-from-url";
+import { table, updateButtonVisibility } from "./fetch-permits";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
 
