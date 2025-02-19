@@ -1,4 +1,4 @@
-import { ERC20Permit, ERC721Permit } from "@ubiquibot/permit-generation/types";
+import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { BigNumber, ethers } from "ethers";
 import { app, AppState } from "../app-state";
 
@@ -29,7 +29,7 @@ export function insertErc20PermitTableData(
   table: Element,
   treasury: { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }
 ): Element {
-  const reward = app.reward as ERC20Permit;
+  const reward = app.reward as PermitReward;
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
   renderToFields(reward.beneficiary, app.currentExplorerUrl);
   renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
@@ -55,11 +55,12 @@ export function insertErc20PermitTableData(
   return requestedAmountElement;
 }
 
-export function insertErc721PermitTableData(reward: ERC721Permit, table: Element): Element {
+export function insertErc721PermitTableData(reward: PermitReward, table: Element): Element {
   const requestedAmountElement = document.getElementById("rewardAmount") as Element;
   renderToFields(reward.beneficiary, app.currentExplorerUrl);
   renderTokenFields(reward.tokenAddress, app.currentExplorerUrl);
-  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } = reward.erc721Request?.metadata || {};
+  const { GITHUB_REPOSITORY_NAME, GITHUB_CONTRIBUTION_TYPE, GITHUB_ISSUE_NODE_ID, GITHUB_ORGANIZATION_NAME, GITHUB_USERNAME } =
+    reward.erc721Request?.metadata || {};
   renderDetailsFields([
     {
       name: "NFT address",
@@ -79,7 +80,7 @@ export function insertErc721PermitTableData(reward: ERC721Permit, table: Element
     },
     {
       name: "GitHub Issue",
-      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_ORGANIZATION_NAME}/${GITHUB_REPOSITORY_NAME}/issues/${GITHUB_ISSUE_ID}">${GITHUB_ISSUE_ID}</a>`,
+      value: `<a target="_blank" rel="noopener noreferrer" href="https://github.com/${GITHUB_ORGANIZATION_NAME}/${GITHUB_REPOSITORY_NAME}/issues/${GITHUB_ISSUE_NODE_ID}">${GITHUB_ISSUE_NODE_ID}</a>`,
     },
     {
       name: "GitHub Username",

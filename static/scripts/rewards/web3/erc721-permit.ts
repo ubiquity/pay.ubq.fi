@@ -1,5 +1,5 @@
 import { JsonRpcProvider, TransactionResponse } from "@ethersproject/providers";
-import { ERC721Permit } from "@ubiquibot/permit-generation/types";
+import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
@@ -7,7 +7,7 @@ import { toaster } from "../toaster";
 import { buttonController, getMakeClaimButton } from "../button-controller";
 import { connectWallet } from "./connect-wallet";
 
-export function claimErc721PermitHandler(reward: ERC721Permit) {
+export function claimErc721PermitHandler(reward: PermitReward) {
   return async function claimHandler() {
     const signer = await connectWallet();
     if (!signer) {
@@ -72,7 +72,7 @@ export function claimErc721PermitHandler(reward: ERC721Permit) {
   };
 }
 
-async function isNonceRedeemed(reward: ERC721Permit, provider: JsonRpcProvider): Promise<boolean> {
+async function isNonceRedeemed(reward: PermitReward, provider: JsonRpcProvider): Promise<boolean> {
   const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, provider);
   return nftContract.nonceRedeemed(reward.nonce);
 }
