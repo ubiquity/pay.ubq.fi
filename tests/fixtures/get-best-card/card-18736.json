@@ -1,0 +1,42 @@
+{
+  "productId": 18736,
+  "productName": "Virtual Visa Globe Pay US",
+  "global": false,
+  "status": "ACTIVE",
+  "supportsPreOrder": false,
+  "senderFee": 1.0,
+  "senderFeePercentage": 1.0,
+  "discountPercentage": 0.0,
+  "denominationType": "RANGE",
+  "recipientCurrencyCode": "USD",
+  "minRecipientDenomination": 1.0,
+  "maxRecipientDenomination": 1000.0,
+  "senderCurrencyCode": "USD",
+  "minSenderDenomination": 1.0,
+  "maxSenderDenomination": 1000.0,
+  "fixedRecipientDenominations": [],
+  "fixedSenderDenominations": null,
+  "fixedRecipientToSenderDenominationsMap": null,
+  "metadata": null,
+  "logoUrls": ["https://cdn.reloadly.com/giftcards/82fe80ad-cb78-4d91-97b0-273b2eaabd88.png"],
+  "brand": {
+    "brandId": 377,
+    "brandName": "Visa"
+  },
+  "category": {
+    "id": 1,
+    "name": "Payment Cards"
+  },
+  "country": {
+    "isoName": "US",
+    "name": "United States",
+    "flagUrl": "https://s3.amazonaws.com/rld-flags/us.svg"
+  },
+  "redeemInstruction": {
+    "concise": "Card can be used anywhere Visa debit cards are accepted. No cash or ATM access. Please note: all funds are loaded in USD and the card is non-reloadable.\nOnce you activate your virtual prepaid card, it is ready for use. You have 6 months from issuance date to access the funds on the card before the card expires, after which, you will no longer have access to the funds.\nPurchases must be within the available balance on the card or with a merchant that allows multiple forms of payment for the same transaction. Accepting multiple forms of payment is up to the merchant’s discretion, not the issuer of the prepaid card. The card cannot be used for recurring purchases or payments, the balance on the card cannot be transferred to another account such as PayPal/eBay/Cash App.",
+    "verbose": "Redeem Instruction: \n\"Once you activate your virtual prepaid card, it is ready for use. You have 6 months from issuance date to access the funds on the card before the card expires, after which, you will no longer have access to the funds.\n\nPurchases must be within the available balance on the card or with a merchant that allows multiple forms of payment for the same transaction. Accepting multiple forms of payment is up to the merchant’s discretion, not the issuer of the prepaid card.\nThe card cannot be used for recurring purchases or payments, the balance on the card cannot be transferred to another account such as PayPal/eBay/Cash App.\n\n\nTo manually add a bank card to Apple Wallet on an iPhone, you can do the following:\n1.Open the Wallet app\n2.Tap Add Card\n3.Tap Debit or Credit Card\n4.Tap Continue\n5.Tap Enter Card Details Manually\n6.Enter the card’s name, card number, expiration date, and CVV\n7.Follow the onscreen instructions\nTo manually add a bank card to Google Wallet, you can do the following:\n1.Open the Google Wallet app\n2.Tap Add to Wallet at the bottom\n3.Tap Payment card\n4.Tap New credit or debit card\n5.Tap Enter details manually\n6.Enter the card information\n7.Tap Save and continue at the bottom\n8.Read the Issuer Terms and tap Accept\n9.If prompted, verify your payment method\"\n\n\nTerms and Condition:\nPlease note that during card registration process your address details may be required for verification purposes between Visa and certain merchants. Providing incorrect information can result in declined transactions and, in some cases, may prevent your card from being added to Apple Pay or Google Pay wallets. Prepaid Visa card is denominated in USD. When making purchases in a currency other than USD, exchange rates may vary depending on the currency used. The applicable exchange rate will be determined by Visa at the time of transaction and may differ from standard market rates. For the most accurate and up-to-date information on Visa’s exchange rates, please visit Visa’s official exchange rate calculator: https://usa.visa.com/support/consumer/travel-support/exchange-rate-calculator.html For transactions in currencies other than USD, a minimum balance is required to ensure sufficient funds for currency exchange. The minimum transaction amount for this card is $1 USD.Please note that this prepaid Visa card is denominated in USD. When making purchases in a currency other than USD, exchange rates may vary depending on the currency used. The applicable exchange rate will be determined by Visa at the time of transaction and may differ from standard market rates. For the most accurate and up-to-date information on Visa’s exchange rates, please visit Visa’s official exchange rate calculator:https://usa.visa.com/support/consumer/travel-support/exchange-rate-calculator.html Please use a standard web browser without enabling anonymous browsing modes, ad blockers, or VPN (Virtual Private Network) services. These settings are essential as they allow the issuer’s bank security system to perform initial checks to ensure a secure transaction. Additionally, the use of bots or automated tools for simultaneous redemptions is strictly prohibited.You can add up to 16 cards to a single Apple Wallet, provided your device supports Apple Pay. For further details, please visit: https://support.apple.com/en-us/108398.When adding a card to your Apple Wallet, ensure you are in a location where Apple Pay is supported. For a list of eligible locations, visit: https://www.apple.com/ios/feature-availability/#apple-wallet-apple-pay. Affected countries: Afghanistan, Belarus, Bosnia and Herzegovina, Burma (Myanmar), Cameroon, Central African Republic, Cuba, Democratic Republic of the Congo, Iran, Iraq, Lebanon, Libya, Mali, Mozambique, Nicaragua, Nigeria, North Korea, Panama, Russia, Somalia, South Sudan, Sudan, Syria, Ukraine, Venezuela, Yemen, Zimbabwe MyGlobePay Card is issued by Sunrise Banks N.A., Member FDIC, St. Paul, MN 55103, pursuant to a license from Visa U.S.A. Inc. Use of this card constitutes acceptance of the terms and conditions stated in the Cardholder Agreement. Read more about the privacy policy: https://www.sunrise.bank/privacy-policy#:~:text=How%20does%20Sunrise%20Bank%20protect,and%20secured%20files%20and%20buildings."
+  },
+  "additionalRequirements": {
+    "userIdRequired": false
+  }
+}

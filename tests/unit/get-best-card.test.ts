@@ -8,6 +8,7 @@ import { RELOADLY_PRODUCTION_API_URL } from "../../functions/utils/shared";
 import bestCard from "../fixtures/get-best-card/best-card-sandbox.json";
 import card18597 from "../fixtures/get-best-card/card-18597.json";
 import card18732 from "../fixtures/get-best-card/card-18732.json";
+import card18736 from "../fixtures/get-best-card/card-18736.json";
 import card18732NotFound from "../fixtures/get-best-card/card-18732-not-found.json";
 import noCardKr from "../fixtures/get-best-card/no-card-kr.json";
 import { httpMocks } from "../fixtures/http-mocks";
@@ -51,6 +52,15 @@ describe("Get best payment card", () => {
     await waitOnExecutionContext(execContext);
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(card18732);
+  });
+
+  it.only("should respond with visa 18736 for Pakistan as fallback", async () => {
+    const request = new Request(`${TESTS_BASE_URL}/get-best-card?country=PK&amount=${parseEther("50")}`);
+    const eventCtx = createEventContext(request, execContext);
+    const response = await pagesFunction(eventCtx);
+    await waitOnExecutionContext(execContext);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(card18736);
   });
 
   it("should respond with no payment card for unsupported country", async () => {

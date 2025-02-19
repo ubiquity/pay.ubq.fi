@@ -128,7 +128,7 @@ async function getSecondFallbackIntlVisa(accessToken: AccessToken): Promise<Gift
   try {
     return await getGiftCardById(fallbackIntlVisaSecond.sku, accessToken);
   } catch (e) {
-    console.error(`Failed to load international US visa: ${JSON.stringify(fallbackIntlVisaSecond)}\n${e}`);
+    console.error(`Failed to load Virtual Visa Globe Pay US: ${JSON.stringify(fallbackIntlVisaSecond)}\n${e}`);
     return null;
   }
 }

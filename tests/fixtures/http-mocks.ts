@@ -4,6 +4,7 @@ import bestMastercardProd from "./get-best-card/best-master-card-prod.json";
 import bestVisaProd from "./get-best-card/best-visa-card-prod.json";
 import card18597 from "./get-best-card/card-18597.json";
 import card18732 from "./post-order/card-18732.json";
+import card18736 from "./get-best-card/card-18736.json";
 import card18598 from "./get-best-card/card-18598.json";
 import noCardMt from "./get-best-card/no-card-mt.json";
 import transaction from "./get-order/transaction.json";
@@ -55,6 +56,10 @@ export const httpMocks = [
     return HttpResponse.json(noCardMt, { status: 404 });
   }),
 
+  http.get(`${RELOADLY_PRODUCTION_API_URL}/countries/PK/products`, () => {
+    return HttpResponse.json(noCardMt, { status: 404 });
+  }),
+
   http.get(`${RELOADLY_PRODUCTION_API_URL}/orders/transactions/38994/cards`, () => {
     return HttpResponse.json(card, { status: 200 });
   }),
@@ -85,6 +90,10 @@ export const httpMocks = [
 
   http.get(`${RELOADLY_PRODUCTION_API_URL}/products/18732`, () => {
     return HttpResponse.json(card18732, { status: 200 });
+  }),
+
+  http.get(`${RELOADLY_PRODUCTION_API_URL}/products/18736`, () => {
+    return HttpResponse.json(card18736, { status: 200 });
   }),
 
   http.get(`${RELOADLY_SANDBOX_API_URL}/products/13959`, () => {
