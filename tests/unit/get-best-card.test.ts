@@ -54,7 +54,7 @@ describe("Get best payment card", () => {
     expect(await response.json()).toEqual(card18732);
   });
 
-  it.only("should respond with visa 18736 for Pakistan as fallback", async () => {
+  it("should respond with visa 18736 for Pakistan as fallback", async () => {
     const request = new Request(`${TESTS_BASE_URL}/get-best-card?country=PK&amount=${parseEther("50")}`);
     const eventCtx = createEventContext(request, execContext);
     const response = await pagesFunction(eventCtx);
