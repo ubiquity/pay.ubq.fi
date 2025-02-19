@@ -22,6 +22,7 @@ const typescriptEntries = ["static/scripts/rewards/init.ts", "static/scripts/ubi
 export const entries = [...typescriptEntries];
 
 export const esBuildContext: esbuild.BuildOptions = {
+  external: ["@ubiquity-os/permit-generation"],
   sourcemap: true,
   entryPoints: entries,
   bundle: true,
