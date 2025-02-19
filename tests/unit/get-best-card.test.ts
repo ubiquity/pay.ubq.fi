@@ -54,7 +54,7 @@ describe("Get best payment card", () => {
   });
 
   it("should respond with no payment card for unsupported country", async () => {
-    const request = new Request(`${TESTS_BASE_URL}/get-best-card?country=PK&amount=${parseEther("50")}`);
+    const request = new Request(`${TESTS_BASE_URL}/get-best-card?country=RU&amount=${parseEther("50")}`);
     const eventCtx = createEventContext(request, execContext);
     const response = await pagesFunction(eventCtx);
     await waitOnExecutionContext(execContext);
