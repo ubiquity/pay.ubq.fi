@@ -4,11 +4,11 @@ import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { getNetworkExplorer, permit2Address } from "@ubiquity-dao/rpc-handler";
-import { supabase } from "../render-transaction/fetch-permits";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 import { convertToNetworkId } from "./use-rpc-handler";
+import { supabase } from "../render-transaction/supabase-getters";
 
 export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
