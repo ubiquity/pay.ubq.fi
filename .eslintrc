@@ -41,7 +41,7 @@
     "sonarjs/no-identical-expressions": "error",
     "@typescript-eslint/naming-convention": [
       "error",
-      { "selector": "interface", "format": ["StrictPascalCase"], "custom": { "regex": "^I[A-Z]", "match": false } },
+      { "selector": "interface", "format": ["PascalCase"], "custom": { "regex": "^I[A-Z]", "match": false } },
       { "selector": "memberLike", "modifiers": ["private"], "format": ["strictCamelCase"], "leadingUnderscore": "require" },
       { "selector": "typeLike", "format": ["StrictPascalCase"] },
       { "selector": "typeParameter", "format": ["StrictPascalCase"], "prefix": ["T"] },
