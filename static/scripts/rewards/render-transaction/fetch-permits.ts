@@ -13,6 +13,8 @@ import { switchNetwork } from "../web3/switch-network";
 import { ethers } from "ethers";
 import { getNetworkName, NetworkId } from "@ubiquity-dao/rpc-handler";
 import { fetchPermitsFromSupabase, supabase } from "./supabase-getters";
+import { getSessionToken, GITHUB_ACCEPT_HEADER } from "../auth";
+import { Octokit } from "@octokit/rest";
 
 const urlParams = new URLSearchParams(window.location.search);
 const base64encodedTxData = urlParams.get("claim");
@@ -22,16 +24,32 @@ export const table = document.getElementsByTagName(`table`)[0];
 export async function fetchPermits(app: AppState) {
   let permits: PermitReward[];
 
-  // if there is a permit encoded in the URL read from URL
-  // else fetch from supabase db
+  const token = getSessionToken();
+
+  /**
+   * In early return fashion, meaning priority to what comes first:
+   * 1. If there is a permit in the URL query string, read it.
+   * 2. If user is authenticated in Github fetch permits from Supabase.
+   * 3. Show error message if no permits found.
+   */
   if (base64encodedTxData) {
     permits = await readClaimDataFromUrl();
-  } else {
-    const testUser = 155616000; // zug
-    permits = await fetchPermitsFromSupabase(testUser);
+  } else if (token) {
+    const octokit = new Octokit({
+      auth: token,
+      headers: {
+        Accept: GITHUB_ACCEPT_HEADER,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const { data: user } = await octokit.users.getAuthenticated();
+    permits = await fetchPermitsFromSupabase(user.id);
 
     // filter claimed permits, only show unclaimed ones
     permits = permits.filter((permit) => !isNonceClaimed(app, permit));
+  } else {
+    permits = [];
   }
 
   // if found no permits

@@ -1,6 +1,8 @@
 import { getLocalStore, setLocalStore } from "./local-store";
 import { supabase } from "./render-transaction/supabase-getters";
 
+export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
+
 export interface OAuthToken {
   provider_token: string;
   access_token: string;
@@ -87,7 +89,7 @@ export async function gitHubLoginButtonHandler() {
  * 1. URL hash after OAuth redirect
  * 2. Cached session in local storage
  */
-function getSessionToken() {
+export function getSessionToken() {
   // cSpell: ignore wfzpewmlyiozupulbuur
   const cachedSessionToken = getLocalStore<OAuthToken>("sb-wfzpewmlyiozupulbuur-auth-token");
   if (cachedSessionToken) {
