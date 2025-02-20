@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { getNetworkName, getNetworkExplorer, getNetworkCurrency, getNetworkRpcs } from "@ubiquity-dao/rpc-handler";
-import { convertToNetworkId } from "./use-rpc-handler";
+import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
 
 export async function addNetwork(provider: ethers.providers.Web3Provider, networkId: number): Promise<boolean> {
   const networkIdTyped = convertToNetworkId(networkId);

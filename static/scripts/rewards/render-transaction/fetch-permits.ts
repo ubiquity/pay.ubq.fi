@@ -8,7 +8,7 @@ import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, i
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
-import { useRpcHandler } from "../web3/use-rpc-handler";
+import { useRpcHandler } from "../../../../shared/use-rpc-handler";
 import { switchNetwork } from "../web3/switch-network";
 import { ethers } from "ethers";
 import { getNetworkName, NetworkId } from "@ubiquity-dao/rpc-handler";

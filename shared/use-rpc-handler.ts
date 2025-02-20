@@ -1,4 +1,6 @@
 import { RPCHandler, HandlerConstructorConfig, NetworkId } from "@ubiquity-dao/rpc-handler";
+import { networkRpcs } from "./constants";
+import { JsonRpcProvider } from "@ethersproject/providers";
 
 export function convertToNetworkId(networkId: number | string): NetworkId {
   if (typeof networkId === "string") {
@@ -34,12 +36,16 @@ export async function useRpcHandler(networkId: number) {
   if (!networkId) {
     throw new Error("Network ID not set");
   }
-
-  const handler = useHandler(networkId);
-  const provider = await handler.getFastestRpcProvider();
-  const url = provider.connection.url;
-  if (!url) {
-    throw new Error("Provider URL not set");
+  try {
+    const handler = useHandler(networkId);
+    const provider = await handler.getFastestRpcProvider();
+    const url = provider.connection.url;
+    if (!url) {
+      throw new Error("Provider URL not set");
+    }
+    return provider;
+  } catch (e) {
+    console.log(`RpcHandler is having issues. Error: ${e} \nUsing backup rpc.`);
+    return new JsonRpcProvider({ url: networkRpcs[networkId], skipFetchSetup: true });
   }
-  return provider;
 }

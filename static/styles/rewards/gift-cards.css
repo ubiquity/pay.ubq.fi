@@ -162,6 +162,14 @@
   color: #fff;
 }
 
+.cards-env {
+  background: yellow;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  color: #000;
+}
+
 .disclaimer {
   text-align: center;
   padding: 24px 12px;

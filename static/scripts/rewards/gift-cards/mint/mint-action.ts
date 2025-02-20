@@ -1,7 +1,10 @@
 import { ethers } from "ethers";
-import { giftCardTreasuryAddress, permit2Address } from "../../../../../shared/constants";
+import { PostOrderParams } from "../../../../../shared/api-types";
+import { giftCardTreasuryAddress, permit2Address, ubiquityDollarChainAddresses } from "../../../../../shared/constants";
+import { getGiftCardOrderId, getMintMessageToSign } from "../../../../../shared/helpers";
 import { isClaimableForAmount } from "../../../../../shared/pricing";
 import { GiftCard } from "../../../../../shared/types";
+import { postOrder } from "../../../shared/api";
 import { permit2Abi } from "../../abis";
 import { AppState } from "../../app-state";
 import { isErc20Permit } from "../../render-transaction/render-transaction";
@@ -9,10 +12,7 @@ import { toaster } from "../../toaster";
 import { checkPermitClaimable, transferFromPermit, waitForTransaction } from "../../web3/erc20-permit";
 import { getApiBaseUrl, getUserCountryCode } from "../helpers";
 import { initClaimGiftCard } from "../index";
-import { getGiftCardOrderId, getMintMessageToSign } from "../../../../../shared/helpers";
-import { postOrder } from "../../../shared/api";
 import { getIncompleteMintTx, removeIncompleteMintTx, storeIncompleteMintTx } from "./mint-tx-tracker";
-import { PostOrderParams } from "../../../../../shared/api-types";
 
 export function attachMintAction(giftCard: GiftCard, app: AppState) {
   const mintBtn: HTMLElement | null = document.getElementById("mint");
@@ -23,6 +23,8 @@ export function attachMintAction(giftCard: GiftCard, app: AppState) {
 
     if (!isErc20Permit(app.reward)) {
       toaster.create("error", "Only ERC20 permits are allowed to claim a card.");
+    } else if (app.reward.tokenAddress.toLowerCase() !== ubiquityDollarChainAddresses[app.reward.networkId].toLowerCase()) {
+      toaster.create("error", `<a href="https://dao.ubq.fi/card-minting" target="_blank">Payment card can be minted only with Ubiquity Dollar permit.</a>`);
     } else if (!isClaimableForAmount(giftCard, app.reward.amount)) {
       toaster.create("error", "Your reward amount is not equal to the price of available card.");
     } else {
