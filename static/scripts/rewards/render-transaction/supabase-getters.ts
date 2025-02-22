@@ -18,7 +18,6 @@ export interface SupabasePermit {
   token_id: number | null;
   beneficiary_id: number | null;
   partner_id: number | null;
-  location_id: number | null;
 }
 
 export interface SupabaseToken {
@@ -30,13 +29,11 @@ export interface SupabaseToken {
 export interface SupabasePartner {
   id: number;
   wallet_id: number;
-  location_id: number;
 }
 
 export interface SupabaseUser {
   id: number;
   wallet_id: number;
-  location_id: number;
 }
 
 export interface SupabaseWallet {
@@ -95,7 +92,6 @@ export async function fetchUserById(userId: number): Promise<SupabaseUser | null
                     node {
                         id
                         wallet_id
-                        location_id
                     }
                 }
             }
@@ -138,7 +134,6 @@ export async function fetchPartnerById(partnerId: number): Promise<SupabasePartn
             node {
               id
               wallet_id
-              location_id
             }
           }
         }
@@ -227,6 +222,8 @@ export async function fetchPermitsFromSupabase(userId: number): Promise<PermitRe
               deadline
               signature
               token_id
+              beneficiary_id
+              partner_id
             }
           }
         }
@@ -262,34 +259,30 @@ export async function fetchPermitsFromSupabase(userId: number): Promise<PermitRe
 async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]> {
   const processed = await Promise.all(
     permits.map(async (permit) => {
-      if (!permit.token_id || !permit.beneficiary_id || !permit.partner_id) {
-        // skip
+      if (!permit.beneficiary_id || !permit.token_id || !permit.partner_id) {
+        // skip if not enough info from db
         return null;
       }
 
-      const tokenRecord = await fetchTokenById(permit.token_id);
-      if (!tokenRecord) {
-        // skip
-        return null;
-      }
+      // fetch objects from db
       const userRecord = await fetchUserById(permit.beneficiary_id);
       if (!userRecord) {
-        // skip
+        // skip if user not found
+        console.log("User not found");
         return null;
       }
+      const tokenRecord = await fetchTokenById(permit.token_id);
       const userWalletRecord = await fetchWalletById(userRecord.wallet_id);
-      if (!userWalletRecord) {
-        // skip
-        return null;
-      }
       const partnerRecord = await fetchPartnerById(permit.partner_id);
       if (!partnerRecord) {
-        // skip
+        console.log("Partner not found");
         return null;
       }
       const partnerWalletRecord = await fetchWalletById(partnerRecord.wallet_id);
-      if (!partnerWalletRecord) {
-        // skip
+
+      if (!tokenRecord || !userWalletRecord || !partnerWalletRecord) {
+        // skip if not enough info from db
+        console.log("Token or wallet not found");
         return null;
       }
 
