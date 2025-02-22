@@ -1,8 +1,9 @@
 import ct from "countries-and-timezones";
 
+declare const BACKEND_URL: string;
+
 export function getApiBaseUrl() {
-  // specify when backend functions and frontend are deployed to a different URL
-  return "";
+  return BACKEND_URL;
 }
 
 async function getCountryCodeByIp() {
@@ -34,4 +35,26 @@ export async function getUserCountryCode() {
     }
   }
   return null;
+}
+
+export async function isReloadlySandbox() {
+  const response = await fetch(`${getApiBaseUrl()}/get-cards-env`);
+  if (response.status == 200) {
+    const responseJson = await response.json();
+    return responseJson.USE_RELOADLY_SANDBOX === "true";
+  }
+  return false;
+}
+
+export async function detectCardsEnv() {
+  const isCardsSandbox = await isReloadlySandbox();
+  if (isCardsSandbox) {
+    const cardEnvElement = document.createElement("div");
+    cardEnvElement.setAttribute("class", "cards-env");
+    cardEnvElement.textContent = "You are using Reloadly Sandbox.";
+    const footer = document.getElementsByTagName("footer");
+    if (footer.length) {
+      footer[0].parentNode?.insertBefore(cardEnvElement, footer[0].nextSibling);
+    }
+  }
 }

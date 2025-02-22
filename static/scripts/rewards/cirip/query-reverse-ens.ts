@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { useHandler } from "../web3/use-rpc-handler";
+import { useHandler } from "../../../../shared/use-rpc-handler";
 
 export async function queryReverseEns(address: string) {
   // Try to get the ENS name from localStorage

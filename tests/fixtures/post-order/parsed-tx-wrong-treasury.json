@@ -1,7 +1,7 @@
 {
   "args": {
     "permit": {
-      "0": { "token": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d" },
+      "0": { "token": "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068" },
       "deadline": 33287622343
     },
     "transferDetails": {
@@ -10,7 +10,7 @@
     },
 
     "0": [
-      ["0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d", { "type": "BigNumber", "hex": "0x02b5e3af16b1880000" }],
+      ["0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068", { "type": "BigNumber", "hex": "0x02b5e3af16b1880000" }],
       { "type": "BigNumber", "hex": "0x736d6a935bb4879ae1e94d2ff4ee433a5d705d6cef7b1fa174fa169575bf4a76" },
       { "type": "BigNumber", "hex": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }
     ],

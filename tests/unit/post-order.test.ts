@@ -27,7 +27,6 @@ import receiptTxForMockedParse from "../fixtures/post-order/receipt-tx-for-mocke
 import receiptUusd from "../fixtures/post-order/receipt-tx-uusd.json";
 import receiptGeneric from "../fixtures/post-order/receipt.json";
 import { createEventContext, TESTS_BASE_URL } from "./shared-utils";
-import * as constant from "../../shared/constants";
 
 describe("Post order for a payment card", () => {
   let server: SetupServerApi;
@@ -44,8 +43,6 @@ describe("Post order for a payment card", () => {
     } catch (e) {
       console.log(`Error starting msw server: ${e}`);
     }
-    // Fixture use wxdai token for reward
-    constant.chainIdToRewardTokenMap[31337] = constant.Tokens.WXDAI;
   });
 
   beforeEach(async () => {
@@ -253,7 +250,7 @@ describe("Post order for a payment card", () => {
     expect(await response.json()).toEqual(generalError);
     expect(consoleMock).toHaveBeenLastCalledWith(
       "Given transaction hash is not an interaction with permit2Address",
-      "txReceipt.to=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
+      "txReceipt.to=0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068",
       "permit2Address=0x000000000022D473030F116dDEE9F6B43aC78BA3"
     );
   });
@@ -306,7 +303,7 @@ describe("Post order for a payment card", () => {
     expect(await response.json()).toEqual(generalError);
     expect(consoleMock).toHaveBeenLastCalledWith(
       "Given transaction hash is not transferring the required ERC20 token.",
-      '{"transferredToken":"0x4ECaBa5870353805a9F068101A40E0f32ed605C6","requiredToken":"0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"}'
+      '{"transferredToken":"0x4ECaBa5870353805a9F068101A40E0f32ed605C6","requiredToken":"0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"}'
     );
   });
 
@@ -462,11 +459,6 @@ describe("Post order for a payment card", () => {
 });
 
 async function initMocks(receipt: object = receiptGeneric, minedTx: object = minedTxGeneric, parsedTx?: object) {
-  const helpers = await import("../../shared/helpers");
-  vi.spyOn(helpers, "getFastestRpcUrl").mockImplementation(async () => {
-    return "http://127.0.0.1:8545";
-  });
-
   const providers = await import("@ethersproject/providers");
   vi.spyOn(providers.JsonRpcProvider.prototype, "getTransactionReceipt").mockImplementationOnce(async () => {
     return receipt as TransactionReceipt;

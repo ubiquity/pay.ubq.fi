@@ -1,5 +1,5 @@
 import { spawnSync } from "child_process";
-import { useHandler } from "../../static/scripts/rewards/web3/use-rpc-handler";
+import { useHandler } from "../../shared/use-rpc-handler";
 import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
 class Anvil {

@@ -3,9 +3,10 @@ import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { BigNumber, ethers } from "ethers";
 import { nftRewardAbi } from "../abis/nft-reward-abi";
 import { app } from "../app-state";
-import { toaster } from "../toaster";
+import { errorToast, MetaMaskError, toaster } from "../toaster";
 import { buttonController, getMakeClaimButton } from "../button-controller";
 import { connectWallet } from "./connect-wallet";
+import { decodeError } from "@ubiquity-os/ethers-decode-error";
 
 export function claimErc721PermitHandler(reward: PermitReward) {
   return async function claimHandler() {
@@ -33,7 +34,6 @@ export function claimErc721PermitHandler(reward: PermitReward) {
     buttonController.showLoader();
     try {
       const nftContract = new ethers.Contract(reward.tokenAddress, nftRewardAbi, signer);
-
       const tx: TransactionResponse = await nftContract.safeMint(
         {
           beneficiary: reward.beneficiary,
@@ -62,7 +62,16 @@ export function claimErc721PermitHandler(reward: PermitReward) {
     } catch (error: unknown) {
       console.error(error);
       if (error instanceof Error) {
-        toaster.create("error", `Error claiming NFT: ${error.message}`);
+        const e = error as unknown as MetaMaskError;
+        if (e.code == "ACTION_REJECTED") {
+          // Handle the user rejection case
+          toaster.create("info", `Transaction was not sent because it was rejected by the user.`);
+          buttonController.hideLoader();
+          buttonController.showMakeClaim();
+        } else {
+          const { error } = decodeError(e, nftRewardAbi);
+          errorToast(e, `Error in permitTransferFrom: ${error}`);
+        }
       } else if (typeof error === "string") {
         toaster.create("error", `Error claiming NFT: ${error}`);
       } else {

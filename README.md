@@ -13,6 +13,7 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   # Common variables
   CHAIN_ID="31337"
   FRONTEND_URL="http://localhost:8080"
+  BACKEND_URL="" # "" or if you want to work on frontend only, use "https://pay.ubq.fi"
   UBIQUIBOT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
   RPC_PROVIDER_URL="http://127.0.0.1:8545"
   PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
@@ -152,3 +153,18 @@ Notice that this examples uses gnosis chain for nonce invalidation. If you need 
 
 1. Set `RPC_PROVIDER_URL` on step 1 to the desired RPC chain provider
 2. On step 3 open UI for the desired chain
+
+### Working with frontend only
+
+Following environment variables will help you quickly get started with frontend only. Rest of the environment variables should be specified as described [above](https://github.com/ubiquity/pay.ubq.fi#setup-local-testing-environment).
+
+```
+CHAIN_ID="100"
+BACKEND_URL="https://pay.ubq.fi"
+RPC_PROVIDER_URL="https://rpc.gnosischain.com"
+```
+
+In this case, the production deploy of the backend is served to your frontend and you can change things in the frontend.
+
+There are some `/shared` files for frontend & backend. To make sure you didn't break anything in backend, you should occasionally run
+`yarn test:unit`

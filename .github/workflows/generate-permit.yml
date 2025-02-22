@@ -6,6 +6,9 @@ on:
       beneficiary:
         required: true
         description: The address of the beneficiary's wallet
+      amount:
+        required: true
+        description: The amount of permit
       evmPrivateEncrypted:
         required: true
         description: Ubiquibot's Private Key
@@ -29,9 +32,10 @@ jobs:
           yarn start:sign
         env:
           BENEFICIARY_ADDRESS: ${{ github.event.inputs.beneficiary }}
-          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
-          AMOUNT_IN_ETH: 0
+          PAYMENT_TOKEN_ADDRESS: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          AMOUNT_IN_ETH: ${{ github.event.inputs.amount }}
           CHAIN_ID: 100
           FRONTEND_URL: "http://localhost:8080"
+          BACKEND_URL: ""
           RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
           UBIQUIBOT_PRIVATE_KEY: ${{ github.event.inputs.evmPrivateEncrypted }}
