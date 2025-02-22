@@ -267,10 +267,10 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
       // fetch objects from db
       const userRecord = await fetchUserById(permit.beneficiary_id);
       if (!userRecord) {
-        // skip if user not found
         console.log("User not found");
         return null;
       }
+
       const tokenRecord = await fetchTokenById(permit.token_id);
       const userWalletRecord = await fetchWalletById(userRecord.wallet_id);
       const partnerRecord = await fetchPartnerById(permit.partner_id);
@@ -278,18 +278,12 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
         console.log("Partner not found");
         return null;
       }
-      const partnerWalletRecord = await fetchWalletById(partnerRecord.wallet_id);
 
+      const partnerWalletRecord = await fetchWalletById(partnerRecord.wallet_id);
       if (!tokenRecord || !userWalletRecord || !partnerWalletRecord) {
-        // skip if not enough info from db
         console.log("Token or wallet not found");
         return null;
       }
-
-      const tokenAddress = tokenRecord.address;
-      const networkId = tokenRecord.network;
-      const beneficiary = userWalletRecord.address;
-      const owner = partnerWalletRecord.address;
 
       return {
         nonce: permit.nonce,
@@ -297,10 +291,10 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
         deadline: permit.deadline,
         signature: permit.signature,
         tokenType: TokenType.ERC20,
-        tokenAddress,
-        beneficiary,
-        owner,
-        networkId,
+        tokenAddress: tokenRecord.address,
+        beneficiary: userWalletRecord.address,
+        owner: partnerWalletRecord.address,
+        networkId: tokenRecord.network,
       } as PermitReward;
     })
   );
