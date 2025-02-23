@@ -70,11 +70,7 @@ export async function fetchPermits(app: AppState) {
     table.setAttribute(`data-make-claim`, "error");
   }
 
-  try {
-    app.signer = await connectWallet();
-  } catch (error) {
-    /* empty */
-  }
+  app.signer = await connectWallet();
 
   await updateButtonVisibility(app);
 
