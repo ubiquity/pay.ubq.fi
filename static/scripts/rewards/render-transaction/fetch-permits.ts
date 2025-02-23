@@ -45,21 +45,9 @@ export async function fetchPermits(app: AppState) {
 
     const { data: user } = await octokit.users.getAuthenticated();
     permits = await fetchPermitsFromSupabase(user.id);
-
-    // filter claimed permits, only show unclaimed ones
-    permits = permits.filter((permit) => !isNonceClaimed(app, permit));
   } else {
     permits = [];
   }
-
-  // if found no permits
-  if (!permits.length) {
-    setClaimMessage({ type: "Notice", message: `No claim data found.` });
-    table.setAttribute(`data-make-claim`, "error");
-  }
-
-  app.claims = permits;
-  app.claimTxs = await getClaimedTxs(app);
 
   try {
     app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
@@ -69,6 +57,17 @@ export async function fetchPermits(app: AppState) {
     } else {
       toaster.create("error", JSON.stringify(e));
     }
+  }
+
+  // filter claimed permits, only show unclaimed ones
+  permits = permits.filter((permit) => !isNonceClaimed(app, permit));
+  app.claims = permits;
+  app.claimTxs = await getClaimedTxs(app);
+
+  // if found no permits
+  if (!permits.length) {
+    setClaimMessage({ type: "Notice", message: `No claim data found.` });
+    table.setAttribute(`data-make-claim`, "error");
   }
 
   try {
