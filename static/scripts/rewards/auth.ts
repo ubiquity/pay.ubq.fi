@@ -117,7 +117,6 @@ function getNewSessionToken() {
 
 export function initializeAuth() {
   const token = getSessionToken();
-  console.log("Token:", token);
   const loginButton = document.getElementById("github-login") as HTMLDivElement;
   const gitHubLoginButton = document.getElementById("github-login-button") as HTMLButtonElement;
 
