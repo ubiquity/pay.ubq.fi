@@ -61,7 +61,7 @@ jobs:
             }
 
       - name: Report Knip results to pull request
-        uses: gitcoindev/knip-reporter@main
+        uses: ubiquity/knip-reporter@main
         with:
           verbose: true
           comment_id: ${{ steps.get-comment.outputs.comment_id || github.workflow }}-knip-report
