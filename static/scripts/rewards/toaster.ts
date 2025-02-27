@@ -74,4 +74,13 @@ export type MetaMaskError = {
       hex: "0x012c5a";
     };
   };
+  error: {
+    code: string;
+    message: string;
+    data: {
+      code: string;
+      message: string;
+      data: string;
+    };
+  };
 };

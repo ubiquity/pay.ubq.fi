@@ -1,20 +1,20 @@
-import { JsonRpcProvider, TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
+import { Interface, TransactionDescription } from "@ethersproject/abi";
+import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { verifyMessage } from "@ethersproject/wallet";
 import { BigNumber } from "ethers";
-import { Interface, TransactionDescription } from "@ethersproject/abi";
-import { Tokens, chainIdToRewardTokenMap, giftCardTreasuryAddress, permit2Address } from "../shared/constants";
-import { getFastestRpcUrl, getGiftCardOrderId, getMintMessageToSign } from "../shared/helpers";
+import { PostOrderParams, postOrderParamsSchema } from "../shared/api-types";
+import { giftCardTreasuryAddress, permit2Address, ubiquityDollarAllowedChainIds, ubiquityDollarChainAddresses } from "../shared/constants";
+import { getGiftCardOrderId, getMintMessageToSign } from "../shared/helpers";
 import { getGiftCardValue, isClaimableForAmount } from "../shared/pricing";
 import { ExchangeRate, GiftCard } from "../shared/types";
-import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
+import { useRpcHandler } from "../shared/use-rpc-handler";
 import { erc20Abi } from "../static/scripts/rewards/abis/erc20-abi";
+import { permit2Abi } from "../static/scripts/rewards/abis/permit2-abi";
 import { getTransactionFromOrderId } from "./get-order";
+import { findBestCard } from "./utils/best-card-finder";
 import { commonHeaders, getAccessToken, getReloadlyApiBaseUrl } from "./utils/shared";
 import { AccessToken, Context, ReloadlyFailureResponse, ReloadlyOrderResponse } from "./utils/types";
 import { validateEnvVars, validateRequestMethod } from "./utils/validators";
-import { PostOrderParams, postOrderParamsSchema } from "../shared/api-types";
-import { permitAllowedChainIds, ubiquityDollarAllowedChainIds, ubiquityDollarChainAddresses } from "../shared/constants";
-import { findBestCard } from "./utils/best-card-finder";
 
 export async function onRequest(ctx: Context): Promise<Response> {
   try {
@@ -29,15 +29,7 @@ export async function onRequest(ctx: Context): Promise<Response> {
     }
     const { type, productId, txHash, chainId, country } = result.data;
 
-    const fastestRpcUrl = await getFastestRpcUrl(chainId);
-
-    const provider = new JsonRpcProvider(
-      {
-        url: fastestRpcUrl,
-        skipFetchSetup: true,
-      },
-      chainId
-    );
+    const provider = await useRpcHandler(chainId);
 
     const [txReceipt, tx, giftCard]: [TransactionReceipt, TransactionResponse, GiftCard] = await Promise.all([
       provider.getTransactionReceipt(txHash),
@@ -151,12 +143,13 @@ async function orderGiftCard(
   const requestBody = JSON.stringify({
     productId: productId,
     quantity: 1,
-    unitPrice: cardValue.toFixed(2),
+    unitPrice: cardValue,
     customIdentifier: identifier,
     preOrder: false,
     productAdditionalRequirements: {
       userId: userId,
     },
+    senderName: "Ubiquity",
   });
 
   console.log(`Placing order at url: ${url}`);
@@ -259,7 +252,7 @@ function validatePermitTransaction(
   postOrderParams: PostOrderParams,
   giftCard: GiftCard
 ): string | null {
-  if (!permitAllowedChainIds.includes(postOrderParams.chainId)) {
+  if (!ubiquityDollarAllowedChainIds.includes(postOrderParams.chainId)) {
     return "Unsupported chain";
   }
 
@@ -319,12 +312,12 @@ function validatePermitTransaction(
     return wrongContractErr;
   }
 
-  if (txParsed.args.permit[0].token.toLowerCase() != chainIdToRewardTokenMap[postOrderParams.chainId].toLowerCase()) {
+  if (txParsed.args.permit[0].token.toLowerCase() != ubiquityDollarChainAddresses[postOrderParams.chainId].toLowerCase()) {
     console.error(
       "Given transaction hash is not transferring the required ERC20 token.",
       JSON.stringify({
         transferredToken: txParsed.args.permit[0].token,
-        requiredToken: Tokens.WXDAI.toLowerCase(),
+        requiredToken: ubiquityDollarChainAddresses[postOrderParams.chainId],
       })
     );
     return wrongContractErr;

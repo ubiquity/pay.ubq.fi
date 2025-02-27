@@ -36,7 +36,7 @@ export const esBuildContext: esbuild.BuildOptions = {
   },
   outdir: "static/out",
   entryNames: "[dir]", // Ensure the CSS is named bundles.css
-  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY"], {
+  define: createEnvDefines(["SUPABASE_URL", "SUPABASE_ANON_KEY", "BACKEND_URL"], {
     commitHash: execSync(`git rev-parse --short HEAD`).toString().trim(),
   }),
   plugins: [

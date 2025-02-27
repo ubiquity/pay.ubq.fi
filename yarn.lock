@@ -2900,6 +2900,11 @@
     axios "^1.7.1"
     node-fetch "^3.3.2"
 
+"@ubiquity-os/ethers-decode-error@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@ubiquity-os/ethers-decode-error/-/ethers-decode-error-1.1.0.tgz#0c6ec0c0ef1194d60894a8565cf4cd2d1e1c2d72"
+  integrity sha512-xSy1DTgDWZrLsjt/F8MpTJSst0ABzKrD/QZju6soGuqTnAWpN7X3DuYiEHWZ3KoIYdZCxs1iK73FiJdaVZHyKA==
+
 "@ungap/structured-clone@^1.2.0":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.2.0.tgz"

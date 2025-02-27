@@ -37,6 +37,20 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Make env sync script executable
+        run: chmod +x .github/sync-env-vars.sh
+
+      - name: Run env sync script script
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RELOADLY_API_CLIENT_ID: ${{ secrets.RELOADLY_API_CLIENT_ID }}
+          RELOADLY_API_CLIENT_SECRET: ${{ secrets.RELOADLY_API_CLIENT_SECRET }}
+          RELOADLY_SANDBOX_API_CLIENT_ID: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_ID }}
+          RELOADLY_SANDBOX_API_CLIENT_SECRET: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_SECRET }}
+        run: bash .github/sync-env-vars.sh
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -55,10 +69,11 @@ jobs:
           echo "CLAIMABLE_URL=$url" >> $GITHUB_ENV
         env:
           BENEFICIARY_ADDRESS: "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd"
-          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
-          AMOUNT_IN_ETH: 0
+          PAYMENT_TOKEN_ADDRESS: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          AMOUNT_IN_ETH: 30
           CHAIN_ID: 100
           FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
+          BACKEND_URL: ""
           RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
           UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_APP_PRIVATE_KEY_TEST }}
 

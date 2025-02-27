@@ -8,7 +8,8 @@ import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
-import { convertToNetworkId } from "./use-rpc-handler";
+import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
+import { decodeError } from "@ubiquity-os/ethers-decode-error";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -89,9 +90,9 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
         buttonController.hideLoader();
         buttonController.showMakeClaim();
       } else {
-        // Handle other errors
-        console.error("Error in permitTransferFrom:", e);
-        errorToast(e, e.reason);
+        console.error(e);
+        const { error } = decodeError(e, permit2Abi);
+        errorToast(e, `Error in permitTransferFrom: ${error}`);
       }
     }
     return null;
@@ -272,11 +273,12 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 
     if (!app.signer) return;
     await invalidateNonce(app.signer, app.reward.nonce);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      const e = err as unknown as MetaMaskError;
       console.error(e);
-      errorToast(e, e.reason);
+      const { error } = decodeError(e, permit2Abi);
+      errorToast(e, `Error in invalidateNonce: ${error}`);
       return;
     }
   }

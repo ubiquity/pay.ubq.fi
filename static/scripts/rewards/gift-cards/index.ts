@@ -3,7 +3,7 @@ import { getGiftCardOrderId, isGiftCardAvailable } from "../../../../shared/help
 import { GiftCard, OrderTransaction } from "../../../../shared/types";
 import { AppState } from "../app-state";
 import { getGiftCardHtml } from "./gift-card";
-import { getApiBaseUrl, getUserCountryCode } from "./helpers";
+import { detectCardsEnv, getApiBaseUrl, getUserCountryCode } from "./helpers";
 import { attachMintAction } from "./mint/mint-action";
 import { getRedeemCodeHtml } from "./reveal/redeem-code-html";
 import { attachRevealAction } from "./reveal/reveal-action";
@@ -16,7 +16,10 @@ export async function initClaimGiftCard(app: AppState) {
   }
   giftCardsSection.innerHTML = "Loading...";
 
+  void detectCardsEnv();
+
   const countryCode = await getUserCountryCode();
+
   if (!countryCode) {
     giftCardsSection.innerHTML = `<p class="card-error">Failed to load suitable virtual cards for you. Refresh or try disabling adblocker.</p>`;
     return;
