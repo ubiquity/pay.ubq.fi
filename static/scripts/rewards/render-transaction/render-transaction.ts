@@ -7,6 +7,7 @@ import { insertErc20PermitTableData, insertErc721PermitTableData } from "./inser
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
 import { TokenType } from "@ubiquibot/permit-generation/types";
+import { useRpcHandler } from "../../../../shared/use-rpc-handler";
 
 const carousel = document.getElementById("carousel") as Element;
 const table = document.querySelector(`table`) as HTMLTableElement;
@@ -26,6 +27,8 @@ export async function renderTransaction(): Promise<Success> {
   }
 
   if (isErc20Permit(app.reward)) {
+    app.provider = await useRpcHandler(app.reward.networkId);
+
     const treasury = await fetchTreasury(app.reward);
     table.setAttribute(`data-additional-data-size`, "small");
 
