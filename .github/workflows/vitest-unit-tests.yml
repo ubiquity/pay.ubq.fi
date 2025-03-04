@@ -18,9 +18,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-        submodules: "recursive" # Ensures submodules are checked out
-
 
       - name: Install dependencies
         run: yarn
