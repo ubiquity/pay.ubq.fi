@@ -49,6 +49,11 @@ export async function fetchPermits(app: AppState) {
     permits = [];
   }
 
+  // filter claimed permits, only show unclaimed ones
+  permits = permits.filter(async (permit) => !(await isNonceClaimed(permit)));
+  app.claims = permits;
+  app.claimTxs = await getClaimedTxs(app);
+
   try {
     app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
   } catch (e) {
@@ -58,11 +63,6 @@ export async function fetchPermits(app: AppState) {
       toaster.create("error", JSON.stringify(e));
     }
   }
-
-  // filter claimed permits, only show unclaimed ones
-  permits = permits.filter((permit) => !isNonceClaimed(app, permit));
-  app.claims = permits;
-  app.claimTxs = await getClaimedTxs(app);
 
   // if found no permits
   if (!permits.length) {

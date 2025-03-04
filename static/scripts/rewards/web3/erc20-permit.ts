@@ -8,7 +8,7 @@ import { buttonController, getMakeClaimButton, viewClaimButton } from "../button
 import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 import { supabase } from "../render-transaction/supabase-getters";
-import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
+import { convertToNetworkId, useRpcHandler } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
 
 export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
@@ -167,7 +167,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed: boolean;
   try {
-    isClaimed = await isNonceClaimed(app, app.reward);
+    isClaimed = await isNonceClaimed(app.reward);
   } catch (error: unknown) {
     console.error("Error in isNonceClaimed: ", error);
     return false;
@@ -264,7 +264,7 @@ const invalidateButton = document.getElementById("invalidator") as HTMLDivElemen
 
 invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
   try {
-    const isClaimed = await isNonceClaimed(app, app.reward);
+    const isClaimed = await isNonceClaimed(app.reward);
     if (isClaimed) {
       toaster.create("error", `This reward has already been claimed or invalidated.`);
       buttonController.hideInvalidator();
@@ -287,9 +287,8 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 });
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-export async function isNonceClaimed(app: AppState, permit: PermitReward): Promise<boolean> {
-  const provider = app.provider;
-
+export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
+  const provider = await useRpcHandler(permit.networkId);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
   const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.nonce));
@@ -301,6 +300,8 @@ export async function isNonceClaimed(app: AppState, permit: PermitReward): Promi
 
   const bit = BigNumber.from(1).shl(bitPos);
   const flipped = BigNumber.from(bitmap).xor(bit);
+
+  console.log("successfull nonce", bit.and(flipped).eq(0));
 
   return bit.and(flipped).eq(0);
 }
