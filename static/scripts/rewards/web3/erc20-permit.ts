@@ -301,8 +301,6 @@ export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
   const bit = BigNumber.from(1).shl(bitPos);
   const flipped = BigNumber.from(bitmap).xor(bit);
 
-  console.log("successfull nonce", bit.and(flipped).eq(0));
-
   return bit.and(flipped).eq(0);
 }
 

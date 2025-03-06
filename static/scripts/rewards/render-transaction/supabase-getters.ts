@@ -134,8 +134,6 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
 
   const validPermits = processed.filter((permit): permit is PermitReward => permit !== null);
 
-  console.log(validPermits);
-
   // deduplicate by signature using highest nonce
   const permitMap = new Map<string, PermitReward>();
   for (const permit of validPermits) {
