@@ -46,7 +46,9 @@ export async function fetchPermits(app: AppState) {
     const { data: user } = await octokit.users.getAuthenticated();
     permits = await fetchPermitsFromSupabase(user.id);
   } else {
-    permits = [];
+    setClaimMessage({ type: "Notice", message: `Sign in to fetch your permits.` });
+    table.setAttribute(`data-make-claim`, "error");
+    return;
   }
 
   // filter claimed permits, only show unclaimed ones
