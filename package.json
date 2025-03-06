@@ -94,6 +94,9 @@
     "vitest": "2.0.5",
     "wrangler": "^3.51.2"
   },
+  "resolutions": {
+    "@ubiquity-dao/rpc-handler": "^1.4.0"
+  },
   "lint-staged": {
     "*.ts": [
       "yarn prettier --write",
