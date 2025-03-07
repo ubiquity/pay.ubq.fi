@@ -1,11 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database, type PermitReward } from "@ubiquity-os/permit-generation";
-import { TokenType } from "@ubiquibot/permit-generation";
+import { TokenType } from "@ubiquibot/permit-generation/core";
 import { toaster } from "../toaster";
 import { BigNumber } from "ethers";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment");
+}
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export interface SupabasePermit {
@@ -78,7 +81,7 @@ export async function fetchWalletById(walletId: number): Promise<SupabaseWallet 
 }
 
 export async function fetchPermitsFromSupabase(userId: number): Promise<PermitReward[]> {
-  const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId);
+  const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId).order("id", { ascending: false });
   if (error) {
     console.error("error fetching permits:", error);
     toaster.create("error", "failed to fetch permits from supabase.");
