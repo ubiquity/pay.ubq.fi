@@ -92,12 +92,7 @@ export async function fetchPermits(app: AppState) {
 }
 
 async function readClaimDataFromUrl(): Promise<PermitReward[]> {
-  // safeguard: no claim data found from URL load from supabase
-  if (!base64encodedTxData) {
-    return [];
-  }
-
-  return decodeClaimData(base64encodedTxData);
+  return decodeClaimData(base64encodedTxData ?? "");
 }
 
 export async function updateButtonVisibility(app: AppState) {
