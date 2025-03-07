@@ -52,7 +52,16 @@ export async function fetchPermits(app: AppState) {
   }
 
   // filter claimed permits, only show unclaimed ones
-  permits = permits.filter(async (permit) => !(await isNonceClaimed(permit)));
+  console.log("unfiltered permits", permits);
+  permits = (
+    await Promise.all(
+      permits.map(async (permit) => {
+        const isClaimed = await isNonceClaimed(permit);
+        return !isClaimed ? permit : null;
+      })
+    )
+  ).filter((permit): permit is PermitReward => permit !== null);
+  console.log("filtered permits", permits);
   app.claims = permits;
   app.claimTxs = await getClaimedTxs(app);
 
