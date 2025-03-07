@@ -44,7 +44,7 @@ plugins:
         with:
           allowPublicQuery: true
   - uses:
-      - plugin: ubiquity-os-marketplace/daemon-pricing@main
+      - plugin: https://ubiquity-os-daemon-pricing-main.ubiquity.workers.dev
         with:
           labels:
             time:
