@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Database, type PermitReward } from "@ubiquity-os/permit-generation";
 import { TokenType } from "@ubiquibot/permit-generation/types";
 import { toaster } from "../toaster";
-import { BigNumber } from "ethers";
+import { BigNumber, BigNumberish } from "ethers";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -137,19 +137,19 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
 
   const validPermits = processed.filter((permit): permit is PermitReward => permit !== null);
 
-  // deduplicate by signature using highest nonce
-  const permitMap = new Map<string, PermitReward>();
+  // deduplicate by nonce using highest amount
+  const permitMap = new Map<BigNumberish, PermitReward>();
   for (const permit of validPermits) {
-    if (!permit.signature) continue;
+    if (!permit.nonce) continue;
 
-    const current = permitMap.get(permit.signature);
+    const current = permitMap.get(permit.nonce);
     if (!current) {
-      permitMap.set(permit.signature, permit);
+      permitMap.set(permit.nonce, permit);
     } else {
-      const oldNonce = BigNumber.from(current.nonce);
-      const newNonce = BigNumber.from(permit.nonce);
-      if (newNonce.gt(oldNonce)) {
-        permitMap.set(permit.signature, permit);
+      const oldAmount = BigNumber.from(current.amount);
+      const newAmount = BigNumber.from(permit.amount);
+      if (newAmount.gt(oldAmount)) {
+        permitMap.set(permit.nonce, permit);
       }
     }
   }
