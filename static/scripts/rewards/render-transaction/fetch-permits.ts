@@ -79,6 +79,7 @@ export async function fetchPermits(app: AppState) {
   if (!permits.length) {
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
     table.setAttribute(`data-make-claim`, "error");
+    return;
   }
 
   app.signer = await connectWallet();

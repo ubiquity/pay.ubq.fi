@@ -6,7 +6,7 @@ import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
-import { TokenType } from "@ubiquibot/permit-generation/core";
+import { TokenType } from "@ubiquibot/permit-generation/types";
 import { useRpcHandler } from "../../../../shared/use-rpc-handler";
 
 const carousel = document.getElementById("carousel") as Element;

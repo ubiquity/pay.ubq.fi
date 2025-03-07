@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database, type PermitReward } from "@ubiquity-os/permit-generation";
-import { TokenType } from "@ubiquibot/permit-generation/core";
+import { TokenType } from "@ubiquibot/permit-generation/types";
 import { toaster } from "../toaster";
 import { BigNumber } from "ethers";
 
