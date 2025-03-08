@@ -3,10 +3,13 @@ import { Permit } from "@ubiquibot/permit-generation/types";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
-import { permit2Address } from "@ubiquity-dao/rpc-handler";
+import { getNetworkExplorer, permit2Address } from "@ubiquity-dao/rpc-handler";
 import { supabase } from "../render-transaction/read-claim-data-from-url";
-import { MetaMaskError, buttonController, errorToast, getMakeClaimButton, toaster, viewClaimButton } from "../toaster";
+import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
+import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
+import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
+import { decodeError } from "@ubiquity-os/ethers-decode-error";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -57,8 +60,7 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return false;
 }
 
-async function transferFromPermit(permit2Contract: Contract, app: AppState) {
-  const reward = app.reward;
+export async function transferFromPermit(permit2Contract: Contract, reward: Permit, successMessage?: string) {
   const signer = app.signer;
   if (!signer) return null;
 
@@ -76,7 +78,7 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
       reward.owner,
       reward.signature
     );
-    toaster.create("info", `Transaction sent`);
+    toaster.create("info", successMessage ?? `Transaction sent`);
     return tx;
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -88,23 +90,32 @@ async function transferFromPermit(permit2Contract: Contract, app: AppState) {
         buttonController.hideLoader();
         buttonController.showMakeClaim();
       } else {
-        // Handle other errors
-        console.error("Error in permitTransferFrom:", e);
-        errorToast(e, e.reason);
+        console.error(e);
+        const { error } = decodeError(e, permit2Abi);
+        errorToast(e, `Error in permitTransferFrom: ${error}`);
       }
     }
     return null;
   }
 }
 
-async function waitForTransaction(tx: TransactionResponse) {
+export async function waitForTransaction(tx: TransactionResponse, successMessage: string, networkId: number) {
   try {
     const receipt = await tx.wait();
-    viewClaimButton.onclick = () => {
-      window.open(`https://blockscan.com/tx/${receipt.transactionHash}`, "_blank");
-    };
+    const networkExplorers = getNetworkExplorer(convertToNetworkId(networkId));
 
-    toaster.create("success", `Claim Complete.`);
+    if (networkExplorers.length === 0) {
+      viewClaimButton.onclick = () => {
+        window.open(`https://blockscan/com/tx/${receipt.transactionHash}`, "_blank");
+      };
+      toaster.create("info", "We had to use a fallback block explorer which may take longer to populate your transaction.");
+    } else {
+      viewClaimButton.onclick = () => {
+        window.open(`${networkExplorers[0].url}/tx/${receipt.transactionHash}`, "_blank");
+      };
+    }
+
+    toaster.create("success", successMessage);
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
@@ -140,10 +151,10 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) return;
 
-    const tx = await transferFromPermit(permit2Contract, app);
+    const tx = await transferFromPermit(permit2Contract, app.reward);
     if (!tx) return;
 
-    const receipt = await waitForTransaction(tx);
+    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
     if (!receipt) return;
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
@@ -153,7 +164,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
   };
 }
 
-async function checkPermitClaimable(app: AppState): Promise<boolean> {
+export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed: boolean;
   try {
     isClaimed = await isNonceClaimed(app);
@@ -262,11 +273,12 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 
     if (!app.signer) return;
     await invalidateNonce(app.signer, app.reward.nonce);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const e = error as unknown as MetaMaskError;
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      const e = err as unknown as MetaMaskError;
       console.error(e);
-      errorToast(e, e.reason);
+      const { error } = decodeError(e, permit2Abi);
+      errorToast(e, `Error in invalidateNonce: ${error}`);
       return;
     }
   }
@@ -275,7 +287,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 });
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-async function isNonceClaimed(app: AppState): Promise<boolean> {
+export async function isNonceClaimed(app: AppState): Promise<boolean> {
   const provider = app.provider;
 
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
@@ -321,7 +333,6 @@ async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean>
 
   if (error !== null) {
     console.error(error);
-    throw error;
   }
 
   return true;

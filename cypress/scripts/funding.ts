@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { SpawnSyncOptionsWithStringEncoding, spawnSync } from "child_process";
+import { ubiquityDollarChainAddresses } from "../../shared/constants";
 
 /**
  * Handles the async funding of the testing environment
@@ -16,11 +17,11 @@ class TestFunder {
   fundingWallet = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
   beneficiary = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   permit2 = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-  WXDAI = "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d";
-  whale = "0xba12222222228d8ba445958a75a0704d566bf2c8";
+  rewardToken = ubiquityDollarChainAddresses[100];
+  whale = "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd";
   expected = {
     allowance: "999999999999999111119999999999999999",
-    balance: "337888400000000000000000",
+    balance: "10000000000000000000000",
   };
 
   async execute() {
@@ -117,7 +118,7 @@ class TestFunder {
   private async _fundingAllowanceCheck() {
     const allowance = await this._exec({
       command: "cast",
-      args: ["call", this.WXDAI, "allowance(address,address)(uint256)", this.fundingWallet, this.permit2, "--rpc-url", this.anvilRPC],
+      args: ["call", this.rewardToken, "allowance(address,address)(uint256)", this.fundingWallet, this.permit2, "--rpc-url", this.anvilRPC],
       options: { encoding: "utf8" },
     });
 
@@ -127,7 +128,7 @@ class TestFunder {
   private async _fundingBalanceCheck() {
     const balance = await this._exec({
       command: "cast",
-      args: ["call", this.WXDAI, "balanceOf(address)(uint256)", this.fundingWallet, "--rpc-url", this.anvilRPC],
+      args: ["call", this.rewardToken, "balanceOf(address)(uint256)", this.fundingWallet, "--rpc-url", this.anvilRPC],
       options: { encoding: "utf8" },
     });
 
@@ -141,7 +142,7 @@ class TestFunder {
         "send",
         "--rpc-url",
         this.anvilRPC,
-        this.WXDAI,
+        this.rewardToken,
         "--unlocked",
         "--from",
         address,
@@ -173,7 +174,7 @@ class TestFunder {
         "send",
         "--rpc-url",
         this.anvilRPC,
-        this.WXDAI,
+        this.rewardToken,
         "--unlocked",
         "--from",
         this.whale,
@@ -200,7 +201,7 @@ class TestFunder {
         "send",
         "--rpc-url",
         this.anvilRPC,
-        this.WXDAI,
+        this.rewardToken,
         "--unlocked",
         "--from",
         this.fundingWallet,

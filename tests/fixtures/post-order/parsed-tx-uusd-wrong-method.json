@@ -1,0 +1,50 @@
+{
+  "args": ["0xD51B09ad92e08B962c994374F4e417d4AD435189", "0x01a055690d9db80000"],
+  "functionFragment": {
+    "type": "function",
+    "name": "transferEdited",
+    "constant": false,
+    "inputs": [
+      {
+        "name": "dst",
+        "type": "address",
+        "indexed": null,
+        "components": null,
+        "arrayLength": null,
+        "arrayChildren": null,
+        "baseType": "address",
+        "_isParamType": true
+      },
+      {
+        "name": "wad",
+        "type": "uint256",
+        "indexed": null,
+        "components": null,
+        "arrayLength": null,
+        "arrayChildren": null,
+        "baseType": "uint256",
+        "_isParamType": true
+      }
+    ],
+    "outputs": [
+      {
+        "name": null,
+        "type": "bool",
+        "indexed": null,
+        "components": null,
+        "arrayLength": null,
+        "arrayChildren": null,
+        "baseType": "bool",
+        "_isParamType": true
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "gas": null,
+    "_isFragment": true
+  },
+  "name": "transfer",
+  "signature": "transfer(address,uint256)",
+  "sighash": "0xa9059cbb",
+  "value": { "type": "BigNumber", "hex": "0x00" }
+}

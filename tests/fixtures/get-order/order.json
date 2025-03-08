@@ -1,0 +1,76 @@
+{
+  "transaction": {
+    "transactionId": 611499,
+    "amount": 6.1204,
+    "discount": 0,
+    "currencyCode": "USD",
+    "fee": 3,
+    "smsFee": 0,
+    "totalFee": 3,
+    "preOrdered": false,
+    "recipientEmail": null,
+    "recipientPhone": null,
+    "customIdentifier": "0xd89d85e5f65499e03f85cf5d4e69d04ee04d959cc04f8aa6a9fccba52b3c6916",
+    "status": "SUCCESSFUL",
+    "transactionCreatedTime": "2024-08-29 18:47:57",
+    "product": {
+      "productId": 18597,
+      "productName": "Virtual MasterCard International USD US",
+      "countryCode": "US",
+      "quantity": 1,
+      "unitPrice": 5.02,
+      "totalPrice": 5.02,
+      "currencyCode": "USD",
+      "brand": {
+        "brandId": 378,
+        "brandName": "Mastercard"
+      }
+    },
+    "balanceInfo": {
+      "oldBalance": 52.3369,
+      "newBalance": 46.2165,
+      "cost": 6.1204,
+      "currencyCode": "USD",
+      "currencyName": "US Dollar",
+      "updatedAt": "2024-08-29 18:42:40"
+    }
+  },
+  "product": {
+    "productId": 18597,
+    "productName": "Virtual MasterCard International USD US",
+    "global": false,
+    "supportsPreOrder": false,
+    "senderFee": 1,
+    "senderFeePercentage": 2,
+    "discountPercentage": 0,
+    "denominationType": "RANGE",
+    "recipientCurrencyCode": "USD",
+    "minRecipientDenomination": 5,
+    "maxRecipientDenomination": 1000,
+    "senderCurrencyCode": "USD",
+    "minSenderDenomination": 5,
+    "maxSenderDenomination": 1000,
+    "fixedRecipientDenominations": [],
+    "fixedSenderDenominations": null,
+    "fixedRecipientToSenderDenominationsMap": null,
+    "metadata": null,
+    "logoUrls": ["https://cdn.reloadly.com/giftcards/08ca41fe-e059-4dea-9dde-aff6ec231303.png"],
+    "brand": {
+      "brandId": 378,
+      "brandName": "Mastercard"
+    },
+    "category": {
+      "id": 1,
+      "name": "Payment Cards"
+    },
+    "country": {
+      "isoName": "US",
+      "name": "United States",
+      "flagUrl": "https://s3.amazonaws.com/rld-flags/us.svg"
+    },
+    "redeemInstruction": {
+      "concise": "Your Virtual Promotional Prepaid Mastercard can be used online, for phone/mail orders, or in stores that accept mobile wallet where Debit Mastercard is accepted. This card must be used within 6 months from the time you receive your link. Visit MyPrepaidCenter.com for card usage details.\n2% currency conversion fee will apply if the merchant settles in a currency other than USD",
+      "verbose": "Redeem Instruction:\nYour Virtual Promotional Prepaid Mastercard can be used online, for phone/mail orders, or in stores that accept mobile wallet where Debit Mastercard is accepted. This card must be used within 6 months from the time you receive your link. Visit MyPrepaidCenter.com for card usage details.\n2% currency conversion fee will apply if the merchant settles in a currency other than USD\n\nTerms and condition:\nVirtual card is issued by Pathward®, N.A., Member FDIC, pursuant to license by Mastercard International Incorporated. Mastercard and the circles design are registered trademarks of Mastercard International Incorporated. No cash access or recurring payments. Can be used where Debit Mastercard is accepted online, for phone/mail orders, or in stores that accept mobile wallet. Valid for up to 6 months; unused funds will forfeit after the valid thru date. Terms and conditions apply. See Cardholder Agreement for details <a href=\"https://www.myprepaidcenter.com/page/mastercard-promo-virtual\" target=\"_blank\" rel=\"noopener\">https://www.myprepaidcenter.com/page/mastercard-promo-virtual\n\nMastercard is widely accepted globally*, with the exception of certain countries where credit cards are blocked due to economic sanctions or other regulatory restrictions. Specifically, this includes:\nChina, The Democratic People's Republic of Korea (North Korea), The Islamic Republic of Iran, The Syrian Arab Republic, Ukraine, The Bahamas, Barbados, Benin, Burundi, Burkina Faso, Cambodia, The Cayman Islands, Chad, The Central African Republic, Congo, Comoros, Dominican Republic, Cuba, Guinea, Eritrea, Guinea-Bissau, Haiti, Iraq, Lebanon, Laos, Lesotho, Myanmar, Madagascar, Nicaragua, Panama, Somalia, Sudan, South Sudan, Uganda, Venezuela , Yemen, Zimbabwe, Liberia\n\nHow to use:\nGo to =\"http://www.MyPrepaidCenter.com/redeem\">MyPrepaidCenter.com/redeem and enter code\nComplete the online registration page and accept the cardholder agreement and e-sign agreement, then you will be able to view your 16-digit card number, expiration date, security information, where your card can be used, available balance, transaction history, etc.\nPlastic card available upon request. Requesting a plastic card will reduce the card’s value by $3.00 for manufacturing and fulfillment cost, and can take 7-14 business days. \nRecipient can request a plastic card once they have completed the card registration and activation at <a href=\"http://www.MyPrepaidCenter.com\">MyPrepaidCenter.com"
+    }
+  }
+}

@@ -3,13 +3,17 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import { Permit } from "@ubiquibot/permit-generation/types";
 import { app, AppState } from "../app-state";
 import { toaster } from "../toaster";
+import { buttonController } from "../button-controller";
+
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl } from "../web3/erc20-permit";
-import { verifyCurrentNetwork } from "../web3/verify-current-network";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
-import { useRpcHandler } from "../web3/use-rpc-handler";
+import { useRpcHandler } from "../../../../shared/use-rpc-handler";
+import { switchNetwork } from "../web3/switch-network";
+import { ethers } from "ethers";
+import { getNetworkName, NetworkId } from "@ubiquity-dao/rpc-handler";
 
 declare const SUPABASE_URL: string;
 declare const SUPABASE_ANON_KEY: string;
@@ -32,7 +36,7 @@ export async function readClaimDataFromUrl(app: AppState) {
   app.claimTxs = await getClaimedTxs(app);
 
   try {
-    app.provider = await useRpcHandler(app);
+    app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
   } catch (e) {
     if (e instanceof Error) {
       toaster.create("error", e.message);
@@ -47,28 +51,57 @@ export async function readClaimDataFromUrl(app: AppState) {
     /* empty */
   }
 
-  try {
-    // this would throw on mobile browsers & non-web3 browsers
-    window?.ethereum.on("accountsChanged", () => {
-      checkRenderMakeClaimControl(app).catch(console.error);
-      checkRenderInvalidatePermitAdminControl(app).catch(console.error);
-    });
-  } catch (err) {
-    /*
-     * handled feedback upstream already
-     * buttons are hidden and non-web3 infinite toast exists
-     */
-  }
+  await updateButtonVisibility(app);
 
   displayRewardDetails();
   displayRewardPagination();
 
   await renderTransaction();
-  if (app.networkId !== null) {
-    await verifyCurrentNetwork(app.networkId);
-  } else {
-    throw new Error("Network ID is null");
+}
+
+export async function updateButtonVisibility(app: AppState) {
+  try {
+    const currentNetworkId = parseInt(await window.ethereum.request({ method: "eth_chainId" }), 16);
+
+    const appId = app.networkId ?? app.reward.networkId;
+
+    if (currentNetworkId !== appId) {
+      console.warn(`Incorrect network. Expected ${appId}, but got ${currentNetworkId}.`);
+      buttonController.hideAll(); // Hide all buttons if the network is incorrect
+      toaster.create("error", `This dApp currently does not support payouts for network ID ${currentNetworkId}`);
+
+      // Try switching to the proper network id
+      switchNetwork(new ethers.providers.Web3Provider(window.ethereum), appId).catch((error) => {
+        console.error(error);
+        if (app.networkId !== null) {
+          toaster.create("error", `Please switch to the ${getNetworkName(String(appId) as NetworkId)} network to claim this reward.`);
+        }
+      });
+
+      return; // Stop further checks if the network is incorrect
+    }
+
+    await checkRenderMakeClaimControl(app);
+    await checkRenderInvalidatePermitAdminControl(app);
+  } catch (error) {
+    console.error("Error updating button visibility:", error);
+    buttonController.hideAll(); // Hide all buttons if there's an error
   }
+}
+
+// Below is a listener that updates buttons on account/network change
+if (window.ethereum) {
+  // Handle account changes
+  window.ethereum.on("accountsChanged", async () => {
+    await updateButtonVisibility(app);
+  });
+
+  // Handle network changes
+  window.ethereum.on("chainChanged", async () => {
+    await updateButtonVisibility(app);
+  });
+} else {
+  console.warn("Ethereum provider not detected.");
 }
 
 async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {

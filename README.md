@@ -13,6 +13,7 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   # Common variables
   CHAIN_ID="31337"
   FRONTEND_URL="http://localhost:8080"
+  BACKEND_URL="" # "" or if you want to work on frontend only, use "https://pay.ubq.fi"
   UBIQUIBOT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
   RPC_PROVIDER_URL="http://127.0.0.1:8545"
   PAYMENT_TOKEN_ADDRESS="0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
@@ -23,7 +24,7 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   SUPABASE_ANON_KEY="...." # used for storing permit tx data
 
   # Variables depending on spender (bounty hunter)
-  AMOUNT_IN_ETH="1"
+  AMOUNT_IN_ETH="50"
   BENEFICIARY_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
   # Legacy env vars (only used when invalidating **REAL** permits via /scripts/solidity/getInvalidateNonceParams.ts)
@@ -31,15 +32,31 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
   NONCE_SIGNER_ADDRESS="0x"
   ```
 
+3. Update values for wrangler variables to use Reloadly sandbox or production API in the `wrangler.toml` file.
+
+```
+[vars]
+USE_RELOADLY_SANDBOX = "true"
+RELOADLY_API_CLIENT_ID = "xxxxxxxxxxxxxxxxxx"
+RELOADLY_API_CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
 ## Local Testing
 
 1. Set `.env` variables.
-2. Run `yarn test:anvil` in terminal A and `yarn test:fund` in terminal B.
-3. In terminal B, run `yarn start`.
+2. Run `yarn`
+3. Run `yarn test:anvil` in terminal A and `yarn test:fund` in terminal B.
+4. In terminal B, run
+
+```
+yarn build
+yarn start
+```
+
 4. A permit URL for both ERC20 and ERC721 will be generated.
 5. Open the generated permit URL from the console.
 6. Connect your wallet (import anvil accounts [0] & [1] into your wallet).
-7. Depending on your connected account, either the claim or invalidate button will be visible.
+7. Depending on your connected account, either the claim or invalidate button will be visible. The virtual card section will also display an available virtual card.
 8. To test ERC721 permits, deploy the `nft-rewards` contract from the [repository](https://github.com/ubiquity/nft-rewards).
 
 ### Importing Anvil Accounts
@@ -79,6 +96,19 @@ A vanilla Typescript dApp for claiming Ubiquity Rewards. It also includes tools 
 - The test suite may show error toasts due to MetaMask spoofing.
 - Ensure `.env` is correctly configured and wallet provider network is correct if `Allowance` or `Balance` is `0.00`.
 - Always start the Anvil instance before using `yarn start` as permit generation requires an on-chain call to `token.decimals()`.
+
+### Troubleshooting virtual cards
+
+Virtual cards are subject to regulations and are not available for all countries. Moreover, each virtual card is available for specific amounts. If you are unable to see an available virtual card it is either because of your location or the amount of your permit.
+
+If you are not getting an available card, you can perform a few extra steps to get a virtual card for testing purposes. You can set the permit amount `AMOUNT_IN_ETH` to be 50 WXDAI in the `.env` file and mock your location as United States. To set your location to United States, you can follow one of the steps given below:
+
+- Use a USA VPN
+- Set your timezone to `Eastern Time (ET) New York` and block the ajax request to `https://ipinfo.io/json` so that your timezone is used to detect your location.
+
+One of these steps should get you a virtual card to try both on Reloadly sandbox and production. Please note that if you are minting a virtual card with a mock location on Reloadly production, you will get a redeem code but you may not able to use the card due to restrictions on the card, and there is no refund or replacement. Use your real location if you want to use the virtual card.
+
+If you are using mainnet with your local environments, you may want to change the `giftCardTreasuryAddress` to a wallet that you own in the file `shared/constants.ts`. It is the wallet where payments for the virtual cards are sent.
 
 ## How to generate a permit2 URL using the script
 
@@ -123,3 +153,18 @@ Notice that this examples uses gnosis chain for nonce invalidation. If you need 
 
 1. Set `RPC_PROVIDER_URL` on step 1 to the desired RPC chain provider
 2. On step 3 open UI for the desired chain
+
+### Working with frontend only
+
+Following environment variables will help you quickly get started with frontend only. Rest of the environment variables should be specified as described [above](https://github.com/ubiquity/pay.ubq.fi#setup-local-testing-environment).
+
+```
+CHAIN_ID="100"
+BACKEND_URL="https://pay.ubq.fi"
+RPC_PROVIDER_URL="https://rpc.gnosischain.com"
+```
+
+In this case, the production deploy of the backend is served to your frontend and you can change things in the frontend.
+
+There are some `/shared` files for frontend & backend. To make sure you didn't break anything in backend, you should occasionally run
+`yarn test:unit`

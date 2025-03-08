@@ -1,4 +1,5 @@
 import { app } from "./app-state";
+import { initClaimGiftCard } from "./gift-cards/index";
 import { displayCommitHash } from "./render-transaction/display-commit-hash";
 import { readClaimDataFromUrl } from "./render-transaction/read-claim-data-from-url";
 import { grid } from "./the-grid";
@@ -14,3 +15,5 @@ footer.classList.add("ready");
 function gridLoadedCallback() {
   document.body.classList.add("grid-loaded");
 }
+
+initClaimGiftCard(app).catch(console.error);

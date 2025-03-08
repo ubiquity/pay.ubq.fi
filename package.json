@@ -6,15 +6,16 @@
   "author": "Ubiquity DAO",
   "license": "MIT",
   "engines": {
-    "node": "20.10.0"
+    "node": "20.10.0",
+    "yarn": "^1.22.21"
   },
   "scripts": {
-    "start": "run-s start:sign start:ui",
-    "watch": "nodemon -e ts,tsx --exec yarn start",
-    "watch:ui": "nodemon -e ts,tsx --exec yarn start:ui",
+    "start": "run-s start:sign serve:watch",
+    "serve:watch": "run-p serve watch",
+    "serve": "npx wrangler pages dev static --port 8080",
+    "watch": "tsx build/esbuild-watch.ts",
     "format": "run-s format:lint format:prettier format:cspell",
     "build": "run-s utils:build",
-    "start:ui": "tsx build/esbuild-server.ts",
     "start:sign": "tsx scripts/typescript/generate-permit2-url.ts",
     "utils:build": "tsx build/esbuild-build.ts",
     "utils:get-invalidate-params": "forge script --via-ir scripts/solidity/GetInvalidateNonceParams.s.sol",
@@ -27,6 +28,7 @@
     "test:run": "cypress run",
     "test:open": "cypress open",
     "test:fund": "tsx cypress/scripts/funding.ts",
+    "test:unit": "npx vitest run",
     "knip": "knip --config .github/knip.ts",
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "prepare": "husky install",
@@ -42,14 +44,22 @@
     "open-source"
   ],
   "dependencies": {
+    "@ethersproject/abi": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
+    "@ethersproject/units": "^5.7.0",
     "@supabase/supabase-js": "^2.44.4",
-    "@ubiquibot/permit-generation": "1.4.1",
-    "@ubiquity-dao/rpc-handler": "^1.1.0",
+    "@ubiquibot/permit-generation": "^1.4.1",
+    "@ubiquity-dao/rpc-handler": "^1.3.0",
+    "countries-and-timezones": "^3.6.0",
     "dotenv": "^16.4.4",
-    "ethers": "^5.7.2"
+    "ethers": "^5.7.2",
+    "@ubiquity-os/ethers-decode-error": "^1.1.0",
+    "npm-run-all": "^4.1.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.22",
+    "@cloudflare/workers-types": "^4.20240423.0",
     "@commitlint/cli": "^18.6.1",
     "@commitlint/config-conventional": "^18.6.2",
     "@cspell/dict-node": "^4.0.3",
@@ -59,7 +69,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "cspell": "^8.4.0",
-    "cypress": "13.6.6",
+    "cypress": "^13.7.0",
     "esbuild": "^0.20.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
@@ -73,12 +83,14 @@
     "jest-md-dashboard": "0.8.0",
     "knip": "^5.0.1",
     "lint-staged": "^15.2.2",
-    "nodemon": "^3.0.3",
+    "msw": "^2.5.2",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.2.5",
     "ts-jest": "29.1.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "2.0.5",
+    "wrangler": "^3.51.2"
   },
   "lint-staged": {
     "*.ts": [

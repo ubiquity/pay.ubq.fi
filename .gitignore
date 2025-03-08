@@ -11,10 +11,12 @@ commit.txt
 .pnp.cjs
 .pnp.loader.mjs
 .env
+.dev.vars
 static/dist
 static/bundles
 
 cypress/screenshots
 cypress/videos
+.wrangler
 coverage
 junit.xml

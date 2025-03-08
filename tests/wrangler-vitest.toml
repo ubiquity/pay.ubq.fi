@@ -1,0 +1,12 @@
+# This wrangler config is only used in vitest unit tests
+
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-04-05"
+
+[vars]
+USE_RELOADLY_SANDBOX = "true"
+
+# CAUTION: use dummy credentials for unit tests
+# using real credentials may cause tests to place real orders
+RELOADLY_API_CLIENT_ID = "foo"
+RELOADLY_API_CLIENT_SECRET = "bar"

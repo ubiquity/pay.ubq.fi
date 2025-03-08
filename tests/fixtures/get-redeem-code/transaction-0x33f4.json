@@ -1,0 +1,46 @@
+{
+  "content": [
+    {
+      "transactionId": 38994,
+      "amount": 50,
+      "discount": 0,
+      "currencyCode": "USD",
+      "fee": 6,
+      "smsFee": 0,
+      "totalFee": 6,
+      "preOrdered": false,
+      "recipientEmail": null,
+      "recipientPhone": null,
+      "customIdentifier": "0x33f4b8ad8a2d0dda3869566a065602a3d20a31f8ed723013653a5d26a994ceef",
+      "status": "SUCCESSFUL",
+      "transactionCreatedTime": "2024-11-01 12:24:15",
+      "product": ["Object"],
+      "balanceInfo": ["Object"]
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "pageNumber": 0,
+    "pageSize": 1,
+    "offset": 0,
+    "unpaged": false,
+    "paged": true
+  },
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true,
+  "first": true,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "size": 1,
+  "number": 0,
+  "numberOfElements": 1,
+  "empty": false
+}

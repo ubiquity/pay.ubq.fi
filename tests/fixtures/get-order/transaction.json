@@ -1,0 +1,65 @@
+{
+  "content": [
+    {
+      "transactionId": 611499,
+      "amount": 6.1204,
+      "discount": 0.0,
+      "currencyCode": "USD",
+      "fee": 3.0,
+      "smsFee": 0.0,
+      "totalFee": 3.0,
+      "preOrdered": false,
+      "recipientEmail": null,
+      "recipientPhone": null,
+      "customIdentifier": "0xd89d85e5f65499e03f85cf5d4e69d04ee04d959cc04f8aa6a9fccba52b3c6916",
+      "status": "SUCCESSFUL",
+      "transactionCreatedTime": "2024-08-29 18:47:57",
+      "product": {
+        "productId": 18597,
+        "productName": "Virtual MasterCard International USD US",
+        "countryCode": "US",
+        "quantity": 1,
+        "unitPrice": 5.02,
+        "totalPrice": 5.02,
+        "currencyCode": "USD",
+        "brand": {
+          "brandId": 378,
+          "brandName": "Mastercard"
+        }
+      },
+      "balanceInfo": {
+        "oldBalance": 52.3369,
+        "newBalance": 46.2165,
+        "cost": 6.1204,
+        "currencyCode": "USD",
+        "currencyName": "US Dollar",
+        "updatedAt": "2024-08-29 18:42:40"
+      }
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "sorted": false,
+      "unsorted": true,
+      "empty": true
+    },
+    "pageNumber": 0,
+    "pageSize": 1,
+    "offset": 0,
+    "unpaged": false,
+    "paged": true
+  },
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true,
+  "first": true,
+  "sort": {
+    "sorted": false,
+    "unsorted": true,
+    "empty": true
+  },
+  "numberOfElements": 1,
+  "size": 1,
+  "number": 0,
+  "empty": false
+}

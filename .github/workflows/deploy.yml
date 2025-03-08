@@ -11,6 +11,14 @@ jobs:
     name: Automatic Cloudflare Deploy
     runs-on: ubuntu-22.04
     steps:
+      - name: Verify Runner's Identity
+        id: verify-runner
+        run: |
+          echo "Runner name: $RUNNER_NAME"
+          if [[ "$RUNNER_NAME" != *"GitHub Actions"* ]]; then
+            echo "This workflow must run on a GitHub Actions runner. (github-actions[bot])"
+            exit 1
+          fi
       - name: Deploy to Cloudflare
         if: ${{ github.event.workflow_run.conclusion == 'success' }}
         uses: ubiquity/cloudflare-deploy-action@main
@@ -28,6 +36,20 @@ jobs:
 
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Make env sync script executable
+        run: chmod +x .github/sync-env-vars.sh
+
+      - name: Run env sync script script
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RELOADLY_API_CLIENT_ID: ${{ secrets.RELOADLY_API_CLIENT_ID }}
+          RELOADLY_API_CLIENT_SECRET: ${{ secrets.RELOADLY_API_CLIENT_SECRET }}
+          RELOADLY_SANDBOX_API_CLIENT_ID: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_ID }}
+          RELOADLY_SANDBOX_API_CLIENT_SECRET: ${{ secrets.RELOADLY_SANDBOX_API_CLIENT_SECRET }}
+        run: bash .github/sync-env-vars.sh
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -47,10 +69,11 @@ jobs:
           echo "CLAIMABLE_URL=$url" >> $GITHUB_ENV
         env:
           BENEFICIARY_ADDRESS: "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd"
-          PAYMENT_TOKEN_ADDRESS: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
-          AMOUNT_IN_ETH: 0
+          PAYMENT_TOKEN_ADDRESS: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          AMOUNT_IN_ETH: 30
           CHAIN_ID: 100
           FRONTEND_URL: "${{ env.DEPLOYMENT_URL }}"
+          BACKEND_URL: ""
           RPC_PROVIDER_URL: "https://rpc.ankr.com/gnosis"
           UBIQUIBOT_PRIVATE_KEY: ${{ secrets.UBIQUIBOT_APP_PRIVATE_KEY_TEST }}
 
@@ -84,25 +107,23 @@ jobs:
               issue_number,
             });
 
-            // Find the comment to update or create a new one if not found
-            let existingComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
-            let body = '| Preview Deployment |\n| ------------------ |\n';
+            // Look for an existing "Preview Deployment" comment
+            let previewComment = comments.data.find(comment =>
+              comment.body.startsWith("| Preview Deployment |")
+            );
 
-            // If the comment exists, update its body
-            if (existingComment) {
-              // Check if the SHA already exists in the comment body to avoid duplicates
-              if (!existingComment.body.includes(sha)) {
-                body = existingComment.body + `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
-                await github.rest.issues.updateComment({
-                  owner,
-                  repo,
-                  comment_id: existingComment.id,
-                  body
-                });
-              }
+            const body = `| Preview Deployment |\n| ------------------ |\n| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+
+            if (previewComment) {
+              // Update the existing "Preview Deployment" comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: previewComment.id,
+                body
+              });
             } else {
-              // Create a new comment if no existing comment is found
-              body += `| [${sha}](${{ env.CLAIMABLE_URL }}) |\n`;
+              // Create a new "Preview Deployment" comment if not found
               await github.rest.issues.createComment({
                 owner,
                 repo,

@@ -1,0 +1,38 @@
+{
+  "productId": 18598,
+  "productName": "Visa International USD (Virtual) US",
+  "global": false,
+  "supportsPreOrder": false,
+  "senderFee": 1.0,
+  "senderFeePercentage": 1.0,
+  "discountPercentage": 0.0,
+  "denominationType": "RANGE",
+  "recipientCurrencyCode": "USD",
+  "minRecipientDenomination": 5.0,
+  "maxRecipientDenomination": 1000.0,
+  "senderCurrencyCode": "USD",
+  "minSenderDenomination": 5.0,
+  "maxSenderDenomination": 1000.0,
+  "fixedRecipientDenominations": [],
+  "fixedSenderDenominations": null,
+  "fixedRecipientToSenderDenominationsMap": null,
+  "metadata": null,
+  "logoUrls": ["https://cdn.reloadly.com/giftcards/aa1431b0-99fe-4f3d-8c58-ef46baee0c00.png"],
+  "brand": {
+    "brandId": 411,
+    "brandName": "Virtual Visa"
+  },
+  "category": {
+    "id": 1,
+    "name": "Payment Cards"
+  },
+  "country": {
+    "isoName": "US",
+    "name": "United States",
+    "flagUrl": "https://s3.amazonaws.com/rld-flags/us.svg"
+  },
+  "redeemInstruction": {
+    "concise": "his card is redeemable online anywhere Visacard debit is accepted. Use the link shared with this Gift Voucher to redeem the card.",
+    "verbose": "Use the link shared with this Gift Voucher to redeem the card. Card expires Three (3) years after activation, your Virtual Visa Card does not have to be activated, and it can be used as soon as you receive it."
+  }
+}

@@ -1,13 +1,15 @@
-import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 import { spawnSync } from "child_process";
-import { useHandler } from "../../static/scripts/rewards/web3/use-rpc-handler";
+import { useHandler } from "../../shared/use-rpc-handler";
+import { RPCHandler } from "@ubiquity-dao/rpc-handler";
 
 class Anvil {
   rpcs: string[] = [];
   rpcHandler: RPCHandler | null = null;
+  networkIdToFork = 100;
+  networkIdForAnvilToForkAs = 31337;
 
   async init() {
-    this.rpcHandler = useHandler(100);
+    this.rpcHandler = useHandler(this.networkIdToFork);
     console.log(`[RPCHandler] Fetching RPCs...`);
     await this.rpcHandler.testRpcPerformance();
     const latencies: Record<string, number> = this.rpcHandler.getLatencies();
@@ -37,7 +39,7 @@ class Anvil {
 
     console.log(`Forking with RPC: ${rpc}`);
 
-    const anvil = spawnSync("anvil", ["--chain-id", "31337", "--fork-url", rpc, "--host", "127.0.0.1", "--port", "8545"], {
+    const anvil = spawnSync("anvil", ["--chain-id", `${this.networkIdForAnvilToForkAs}`, "--fork-url", rpc, "--host", "127.0.0.1", "--port", "8545"], {
       stdio: "inherit",
     });
 

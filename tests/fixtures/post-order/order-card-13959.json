@@ -1,0 +1,33 @@
+{
+  "transactionId": 39018,
+  "amount": 50,
+  "discount": 0,
+  "currencyCode": "USD",
+  "fee": 6,
+  "smsFee": 0,
+  "totalFee": 6,
+  "preOrdered": false,
+  "recipientEmail": null,
+  "recipientPhone": null,
+  "customIdentifier": "0xd670e1f4f47a0104217f30a8804f7e13803da1dbfd9270dcb6d8d3a5ba72a52e",
+  "status": "SUCCESSFUL",
+  "transactionCreatedTime": "2024-11-03 03:25:42",
+  "product": {
+    "productId": 13959,
+    "productName": "Vanilla® eGift Visa",
+    "countryCode": "US",
+    "quantity": 1,
+    "unitPrice": 44,
+    "totalPrice": 44,
+    "currencyCode": "USD",
+    "brand": { "brandId": 95, "brandName": "Vanilla® eGift Visa" }
+  },
+  "balanceInfo": {
+    "oldBalance": 212439823.44865,
+    "newBalance": 212439773.44865,
+    "cost": 50,
+    "currencyCode": "USD",
+    "currencyName": "US Dollar",
+    "updatedAt": "2024-11-02 13:46:17"
+  }
+}

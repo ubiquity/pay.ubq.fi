@@ -1,0 +1,26 @@
+name: Run unit tests for pages functions
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+env:
+  NODE_ENV: "test"
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.10.0"
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Run tests
+        run: npx vitest --run
