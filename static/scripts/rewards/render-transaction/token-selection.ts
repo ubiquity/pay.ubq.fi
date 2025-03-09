@@ -96,17 +96,38 @@ export function openTokenModal(currentTokenAddress: string, renderParams: Render
     renderTokenList(filtered, currentTokenAddress);
   });
 }
-
 export function renderTokenList(tokens: Token[], currentTokenAddress: string): void {
   if (!tokenListContainer) {
     console.error("Token list container not found");
     return;
   }
 
+  const priorityTokens = ["UUSD", "WXDAI", "DAI", "USDT", "USDC", "USDC.e", "UBQ"];
+  tokens.sort((a, b) => {
+    if (a.address === app.reward.tokenAddress) return -1;
+    if (b.address === app.reward.tokenAddress) return 1;
+
+    const aIndex = priorityTokens.indexOf(a.symbol);
+    const bIndex = priorityTokens.indexOf(b.symbol);
+    if (aIndex === -1 && bIndex === -1) {
+      return a.name.localeCompare(b.name);
+    }
+    if (aIndex === -1) {
+      return 1;
+    }
+    if (bIndex === -1) {
+      return -1;
+    }
+    return aIndex - bIndex;
+  });
+
   tokenListContainer.innerHTML = "";
   tokens.forEach((token: Token) => {
     const tokenItem: HTMLDivElement = document.createElement("div");
     tokenItem.classList.add("token-item");
+    if (token.address === app.reward.tokenAddress) {
+      tokenItem.classList.add("permit-token");
+    }
     tokenItem.innerHTML = `
       <img src="${token.logoURI}" alt="${token.symbol}" />
       <div>
@@ -116,7 +137,7 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
     `;
 
     if (token.address.toLowerCase() === currentTokenAddress.toLowerCase()) {
-      tokenItem.style.backgroundColor = "#2a3550";
+      tokenItem.classList.add("selected-token");
     }
 
     tokenItem.addEventListener("click", async () => {

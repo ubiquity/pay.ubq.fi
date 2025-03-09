@@ -112,3 +112,15 @@
     font-size: 14px;
     color: #aaa;
   }
+
+  .permit-token {
+    border-radius: 4px;
+    background-color: "#2a3550";
+    border: 1px solid #444;
+  }
+
+  .selected-token {
+    border-radius: 4px;
+    background-color: "#2a3550";
+    border: 1px solid #bbb;
+  }
