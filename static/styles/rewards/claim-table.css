@@ -186,6 +186,12 @@ table[data-contract-loaded] #Token {
 #rewardAmount a {
   font-size: 24px;
 }
+#rewardAmount {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
 #rewardAmount a,
 #rewardRecipient div,
 #rewardsCount {

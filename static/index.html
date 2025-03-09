@@ -49,6 +49,23 @@
           </div>
         </a>
       </header>
+      <div id="tokenModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Select a token</h2>
+            <span class="close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <input
+              type="text"
+              id="tokenSearch"
+              class="search-bar"
+              placeholder="Search name or paste address"
+            />
+            <div id="tokenList" class="token-list"></div>
+          </div>
+        </div>
+      </div>
       <div class="receipt-container">
         <table class="receipt" data-details-visible="false" data-make-claim-rendered="false" data-contract-loaded="false" data-make-claim="error">
           <thead>
