@@ -104,6 +104,9 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
 
   const priorityTokens = ["UUSD", "WXDAI", "DAI", "USDT", "USDC", "USDC.e", "UBQ"];
   tokens.sort((a, b) => {
+    if (a.address === currentTokenAddress) return -1;
+    if (b.address === currentTokenAddress) return 1;
+
     if (a.address === app.reward.tokenAddress) return -1;
     if (b.address === app.reward.tokenAddress) return 1;
 
@@ -125,19 +128,34 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
   tokens.forEach((token: Token) => {
     const tokenItem: HTMLDivElement = document.createElement("div");
     tokenItem.classList.add("token-item");
-    if (token.address === app.reward.tokenAddress) {
+    if (token.address.toLowerCase() === app.reward.tokenAddress.toLowerCase()) {
       tokenItem.classList.add("permit-token");
-    }
-    tokenItem.innerHTML = `
-      <img src="${token.logoURI}" alt="${token.symbol}" />
-      <div>
-        <span class="symbol">${token.symbol}</span>
-        <span class="name">${token.name}</span>
-      </div>
-    `;
-
-    if (token.address.toLowerCase() === currentTokenAddress.toLowerCase()) {
+      tokenItem.innerHTML = `
+        <img src="${token.logoURI}" alt="${token.symbol}" />
+        <div>
+          <span class="symbol">${token.symbol}</span>
+          <span class="name">${token.name}</span>
+        </div>
+        <span class="info">Original</span>
+      `;
+    } else if (token.address.toLowerCase() === currentTokenAddress.toLowerCase()) {
       tokenItem.classList.add("selected-token");
+      tokenItem.innerHTML = `
+        <img src="${token.logoURI}" alt="${token.symbol}" />
+        <div>
+          <span class="symbol">${token.symbol}</span>
+          <span class="name">${token.name}</span>
+        </div>
+        <span class="info">Selected</span>
+      `;
+    } else {
+      tokenItem.innerHTML = `
+      <img src="${token.logoURI}" alt="${token.symbol}" />
+        <div>
+          <span class="symbol">${token.symbol}</span>
+          <span class="name">${token.name}</span>
+        </div>
+      `;
     }
 
     tokenItem.addEventListener("click", async () => {

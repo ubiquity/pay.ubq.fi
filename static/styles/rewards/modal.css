@@ -27,11 +27,11 @@
 
   .modal-content {
     background-color: #1e2a44;
-    margin: 12% auto;
     padding: 20px;
     border-radius: 10px;
-    width: 400px;
-    height: 400px;
+    width: 80%;
+    max-width: 400px;
+    height: 640px;
     overflow-y: auto;
     color: #fff;
     font-family: Arial, sans-serif;
@@ -51,7 +51,7 @@
 
   .close {
     cursor: pointer;
-    font-size: 24px;
+    font-size: 36px;
     color: #aaa;
   }
 
@@ -69,6 +69,8 @@
     color: #fff;
     font-size: 14px;
     box-sizing: border-box;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .search-bar::placeholder {
@@ -82,7 +84,7 @@
   .token-item {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 12px;
     border-bottom: 1px solid #444;
     cursor: pointer;
   }
@@ -113,14 +115,16 @@
     color: #aaa;
   }
 
-  .permit-token {
+  .token-item .info {
+    white-space: nowrap;
+    margin-left: auto;
+    color: #aaa;
+  }
+
+  .permit-token, .selected-token {
     border-radius: 4px;
     background-color: "#2a3550";
     border: 1px solid #444;
+    margin-bottom: 8px;
   }
 
-  .selected-token {
-    border-radius: 4px;
-    background-color: "#2a3550";
-    border: 1px solid #bbb;
-  }
