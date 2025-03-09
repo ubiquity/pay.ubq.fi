@@ -48,7 +48,7 @@ export function openTokenModal(currentTokenAddress: string, renderParams: Render
 
   currentRenderParams = renderParams;
 
-  modal.style.display = "block";
+  modal.style.display = "flex";
 
   const networkTokens = cowSwapTokens.filter((token: Token) => token.chainId === app.reward.networkId);
 

@@ -1,16 +1,21 @@
 #currency-settings {
-    width: 24px;
-    height: 24px;
-    opacity: 0.5;
-    padding-bottom: 4px;
-  }
+  width: 24px;
+  height: 24px;
+  opacity: 0.5;
+  margin-bottom: 2px;
+  transition: transform 3s ease, opacity 0.5s ease;
+}
+
 #currency-settings:hover {
-    opacity: 1;
+  opacity: 1;
+  transform: rotate(360deg);
 }
 
 .modal {
     display: none;
     position: fixed;
+    justify-content: center;
+    align-items: center;
     z-index: 1000;
     left: 0;
     top: 0;
@@ -22,11 +27,11 @@
 
   .modal-content {
     background-color: #1e2a44;
-    margin: 15% auto;
+    margin: 12% auto;
     padding: 20px;
     border-radius: 10px;
     width: 400px;
-    max-height: 80vh;
+    height: 400px;
     overflow-y: auto;
     color: #fff;
     font-family: Arial, sans-serif;
@@ -56,13 +61,14 @@
 
   .search-bar {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-bottom: 20px;
     border: 1px solid #444;
     border-radius: 5px;
     background-color: #2a3550;
     color: #fff;
     font-size: 14px;
+    box-sizing: border-box;
   }
 
   .search-bar::placeholder {
@@ -70,7 +76,6 @@
   }
 
   .token-list {
-    max-height: 300px;
     overflow-y: auto;
   }
 
