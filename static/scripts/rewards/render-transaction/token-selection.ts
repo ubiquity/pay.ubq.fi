@@ -35,6 +35,36 @@ export async function fetchCowSwapTokens(): Promise<void> {
     const data = await response.json();
 
     cowSwapTokens = data.tokens;
+
+    cowSwapTokens.push(
+      {
+        // UUSD on Gnosis
+        address: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068",
+        symbol: "UUSD",
+        name: "Ubiquity Dollar",
+        decimals: 18,
+        chainId: 100,
+        logoURI: "https://etherscan.io/token/images/ubiquitydao2_32.png",
+      },
+      {
+        // UUSD on Mainnet
+        address: "0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103",
+        symbol: "UUSD",
+        name: "Ubiquity Dollar",
+        decimals: 18,
+        chainId: 1,
+        logoURI: "https://etherscan.io/token/images/ubiquitydao2_32.png",
+      },
+      {
+        // UBQ on Mainnet
+        address: "0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0",
+        symbol: "UBQ",
+        name: "Ubiquity",
+        decimals: 18,
+        chainId: 1,
+        logoURI: "https://etherscan.io/token/images/ubiquitydao3_32.png",
+      }
+    );
   } catch (error) {
     console.error("Error fetching token list:", error);
   }
