@@ -32,7 +32,7 @@ export async function renderTransaction(): Promise<Success> {
     const requestedAmountElement = insertErc20PermitTableData(app, table, treasury);
 
     renderTokenSymbol({
-      tokenAddress: app.reward.tokenAddress,
+      tokenAddress: app.currency,
       ownerAddress: app.reward.owner,
       amount: app.reward.amount,
       explorerUrl: app.currentExplorerUrl,

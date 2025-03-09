@@ -2,6 +2,7 @@ import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { Permit } from "@ubiquibot/permit-generation";
 import { getNetworkExplorer } from "@ubiquity-dao/rpc-handler";
 import { convertToNetworkId } from "../../../shared/use-rpc-handler";
+import { loadSelectedTokens } from "./render-transaction/token-selection";
 
 export class AppState {
   public claims: Permit[] = [];
@@ -49,6 +50,10 @@ export class AppState {
     }
 
     return getNetworkExplorer(networkId)[0].url;
+  }
+
+  get currency(): string {
+    return loadSelectedTokens()[app.reward.networkId] ?? app.reward.tokenAddress;
   }
 
   nextPermit(): Permit | null {

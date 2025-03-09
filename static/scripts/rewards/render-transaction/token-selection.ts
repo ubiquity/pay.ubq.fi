@@ -28,7 +28,16 @@ interface RenderParams {
 let cowSwapTokens: Token[] = [];
 let currentRenderParams: RenderParams | null = null;
 
-// fetch tokens once on load
+export function loadSelectedTokens(): { [chainId: number]: string | null } {
+  const stored = localStorage.getItem("selectedTokens");
+  return stored ? JSON.parse(stored) : {};
+}
+
+function saveSelectedTokens(selectedTokens: { [chainId: number]: string | null }): void {
+  localStorage.setItem("selectedTokens", JSON.stringify(selectedTokens));
+}
+
+// Fetch tokens once on load and set initial token from localStorage
 export async function fetchCowSwapTokens(): Promise<void> {
   try {
     const response = await fetch("http://files.cow.fi/tokens/CowSwap.json");
@@ -65,6 +74,26 @@ export async function fetchCowSwapTokens(): Promise<void> {
         logoURI: "https://etherscan.io/token/images/ubiquitydao3_32.png",
       }
     );
+
+    // load selected tokens from localStorage
+    const selectedTokens = loadSelectedTokens();
+    const currentChainId = app.reward.networkId;
+    let initialTokenAddress = selectedTokens[currentChainId] || app.reward.tokenAddress;
+
+    // if stored value is null, revert to original token
+    if (initialTokenAddress === null) {
+      initialTokenAddress = app.reward.tokenAddress;
+      selectedTokens[currentChainId] = initialTokenAddress;
+      saveSelectedTokens(selectedTokens);
+    }
+
+    // render the initial token
+    if (currentRenderParams) {
+      await renderTokenSymbol({
+        ...currentRenderParams,
+        tokenAddress: initialTokenAddress,
+      });
+    }
   } catch (error) {
     console.error("Error fetching token list:", error);
   }
@@ -96,6 +125,7 @@ export function openTokenModal(currentTokenAddress: string, renderParams: Render
     renderTokenList(filtered, currentTokenAddress);
   });
 }
+
 export function renderTokenList(tokens: Token[], currentTokenAddress: string): void {
   if (!tokenListContainer) {
     console.error("Token list container not found");
@@ -150,7 +180,7 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
       `;
     } else {
       tokenItem.innerHTML = `
-      <img src="${token.logoURI}" alt="${token.symbol}" />
+        <img src="${token.logoURI}" alt="${token.symbol}" />
         <div>
           <span class="symbol">${token.symbol}</span>
           <span class="name">${token.name}</span>
@@ -163,6 +193,17 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
         console.error("Render parameters not found");
         return;
       }
+
+      const selectedTokens = loadSelectedTokens();
+      const currentChainId = app.reward.networkId;
+
+      if (token.address.toLowerCase() === app.reward.tokenAddress.toLowerCase()) {
+        selectedTokens[currentChainId] = null;
+      } else {
+        selectedTokens[currentChainId] = token.address;
+      }
+
+      saveSelectedTokens(selectedTokens);
 
       await renderTokenSymbol({
         table: currentRenderParams.table,
