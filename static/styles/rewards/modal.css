@@ -25,7 +25,9 @@
   background-color: #00000090;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.5s ease, background-color 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    background-color 0.5s ease;
   overflow: auto;
 }
 
