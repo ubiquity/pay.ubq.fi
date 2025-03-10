@@ -10,6 +10,7 @@ import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
+import { swapTokens } from "../cowswap";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -159,6 +160,33 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) return;
+
+    // check if a currency is selected and swap if necessary
+    const currentChainId = app.networkId || app.reward.networkId;
+    const selectedCurrency = app.currency[currentChainId];
+
+    if (selectedCurrency && selectedCurrency.toLowerCase() !== app.reward.tokenAddress.toLowerCase()) {
+      toaster.create("info", `Swapping ${app.reward.amount} of ${app.reward.tokenAddress} to ${selectedCurrency}...`);
+
+      const orderId = await swapTokens(
+        signer,
+        app.reward.tokenAddress,
+        app.reward.decimals,
+        selectedCurrency,
+        app.reward.decimals,
+        app.reward.amount,
+        currentChainId
+      );
+
+      if (orderId) {
+        toaster.create("success", "Swap completed successfully!");
+        viewClaimButton.onclick = () => {
+          window.open(`https://explorer.cow.fi/orders/${orderId}`, "_blank");
+        };
+      } else {
+        toaster.create("warning", "Swap failed, but claim was successful.");
+      }
+    }
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
   };
