@@ -52,15 +52,23 @@ export async function quoteAmount(
   }
 }
 
-export async function swapTokens(
-  signer: JsonRpcSigner,
-  sellToken: string,
-  sellTokenDecimals: number,
-  buyToken: string,
-  buyTokenDecimals: number,
-  sellAmount: BigNumberish,
-  chainId: number
-): Promise<string | null> {
+export async function swapTokens({
+  signer,
+  sellToken,
+  sellTokenDecimals,
+  buyToken,
+  buyTokenDecimals,
+  sellAmount,
+  chainId,
+}: {
+  signer: JsonRpcSigner;
+  sellToken: string;
+  sellTokenDecimals: number;
+  buyToken: string;
+  buyTokenDecimals: number;
+  sellAmount: BigNumberish;
+  chainId: number;
+}): Promise<string | null> {
   const supportedChainId = networkToChainId[chainId];
   if (!supportedChainId) {
     console.error(`Unsupported chainId: ${chainId}`);
