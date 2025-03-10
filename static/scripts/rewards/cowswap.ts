@@ -1,6 +1,8 @@
-import { OrderBookApi, SupportedChainId, OrderQuoteSideKindSell } from "@cowprotocol/cow-sdk";
+import { OrderBookApi, SupportedChainId, OrderQuoteSideKindSell, TradingSdk, TradeParameters, OrderKind } from "@cowprotocol/cow-sdk";
 import { app } from "./app-state";
 import { BigNumberish, ethers } from "ethers";
+import { JsonRpcSigner } from "@ethersproject/providers";
+import { errorToast, MetaMaskError, toaster } from "./toaster";
 
 const networkToChainId: { [key: number]: SupportedChainId } = {
   1: SupportedChainId.MAINNET,
@@ -47,5 +49,55 @@ export async function quoteAmount(
   } catch (error) {
     console.error("Error fetching quote from CoW Swap:", error);
     return originalAmount;
+  }
+}
+
+export async function swapTokens(
+  signer: JsonRpcSigner,
+  sellToken: string,
+  sellTokenDecimals: number,
+  buyToken: string,
+  buyTokenDecimals: number,
+  sellAmount: BigNumberish,
+  chainId: number
+): Promise<string | null> {
+  const supportedChainId = networkToChainId[chainId];
+  if (!supportedChainId) {
+    console.error(`Unsupported chainId: ${chainId}`);
+    toaster.create("error", "Unsupported network for swapping.");
+    return null;
+  }
+
+  try {
+    const sdk = new TradingSdk({
+      chainId: supportedChainId,
+      signer,
+      appCode: "YourAppCode", // todo: replace with app code
+    });
+
+    const parameters: TradeParameters = {
+      kind: OrderKind.SELL,
+      sellToken: sellToken.toLowerCase(),
+      sellTokenDecimals,
+      buyToken: buyToken.toLowerCase(),
+      buyTokenDecimals,
+      amount: sellAmount.toString(),
+    };
+
+    const orderId = await sdk.postSwapOrder(parameters);
+
+    if (!orderId) {
+      throw new Error("Failed to submit order: No orderId returned");
+    }
+
+    toaster.create("success", "Swap order submitted successfully!");
+    return orderId;
+  } catch (error) {
+    console.error("Error executing swap via CoW SDK:", error);
+    if (error instanceof Error) {
+      const metaMaskError = error as unknown as MetaMaskError;
+      errorToast(metaMaskError, `Failed to execute swap: ${metaMaskError}`);
+    }
+    return null;
   }
 }
