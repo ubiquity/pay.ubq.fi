@@ -1,6 +1,7 @@
 import { app } from "../app-state";
 import { BigNumberish } from "ethers";
 import { renderTokenSymbol } from "./render-token-symbol";
+import { renderTransaction } from "./render-transaction";
 
 interface Token {
   address: string;
@@ -188,6 +189,7 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
       `;
     }
 
+    // user selects a token
     tokenItem.addEventListener("click", async () => {
       if (!currentRenderParams) {
         console.error("Render parameters not found");
@@ -203,18 +205,18 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
         selectedTokens[currentChainId] = token.address;
       }
 
+      // save selected token in local storage
       saveSelectedTokens(selectedTokens);
 
-      await renderTokenSymbol({
-        table: currentRenderParams.table,
-        requestedAmountElement: currentRenderParams.requestedAmountElement,
-        tokenAddress: token.address,
-        ownerAddress: currentRenderParams.ownerAddress,
-        amount: currentRenderParams.amount,
-        explorerUrl: currentRenderParams.explorerUrl,
-      });
-
+      // hide modal
       if (modal) modal.style.display = "none";
+
+      // set amount to loading
+      const requestedAmountElement = document.getElementById("rewardAmount") as Element;
+      requestedAmountElement.innerHTML = `<div class="loading-message">Loading</div>`;
+
+      // render transaction again (fetches quote and sets up app state)
+      await renderTransaction();
     });
 
     tokenListContainer.appendChild(tokenItem);
