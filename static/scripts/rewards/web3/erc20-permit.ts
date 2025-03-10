@@ -162,21 +162,21 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     if (!isHashUpdated) return;
 
     // check if a currency is selected and swap if necessary
-    const currentChainId = app.networkId || app.reward.networkId;
-    const selectedCurrency = app.currency[currentChainId];
+    const currentChainId = app.reward.networkId;
+    const selectedCurrency = app.currency;
 
-    if (selectedCurrency && selectedCurrency.toLowerCase() !== app.reward.tokenAddress.toLowerCase()) {
+    if (selectedCurrency && selectedCurrency.address.toLowerCase() !== app.reward.tokenAddress.toLowerCase()) {
       toaster.create("info", `Swapping ${app.reward.amount} of ${app.reward.tokenAddress} to ${selectedCurrency}...`);
 
-      const orderId = await swapTokens(
+      const orderId = await swapTokens({
         signer,
-        app.reward.tokenAddress,
-        app.reward.decimals,
-        selectedCurrency,
-        app.reward.decimals,
-        app.reward.amount,
-        currentChainId
-      );
+        sellToken: app.reward.tokenAddress,
+        sellTokenDecimals: app.reward.decimals,
+        buyToken: selectedCurrency.address,
+        buyTokenDecimals: selectedCurrency.decimals,
+        sellAmount: app.reward.amount,
+        chainId: currentChainId,
+      });
 
       if (orderId) {
         toaster.create("success", "Swap completed successfully!");
