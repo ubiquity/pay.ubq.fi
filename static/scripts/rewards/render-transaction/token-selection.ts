@@ -3,7 +3,7 @@ import { BigNumberish } from "ethers";
 import { renderTokenSymbol } from "./render-token-symbol";
 import { renderTransaction } from "./render-transaction";
 
-interface Token {
+export interface Token {
   address: string;
   symbol: string;
   name: string;
@@ -29,12 +29,12 @@ interface RenderParams {
 let cowSwapTokens: Token[] = [];
 let currentRenderParams: RenderParams | null = null;
 
-export function loadSelectedTokens(): { [chainId: number]: string | null } {
+export function loadSelectedTokens(): { [chainId: number]: Token | null } {
   const stored = localStorage.getItem("selectedTokens");
   return stored ? JSON.parse(stored) : {};
 }
 
-function saveSelectedTokens(selectedTokens: { [chainId: number]: string | null }): void {
+function saveSelectedTokens(selectedTokens: { [chainId: number]: Token | null }): void {
   localStorage.setItem("selectedTokens", JSON.stringify(selectedTokens));
 }
 
@@ -79,20 +79,23 @@ export async function fetchCowSwapTokens(): Promise<void> {
     // load selected tokens from localStorage
     const selectedTokens = loadSelectedTokens();
     const currentChainId = app.reward.networkId;
-    let initialTokenAddress = selectedTokens[currentChainId] || app.reward.tokenAddress;
+    let initialToken: Token | null = selectedTokens[currentChainId] || null;
 
-    // if stored value is null, revert to original token
-    if (initialTokenAddress === null) {
-      initialTokenAddress = app.reward.tokenAddress;
-      selectedTokens[currentChainId] = initialTokenAddress;
+    // if stored value is null, revert to the original reward token
+    if (!initialToken) {
+      const originalToken = cowSwapTokens.find(
+        (token) => token.address.toLowerCase() === app.reward.tokenAddress.toLowerCase() && token.chainId === currentChainId
+      );
+      initialToken = originalToken || null;
+      selectedTokens[currentChainId] = initialToken;
       saveSelectedTokens(selectedTokens);
     }
 
     // render the initial token
-    if (currentRenderParams) {
+    if (currentRenderParams && initialToken) {
       await renderTokenSymbol({
         ...currentRenderParams,
-        tokenAddress: initialTokenAddress,
+        tokenAddress: initialToken.address,
       });
     }
   } catch (error) {
@@ -202,7 +205,7 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
       if (token.address.toLowerCase() === app.reward.tokenAddress.toLowerCase()) {
         selectedTokens[currentChainId] = null;
       } else {
-        selectedTokens[currentChainId] = token.address;
+        selectedTokens[currentChainId] = token;
       }
 
       // save selected token in local storage

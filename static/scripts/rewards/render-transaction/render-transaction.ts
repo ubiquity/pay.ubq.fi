@@ -33,8 +33,8 @@ export async function renderTransaction(): Promise<Success> {
   let displayAmount: BigNumberish;
 
   if (selectedCurrency && selectedCurrency !== app.reward.tokenAddress) {
-    displayTokenAddress = selectedCurrency;
-    displayAmount = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency, currentChainId);
+    displayTokenAddress = selectedCurrency.address;
+    displayAmount = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency.address, currentChainId);
   } else {
     displayTokenAddress = app.reward.tokenAddress;
     displayAmount = app.reward.amount;
@@ -48,7 +48,7 @@ export async function renderTransaction(): Promise<Success> {
     const requestedAmountElement = insertErc20PermitTableData(app, table, treasury);
 
     renderTokenSymbol({
-      tokenAddress: selectedCurrency,
+      tokenAddress: selectedCurrency.address,
       ownerAddress: app.reward.owner,
       amount: displayAmount,
       explorerUrl: app.currentExplorerUrl,
