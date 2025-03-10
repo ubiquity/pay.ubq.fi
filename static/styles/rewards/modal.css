@@ -42,17 +42,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
 
   .modal-header h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .close {
     cursor: pointer;
-    font-size: 36px;
+    font-size: 32px;
     color: #808080;
   }
 
@@ -63,12 +63,12 @@
   .search-bar {
     width: 100%;
     padding: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border: 1px solid #808080;
-    border-radius: 5px;
+    border-radius: 4px;
     color: #fff;
     background-color: transparent;
-    font-size: 14px;
+    font-size: 12px;
     box-sizing: border-box;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -111,7 +111,7 @@
 
   .token-item .symbol {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 12px;
   }
 
   .token-item .name {
