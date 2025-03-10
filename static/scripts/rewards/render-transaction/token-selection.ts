@@ -111,7 +111,7 @@ export function openTokenModal(currentTokenAddress: string, renderParams: Render
 
   currentRenderParams = renderParams;
 
-  modal.style.display = "flex";
+  modal.classList.add("active");
 
   const networkTokens = cowSwapTokens.filter((token: Token) => token.chainId === app.reward.networkId);
 
@@ -212,7 +212,9 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
       saveSelectedTokens(selectedTokens);
 
       // hide modal
-      if (modal) modal.style.display = "none";
+      if (modal) {
+        modal.classList.remove("active");
+      }
 
       // set amount to loading
       const requestedAmountElement = document.getElementById("rewardAmount") as Element;
@@ -228,12 +230,14 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
 
 if (closeModal) {
   closeModal.addEventListener("click", () => {
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.classList.remove("active");
+    }
   });
 }
 
 window.addEventListener("click", (event: MouseEvent) => {
   if (event.target === modal && modal) {
-    modal.style.display = "none";
+    modal.classList.remove("active");
   }
 });

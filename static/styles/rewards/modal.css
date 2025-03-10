@@ -13,7 +13,7 @@
 }
 
 .modal {
-  display: none;
+  display: flex;
   position: fixed;
   justify-content: center;
   align-items: center;
@@ -22,8 +22,16 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: #00000040;
+  background-color: #00000090;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, background-color 0.5s ease;
   overflow: auto;
+}
+
+.modal.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 .modal-content {
@@ -66,7 +74,7 @@
   width: 100%;
   padding: 12px;
   margin-bottom: 12px;
-  border: 1px solid #808080;
+  border: 1px solid #80808040;
   border-radius: 4px;
   color: #fff;
   background-color: transparent;
@@ -91,12 +99,13 @@
   display: flex;
   align-items: center;
   padding: 12px;
-  border-bottom: 1px solid #808080;
   cursor: pointer;
+  border-radius: 4px;
+  background-color: transparent;
 }
 
 .token-item:hover {
-  background-color: #80808040;
+  background-color: #80808010;
 }
 
 .token-item img {
@@ -118,20 +127,18 @@
 
 .token-item .name {
   font-size: 12px;
-  color: #aaa;
+  color: #808080bb;
 }
 
 .token-item .info {
   white-space: nowrap;
   margin-left: auto;
-  color: #aaa;
+  color: #808080bb;
 }
 
 .permit-token,
 .selected-token {
-  border-radius: 4px;
-  background-color: "#2a3550";
-  border: 1px solid #444;
+  border: 1px solid #80808040;
   margin-bottom: 8px;
 }
 
