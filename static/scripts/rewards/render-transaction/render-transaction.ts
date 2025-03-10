@@ -6,6 +6,8 @@ import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
+import { BigNumberish } from "ethers";
+import { quoteAmount } from "../cowswap";
 
 const carousel = document.getElementById("carousel") as Element;
 const table = document.querySelector(`table`) as HTMLTableElement;
@@ -24,6 +26,20 @@ export async function renderTransaction(): Promise<Success> {
     return false;
   }
 
+  const currentChainId = app.reward.networkId;
+  const selectedCurrency = app.currency;
+
+  let displayTokenAddress: string;
+  let displayAmount: BigNumberish;
+
+  if (selectedCurrency && selectedCurrency !== app.reward.tokenAddress) {
+    displayTokenAddress = selectedCurrency;
+    displayAmount = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency, currentChainId);
+  } else {
+    displayTokenAddress = app.reward.tokenAddress;
+    displayAmount = app.reward.amount;
+  }
+
   if (isErc20Permit(app.reward)) {
     const treasury = await fetchTreasury(app.reward);
     table.setAttribute(`data-additional-data-size`, "small");
@@ -32,9 +48,9 @@ export async function renderTransaction(): Promise<Success> {
     const requestedAmountElement = insertErc20PermitTableData(app, table, treasury);
 
     renderTokenSymbol({
-      tokenAddress: app.currency,
+      tokenAddress: selectedCurrency,
       ownerAddress: app.reward.owner,
-      amount: app.reward.amount,
+      amount: displayAmount,
       explorerUrl: app.currentExplorerUrl,
       table,
       requestedAmountElement,
