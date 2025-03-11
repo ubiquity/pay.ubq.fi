@@ -60,7 +60,7 @@ export async function fetchPermits(app: AppState) {
         return !isClaimed ? permit : null;
       })
     )
-  ).filter((permit: PermitReward) => permit !== null);
+  ).filter((permit): permit is PermitReward => permit !== null);
   console.log("filtered permits", permits);
   app.claims = permits;
   app.claimTxs = await getClaimedTxs(app);
