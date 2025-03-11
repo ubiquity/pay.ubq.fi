@@ -33,7 +33,7 @@ export async function fetchPermits(app: AppState) {
    * 3. Show error message if no permits found.
    */
   if (base64encodedTxData) {
-    permits = await readClaimDataFromUrl();
+    permits = decodeClaimDataFromUrl(base64encodedTxData);
   } else if (token) {
     const octokit = new Octokit({
       auth: token,
@@ -60,7 +60,7 @@ export async function fetchPermits(app: AppState) {
         return !isClaimed ? permit : null;
       })
     )
-  ).filter((permit): permit is PermitReward => permit !== null);
+  ).filter((permit: PermitReward) => permit !== null);
   console.log("filtered permits", permits);
   app.claims = permits;
   app.claimTxs = await getClaimedTxs(app);
@@ -90,10 +90,6 @@ export async function fetchPermits(app: AppState) {
   displayRewardPagination();
 
   await renderTransaction();
-}
-
-async function readClaimDataFromUrl(): Promise<PermitReward[]> {
-  return decodeClaimData(base64encodedTxData ?? "");
 }
 
 export async function updateButtonVisibility(app: AppState) {
@@ -153,7 +149,7 @@ async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
   return txs;
 }
 
-function decodeClaimData(base64encodedTxData: string): PermitReward[] {
+function decodeClaimDataFromUrl(base64encodedTxData: string): PermitReward[] {
   try {
     return decodePermits(base64encodedTxData);
   } catch (error) {
