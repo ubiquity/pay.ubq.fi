@@ -10,8 +10,17 @@ const prevTxButton = document.getElementById("prevTx");
 
 export function claimRewardsPagination(rewardsCount: HTMLElement) {
   rewardsCount.innerHTML = `${app.rewardIndex + 1}/${app.claims.length} reward`;
-  if (nextTxButton) nextTxButton.addEventListener("click", () => transactionHandler("next"));
-  if (prevTxButton) prevTxButton.addEventListener("click", () => transactionHandler("previous"));
+  const attributeKey = "data-listener";
+
+  if (nextTxButton && !nextTxButton.hasAttribute(attributeKey)) {
+    nextTxButton.addEventListener("click", () => transactionHandler("next"));
+    nextTxButton.setAttribute(attributeKey, "true");
+  }
+
+  if (prevTxButton && !prevTxButton.hasAttribute(attributeKey)) {
+    prevTxButton.addEventListener("click", () => transactionHandler("previous"));
+    prevTxButton.setAttribute(attributeKey, "true");
+  }
 }
 
 function transactionHandler(direction: "next" | "previous") {
