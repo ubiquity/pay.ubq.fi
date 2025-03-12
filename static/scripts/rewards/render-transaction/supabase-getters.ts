@@ -51,7 +51,7 @@ export async function fetchPermitsFromSupabase(userId: number): Promise<PermitRe
   const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId).order("id", { ascending: false });
   if (error) {
     console.error("error fetching permits:", error);
-    toaster.create("error", "failed to fetch permits from supabase.");
+    toaster.create("error", "Failed to fetch permits from Supabase.");
     return [];
   }
   if (!data) return [];

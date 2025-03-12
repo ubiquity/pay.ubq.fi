@@ -3,6 +3,12 @@ import { ethers } from "ethers";
 import { buttonController } from "../button-controller";
 import { toaster } from "../toaster";
 
+type StandardError = {
+  code: number;
+  message: string;
+  stack: string;
+};
+
 function checkMobile(a: string) {
   // cspell:disable
   if (
@@ -55,7 +61,6 @@ function connectErrorHandler(error: unknown) {
     console.error(error);
     if (error?.message?.includes("missing provider")) {
       // mobile browsers don't really support window.ethereum
-
       if (mobileCheck()) {
         toaster.create("warning", "Please use a mobile-friendly Web3 browser such as MetaMask to collect this reward", Infinity);
       } else if (!window.ethereum) {
@@ -65,8 +70,19 @@ function connectErrorHandler(error: unknown) {
     } else {
       toaster.create("error", error.message);
     }
+  } else if (typeof error === "object" && error !== null && "code" in error && "message" in error) {
+    const standardError = error as StandardError;
+    // handle MetaMask error objects which have code and message properties
+    if (standardError.code === 4001) {
+      toaster.create("warning", "You rejected the wallet connection request.");
+    } else {
+      const errorMessage = standardError.message;
+      toaster.create("error", errorMessage);
+    }
   } else {
-    toaster.create("error", "An unknown error occurred" + JSON.stringify(error));
+    // fallback for truly unknown errors
+    toaster.create("error", "An unknown error occurred.");
+    console.error("Unknown error:", error);
   }
 
   if (window.location.href.includes("localhost")) {
