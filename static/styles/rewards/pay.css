@@ -22,7 +22,8 @@
   letter-spacing: 2px;
 }
 
-body,html{
+body,
+html {
   height: 100%;
 }
 
@@ -32,7 +33,7 @@ a {
 #github-login {
   text-align: center;
 }
-#github-login.invisible{
+#github-login.invisible {
   display: none;
 }
 #github-login-button {
