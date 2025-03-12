@@ -18,7 +18,16 @@ function transactionHandler(direction: "next" | "previous") {
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
-  updateButtonVisibility(app).catch(console.error);
-  initClaimGiftCard(app).catch(console.error);
-  renderTransaction().catch(console.error);
+  console.time("updateButtonVisibility");
+  updateButtonVisibility(app)
+    .catch(console.error)
+    .finally(() => console.timeEnd("updateButtonVisibility"));
+  console.time("initClaimGiftCard");
+  initClaimGiftCard(app)
+    .catch(console.error)
+    .finally(() => console.timeEnd("initClaimGiftCard"));
+  console.time("renderTransaction");
+  renderTransaction()
+    .catch(console.error)
+    .finally(() => console.timeEnd("renderTransaction"));
 }
