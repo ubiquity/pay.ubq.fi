@@ -120,32 +120,37 @@ async function fetchCaches(permits: SupabasePermit[]): Promise<{
   partnerCache: Map<number, SupabasePartner>;
   walletCache: Map<number, SupabaseWallet>;
 } | null> {
-  const tokenIds = [...new Set(permits.map((p) => p.token_id).filter((id): id is number => id !== null))];
-  const partnerIds = [...new Set(permits.map((p) => p.partner_id).filter((id): id is number => id !== null))];
+  try {
+    const tokenIds = [...new Set(permits.map((p) => p.token_id).filter((id): id is number => id !== null))];
+    const partnerIds = [...new Set(permits.map((p) => p.partner_id).filter((id): id is number => id !== null))];
 
-  const { data: tokensData, error: tokensError } = await supabase.from("tokens").select("*").in("id", tokenIds);
-  if (tokensError) {
-    console.error("error fetching tokens:", tokensError);
+    // fetch tokens and partners concurrently
+    const [tokensResponse, partnersResponse] = await Promise.all([
+      supabase.from("tokens").select("*").in("id", tokenIds),
+      supabase.from("partners").select("*, wallets(*)").in("id", partnerIds),
+    ]);
+
+    if (tokensResponse.error) throw new Error(`Error fetching tokens: ${tokensResponse.error.message}`);
+    if (partnersResponse.error) throw new Error(`Error fetching partners: ${partnersResponse.error.message}`);
+
+    const tokenCache = new Map<number, SupabaseToken>(tokensResponse.data?.map((t) => [t.id, t]) ?? []);
+
+    const partnerCache = new Map<number, SupabasePartner>();
+    const walletCache = new Map<number, SupabaseWallet>();
+
+    // process partners and their joined wallet data
+    partnersResponse.data?.forEach((partner) => {
+      partnerCache.set(partner.id, partner);
+      if (partner.wallet_id && partner.wallets) {
+        walletCache.set(partner.wallet_id, partner.wallets as unknown as SupabaseWallet);
+      }
+    });
+
+    return { tokenCache, partnerCache, walletCache };
+  } catch (error) {
+    console.error("Error in fetchCaches:", error);
     return null;
   }
-  const tokenCache = new Map<number, SupabaseToken>(tokensData?.map((t) => [t.id, t]) ?? []);
-
-  const { data: partnersData, error: partnersError } = await supabase.from("partners").select("*").in("id", partnerIds);
-  if (partnersError) {
-    console.error("error fetching partners:", partnersError);
-    return null;
-  }
-  const partnerCache = new Map<number, SupabasePartner>(partnersData?.map((p) => [p.id, p]) ?? []);
-
-  const walletIds = [...new Set(partnersData?.map((p) => p.wallet_id) ?? [])];
-  const { data: walletsData, error: walletsError } = await supabase.from("wallets").select("*").in("id", walletIds);
-  if (walletsError) {
-    console.error("error fetching wallets:", walletsError);
-    return null;
-  }
-  const walletCache = new Map<number, SupabaseWallet>(walletsData?.map((w) => [w.id, w]) ?? []);
-
-  return { tokenCache, partnerCache, walletCache };
 }
 
 function processPermitRecords(
