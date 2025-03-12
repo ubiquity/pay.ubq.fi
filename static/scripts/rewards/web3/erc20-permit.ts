@@ -289,7 +289,7 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
   // check in localStorage first for performance
-  const claimedNoncesKey = `claimedNonces_${permit.owner}`;
+  const claimedNoncesKey = `claimedNonces`;
   const stored = localStorage.getItem(claimedNoncesKey);
   let claimedNonces: Record<string, boolean> = {};
 
