@@ -288,6 +288,24 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
 export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
+  // check in localStorage first for performance
+  const claimedNoncesKey = `claimedNonces_${permit.owner}`;
+  const stored = localStorage.getItem(claimedNoncesKey);
+  let claimedNonces: Record<string, boolean> = {};
+
+  if (stored) {
+    try {
+      claimedNonces = JSON.parse(stored);
+      // if we have this nonce cached as claimed, return immediately
+      if (claimedNonces[permit.nonce.toString()]) {
+        return true;
+      }
+    } catch (e) {
+      console.error("Error parsing claimedNonces from localStorage", e);
+    }
+  }
+
+  // check on-chain
   const provider = await useRpcHandler(permit.networkId);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
@@ -300,8 +318,15 @@ export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
 
   const bit = BigNumber.from(1).shl(bitPos);
   const flipped = BigNumber.from(bitmap).xor(bit);
+  const isClaimed = bit.and(flipped).eq(0);
 
-  return bit.and(flipped).eq(0);
+  // store in cache if claimed
+  if (isClaimed) {
+    claimedNonces[permit.nonce.toString()] = true;
+    localStorage.setItem(claimedNoncesKey, JSON.stringify(claimedNonces));
+  }
+
+  return isClaimed;
 }
 
 async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
