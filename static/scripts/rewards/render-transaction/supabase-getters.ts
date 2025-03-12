@@ -47,42 +47,6 @@ export interface SupabaseWallet {
   address: string | null;
 }
 
-export async function fetchTokenById(tokenId: number): Promise<SupabaseToken | null> {
-  const { data, error } = await supabase.from("tokens").select("*").eq("id", tokenId).single();
-  if (error) {
-    console.error("error fetching token:", error);
-    return null;
-  }
-  return data as SupabaseToken;
-}
-
-export async function fetchUserById(userId: number): Promise<SupabaseUser | null> {
-  const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-  if (error) {
-    console.error("error fetching user:", error);
-    return null;
-  }
-  return data as SupabaseUser;
-}
-
-export async function fetchPartnerById(partnerId: number): Promise<SupabasePartner | null> {
-  const { data, error } = await supabase.from("partners").select("*").eq("id", partnerId).single();
-  if (error) {
-    console.error("error fetching partner:", error);
-    return null;
-  }
-  return data as SupabasePartner;
-}
-
-export async function fetchWalletById(walletId: number): Promise<SupabaseWallet | null> {
-  const { data, error } = await supabase.from("wallets").select("*").eq("id", walletId).single();
-  if (error) {
-    console.error("error fetching wallet:", error);
-    return null;
-  }
-  return data as SupabaseWallet;
-}
-
 export async function fetchPermitsFromSupabase(userId: number): Promise<PermitReward[]> {
   const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId).order("id", { ascending: false });
   if (error) {
@@ -93,14 +57,16 @@ export async function fetchPermitsFromSupabase(userId: number): Promise<PermitRe
   if (!data) return [];
 
   // fetch user data once
-  const userRecord = await fetchUserById(userId);
-  if (!userRecord) {
-    console.error("user not found for id:", userId);
+  const { data: userData, error: userError } = await supabase.from("users").select("*, wallets(*)").eq("id", userId).single();
+
+  if (userError || !userData) {
+    console.error("error fetching user or wallet:", userError);
     return [];
   }
-  const userWalletRecord = await fetchWalletById(userRecord.wallet_id);
+
+  const userWalletRecord = userData.wallets as SupabaseWallet;
   if (!userWalletRecord) {
-    console.error("user wallet not found for id:", userRecord.wallet_id);
+    console.error("user wallet not found for id:", userData.wallet_id);
     return [];
   }
 
@@ -142,7 +108,7 @@ async function fetchCaches(permits: SupabasePermit[]): Promise<{
     partnersResponse.data?.forEach((partner) => {
       partnerCache.set(partner.id, partner);
       if (partner.wallet_id && partner.wallets) {
-        walletCache.set(partner.wallet_id, partner.wallets as unknown as SupabaseWallet);
+        walletCache.set(partner.wallet_id, partner.wallets as SupabaseWallet);
       }
     });
 
