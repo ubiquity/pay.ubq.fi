@@ -11,10 +11,21 @@ import { supabase } from "../render-transaction/supabase-getters";
 import { convertToNetworkId, useRpcHandler } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
 
+// runtime treasury cache
+const treasuryCache: Map<string, { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> = new Map();
+
 export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
   try {
+    const cacheKey = `${permit.tokenAddress}_${permit.owner}`; // unique key per token and owner
+    if (treasuryCache.has(cacheKey)) {
+      const result = treasuryCache.get(cacheKey);
+      if (result) {
+        return result;
+      }
+    }
+
     const tokenAddress = permit.tokenAddress;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
@@ -40,6 +51,8 @@ export async function fetchTreasury(permit: PermitReward): Promise<{ balance: Bi
       localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
     }
 
+    // Store the token info in the runtime cache
+    treasuryCache.set(cacheKey, { balance, allowance, decimals, symbol });
     return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };

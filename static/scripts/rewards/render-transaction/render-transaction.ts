@@ -27,7 +27,9 @@ export async function renderTransaction(): Promise<Success> {
   }
 
   if (isErc20Permit(app.reward)) {
-    app.provider = await useRpcHandler(app.reward.networkId);
+    if (app.reward.networkId !== app.networkId) {
+      app.provider = await useRpcHandler(app.reward.networkId);
+    }
 
     const treasury = await fetchTreasury(app.reward);
     table.setAttribute(`data-additional-data-size`, "small");
