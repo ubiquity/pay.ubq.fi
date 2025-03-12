@@ -15,7 +15,7 @@ jobs:
         id: verify-runner
         run: |
           echo "Runner name: $RUNNER_NAME"
-          if [[ "$RUNNER_NAME" != *"GitHub Actions"* && "$RUNNER_NAME" != *"GitHub-Actions"* ]] then
+          if [[ "$RUNNER_NAME" != *"GitHub Actions"* && "$RUNNER_NAME" != *"GitHub-Actions"* ]]; then
             echo "This workflow must run on a GitHub Actions runner. (github-actions[bot])"
             exit 1
           fi
