@@ -31,7 +31,10 @@ export interface SupabaseToken {
 
 export interface SupabasePartner {
   id: number;
-  wallet_id: number;
+  wallet_id: number | null;
+  created?: string;
+  updated?: string | null;
+  location_id?: number | null;
 }
 
 export interface SupabaseUser {
@@ -41,7 +44,7 @@ export interface SupabaseUser {
 
 export interface SupabaseWallet {
   id: number;
-  address: string;
+  address: string | null;
 }
 
 export async function fetchTokenById(tokenId: number): Promise<SupabaseToken | null> {
@@ -89,37 +92,77 @@ export async function fetchPermitsFromSupabase(userId: number): Promise<PermitRe
   }
   if (!data) return [];
 
-  return processPermits(data as SupabasePermit[]);
+  // fetch user data once
+  const userRecord = await fetchUserById(userId);
+  if (!userRecord) {
+    console.error("user not found for id:", userId);
+    return [];
+  }
+  const userWalletRecord = await fetchWalletById(userRecord.wallet_id);
+  if (!userWalletRecord) {
+    console.error("user wallet not found for id:", userRecord.wallet_id);
+    return [];
+  }
+
+  return processPermits(data as SupabasePermit[], userWalletRecord);
 }
 
-async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]> {
-  const processed = await Promise.all(
-    permits.map(async (permit) => {
-      if (!permit.beneficiary_id || !permit.token_id || !permit.partner_id) {
-        // skip if not enough info from db
-        return null;
-      }
+async function processPermits(permits: SupabasePermit[], userWalletRecord: SupabaseWallet): Promise<PermitReward[]> {
+  const caches = await fetchCaches(permits);
+  if (!caches) return [];
 
-      // fetch objects from db
-      const userRecord = await fetchUserById(permit.beneficiary_id);
-      if (!userRecord) {
-        console.log("user not found");
-        return null;
-      }
+  const processed = processPermitRecords(permits, userWalletRecord, caches);
+  return deduplicatePermits(processed);
+}
 
-      const tokenRecord = await fetchTokenById(permit.token_id);
-      const userWalletRecord = await fetchWalletById(userRecord.wallet_id);
-      const partnerRecord = await fetchPartnerById(permit.partner_id);
-      if (!partnerRecord) {
-        console.log("partner not found");
-        return null;
-      }
+async function fetchCaches(permits: SupabasePermit[]): Promise<{
+  tokenCache: Map<number, SupabaseToken>;
+  partnerCache: Map<number, SupabasePartner>;
+  walletCache: Map<number, SupabaseWallet>;
+} | null> {
+  const tokenIds = [...new Set(permits.map((p) => p.token_id).filter((id): id is number => id !== null))];
+  const partnerIds = [...new Set(permits.map((p) => p.partner_id).filter((id): id is number => id !== null))];
 
-      const partnerWalletRecord = await fetchWalletById(partnerRecord.wallet_id);
-      if (!tokenRecord || !userWalletRecord || !partnerWalletRecord) {
-        console.log("token or wallet not found");
-        return null;
-      }
+  const { data: tokensData, error: tokensError } = await supabase.from("tokens").select("*").in("id", tokenIds);
+  if (tokensError) {
+    console.error("error fetching tokens:", tokensError);
+    return null;
+  }
+  const tokenCache = new Map<number, SupabaseToken>(tokensData?.map((t) => [t.id, t]) ?? []);
+
+  const { data: partnersData, error: partnersError } = await supabase.from("partners").select("*").in("id", partnerIds);
+  if (partnersError) {
+    console.error("error fetching partners:", partnersError);
+    return null;
+  }
+  const partnerCache = new Map<number, SupabasePartner>(partnersData?.map((p) => [p.id, p]) ?? []);
+
+  const walletIds = [...new Set(partnersData?.map((p) => p.wallet_id) ?? [])];
+  const { data: walletsData, error: walletsError } = await supabase.from("wallets").select("*").in("id", walletIds);
+  if (walletsError) {
+    console.error("error fetching wallets:", walletsError);
+    return null;
+  }
+  const walletCache = new Map<number, SupabaseWallet>(walletsData?.map((w) => [w.id, w]) ?? []);
+
+  return { tokenCache, partnerCache, walletCache };
+}
+
+function processPermitRecords(
+  permits: SupabasePermit[],
+  userWalletRecord: SupabaseWallet,
+  caches: { tokenCache: Map<number, SupabaseToken>; partnerCache: Map<number, SupabasePartner>; walletCache: Map<number, SupabaseWallet> }
+): PermitReward[] {
+  return permits
+    .map((permit) => {
+      if (!permit.token_id || !permit.partner_id) return null;
+
+      const tokenRecord = caches.tokenCache.get(permit.token_id);
+      const partnerRecord = caches.partnerCache.get(permit.partner_id);
+      if (!tokenRecord || !partnerRecord || partnerRecord.wallet_id === null) return null;
+
+      const partnerWalletRecord = caches.walletCache.get(partnerRecord.wallet_id);
+      if (!partnerWalletRecord) return null;
 
       return {
         nonce: permit.nonce,
@@ -133,11 +176,10 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
         networkId: tokenRecord.network,
       } as PermitReward;
     })
-  );
+    .filter((permit): permit is PermitReward => permit !== null);
+}
 
-  const validPermits = processed.filter((permit): permit is PermitReward => permit !== null);
-
-  // deduplicate by nonce using highest amount
+function deduplicatePermits(validPermits: PermitReward[]): PermitReward[] {
   const permitMap = new Map<BigNumberish, PermitReward>();
   for (const permit of validPermits) {
     if (!permit.nonce) continue;
@@ -153,6 +195,5 @@ async function processPermits(permits: SupabasePermit[]): Promise<PermitReward[]
       }
     }
   }
-
   return Array.from(permitMap.values());
 }
