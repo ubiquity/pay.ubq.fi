@@ -44,6 +44,12 @@ export async function fetchPermits(app: AppState) {
     });
 
     const { data: user } = await octokit.users.getAuthenticated();
+
+    // check if it's users first time fetching to show a message
+    const claimedNonces = localStorage.getItem("claimedNonces");
+    if (!claimedNonces) {
+      toaster.create("info", "Fetching all your permits for the first time - this will take a while.");
+    }
     permits = await fetchPermitsFromSupabase(user.id);
   } else {
     setClaimMessage({ type: "Notice", message: `Sign in to fetch your permits.` });
