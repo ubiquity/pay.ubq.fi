@@ -61,10 +61,7 @@ export async function fetchPermits(app: AppState) {
   console.log("unfiltered permits", permits);
   const filteredPermits: PermitReward[] = [];
   for (const permit of permits) {
-    const time0 = performance.now();
     const isClaimed = await isNonceClaimed(permit);
-    const time1 = performance.now();
-    console.log("timing isNonceClaimed", time1 - time0);
     if (!isClaimed) {
       filteredPermits.push(permit);
     }

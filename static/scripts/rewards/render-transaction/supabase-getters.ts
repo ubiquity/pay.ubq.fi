@@ -43,13 +43,14 @@ export interface SupabaseWallet {
 }
 
 export async function fetchPermitsFromSupabase(userId: number): Promise<PermitReward[]> {
-  const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId).order("id", { ascending: false });
+  const { data, error } = await supabase.from("permits").select("*").eq("beneficiary_id", userId).is("transaction", null).order("id", { ascending: false });
   if (error) {
     console.error("error fetching permits:", error);
     toaster.create("error", "Failed to fetch permits from Supabase.");
     return [];
   }
   if (!data) return [];
+  console.log("raw permits", data);
 
   // fetch user data once
   const { data: userData, error: userError } = await supabase.from("users").select("*, wallets(*)").eq("id", userId).single();
@@ -73,6 +74,8 @@ async function processPermits(permits: SupabasePermit[], userWalletRecord: Supab
   if (!caches) return [];
 
   const processed = processPermitRecords(permits, userWalletRecord, caches);
+  const missingPermits = permits.filter((permit) => !processed.some((processedPermit) => processedPermit.nonce === permit.nonce));
+  console.log("excluded permits (missing data)", missingPermits);
   return deduplicatePermits(processed);
 }
 
