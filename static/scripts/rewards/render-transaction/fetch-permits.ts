@@ -64,11 +64,15 @@ export async function fetchPermits(app: AppState) {
     const isClaimed = await isNonceClaimed(permit);
     if (!isClaimed) {
       filteredPermits.push(permit);
+      // streamline render
+      app.claims.push(permit);
+      displayRewardDetails();
+      displayRewardPagination();
+      await renderTransaction();
     }
   }
   permits = filteredPermits;
   console.log("filtered permits", permits);
-  app.claims = permits;
   app.claimTxs = await getClaimedTxs(app);
 
   try {
