@@ -37,11 +37,6 @@ export interface SupabasePartner {
   location_id?: number | null;
 }
 
-export interface SupabaseUser {
-  id: number;
-  wallet_id: number;
-}
-
 export interface SupabaseWallet {
   id: number;
   address: string | null;
