@@ -25,7 +25,6 @@ export async function fetchPermits(app: AppState) {
   let permits: PermitReward[];
 
   const token = getSessionToken();
-  app.signer = await connectWallet();
 
   /**
    * In early return fashion, meaning priority to what comes first:
@@ -57,6 +56,8 @@ export async function fetchPermits(app: AppState) {
     table.setAttribute(`data-make-claim`, "error");
     return;
   }
+
+  app.signer = await connectWallet();
 
   // filter claimed permits, only show unclaimed ones
   console.log("unfiltered permits", permits);
