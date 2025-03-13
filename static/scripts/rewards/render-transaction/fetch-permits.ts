@@ -25,6 +25,7 @@ export async function fetchPermits(app: AppState) {
   let permits: PermitReward[];
 
   const token = getSessionToken();
+  app.signer = await connectWallet();
 
   /**
    * In early return fashion, meaning priority to what comes first:
@@ -68,6 +69,10 @@ export async function fetchPermits(app: AppState) {
       app.claims.push(permit);
       displayRewardDetails();
       displayRewardPagination();
+      if (app.reward === permit) {
+        app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
+        await updateButtonVisibility(app);
+      }
       await renderTransaction();
     }
   }
@@ -75,31 +80,11 @@ export async function fetchPermits(app: AppState) {
   console.log("filtered permits", permits);
   app.claimTxs = await getClaimedTxs(app);
 
-  try {
-    app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
-  } catch (e) {
-    if (e instanceof Error) {
-      toaster.create("error", e.message);
-    } else {
-      toaster.create("error", JSON.stringify(e));
-    }
-  }
-
   // if found no permits
   if (!permits.length) {
     setClaimMessage({ type: "Notice", message: `No claim data found.` });
     table.setAttribute(`data-make-claim`, "error");
-    return;
   }
-
-  app.signer = await connectWallet();
-
-  await updateButtonVisibility(app);
-
-  displayRewardDetails();
-  displayRewardPagination();
-
-  await renderTransaction();
 }
 
 export async function updateButtonVisibility(app: AppState) {
