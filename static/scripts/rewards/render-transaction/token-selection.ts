@@ -41,7 +41,7 @@ function saveSelectedTokens(selectedTokens: { [chainId: number]: Token | null })
 // Fetch tokens once on load and set initial token from localStorage
 export async function fetchCowSwapTokens(): Promise<void> {
   try {
-    const response = await fetch("http://files.cow.fi/tokens/CowSwap.json");
+    const response = await fetch("https://files.cow.fi/tokens/CowSwap.json");
     const data = await response.json();
 
     cowSwapTokens = data.tokens;
