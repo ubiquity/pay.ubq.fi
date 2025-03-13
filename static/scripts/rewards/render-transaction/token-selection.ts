@@ -1,6 +1,5 @@
 import { app } from "../app-state";
 import { BigNumberish } from "ethers";
-import { renderTokenSymbol } from "./render-token-symbol";
 import { renderTransaction } from "./render-transaction";
 
 export interface Token {
@@ -89,14 +88,6 @@ export async function fetchCowSwapTokens(): Promise<void> {
       initialToken = originalToken || null;
       selectedTokens[currentChainId] = initialToken;
       saveSelectedTokens(selectedTokens);
-    }
-
-    // render the initial token
-    if (currentRenderParams && initialToken) {
-      await renderTokenSymbol({
-        ...currentRenderParams,
-        tokenAddress: initialToken.address,
-      });
     }
   } catch (error) {
     console.error("Error fetching token list:", error);

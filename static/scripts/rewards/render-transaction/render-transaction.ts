@@ -31,11 +31,12 @@ export async function renderTransaction(): Promise<Success> {
 
   let displayTokenAddress: string;
   let displayAmount: BigNumberish;
-
+  let isCowswapDown: boolean = false;
   if (selectedCurrency && selectedCurrency !== app.reward.tokenAddress) {
     const quoteTokenInfo = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency.address, currentChainId);
     displayTokenAddress = quoteTokenInfo.tokenAddress;
     displayAmount = quoteTokenInfo.amount;
+    isCowswapDown = quoteTokenInfo.isCowswapDown;
   } else {
     displayTokenAddress = app.reward.tokenAddress;
     displayAmount = app.reward.amount;
@@ -49,12 +50,13 @@ export async function renderTransaction(): Promise<Success> {
     const requestedAmountElement = insertErc20PermitTableData(app, table, treasury);
 
     renderTokenSymbol({
-      tokenAddress: selectedCurrency.address,
+      tokenAddress: displayTokenAddress,
       ownerAddress: app.reward.owner,
       amount: displayAmount,
       explorerUrl: app.currentExplorerUrl,
       table,
       requestedAmountElement,
+      isCowswapDown,
     }).catch(console.error);
 
     const toElement = document.getElementById(`rewardRecipient`) as Element;

@@ -16,15 +16,16 @@ export async function quoteAmount(
   originalAmount: BigNumberish,
   targetTokenAddress: string | null,
   chainId: number
-): Promise<{ tokenAddress: string; amount: BigNumberish }> {
+): Promise<{ tokenAddress: string; amount: BigNumberish; isCowswapDown: boolean }> {
   if (!targetTokenAddress || targetTokenAddress.toLowerCase() === originalTokenAddress.toLowerCase()) {
-    return { tokenAddress: originalTokenAddress, amount: originalAmount };
+    return { tokenAddress: originalTokenAddress, amount: originalAmount, isCowswapDown: false };
   }
 
   const supportedChainId = networkToChainId[chainId];
   if (!supportedChainId) {
     console.error(`Unsupported chainId: ${chainId}`);
-    return { tokenAddress: originalTokenAddress, amount: originalAmount };
+    toaster.create("error", "CowSwap doesn't support this network - normal claim enabled.");
+    return { tokenAddress: originalTokenAddress, amount: originalAmount, isCowswapDown: false };
   }
 
   try {
@@ -41,15 +42,15 @@ export async function quoteAmount(
     console.log("Quote from CoW Swap:", quote);
     if (!quote?.quote?.buyAmount) {
       console.error("Failed to fetch quote: No buyAmount returned");
-      toaster.create("error", "CowSwap is down, normal claim enabled");
-      return { tokenAddress: originalTokenAddress, amount: originalAmount };
+      toaster.create("error", "CowSwap is down - normal claim enabled");
+      return { tokenAddress: originalTokenAddress, amount: originalAmount, isCowswapDown: true };
     }
 
-    return { tokenAddress: targetTokenAddress, amount: ethers.BigNumber.from(quote.quote.buyAmount) };
+    return { tokenAddress: targetTokenAddress, amount: ethers.BigNumber.from(quote.quote.buyAmount), isCowswapDown: false };
   } catch (error) {
     console.error("Error fetching quote from CoW Swap:", error);
-    toaster.create("error", "CowSwap is down, normal claim enabled");
-    return { tokenAddress: originalTokenAddress, amount: originalAmount };
+    toaster.create("error", "CowSwap is down - normal claim enabled");
+    return { tokenAddress: originalTokenAddress, amount: originalAmount, isCowswapDown: true };
   }
 }
 
