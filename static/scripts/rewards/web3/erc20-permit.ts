@@ -159,19 +159,34 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
-    if (!isPermitClaimable) return;
+    if (!isPermitClaimable) {
+      buttonController.hideLoader();
+      return;
+    }
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-    if (!permit2Contract) return;
+    if (!permit2Contract) {
+      buttonController.hideLoader();
+      return;
+    }
 
     const tx = await transferFromPermit(permit2Contract, app.reward);
-    if (!tx) return;
+    if (!tx) {
+      buttonController.hideLoader();
+      return;
+    }
 
     const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
-    if (!receipt) return;
+    if (!receipt) {
+      buttonController.hideLoader();
+      return;
+    }
 
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
-    if (!isHashUpdated) return;
+    if (!isHashUpdated) {
+      buttonController.hideLoader();
+      return;
+    }
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
   };

@@ -64,7 +64,7 @@ export async function fetchPermits(app: AppState) {
     const isClaimed = await isNonceClaimed(permit);
     if (!isClaimed) {
       filteredPermits.push(permit);
-      // streamline render
+      // stream render
       app.claims.push(permit);
       displayRewardDetails();
       displayRewardPagination();
