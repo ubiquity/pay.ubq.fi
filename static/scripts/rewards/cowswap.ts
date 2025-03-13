@@ -16,20 +16,19 @@ export async function quoteAmount(
   originalAmount: BigNumberish,
   targetTokenAddress: string | null,
   chainId: number
-): Promise<BigNumberish> {
+): Promise<{ tokenAddress: string; amount: BigNumberish }> {
   if (!targetTokenAddress || targetTokenAddress.toLowerCase() === originalTokenAddress.toLowerCase()) {
-    return originalAmount;
+    return { tokenAddress: originalTokenAddress, amount: originalAmount };
   }
 
   const supportedChainId = networkToChainId[chainId];
   if (!supportedChainId) {
     console.error(`Unsupported chainId: ${chainId}`);
-    return originalAmount;
+    return { tokenAddress: originalTokenAddress, amount: originalAmount };
   }
 
   try {
     const orderBookApi = new OrderBookApi({ chainId: supportedChainId });
-
     const quote = await orderBookApi.getQuote({
       sellToken: originalTokenAddress,
       buyToken: targetTokenAddress,
@@ -42,13 +41,15 @@ export async function quoteAmount(
     console.log("Quote from CoW Swap:", quote);
     if (!quote?.quote?.buyAmount) {
       console.error("Failed to fetch quote: No buyAmount returned");
-      return originalAmount;
+      toaster.create("error", "CowSwap is down, normal claim enabled");
+      return { tokenAddress: originalTokenAddress, amount: originalAmount };
     }
 
-    return ethers.BigNumber.from(quote.quote.buyAmount);
+    return { tokenAddress: targetTokenAddress, amount: ethers.BigNumber.from(quote.quote.buyAmount) };
   } catch (error) {
     console.error("Error fetching quote from CoW Swap:", error);
-    return originalAmount;
+    toaster.create("error", "CowSwap is down, normal claim enabled");
+    return { tokenAddress: originalTokenAddress, amount: originalAmount };
   }
 }
 

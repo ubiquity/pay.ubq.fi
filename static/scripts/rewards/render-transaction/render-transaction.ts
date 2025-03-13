@@ -33,8 +33,9 @@ export async function renderTransaction(): Promise<Success> {
   let displayAmount: BigNumberish;
 
   if (selectedCurrency && selectedCurrency !== app.reward.tokenAddress) {
-    displayTokenAddress = selectedCurrency.address;
-    displayAmount = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency.address, currentChainId);
+    const quoteTokenInfo = await quoteAmount(app.reward.tokenAddress, app.reward.amount, selectedCurrency.address, currentChainId);
+    displayTokenAddress = quoteTokenInfo.tokenAddress;
+    displayAmount = quoteTokenInfo.amount;
   } else {
     displayTokenAddress = app.reward.tokenAddress;
     displayAmount = app.reward.amount;
