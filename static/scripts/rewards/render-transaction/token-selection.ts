@@ -202,13 +202,7 @@ export function renderTokenList(tokens: Token[], currentTokenAddress: string): v
       const selectedTokens = loadSelectedTokens();
       const currentChainId = app.reward.networkId;
 
-      if (token.address.toLowerCase() === app.reward.tokenAddress.toLowerCase()) {
-        selectedTokens[currentChainId] = null;
-      } else {
-        selectedTokens[currentChainId] = token;
-      }
-
-      // save selected token in local storage
+      selectedTokens[currentChainId] = token;
       saveSelectedTokens(selectedTokens);
 
       // hide modal
