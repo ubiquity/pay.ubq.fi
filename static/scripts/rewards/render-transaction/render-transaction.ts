@@ -53,9 +53,10 @@ export async function renderTransaction(): Promise<Success> {
     renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
 
     if (app.claimTxs[app.reward.nonce.toString()] !== undefined) {
-      buttonController.showViewClaim();
+      buttonController.onlyShowViewClaim;
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`));
     } else if (window.ethereum) {
+      buttonController.hideViewClaim();
       getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
 
