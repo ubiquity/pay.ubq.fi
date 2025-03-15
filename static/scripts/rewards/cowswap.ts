@@ -82,7 +82,7 @@ export async function swapTokens({
     const sdk = new TradingSdk({
       chainId: supportedChainId,
       signer,
-      appCode: "YourAppCode", // todo: replace with app code
+      appCode: "ubiquity-dao", // arbitrary https://docs.cow.fi/cow-protocol/tutorials/widget#app-key
     });
 
     const parameters: TradeParameters = {
