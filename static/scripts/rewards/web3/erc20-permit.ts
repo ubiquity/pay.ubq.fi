@@ -10,7 +10,8 @@ import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
 import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
-import { swapTokens } from "../cowswap";
+import { handleCowswapApproval, swapTokens } from "../cowswap";
+import { getSymbolAndDecimals } from "../render-transaction/render-token-symbol";
 
 export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
@@ -140,52 +141,92 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
       toaster.create("error", `Please connect your wallet to claim this reward.`);
       return;
     }
-
     app.signer = signer; // update this here to be sure it's set if it wasn't before
 
+    // start spinning
     buttonController.hideMakeClaim();
     buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
-    if (!isPermitClaimable) return;
-
-    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-    if (!permit2Contract) return;
-
-    const tx = await transferFromPermit(permit2Contract, app.reward);
-    if (!tx) return;
-
-    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
-    if (!receipt) return;
-
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
-    if (!isHashUpdated) return;
+    if (!isPermitClaimable) {
+      buttonController.hideLoader();
+      buttonController.showMakeClaim();
+      return;
+    }
 
     // check if a currency is selected and swap if necessary
     const currentChainId = app.reward.networkId;
     const selectedCurrency = app.currency;
+    const { symbol: sellTokenSymbol, decimals: sellTokenDecimals } = await getSymbolAndDecimals(app.reward.tokenAddress);
 
     if (selectedCurrency && selectedCurrency.address.toLowerCase() !== app.reward.tokenAddress.toLowerCase()) {
-      toaster.create("info", `Swapping ${app.reward.amount} of ${app.reward.tokenAddress} to ${selectedCurrency}...`);
+      // 1. approve
+      const hasApproved = await handleCowswapApproval({
+        tokenSymbol: sellTokenSymbol,
+        tokenAddress: app.reward.tokenAddress,
+        amount: app.reward.amount,
+        signer,
+      });
 
+      if (!hasApproved) {
+        toaster.create("error", `Failed to approve ${sellTokenSymbol}.`);
+        buttonController.hideLoader();
+        buttonController.showMakeClaim();
+        return;
+      }
+
+      // 2. swap
+      toaster.create("info", `Swap from ${sellTokenSymbol} to ${selectedCurrency.symbol}`);
       const orderId = await swapTokens({
         signer,
         sellTokenAddress: app.reward.tokenAddress,
-        sellTokenDecimals: app.reward.decimals,
+        sellTokenDecimals: sellTokenDecimals,
         buyTokenAddress: selectedCurrency.address,
         buyTokenDecimals: selectedCurrency.decimals,
         sellAmount: app.reward.amount,
         chainId: currentChainId,
       });
 
-      if (orderId) {
-        toaster.create("success", "Swap completed successfully!");
-        viewClaimButton.onclick = () => {
-          window.open(`https://explorer.cow.fi/orders/${orderId}`, "_blank");
-        };
-      } else {
-        toaster.create("warning", "Swap failed, but claim was successful.");
+      if (!orderId) {
+        toaster.create("error", "Failed to swap.");
+        buttonController.hideLoader();
+        buttonController.showMakeClaim();
+        return;
       }
+    }
+
+    // 3. claim
+    toaster.create("info", `Claim the permit`);
+
+    const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
+    if (!permit2Contract) {
+      toaster.create("error", `Failed to get permit contract`);
+      buttonController.hideLoader();
+      buttonController.showMakeClaim();
+      return;
+    }
+
+    const tx = await transferFromPermit(permit2Contract, app.reward);
+    if (!tx) {
+      toaster.create("error", `Failed to claim permit`);
+      buttonController.hideLoader();
+      buttonController.showMakeClaim();
+      return;
+    }
+
+    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
+    if (!receipt) {
+      toaster.create("error", `Failed to get transaction receipt`);
+      buttonController.hideLoader();
+      buttonController.showMakeClaim();
+      return;
+    }
+
+    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    if (!isHashUpdated) {
+      buttonController.hideLoader();
+      buttonController.showMakeClaim();
+      return;
     }
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
