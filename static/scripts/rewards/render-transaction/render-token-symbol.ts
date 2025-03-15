@@ -2,6 +2,20 @@ import { BigNumberish, ethers, utils } from "ethers";
 import { erc20Abi } from "../abis/erc20-abi";
 import { app } from "../app-state";
 import { openTokenModal } from "./token-selection";
+
+export async function getSymbolAndDecimals(tokenAddress: string): Promise<{ symbol: string; decimals: number }> {
+  const tokenInfo = localStorage.getItem(tokenAddress);
+  if (tokenInfo) {
+    const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
+    return { decimals: storedDecimals, symbol: storedSymbol };
+  } else {
+    const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
+    const [symbol, decimals] = await Promise.all([contract.symbol(), contract.decimals()]);
+    localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
+    return { symbol, decimals };
+  }
+}
+
 export async function renderTokenSymbol({
   table,
   requestedAmountElement,
@@ -19,25 +33,7 @@ export async function renderTokenSymbol({
   explorerUrl: string;
   isCowswapDown: boolean;
 }): Promise<void> {
-  const contract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
-
-  let symbol, decimals;
-
-  // Try to get the token info from localStorage
-  const tokenInfo = localStorage.getItem(tokenAddress);
-
-  if (tokenInfo) {
-    // If the token info is in localStorage, parse it and use it
-    const { decimals: storedDecimals, symbol: storedSymbol } = JSON.parse(tokenInfo);
-    decimals = storedDecimals;
-    symbol = storedSymbol;
-  } else {
-    // If the token info is not in localStorage, fetch it from the blockchain
-    [symbol, decimals] = await Promise.all([contract.symbol(), contract.decimals()]);
-
-    // Store the token info in localStorage for future use
-    localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
-  }
+  const { symbol, decimals } = await getSymbolAndDecimals(tokenAddress);
 
   // Format the amount
   let formattedAmount: string | number = parseFloat(utils.formatUnits(amount, decimals));
