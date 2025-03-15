@@ -56,17 +56,17 @@ export async function quoteAmount(
 
 export async function swapTokens({
   signer,
-  sellToken,
+  sellTokenAddress,
   sellTokenDecimals,
-  buyToken,
+  buyTokenAddress,
   buyTokenDecimals,
   sellAmount,
   chainId,
 }: {
   signer: JsonRpcSigner;
-  sellToken: string;
+  sellTokenAddress: string;
   sellTokenDecimals: number;
-  buyToken: string;
+  buyTokenAddress: string;
   buyTokenDecimals: number;
   sellAmount: BigNumberish;
   chainId: number;
@@ -87,9 +87,9 @@ export async function swapTokens({
 
     const parameters: TradeParameters = {
       kind: OrderKind.SELL,
-      sellToken: sellToken.toLowerCase(),
+      sellToken: sellTokenAddress.toLowerCase(),
       sellTokenDecimals,
-      buyToken: buyToken.toLowerCase(),
+      buyToken: buyTokenAddress.toLowerCase(),
       buyTokenDecimals,
       amount: sellAmount.toString(),
     };

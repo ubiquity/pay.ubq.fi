@@ -170,9 +170,9 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
 
       const orderId = await swapTokens({
         signer,
-        sellToken: app.reward.tokenAddress,
+        sellTokenAddress: app.reward.tokenAddress,
         sellTokenDecimals: app.reward.decimals,
-        buyToken: selectedCurrency.address,
+        buyTokenAddress: selectedCurrency.address,
         buyTokenDecimals: selectedCurrency.decimals,
         sellAmount: app.reward.amount,
         chainId: currentChainId,
