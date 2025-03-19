@@ -52,7 +52,6 @@ export async function renderTransaction(): Promise<Success> {
     const toElement = document.getElementById(`rewardRecipient`) as Element;
     renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
     if (window.ethereum) {
-      buttonController.hideViewClaim();
       getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
 
