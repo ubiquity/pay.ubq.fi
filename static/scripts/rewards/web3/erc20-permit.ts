@@ -10,6 +10,7 @@ import { connectWallet } from "./connect-wallet";
 import { supabase } from "../render-transaction/supabase-getters";
 import { convertToNetworkId, useRpcHandler } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
+import { getClaimedTxs } from "../render-transaction/fetch-permits";
 
 // runtime treasury cache
 const treasuryCache: Map<string, { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> = new Map();
@@ -182,11 +183,15 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
       return;
     }
 
+    // saves in supabase
     const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
     if (!isHashUpdated) {
       buttonController.hideLoader();
       return;
     }
+
+    // fetches from supabase
+    app.claimTxs = await getClaimedTxs(app);
 
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
   };

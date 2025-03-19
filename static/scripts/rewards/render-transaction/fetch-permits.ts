@@ -2,7 +2,7 @@ import { decodePermits } from "@ubiquibot/permit-generation/handlers";
 import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { app, AppState } from "../app-state";
 import { toaster } from "../toaster";
-import { buttonController } from "../button-controller";
+import { buttonController, viewClaimButton } from "../button-controller";
 import { connectWallet } from "../web3/connect-wallet";
 import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, isNonceClaimed } from "../web3/erc20-permit";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
@@ -109,9 +109,13 @@ export async function updateButtonVisibility(app: AppState) {
 
       return; // Stop further checks if the network is incorrect
     }
-
-    await checkRenderMakeClaimControl(app);
-    await checkRenderInvalidatePermitAdminControl(app);
+    if (app.claimTxs[app.reward.nonce.toString()] !== undefined) {
+      buttonController.onlyShowViewClaim();
+      viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`));
+    } else {
+      await checkRenderMakeClaimControl(app);
+      await checkRenderInvalidatePermitAdminControl(app);
+    }
   } catch (error) {
     console.error("Error updating button visibility:", error);
     buttonController.hideAll(); // Hide all buttons if there's an error
@@ -133,7 +137,7 @@ if (window.ethereum) {
   console.warn("Ethereum provider not detected.");
 }
 
-async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
+export async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
   const txs: Record<string, string> = Object.create(null);
   for (const claim of app.claims) {
     const { data } = await supabase.from("permits").select("transaction").eq("nonce", claim.nonce.toString());

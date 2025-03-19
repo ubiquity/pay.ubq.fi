@@ -1,6 +1,6 @@
 import { app } from "../app-state";
 import { initClaimGiftCard } from "../gift-cards/index";
-import { getMakeClaimButton } from "../button-controller";
+import { buttonController, getMakeClaimButton } from "../button-controller";
 import { table, updateButtonVisibility } from "./fetch-permits";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
@@ -27,6 +27,8 @@ function transactionHandler(direction: "next" | "previous") {
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
+  buttonController.hideViewClaim();
+  buttonController.hideLoader();
   updateButtonVisibility(app).catch(console.error);
   initClaimGiftCard(app).catch(console.error);
   renderTransaction().catch(console.error);
