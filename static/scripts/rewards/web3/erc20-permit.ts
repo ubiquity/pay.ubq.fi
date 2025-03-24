@@ -423,20 +423,3 @@ export function removeLocalStorageTransaction(nonce: string) {
   delete transactions[nonce];
   localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
 }
-
-export async function syncLocalStorageTransactions() {
-  const transactions = getLocalStorageTransactions();
-
-  for (const [nonce, hash] of Object.entries(transactions)) {
-    try {
-      const { error } = await supabase.from("permits").update({ transaction: hash }).eq("nonce", nonce);
-
-      if (error) {
-        console.error(`Failed to sync transaction for nonce ${nonce}:`, error);
-        continue;
-      }
-    } catch (error) {
-      console.error(`Failed to sync transaction for nonce ${nonce}:`, error);
-    }
-  }
-}
