@@ -74,12 +74,12 @@ export async function fetchPermits(app: AppState) {
         app.provider = await useRpcHandler(app.networkId ?? app.reward.networkId);
         await updateButtonVisibility(app);
       }
+      app.claimTxs = await getClaimedTxs(app);
       await renderTransaction();
     }
   }
   permits = filteredPermits;
   console.log("filtered permits", permits);
-  app.claimTxs = await getClaimedTxs(app);
 
   // if found no permits
   if (!permits.length) {
