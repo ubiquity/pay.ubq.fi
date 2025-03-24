@@ -133,7 +133,7 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
     buttonController.showViewClaim();
     buttonController.hideLoader();
     buttonController.hideMakeClaim();
-    console.log(receipt.transactionHash);
+    console.log("tx hash: ", receipt.transactionHash);
 
     return receipt;
   } catch (error: unknown) {
@@ -144,13 +144,15 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
     }
   }
 }
-
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
+    app.isClaiming = true; // this forbids the user from pagination cause it breaks this flow
+
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       buttonController.hideAll();
       toaster.create("error", `Please connect your wallet to claim this reward.`);
+      app.isClaiming = false;
       return;
     }
 
@@ -162,38 +164,43 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     const isPermitClaimable = await checkPermitClaimability(app);
     if (!isPermitClaimable) {
       buttonController.hideLoader();
+      app.isClaiming = false;
       return;
     }
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
     if (!permit2Contract) {
       buttonController.hideLoader();
+      app.isClaiming = false;
       return;
     }
 
     const tx = await transferFromPermit(permit2Contract, app.reward);
     if (!tx) {
       buttonController.hideLoader();
+      app.isClaiming = false;
       return;
     }
 
     const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
     if (!receipt) {
       buttonController.hideLoader();
+      app.isClaiming = false;
       return;
     }
 
     // saves in supabase
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
+    const isHashUpdated = await updatePermitTxHash(app.reward.nonce.toString(), receipt.transactionHash);
     if (!isHashUpdated) {
       buttonController.hideLoader();
+      app.isClaiming = false;
       return;
     }
 
     // fetches from supabase
     app.claimTxs = await getClaimedTxs(app);
-
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
+    app.isClaiming = false;
   };
 }
 
@@ -380,16 +387,56 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
   return { wordPos, bitPos };
 }
 
-async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
-  const { error } = await supabase
-    .from("permits")
-    .update({ transaction: hash })
-    // using only nonce in the condition as it's defined unique on db
-    .eq("nonce", app.reward.nonce.toString());
+export async function updatePermitTxHash(nonce: string, hash: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("permits").update({ transaction: hash }).eq("nonce", nonce);
 
-  if (error !== null) {
-    console.error(error);
+    saveLocalStorageTransaction(nonce, hash);
+
+    if (error) {
+      console.error("Failed to update Supabase:", error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating permit hash:", error);
+    return false;
   }
+}
 
-  return true;
+const LOCAL_STORAGE_TX_KEY = "permit-transactions";
+
+export function getLocalStorageTransactions(): Record<string, string> {
+  const stored = localStorage.getItem(LOCAL_STORAGE_TX_KEY);
+  return stored ? JSON.parse(stored) : {};
+}
+
+export function saveLocalStorageTransaction(nonce: string, hash: string) {
+  const transactions = getLocalStorageTransactions();
+  transactions[nonce] = hash;
+  localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
+}
+
+export function removeLocalStorageTransaction(nonce: string) {
+  const transactions = getLocalStorageTransactions();
+  delete transactions[nonce];
+  localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
+}
+
+export async function syncLocalStorageTransactions() {
+  const transactions = getLocalStorageTransactions();
+
+  for (const [nonce, hash] of Object.entries(transactions)) {
+    try {
+      const { error } = await supabase.from("permits").update({ transaction: hash }).eq("nonce", nonce);
+
+      if (error) {
+        console.error(`Failed to sync transaction for nonce ${nonce}:`, error);
+        continue;
+      }
+    } catch (error) {
+      console.error(`Failed to sync transaction for nonce ${nonce}:`, error);
+    }
+  }
 }

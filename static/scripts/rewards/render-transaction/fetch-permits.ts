@@ -4,7 +4,7 @@ import { app, AppState } from "../app-state";
 import { toaster } from "../toaster";
 import { buttonController, viewClaimButton } from "../button-controller";
 import { connectWallet } from "../web3/connect-wallet";
-import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, isNonceClaimed } from "../web3/erc20-permit";
+import { checkRenderInvalidatePermitAdminControl, checkRenderMakeClaimControl, getLocalStorageTransactions, isNonceClaimed } from "../web3/erc20-permit";
 import { claimRewardsPagination } from "./claim-rewards-pagination";
 import { renderTransaction } from "./render-transaction";
 import { setClaimMessage } from "./set-claim-message";
@@ -59,11 +59,11 @@ export async function fetchPermits(app: AppState) {
 
   app.signer = await connectWallet();
 
-  // filter claimed permits, only show unclaimed ones
+  // in fetch permits filter claimed permits, only show unclaimed ones
   console.log("unfiltered permits", permits);
   const filteredPermits: PermitReward[] = [];
   for (const permit of permits) {
-    const isClaimed = await isNonceClaimed(permit);
+    const isClaimed = base64encodedTxData ? false : await isNonceClaimed(permit);
     if (!isClaimed) {
       filteredPermits.push(permit);
       // stream render
@@ -139,13 +139,22 @@ if (window.ethereum) {
 
 export async function getClaimedTxs(app: AppState): Promise<Record<string, string>> {
   const txs: Record<string, string> = Object.create(null);
+  const localStorageTxs = getLocalStorageTransactions();
+
   for (const claim of app.claims) {
-    const { data } = await supabase.from("permits").select("transaction").eq("nonce", claim.nonce.toString());
+    const nonce = claim.nonce.toString();
+
+    // Check Supabase first
+    const { data } = await supabase.from("permits").select("transaction").eq("nonce", nonce);
 
     if (data?.length == 1 && data[0].transaction !== null) {
-      txs[claim.nonce.toString()] = data[0].transaction as string;
+      txs[nonce] = data[0].transaction as string;
+    } else if (localStorageTxs[nonce]) {
+      // Fallback to localStorage if not in Supabase
+      txs[nonce] = localStorageTxs[nonce];
     }
   }
+
   return txs;
 }
 
