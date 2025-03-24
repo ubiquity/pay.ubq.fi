@@ -415,9 +415,3 @@ export function saveLocalStorageTransaction(nonce: string, hash: string) {
   transactions[nonce] = hash;
   localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
 }
-
-export function removeLocalStorageTransaction(nonce: string) {
-  const transactions = getLocalStorageTransactions();
-  delete transactions[nonce];
-  localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
-}
