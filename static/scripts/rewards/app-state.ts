@@ -4,11 +4,20 @@ import { getNetworkExplorer } from "@ubiquity-dao/rpc-handler";
 import { convertToNetworkId } from "../../../shared/use-rpc-handler";
 
 export class AppState {
+  private _claiming: boolean = false;
   public claims: PermitReward[] = [];
   public claimTxs: Record<string, string> = {};
   private _provider!: JsonRpcProvider;
   private _currentIndex = 0;
   private _signer: JsonRpcSigner | null = null;
+
+  get isClaiming() {
+    return this._claiming;
+  }
+
+  set isClaiming(value) {
+    this._claiming = value;
+  }
 
   get signer() {
     return this._signer;

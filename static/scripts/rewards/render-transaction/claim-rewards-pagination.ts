@@ -4,6 +4,7 @@ import { buttonController, getMakeClaimButton } from "../button-controller";
 import { table, updateButtonVisibility } from "./fetch-permits";
 import { renderTransaction } from "./render-transaction";
 import { removeAllEventListeners } from "./utils";
+import { toaster } from "../toaster";
 
 const nextTxButton = document.getElementById("nextTx");
 const prevTxButton = document.getElementById("prevTx");
@@ -24,6 +25,10 @@ export function claimRewardsPagination(rewardsCount: HTMLElement) {
 }
 
 function transactionHandler(direction: "next" | "previous") {
+  if (app.isClaiming) {
+    toaster.create("error", "Please wait for the current transaction to complete.");
+    return;
+  }
   removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
   direction === "next" ? app.nextPermit() : app.previousPermit();
   table.setAttribute(`data-make-claim`, "error");
