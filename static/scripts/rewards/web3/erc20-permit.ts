@@ -113,7 +113,7 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
   }
 }
 
-export async function waitForTransaction(tx: TransactionResponse, successMessage: string, networkId: number) {
+export async function waitForTransaction(tx: TransactionResponse, networkId: number) {
   try {
     const receipt = await tx.wait();
     const networkExplorers = getNetworkExplorer(convertToNetworkId(networkId));
@@ -129,10 +129,6 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
       };
     }
 
-    toaster.create("success", successMessage);
-    buttonController.showViewClaim();
-    buttonController.hideLoader();
-    buttonController.hideMakeClaim();
     console.log("tx hash: ", receipt.transactionHash);
 
     return receipt;
@@ -182,7 +178,7 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
       return;
     }
 
-    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
+    const receipt = await waitForTransaction(tx, app.reward.networkId);
     if (!receipt) {
       buttonController.hideLoader();
       app.isClaiming = false;
@@ -201,6 +197,8 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     app.claimTxs = await getClaimedTxs(app);
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
     app.isClaiming = false;
+    buttonController.onlyShowViewClaim();
+    toaster.create("success", "Claim Complete.");
   };
 }
 
