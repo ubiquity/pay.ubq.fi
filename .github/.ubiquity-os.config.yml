@@ -81,7 +81,7 @@ plugins:
               - name: "Priority: 5 (Emergency)"
                 collaboratorOnly: false
           basePriceMultiplier: 2
-          publicAccessControl: false
+          shouldFundContributorClosedIssue: false
   - skipBotEvents: false
     uses:
       - plugin: ubiquity-os-marketplace/text-conversation-rewards@main
