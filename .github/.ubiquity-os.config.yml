@@ -9,24 +9,30 @@ plugins:
           maxConcurrentTasks:
             collaborator: 2
             contributor: 2
-          emptyWalletText: Please set your wallet address with the /wallet command first
-            and try again.
+          emptyWalletText: Please set your wallet address with the /wallet command first and try again.
           rolesWithReviewAuthority:
             - COLLABORATOR
             - OWNER
             - MEMBER
             - ADMIN
           requiredLabelsToStart:
-            - name: "Priority: 1 (Normal)"
-              allowedRoles: ["collaborator", "contributor"]
-            - name: "Priority: 2 (Medium)"
-              allowedRoles: ["collaborator", "contributor"]
-            - name: "Priority: 3 (High)"
-              allowedRoles: ["collaborator"]
-            - name: "Priority: 4 (Urgent)"
-              allowedRoles: ["collaborator"]
-            - name: "Priority: 5 (Emergency)"
-              allowedRoles: ["collaborator"]
+            - name: 'Priority: 1 (Normal)'
+              allowedRoles:
+                - collaborator
+                - contributor
+            - name: 'Priority: 2 (Medium)'
+              allowedRoles:
+                - collaborator
+                - contributor
+            - name: 'Priority: 3 (High)'
+              allowedRoles:
+                - collaborator
+            - name: 'Priority: 4 (Urgent)'
+              allowedRoles:
+                - collaborator
+            - name: 'Priority: 5 (Emergency)'
+              allowedRoles:
+                - collaborator
           assignedIssueScope: org
   - uses:
       - plugin: https://ubiquity-os-command-wallet-main.ubiquity.workers.dev
@@ -48,30 +54,30 @@ plugins:
         with:
           labels:
             time:
-              - name: "Time: <15 Minutes"
+              - name: 'Time: <15 Minutes'
                 collaboratorOnly: false
-              - name: "Time: <1 Hour"
+              - name: 'Time: <1 Hour'
                 collaboratorOnly: false
-              - name: "Time: <2 Hours"
+              - name: 'Time: <2 Hours'
                 collaboratorOnly: false
-              - name: "Time: <4 Hours"
+              - name: 'Time: <4 Hours'
                 collaboratorOnly: false
-              - name: "Time: <1 Day"
+              - name: 'Time: <1 Day'
                 collaboratorOnly: false
-              - name: "Time: <1 Week"
+              - name: 'Time: <1 Week'
                 collaboratorOnly: false
             priority:
-              - name: "Priority: 0 (Regression)"
+              - name: 'Priority: 0 (Regression)'
                 collaboratorOnly: false
-              - name: "Priority: 1 (Normal)"
+              - name: 'Priority: 1 (Normal)'
                 collaboratorOnly: false
-              - name: "Priority: 2 (Medium)"
+              - name: 'Priority: 2 (Medium)'
                 collaboratorOnly: false
-              - name: "Priority: 3 (High)"
+              - name: 'Priority: 3 (High)'
                 collaboratorOnly: false
-              - name: "Priority: 4 (Urgent)"
+              - name: 'Priority: 4 (Urgent)'
                 collaboratorOnly: false
-              - name: "Priority: 5 (Emergency)"
+              - name: 'Priority: 5 (Emergency)'
                 collaboratorOnly: false
           basePriceMultiplier: 2
           publicAccessControl:
@@ -87,8 +93,8 @@ plugins:
         with:
           logLevel: debug
           evmNetworkId: 100
-          evmPrivateEncrypted: "bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw" # https://github.com/ubiquibot/conversation-rewards/pull/111#issuecomment-2348639931
-          erc20RewardToken: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
+          evmPrivateEncrypted: bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw
+          erc20RewardToken: '0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068'
           incentives:
             contentEvaluator:
               enabled: true
@@ -97,7 +103,8 @@ plugins:
                 tokenCountLimit: 124000
                 endpoint: https://openrouter.ai/api/v1
               multipliers:
-                - role: ["ISSUE_SPECIFICATION"]
+                - role:
+                    - ISSUE_SPECIFICATION
                   relevance: 1
             userExtractor:
               enabled: true
@@ -109,275 +116,29 @@ plugins:
               multipliers:
                 - role:
                     - ISSUE_SPECIFICATION
-                  multiplier: 1
-                  rewards:
-                    wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
-                - role:
                     - ISSUE_AUTHOR
                     - ISSUE_COLLABORATOR
                     - PULL_COLLABORATOR
+                    - PULL_SPECIFICATION
                   multiplier: 1
                   rewards:
                     wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
+                    html: '*tcrHtmlConfig'
                 - role:
                     - ISSUE_CONTRIBUTOR
                     - ISSUE_ASSIGNEE
                   multiplier: 0.25
                   rewards:
                     wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
+                    html: '*tcrHtmlConfig'
                 - role:
-                    - PULL_SPECIFICATION
                     - PULL_AUTHOR
                     - PULL_CONTRIBUTOR
                     - PULL_ASSIGNEE
                   multiplier: 0
                   rewards:
                     wordValue: 0
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
-              wordCountExponent: 0.85
+                    html: '*tcrHtmlConfig'
             permitGeneration: {}
             githubComment:
               post: true
