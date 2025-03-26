@@ -1,3 +1,43 @@
+zeroTrue: &zeroTrue
+  score: 0
+  countWords: true
+
+zeroFalse: &zeroFalse
+  score: 0
+  countWords: false
+
+oneTrue: &oneTrue
+  score: 1
+  countWords: true
+
+oneFalse: &oneFalse
+  score: 1
+  countWords: false
+
+tcrHtmlConfig: &tcrHtmlConfig
+  a: *oneTrue
+  code: *oneFalse
+  img: *oneFalse
+  h1: *oneTrue
+  h2: *oneTrue
+  h3: *oneTrue
+  h4: *oneTrue
+  h5: *oneTrue
+  h6: *oneTrue
+  br: *zeroTrue
+  p: *zeroTrue
+  em: *zeroTrue
+  ul: *zeroTrue
+  td: *zeroTrue
+  hr: *zeroTrue
+  ol: *zeroTrue
+  pre: *zeroFalse
+  strong: *zeroFalse
+  blockquote: *zeroFalse
+  li:
+    score: 0.1
+    countWords: true
+
 plugins:
   - uses:
       - plugin: https://ubiquity-os-command-start-stop-main.ubiquity.workers.dev
@@ -109,275 +149,29 @@ plugins:
               multipliers:
                 - role:
                     - ISSUE_SPECIFICATION
-                  multiplier: 1
-                  rewards:
-                    wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
-                - role:
                     - ISSUE_AUTHOR
                     - ISSUE_COLLABORATOR
                     - PULL_COLLABORATOR
+                    - PULL_SPECIFICATION
                   multiplier: 1
                   rewards:
                     wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
+                    html: *tcrHtmlConfig
                 - role:
                     - ISSUE_CONTRIBUTOR
                     - ISSUE_ASSIGNEE
                   multiplier: 0.25
                   rewards:
                     wordValue: 0.1
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
+                    html: *tcrHtmlConfig
                 - role:
-                    - PULL_SPECIFICATION
                     - PULL_AUTHOR
                     - PULL_CONTRIBUTOR
                     - PULL_ASSIGNEE
                   multiplier: 0
                   rewards:
                     wordValue: 0
-                    html:
-                      br:
-                        score: 0
-                        countWords: true
-                      code:
-                        score: 5
-                        countWords: false
-                      p:
-                        score: 0
-                        countWords: true
-                      em:
-                        score: 0
-                        countWords: true
-                      img:
-                        score: 5
-                        countWords: true
-                      strong:
-                        score: 0
-                        countWords: false
-                      blockquote:
-                        score: 0
-                        countWords: false
-                      h1:
-                        score: 1
-                        countWords: true
-                      h2:
-                        score: 1
-                        countWords: true
-                      h3:
-                        score: 1
-                        countWords: true
-                      h4:
-                        score: 1
-                        countWords: true
-                      h5:
-                        score: 1
-                        countWords: true
-                      h6:
-                        score: 1
-                        countWords: true
-                      a:
-                        score: 5
-                        countWords: true
-                      li:
-                        score: 0.5
-                        countWords: true
-                      ul:
-                        score: 1
-                        countWords: true
-                      td:
-                        score: 0
-                        countWords: true
-                      hr:
-                        score: 0
-                        countWords: true
-                      pre:
-                        score: 0
-                        countWords: false
-                      ol:
-                        score: 1
-                        countWords: true
-              wordCountExponent: 0.85
+                    html: *tcrHtmlConfig
             permitGeneration: {}
             githubComment:
               post: true
