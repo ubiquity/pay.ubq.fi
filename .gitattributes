@@ -1,4 +1,4 @@
 dist/** linguist-generated
-bun.lockb linguist-generated
-bun.lock linguist-generated
+*.lockb linguist-generated
+*.lock linguist-generated
 tests/__mocks__/ linguist-generated
