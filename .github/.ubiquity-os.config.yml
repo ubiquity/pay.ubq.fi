@@ -18,15 +18,22 @@ plugins:
             - ADMIN
           requiredLabelsToStart:
             - name: "Priority: 1 (Normal)"
-              allowedRoles: ["collaborator", "contributor"]
+              allowedRoles:
+                - collaborator
+                - contributor
             - name: "Priority: 2 (Medium)"
-              allowedRoles: ["collaborator", "contributor"]
+              allowedRoles:
+                - collaborator
+                - contributor
             - name: "Priority: 3 (High)"
-              allowedRoles: ["collaborator"]
+              allowedRoles:
+                - collaborator
             - name: "Priority: 4 (Urgent)"
-              allowedRoles: ["collaborator"]
+              allowedRoles:
+                - collaborator
             - name: "Priority: 5 (Emergency)"
-              allowedRoles: ["collaborator"]
+              allowedRoles:
+                - collaborator
           assignedIssueScope: org
   - uses:
       - plugin: https://ubiquity-os-command-wallet-main.ubiquity.workers.dev
@@ -74,20 +81,14 @@ plugins:
               - name: "Priority: 5 (Emergency)"
                 collaboratorOnly: false
           basePriceMultiplier: 2
-          publicAccessControl:
-            setLabel: true
-            fundExternalClosedIssue: false
-            protectLabels:
-              - priority
-              - price
-              - time
+          publicAccessControl: false
   - skipBotEvents: false
     uses:
       - plugin: ubiquity-os-marketplace/text-conversation-rewards@main
         with:
           logLevel: debug
           evmNetworkId: 100
-          evmPrivateEncrypted: "bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw" # https://github.com/ubiquibot/conversation-rewards/pull/111#issuecomment-2348639931
+          evmPrivateEncrypted: bd5AFnSCO6c5jJyPifpOfr5Zys29RE7SyXkEU3akT13RtGmYDrqGIGuvJQyH53HA5dIba7PL5bXfll0JebmwXYe5gHIXSGX80WuGMDHh0cFfeGjHhmUXe8kkZ1OT2De9qRpqejJcEzdfi-8XNAvP7cQu2Vt-7RNnPw
           erc20RewardToken: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068"
           incentives:
             contentEvaluator:
@@ -97,7 +98,8 @@ plugins:
                 tokenCountLimit: 124000
                 endpoint: https://openrouter.ai/api/v1
               multipliers:
-                - role: ["ISSUE_SPECIFICATION"]
+                - role:
+                    - ISSUE_SPECIFICATION
                   relevance: 1
             userExtractor:
               enabled: true
