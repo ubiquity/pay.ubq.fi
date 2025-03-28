@@ -4,9 +4,9 @@ import { verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 import { Context, Hono, Next } from "https://deno.land/x/hono@v4.1.5/mod.ts";
 import type { PermitData, TokenInfo, PartnerInfo } from "../../shared/types.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
-import { createPublicClient, http, parseAbiItem, PublicClient } from 'npm:viem';
-import { gnosis, localhost, mainnet } from 'npm:viem/chains';
-import { Permit2RPC } from 'npm:@pavlovcik/permit2-rpc-manager'; // Import the RPC manager
+import { parseAbiItem } from 'npm:viem';
+import { gnosis, localhost, mainnet } from 'npm:viem/chains'; // Restore viem/chains import
+import { RpcHandler, readContract } from 'npm:@pavlovcik/permit2-rpc-manager'; // Import RpcHandler and readContract
 
 // --- Load Environment Variables ---
 await load({ export: true });
@@ -31,7 +31,7 @@ const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
 let jwtKey: CryptoKey | null = null;
 let supabase: SupabaseClient | null = null;
 // const rpcClients: Map<number, PublicClient> = new Map(); // Remove old map
-let rpcManager: Permit2RPC | null = null; // Add manager instance
+let rpcManager: RpcHandler | null = null; // Use RpcHandler
 
 // --- ABIs ---
 const permit2Abi = parseAbiItem('function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)');
@@ -78,40 +78,18 @@ async function initialize() {
           100: gnosis,
           31337: localhost,
       };
-      // Filter chainsConfig based on validRpcUrls keys
-      const validChains = Object.keys(validRpcUrls).reduce((acc, keyStr) => {
-          const key = Number(keyStr);
-          if (chainsConfig[key as keyof typeof chainsConfig]) {
-              acc[key] = chainsConfig[key as keyof typeof chainsConfig];
-          }
-          return acc;
-      }, {} as Record<number, typeof mainnet | typeof gnosis | typeof localhost>);
+      // }, {} as Record<number, typeof mainnet | typeof gnosis | typeof localhost>); // Removed unused validChains block
 
-      rpcManager = new Permit2RPC({ rpcs: validRpcUrls, chains: validChains });
-      console.log("Permit2RPC Manager initialized.");
+      // Instantiate RpcHandler using default constructor (relies on internal whitelist)
+      rpcManager = new RpcHandler(); // Use default constructor as per README
+      console.log("RpcHandler initialized."); // Update log
   } catch (err) {
-      console.error("Failed to initialize Permit2RPC Manager:", err);
+      console.error("Failed to initialize RpcHandler:", err);
       Deno.exit(1);
   }
 }
 
-// --- RPC Client Helper (Refactored) ---
-function getRpcClient(networkId: number): PublicClient {
-  if (!rpcManager) {
-      throw new Error("RPC Manager not initialized.");
-  }
-  try {
-      // The manager's getRpc method returns a Viem PublicClient
-      const client = rpcManager.getRpc(networkId);
-      if (!client) {
-          throw new Error(`No RPC client available for network ID: ${networkId} via manager.`);
-      }
-      return client;
-  } catch (err) {
-      console.error(`Error getting RPC client for network ${networkId} from manager:`, err);
-      throw new Error(`Failed to get RPC client for network ID: ${networkId}`);
-  }
-}
+// Removed getRpcClient function and viemClientCache
 
 const app = new Hono();
 
@@ -167,40 +145,50 @@ app.post("/api/auth/github/callback", async (c: Context) => { /* ... Auth callba
 
 // --- Authenticated Routes ---
 
-// --- On-Chain Validation Logic ---
+// --- On-Chain Validation Logic (Using RpcHandler's readContract) ---
 async function isErc20NonceClaimed(permitData: PermitData): Promise<boolean> {
+  if (!rpcManager) throw new Error("RpcHandler not initialized.");
   try {
-    const client = getRpcClient(permitData.networkId); // Uses the manager now
     const wordPos = BigInt(permitData.nonce) >> 8n;
     const owner = permitData.owner;
     if (!owner) return true; // Fail safe - treat as claimed if no owner
-    const bitmap = await client.readContract({
+
+    // Use the imported readContract utility with the rpcManager instance
+    const bitmap = await readContract<bigint>({
+      handler: rpcManager, // Pass the handler instance
+      chainId: permitData.networkId,
       address: PERMIT2_ADDRESS,
       abi: [permit2Abi],
       functionName: 'nonceBitmap',
-      args: [owner as `0x${string}`, wordPos] // Added cast
+      args: [owner as `0x${string}`, wordPos]
     });
+
     const bit = 1n << (BigInt(permitData.nonce) & 255n);
     return Boolean(bitmap & bit);
   } catch (error) {
-    console.error('Error checking ERC20 permit claim status:', error);
+    console.error(`Error checking ERC20 permit claim status (nonce: ${permitData.nonce}, chain: ${permitData.networkId}):`, error);
     return true; // Fail safe - treat as claimed if check fails
   }
 }
 
 async function isErc721NonceClaimed(permitData: PermitData): Promise<boolean> {
+  if (!rpcManager) throw new Error("RpcHandler not initialized.");
   try {
-    const client = getRpcClient(permitData.networkId); // Uses the manager now
     if (!permitData.token?.address) return true; // Fail safe - treat as claimed if no token
-    const isRedeemed = await client.readContract({
-      address: permitData.token.address as `0x${string}`, // Added cast
+
+    // Use the imported readContract utility with the rpcManager instance
+    const isRedeemed = await readContract<boolean>({
+      handler: rpcManager, // Pass the handler instance
+      chainId: permitData.networkId,
+      address: permitData.token.address as `0x${string}`,
       abi: [nftRewardAbi],
       functionName: 'nonceRedeemed',
       args: [BigInt(permitData.nonce)]
     });
+
     return Boolean(isRedeemed);
   } catch (error) {
-    console.error('Error checking ERC721 permit claim status:', error);
+    console.error(`Error checking ERC721 permit claim status (nonce: ${permitData.nonce}, chain: ${permitData.networkId}):`, error);
     return true; // Fail safe - treat as claimed if check fails
   }
 }
@@ -272,27 +260,27 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         if (!beneficiaryWalletAddress) {
           console.warn(`Permit nonce ${permit.nonce}: Could not find beneficiary wallet address for beneficiary_id ${permit.beneficiary_id}. Skipping.`);
           return null;
-        }
-
+        } // <-- Add missing closing brace here
+        // Re-apply explicit type conversions for safety
         const permitData: PermitData = {
-          nonce: permit.nonce,
-          networkId: permit.networkId || tokenData?.network || 0,
-          beneficiary: beneficiaryWalletAddress, // Use address fetched separately
-          deadline: permit.deadline,
-          signature: permit.signature,
+          nonce: String(permit.nonce),
+          networkId: Number(permit.networkId || tokenData?.network || 0),
+          beneficiary: String(beneficiaryWalletAddress), // Use address fetched separately
+          deadline: String(permit.deadline),
+          signature: String(permit.signature),
           type: permit.amount && BigInt(permit.amount) > 0n ? 'erc20-permit' : 'erc721-permit',
-          owner: ownerWalletData?.address || '',
-          tokenAddress: tokenData?.address,
+          owner: String(ownerWalletData?.address || ''),
+          tokenAddress: tokenData?.address ? String(tokenData.address) : undefined,
           token: {
-            address: tokenData?.address || '',
-            network: tokenData?.network || 0
+            address: String(tokenData?.address || ''),
+            network: Number(tokenData?.network || 0)
           },
-          amount: permit.amount,
-          token_id: permit.token_id,
-          githubCommentUrl: permit.location?.node_url || '',
+          amount: permit.amount !== undefined && permit.amount !== null ? String(permit.amount) : undefined,
+          token_id: permit.token_id !== undefined && permit.token_id !== null ? Number(permit.token_id) : undefined,
+          githubCommentUrl: String(permit.location?.node_url || ''),
           partner: {
             wallet: {
-              address: ownerWalletData?.address || ''
+              address: String(ownerWalletData?.address || '')
             }
           }
         };
@@ -458,20 +446,28 @@ app.post("/api/permits/test", verifyJwtMiddleware, async (c: Context) => {
     }
 
     // Check claim status on-chain using data from request body + fetched owner address
+    // Ensure types match PermitData interface
     const permitTestData: PermitData = {
-        nonce,
-        networkId,
-        beneficiary,
-        deadline: requestDeadline,
-        signature: body.signature, // Assuming signature is passed in body
-        type: amount ? 'erc20-permit' : 'erc721-permit',
-        owner: ownerAddress, // Use fetched owner address
-        tokenAddress,
-        token: { address: tokenAddress, network: networkId },
-        amount,
-        token_id,
-        githubCommentUrl: body.githubCommentUrl || '', // Assuming passed in body
-        partner: { wallet: { address: ownerAddress || '' } } // Use fetched ownerAddress
+        nonce: String(nonce), // Ensure string
+        networkId: Number(networkId), // Ensure number
+        beneficiary: String(beneficiary), // Ensure string
+        deadline: String(requestDeadline), // Ensure string
+        signature: String(body.signature ?? ''), // Ensure string, provide default if undefined
+        type: amount !== undefined && String(amount) !== '0' ? 'erc20-permit' : 'erc721-permit', // Refined type check
+        owner: String(ownerAddress), // Ensure string
+        tokenAddress: tokenAddress !== undefined ? String(tokenAddress) : undefined, // Ensure string or undefined
+        token: {
+            address: String(tokenAddress ?? ''), // Ensure string
+            network: Number(networkId) // Ensure number
+        },
+        amount: amount !== undefined ? String(amount) : undefined, // Ensure string or undefined
+        token_id: token_id !== undefined && token_id !== null ? Number(token_id) : undefined, // Ensure number or undefined
+        githubCommentUrl: String(body.githubCommentUrl || ''), // Ensure string
+        partner: {
+            wallet: {
+                address: String(ownerAddress || '') // Ensure string
+            }
+        }
     };
 
 

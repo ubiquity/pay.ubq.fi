@@ -1,7 +1,7 @@
-import React from 'react';
-import type { PermitData } from '../../../shared/types';
-import { PermitRow } from './permit-row.tsx'; // Import the row component with extension
-import type { Chain } from 'viem'; // Import Chain type if needed for props
+import React from "react";
+import type { PermitData } from "../../../shared/types";
+import { PermitRow } from "./permit-row.tsx"; // Import the row component with extension
+import type { Chain } from "viem"; // Import Chain type if needed for props
 
 interface PermitsTableProps {
   permits: PermitData[];
@@ -25,13 +25,24 @@ export function PermitsTable({
   // Show spinner while loading
   if (isLoading) {
     // You might want a more styled spinner component later
-    return <div className="section-loading-indicator"><div className="spinner"></div><span>Loading permits...</span></div>;
+    return (
+      <div className="section-loading-indicator">
+        <div className="spinner"></div>
+        <span>Loading permits...</span>
+      </div>
+    );
   }
 
   // Show message only after loading is finished and there are no permits
-  // if (permits.length === 0) {
-  //   return <section><div className='error-message'><span>No permits pending</span></div></section>;
-  // }
+  if (permits.length === 0) {
+    return (
+      <section>
+        <div className="error-message">
+          <span>No permits pending</span>
+        </div>
+      </section>
+    );
+  }
 
   // Render table if not loading and permits exist
   return (
