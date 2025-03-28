@@ -281,7 +281,7 @@ export function DashboardPage() {
 
    return (
      <div>
-      <h1>Permit Claiming App</h1>
+      <h1>Ubiquity OS Rewards</h1>
       <p>Welcome!</p>
 
       {isConnected ? (

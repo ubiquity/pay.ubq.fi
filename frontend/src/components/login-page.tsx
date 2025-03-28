@@ -7,7 +7,7 @@ interface LoginPageProps {
 export function LoginPage({ onLogin }: LoginPageProps) {
   return (
     <div>
-      <h1>Permit Claiming App</h1>
+      <h1>Ubiquity OS Rewards</h1>
       <button onClick={onLogin}>Login with GitHub</button>
     </div>
   );
