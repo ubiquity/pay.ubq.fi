@@ -1,0 +1,6 @@
+{
+  "dependencies": {},
+  "devDependencies": {
+    "vite-plugin-svgr": "^4.3.0"
+  }
+}

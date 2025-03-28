@@ -5,13 +5,6 @@
 
 /* ========== FONT DEFINITIONS ========== */
 
-@font-face {
-  font-family: "Ubiquity Nova";
-  src: url("../fonts/ubiquity-nova-standard.eot");
-  src: url("../fonts/ubiquity-nova-standard.woff") format("woff"), url("../fonts/ubiquity-nova-standard.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
 
 /* ========== VARIABLES & THEMING ========== */
 
@@ -66,12 +59,15 @@ body {
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 16px;
+  text-transform: uppercase;
   font-weight: 100;
   /* margin: 0 0 1.5rem; */
   line-height: 1;
   text-rendering: geometricPrecision;
   text-align: center;
+  letter-spacing: 2px;
+  vertical-align: middle;
 }
 
 header {
@@ -843,16 +839,18 @@ details {
 .permits-table {
   width: 100%;
   border-collapse: collapse;
+  background-color: #000;
 }
 
 .permits-table th,
 .permits-table td {
   padding: 8px;
-  border-bottom: 1px solid #dddd40;
+  /* border-bottom: 1px solid #dddd40; */
 }
 
 .permits-table th {
-  text-align: left; /* Default alignment for headers */
+  text-align: center; /* Default alignment for headers */
+  font-weight: bold;
 }
 
 .permits-table .align-right {
@@ -904,7 +902,7 @@ details {
 }
 
 .permits-table .row-invalid {
-  background-color: #fff4f440; /* Light red background - Used for invalid, test failed, prerequisite failed */
+  background-color: #ffffff20; /* Light red background - Used for invalid, test failed, prerequisite failed */
 }
 
 .permits-table .row-claimed {
@@ -948,3 +946,25 @@ details {
 /* .status-testing uses .status-claiming */
 
 /* .status-default uses .subtle-text */
+
+/* Logo Styling */
+/* Target the SVG inside the wrapper span */
+#header-logo-wrapper svg {
+  height: 1em; /* Match the text size */
+  width: auto;
+  margin-right: 0.5em;
+  vertical-align: -0.125em; /* Adjust vertical alignment */
+  fill: currentColor; /* Allow color inheritance */
+  height: 24px;
+  width: 24px;
+  vertical-align: middle;
+}
+#header-logo-wrapper svg path {
+  fill: currentColor; /* Allow color inheritance */
+}
+button {
+  cursor: pointer;
+  background-color: #ffffff10;
+  padding: 8px 16px;
+  border-radius: 4px;
+}

@@ -6,6 +6,7 @@ import type { PermitData } from '../../../shared/types'; // Corrected path
 import permit2ABI from '../fixtures/permit2-abi'; // Adjust path
 import { checkPermitPrerequisites, hasRequiredFields } from '../utils/permit-utils'; // Import helpers (removed formatAmount)
 import { PermitsTable } from './permits-table'; // Import the new table component
+import logoSvgContent from '../assets/ubiquity-os-logo.svg?raw'; // Import SVG content as raw string
 
 // Assuming BACKEND_API_URL and PERMIT2_ADDRESS are accessible
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8000';
@@ -279,9 +280,17 @@ export function DashboardPage() {
      // else { setPermits([]); }
    }, [isConnected]); // Re-run when isConnected changes
 
+  // Create a wrapper span for the SVG content
+  const LogoSpan = () => (
+    <span
+      id="header-logo-wrapper" // Use a wrapper class if needed for positioning/sizing
+      dangerouslySetInnerHTML={{ __html: logoSvgContent }}
+    />
+  );
+
    return (
      <div>
-      <h1>Ubiquity OS Rewards</h1>
+      <h1><LogoSpan />Ubiquity OS Rewards</h1>
       <p>Welcome!</p>
 
       {isConnected ? (
@@ -295,20 +304,10 @@ export function DashboardPage() {
         </button>
       )}
 
-      <hr />
 
-      <h2>Your Permits</h2>
-      {isLoading && <p>Loading permits...</p>}
+
       {error && <p className="error-message">Error: {error}</p>}
-      {/* Summary Info */}
-      {permits.length > 0 && (
-        <div className="summary-info">
-          <p>Found {permits.length} permits total.</p>
-          <p>{permits.filter(hasRequiredFields).length} permits have valid data.</p>
-           {/* <p>{permits.filter(p => p.status === 'TestSuccess').length} permits passed test validation.</p> */}
-           <p>{permits.filter(p => p.claimStatus === 'Success' || p.status === 'Claimed').length} permits claimed successfully.</p>
-        </div>
-      )}
+
 
       {/* Render the PermitsTable component */}
       <PermitsTable

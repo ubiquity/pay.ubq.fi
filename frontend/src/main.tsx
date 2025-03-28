@@ -6,7 +6,7 @@ import { WagmiProvider, createConfig, http } from 'wagmi';
 import { gnosis, mainnet } from 'wagmi/chains'; // Import chains used by the app
 import App from './App.tsx';
 import { AuthProvider } from './auth-context.tsx'; // Import AuthProvider
-import './app-styles.css'; // Import global styles
+// import './app-styles.css'; // Import global styles - REMOVED, will link in index.html
 import './ubiquity-styles.css'; // Import ubiquity styles
 import './grid-styles.css'; // Import grid styles (once)
 import { grid } from './the-grid'; // Import the grid function (once)
