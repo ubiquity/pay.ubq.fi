@@ -994,7 +994,7 @@ details {
 #header-logo-wrapper svg {
   height: 1em; /* Match the text size */
   width: auto;
-  margin-right: 0.5em;
+  margin-right: 4px;
   vertical-align: -0.125em; /* Adjust vertical alignment */
   fill: currentColor; /* Allow color inheritance */
   height: 24px;
@@ -1043,19 +1043,25 @@ div#controls {
   max-width: 563px;
   margin: 4px auto;
   backdrop-filter: blur(12px);
-  /* border: 1px solid #ffffff10; */
+  border: 1px solid #ffffff10;
   text-align: center;
   max-width: 563px;
   margin: 4px auto;
-  /* box-shadow: inset 0 0 36px #00bfff10; */
+  box-shadow: inset 0 0 36px #00bfff10;
 }
 div#controls > button {
-  width: calc(50% - 2px);)50% - 4px);)50% - 4px;)50% - 4p;)50% - 4;)50% -;)50%
-  -webkit-fill-available;)50%
-  -webkit-fill-available;)50% -;)50%;)50%;)50;)5;);)4;);
+  width: calc(50% - 2px); /* Corrected corrupted width value */
   margin: 0 1px;
+  background-color: transparent;
 }
 
+/* Class for buttons containing text and an SVG icon */
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center; /* Center content within the button */
+}
 
 thead {
     display: none;

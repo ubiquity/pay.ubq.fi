@@ -16,7 +16,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <div>
-      <h1><LogoSpan />Ubiquity OS Rewards</h1>
+      <h1><LogoSpan /><span>Ubiquity OS Rewards</span></h1>
       <button onClick={onLogin}>Login with GitHub</button>
     </div>
   );

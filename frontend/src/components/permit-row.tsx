@@ -98,7 +98,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     : claimFailed
     ? "Retry Claim"
     : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-    ? "Cannot Claim"
+    ? "Claim"
     : "Claim";
 
   // Function to parse GitHub URL and return formatted string
@@ -141,7 +141,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         <button
           onClick={() => onClaimPermit(permit)}
           disabled={!isConnected || !canAttemptClaim || isClaimingThis || isClaimed}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }} // Add styles for alignment
+          className="button-with-icon" // Apply CSS class
         >
           <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
             {" "}
