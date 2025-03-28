@@ -353,24 +353,27 @@ export function DashboardPage() {
   return (
     <>
       <section id="header">
-        <h1>
-          <LogoSpan />
-          <span>Ubiquity OS Rewards</span>
-        </h1>
+        <div id="logo-wrapper">
+          <h1>
+            <LogoSpan />
+            <span>Ubiquity OS Rewards</span>
+          </h1>
+        </div>
+        {/* Moved controls inside header */}
+        {isConnected && address ? ( // Check for address as well
+          <div id="controls">
+            <button onClick={() => disconnect()} className="button-with-icon">
+              {ICONS.DISCONNECT}
+              <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
+            </button>
+            {/* Removed Logout button */}
+          </div>
+        ) : (
+          // This part should ideally not be reached if App.tsx handles rendering LoginPage
+          <div>Wallet not connected.</div>
+        )}
       </section>
-      {isConnected && address ? ( // Check for address as well
-        <section id="controls">
-
-          <button onClick={() => disconnect()} className="button-with-icon">
-            {ICONS.DISCONNECT}
-            <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
-          </button>
-
-        </section>
-      ) : (
-        // This part should ideally not be reached if App.tsx handles rendering LoginPage
-        <div>Wallet not connected.</div>
-      )}
+      {/* Controls section removed from here */}
       {error && (
         <section id="error-message-wrapper">
           <div className="error-message">

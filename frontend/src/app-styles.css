@@ -84,6 +84,10 @@ h1 {
   vertical-align: middle;
   /* color: #808080; */
   margin: 0;
+  display: inline-block;
+  text-align: left;
+  margin: 12px;
+  white-space: nowrap;
 }
 
 section {
@@ -1060,27 +1064,35 @@ button:disabled {
   opacity: 1;
 }
 #controls {
-  text-align: center;
+  /* text-align: center; */
   /* margin-top: 4px; */
   /* width: 50vw; */
-  width: 100%;
-  max-width: 563px;
-  margin: 4px auto;
-  backdrop-filter: blur(12px);
-  border: 1px solid #ffffff10;
-  text-align: center;
-  max-width: 563px;
-  margin: 4px auto;
-  box-shadow: inset 0 0 36px #00bfff10;
+  /* width: 100%; */
+  /* max-width: 563px; */
+  /* margin: 4px auto; */
+  /* backdrop-filter: blur(12px); */
+  /* border: 1px solid #ffffff10; */
+  /* text-align: right; */
+  /* max-width: 563px; */
+  /* margin: 4px auto; */
+  /* box-shadow: inset 0 0 36px #00bfff10; */
+  display: inline-block;
+  text-align: right;
+  /* height: 100%; */
+  /* float: right; */
 }
 #controls > button {
   /* width: calc(50% - 2px); */ /* Corrected corrupted width value */
-  margin: 0 1px;
+  /* margin: 0 1px; */
   background-color: transparent;
-  width: 100%;
+  /* width: 100%; */
+  /* text-align: right; */
+  /* justify-content: end; */
+  height: 48px;
 }
 #controls > button:hover {
   background-color: #ffffff08;
+  border-radius: 0px;
 }
 
 #controls button span{
@@ -1090,7 +1102,7 @@ button:disabled {
 .button-with-icon {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   justify-content: center; /* Center content within the button */
 }
 #controls svg {
@@ -1144,5 +1156,53 @@ section#controls > * {
 
 
 section#header {
-    padding: 12px;
+    /* padding: 0 12px; */
+    /* display: table; */
+}
+
+section#header>* {
+    /* max-width: calc(50% - 16px); */
+    /* vertical-align: middle; */
+    /* justify-content: end; */
+    /* text-align: right; */
+    /* display: table-cell; */
+    /* height: 36px; */
+    /* margin-left: auto; */
+    /* display: inline-flex; */
+}
+
+/* Header Layout */
+#header {
+  display: flex;
+  justify-content: space-between; /* Pushes children to opposite ends */
+  align-items: center; /* Vertically aligns items in the middle */
+  padding: 9; /* Add some padding */
+  max-width: 563px; /* Override previous max-width */
+  /* Remove conflicting styles */
+  /* display: table; */
+}
+
+/* Ensure direct children of header don't override flex behavior */
+#header > div {
+  /* Remove conflicting styles */
+  /* display: table-cell; */
+  /* display: inline-flex; */ /* Let flexbox handle alignment */
+  /* height: 48px; */ /* Let flexbox handle height */
+  /* margin-left: auto; */ /* Let justify-content handle spacing */
+  /* max-width: calc(50% - 16px); */ /* Allow natural sizing */
+  /* vertical-align: middle; */ /* Keep vertical alignment */
+  height: 100%;
+  /* border: 1px solid red; */
+}
+
+/* Specifically target the h1 container and controls container if needed */
+#header > div:first-child { /* Container for h1 */
+  /* Styles for the left side if needed */
+}
+
+#header > #controls { /* The controls div itself */
+  /* Styles for the right side if needed */
+  /* text-align: right; */ /* Keep text alignment within controls */
+  /* float: none; */ /* Remove float */
+  /* display: inline-block; */ /* Override inline-flex if it was causing issues */
 }
