@@ -41,7 +41,6 @@ export function PermitsTable({
           <th>Type</th>
           <th>Token Address</th>
           <th className="align-right">Amount</th>
-          <th>Beneficiary</th>
           <th>Status</th>
           <th>Source</th>
           <th>Actions</th>

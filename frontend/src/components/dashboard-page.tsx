@@ -290,7 +290,9 @@ export function DashboardPage() {
 
    return (
      <div>
-      <h1><LogoSpan />Ubiquity OS Rewards</h1>
+      <header>
+        <h1><LogoSpan />Ubiquity OS Rewards</h1>
+      </header>
       <p>Welcome!</p>
 
       {isConnected ? (
