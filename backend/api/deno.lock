@@ -1,6 +1,7 @@
 {
   "version": "4",
   "specifiers": {
+    "npm:@pavlovcik/permit2-rpc-manager@*": "0.1.0",
     "npm:viem@*": "2.24.1_ws@8.18.1"
   },
   "npm": {
@@ -15,6 +16,12 @@
     },
     "@noble/hashes@1.7.1": {
       "integrity": "sha512-B8XBPsn4vT/KJAGqDzbwztd+6Yte3P4V7iafm24bxgDe/mlRuK6xmWPuCNrKt2vDafZ8MfJLlchDG/vYafQEjQ=="
+    },
+    "@pavlovcik/permit2-rpc-manager@0.1.0": {
+      "integrity": "sha512-xBIOmovFqEE+GFRTSimgcV9EjZEym1mKJu4KdHbuAo9QTw9L/IzBLphgGg6LWjgdnWdubDAm8EyG420ANewfDA==",
+      "dependencies": [
+        "viem"
+      ]
     },
     "@scure/base@1.2.4": {
       "integrity": "sha512-5Yy9czTO47mqz+/J8GM6GIId4umdCk1wc1q8rKERQulIoc8VP9pzDcghv10Tl2E7R96ZUx/PhND3ESYUQX8NuQ=="

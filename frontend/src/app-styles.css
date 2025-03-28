@@ -62,7 +62,7 @@ body {
   color: var(--text);
   background: #000;
   margin: 0 auto;
-  font-size: 16px;
+  /* font-size: 16px; */
   overflow-x: visible; /* Allow content-columns to overflow */
   max-width: 1280px;
   /* Add flexbox for vertical centering */
@@ -85,7 +85,7 @@ h1 {
   /* color: #808080; */
 }
 
-header {
+section {
   /* margin-bottom: 4px; */
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
@@ -96,7 +96,11 @@ header {
   /* opacity: 0.5; */
   /* color: #808080; */
 }
-
+section > span {
+  padding: 8px 0;
+  display: inline-block;
+  vertical-align: middle;
+}
 main {
   /* No special positioning - just let it flow naturally */
 }
@@ -194,12 +198,17 @@ footer {
 
 /* ========== STATUS INDICATORS ========== */
 
-.error-message {
-  padding: 0.5rem 1rem;
-  background: var(--hover);
-  color: var(--error);
-  border-radius: 4px;
-  margin: 1rem 0;
+#error-message-wrapper {
+  backdrop-filter: blur(12px);
+  border: 1px solid #ffffff10;
+  text-align: center;
+  max-width: 563px;
+  margin: 4px auto;
+  box-shadow: inset 0 0 36px #00bfff10;
+  /* display: inline-flex; */
+  /* align-items: center; */
+  /* gap: 4px; */
+  /* justify-content: center; */
 }
 
 .hidden {
@@ -852,7 +861,13 @@ details {
 
 /* dashboard-page.tsx */
 .error-message {
-  color: red;
+  /* color: red; */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  opacity: 0.75;
+  padding: 8px;
 }
 
 .summary-info {
@@ -1041,7 +1056,7 @@ button:disabled {
 .github-comment-url > a:hover {
   opacity: 1;
 }
-div#controls {
+#controls {
   text-align: center;
   /* margin-top: 4px; */
   /* width: 50vw; */
@@ -1055,12 +1070,12 @@ div#controls {
   margin: 4px auto;
   box-shadow: inset 0 0 36px #00bfff10;
 }
-div#controls > button {
+#controls > button {
   width: calc(50% - 2px); /* Corrected corrupted width value */
   margin: 0 1px;
   background-color: transparent;
 }
-div#controls > button:hover{
+#controls > button:hover {
   background-color: #ffffff08;
 }
 /* Class for buttons containing text and an SVG icon */
@@ -1078,6 +1093,7 @@ thead {
 h1 > span {
   color: #bfbfbf;
   user-select: none;
+  font-size: 16px;
 }
 h1:hover > span {
   color: #fff;
@@ -1088,4 +1104,14 @@ h1 > #header-logo-wrapper > svg > path {
 }
 h1:hover > #header-logo-wrapper > svg > path {
   fill: #fff;
+}
+
+svg {
+  vertical-align: middle;
+}
+
+
+.error-message>span {
+    vertical-align: middle;
+    /* padding: 8px; */
 }

@@ -1,53 +1,46 @@
-import { readContract } from '@wagmi/core';
-import { erc20Abi } from 'viem';
+// Removed readContract import, will use multicall
+import { erc20Abi, type Abi, type Address } from 'viem'; // Import Address and Abi types
 import type { PermitData } from '../../../shared/types';
-import { config } from '../main'; // Assuming config is exported from main.tsx
+// Removed config import, chainId will be passed
+
+// Define and export a type for the contract call object used by multicall
+export interface MulticallContract { // Added export
+  address: Address;
+  abi: Abi;
+  functionName: string;
+  args?: unknown[];
+}
 
 const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3'; // Universal Permit2 address
 
 /**
- * Checks owner balance and Permit2 allowance for an ERC20 permit.
- * Returns an object with boolean flags or an error string.
+ * Prepares the contract call objects for checking ERC20 permit prerequisites (balance and allowance).
+ * Returns an array of contract call objects or null if not applicable.
  */
-export async function checkPermitPrerequisites(permit: PermitData): Promise<{ ownerBalanceSufficient?: boolean; permit2AllowanceSufficient?: boolean; checkError?: string }> {
-  if (permit.type !== 'erc20-permit' || !permit.token?.address || !permit.amount) {
-    // Not applicable for non-ERC20 or missing data, return empty object.
-    return {};
+export function preparePermitPrerequisiteContracts(permit: PermitData): MulticallContract[] | null { // Use specific type
+  if (permit.type !== 'erc20-permit' || !permit.token?.address || !permit.amount || !permit.owner) {
+    // Not applicable for non-ERC20 or missing data
+    return null;
   }
 
-  try {
-    const requiredAmount = BigInt(permit.amount);
-    const ownerAddress = permit.owner as `0x${string}`;
-    const tokenAddress = permit.token.address as `0x${string}`;
-    const networkId = permit.networkId as (1 | 100); // Cast for config
+  const ownerAddress = permit.owner as `0x${string}`;
+  const tokenAddress = permit.token.address as `0x${string}`;
 
-    // Check balance
-    const balance = await readContract(config, {
-      abi: erc20Abi,
-      address: tokenAddress,
-      functionName: 'balanceOf',
-      args: [ownerAddress],
-      chainId: networkId,
-    });
-    const ownerBalanceSufficient = BigInt(balance) >= requiredAmount;
+  const balanceCall = {
+    abi: erc20Abi,
+    address: tokenAddress,
+    functionName: 'balanceOf',
+    args: [ownerAddress],
+  };
 
-    // Check allowance
-    const allowance = await readContract(config, {
-      abi: erc20Abi,
-      address: tokenAddress,
-      functionName: 'allowance',
-      args: [ownerAddress, PERMIT2_ADDRESS],
-      chainId: networkId,
-    });
-    const permit2AllowanceSufficient = BigInt(allowance) >= requiredAmount;
+  const allowanceCall = {
+    abi: erc20Abi,
+    address: tokenAddress,
+    functionName: 'allowance',
+    args: [ownerAddress, PERMIT2_ADDRESS],
+  };
 
-    console.log(`Prereq check for nonce ${permit.nonce}: Balance OK: ${ownerBalanceSufficient}, Allowance OK: ${permit2AllowanceSufficient}`);
-    return { ownerBalanceSufficient, permit2AllowanceSufficient };
-
-  } catch (error) {
-    console.error(`Failed prerequisite check for nonce ${permit.nonce}:`, error);
-    return { checkError: error instanceof Error ? error.message : "Failed to check balance/allowance." };
-  }
+  return [balanceCall, allowanceCall];
 }
 
 /**

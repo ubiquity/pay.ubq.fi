@@ -29,9 +29,9 @@ export function PermitsTable({
   }
 
   // Show message only after loading is finished and there are no permits
-  if (permits.length === 0) {
-    return <p>No permits pending.</p>;
-  }
+  // if (permits.length === 0) {
+  //   return <section><div className='error-message'><span>No permits pending</span></div></section>;
+  // }
 
   // Render table if not loading and permits exist
   return (

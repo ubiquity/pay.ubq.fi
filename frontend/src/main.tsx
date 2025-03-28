@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import QueryClient things
-import { StrictMode } from 'react';
+import { StrictMode } from 'react'; // Re-enabled import
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { WagmiProvider, createConfig, http } from 'wagmi';
@@ -36,7 +36,7 @@ if (!gridElement) {
 }
 
 createRoot(rootElement).render(
-  <StrictMode>
+  <StrictMode> {/* Re-enabled */}
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}> {/* Wrap AuthProvider */}
         <AuthProvider>
@@ -46,7 +46,7 @@ createRoot(rootElement).render(
         </AuthProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  </StrictMode>,
+  </StrictMode>
 );
 
 // Initialize the grid animation, targeting the #grid div if it exists

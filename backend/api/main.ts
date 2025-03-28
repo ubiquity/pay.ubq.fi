@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
 import { verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
-// import { logger } from "https://deno.land/x/hono@v4.1.5/middleware/logger.ts"; // Still commented out
 import { Context, Hono, Next } from "https://deno.land/x/hono@v4.1.5/mod.ts";
-// Import shared types
 import type { PermitData, TokenInfo, PartnerInfo } from "../../shared/types.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 import { createPublicClient, http, parseAbiItem, PublicClient } from 'npm:viem';
 import { gnosis, localhost, mainnet } from 'npm:viem/chains';
+import { Permit2RPC } from 'npm:@pavlovcik/permit2-rpc-manager'; // Import the RPC manager
 
 // --- Load Environment Variables ---
 await load({ export: true });
@@ -31,7 +30,8 @@ const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
 
 let jwtKey: CryptoKey | null = null;
 let supabase: SupabaseClient | null = null;
-const rpcClients: Map<number, PublicClient> = new Map();
+// const rpcClients: Map<number, PublicClient> = new Map(); // Remove old map
+let rpcManager: Permit2RPC | null = null; // Add manager instance
 
 // --- ABIs ---
 const permit2Abi = parseAbiItem('function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)');
@@ -51,28 +51,66 @@ async function initialize() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) { console.error("FATAL: Supabase config missing."); Deno.exit(1); }
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   console.log("Supabase client initialized.");
-}
 
-// --- RPC Client Helper ---
-function getRpcClient(networkId: number): PublicClient {
-  if (rpcClients.has(networkId)) { return rpcClients.get(networkId)!; }
+  // Init RPC Manager
   const rpcUrls: Record<number, string> = {
       1: Deno.env.get("RPC_URL_1") || "https://ethereum.publicnode.com",
       100: Deno.env.get("RPC_URL_100") || "https://rpc.gnosischain.com",
       31337: Deno.env.get("RPC_URL_31337") || "http://127.0.0.1:8545",
   };
-  const rpcUrl = rpcUrls[networkId];
-  if (!rpcUrl) { throw new Error(`RPC URL not configured for network ID: ${networkId}`); }
-  let chain;
-  switch (networkId) {
-    case 1: chain = mainnet; break;
-    case 100: chain = gnosis; break;
-    case 31337: chain = localhost; break;
-    default: throw new Error(`Chain configuration missing for network ID: ${networkId}`);
+  // Filter out potentially missing URLs if env vars are not set for all
+  const validRpcUrls = Object.entries(rpcUrls)
+    .filter(([, url]) => url)
+    .reduce((acc, [key, url]) => {
+      acc[Number(key)] = url;
+      return acc;
+    }, {} as Record<number, string>);
+
+  if (Object.keys(validRpcUrls).length === 0) {
+      console.error("FATAL: No valid RPC URLs configured.");
+      Deno.exit(1);
   }
-  const client = createPublicClient({ chain: chain, transport: http(rpcUrl) });
-  rpcClients.set(networkId, client);
-  return client;
+
+  try {
+      // Provide chains configuration to the manager
+      const chainsConfig = {
+          1: mainnet,
+          100: gnosis,
+          31337: localhost,
+      };
+      // Filter chainsConfig based on validRpcUrls keys
+      const validChains = Object.keys(validRpcUrls).reduce((acc, keyStr) => {
+          const key = Number(keyStr);
+          if (chainsConfig[key as keyof typeof chainsConfig]) {
+              acc[key] = chainsConfig[key as keyof typeof chainsConfig];
+          }
+          return acc;
+      }, {} as Record<number, typeof mainnet | typeof gnosis | typeof localhost>);
+
+      rpcManager = new Permit2RPC({ rpcs: validRpcUrls, chains: validChains });
+      console.log("Permit2RPC Manager initialized.");
+  } catch (err) {
+      console.error("Failed to initialize Permit2RPC Manager:", err);
+      Deno.exit(1);
+  }
+}
+
+// --- RPC Client Helper (Refactored) ---
+function getRpcClient(networkId: number): PublicClient {
+  if (!rpcManager) {
+      throw new Error("RPC Manager not initialized.");
+  }
+  try {
+      // The manager's getRpc method returns a Viem PublicClient
+      const client = rpcManager.getRpc(networkId);
+      if (!client) {
+          throw new Error(`No RPC client available for network ID: ${networkId} via manager.`);
+      }
+      return client;
+  } catch (err) {
+      console.error(`Error getting RPC client for network ${networkId} from manager:`, err);
+      throw new Error(`Failed to get RPC client for network ID: ${networkId}`);
+  }
 }
 
 const app = new Hono();
@@ -94,8 +132,6 @@ app.use('*', async (c, next) => {
   }
   await next();
 });
-
-// app.use("*", logger()); // Still commented out
 
 // --- JWT Verification Middleware ---
 const verifyJwtMiddleware = async (c: Context, next: Next) => {
@@ -134,7 +170,7 @@ app.post("/api/auth/github/callback", async (c: Context) => { /* ... Auth callba
 // --- On-Chain Validation Logic ---
 async function isErc20NonceClaimed(permitData: PermitData): Promise<boolean> {
   try {
-    const client = getRpcClient(permitData.networkId);
+    const client = getRpcClient(permitData.networkId); // Uses the manager now
     const wordPos = BigInt(permitData.nonce) >> 8n;
     const owner = permitData.owner;
     if (!owner) return true; // Fail safe - treat as claimed if no owner
@@ -142,7 +178,7 @@ async function isErc20NonceClaimed(permitData: PermitData): Promise<boolean> {
       address: PERMIT2_ADDRESS,
       abi: [permit2Abi],
       functionName: 'nonceBitmap',
-      args: [owner, wordPos]
+      args: [owner as `0x${string}`, wordPos] // Added cast
     });
     const bit = 1n << (BigInt(permitData.nonce) & 255n);
     return Boolean(bitmap & bit);
@@ -154,10 +190,10 @@ async function isErc20NonceClaimed(permitData: PermitData): Promise<boolean> {
 
 async function isErc721NonceClaimed(permitData: PermitData): Promise<boolean> {
   try {
-    const client = getRpcClient(permitData.networkId);
+    const client = getRpcClient(permitData.networkId); // Uses the manager now
     if (!permitData.token?.address) return true; // Fail safe - treat as claimed if no token
     const isRedeemed = await client.readContract({
-      address: permitData.token.address,
+      address: permitData.token.address as `0x${string}`, // Added cast
       abi: [nftRewardAbi],
       functionName: 'nonceRedeemed',
       args: [BigInt(permitData.nonce)]
@@ -200,7 +236,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         throw new Error(`Supabase permit fetch error: ${permitError.message}`);
     }
 
-    console.log("Raw potential permits from DB:", potentialPermits);
+    console.log("Raw potential permits from DB:", potentialPermits?.length);
 
     if (!potentialPermits || potentialPermits.length === 0) {
         console.log(`No potential permits found in DB for user ${payload?.gh_login}`);
@@ -221,7 +257,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
     }
 
     const beneficiaryWalletMap = new Map(users.map(u => [String(u.github_id), u.wallet_address]));
-    console.log("Beneficiary Wallet Map:", beneficiaryWalletMap);
+    console.log("Beneficiary Wallet Map populated:", beneficiaryWalletMap.size);
 
     // Step 3: Construct final permit data and perform On-Chain Validation
     console.log(`Processing ${potentialPermits.length} potential permits, validating on-chain...`);
@@ -230,7 +266,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         const ownerWalletData = permit.partner?.wallet;
         const beneficiaryWalletAddress = beneficiaryWalletMap.get(String(permit.beneficiary_id)); // Get address from map
 
-        console.log(`Raw permit object for nonce ${permit.nonce}:`, permit);
+        // console.log(`Raw permit object for nonce ${permit.nonce}:`, permit); // Reduce logging verbosity
 
         // Skip if beneficiary address couldn't be found
         if (!beneficiaryWalletAddress) {
@@ -268,21 +304,21 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
 
         const deadlineInt = parseInt(permitData.deadline, 10);
         if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
-          console.log(`Permit nonce ${permit.nonce} is expired or has invalid deadline.`);
+          // console.log(`Permit nonce ${permit.nonce} is expired or has invalid deadline.`); // Reduce logging
           return null;
         }
 
         let isClaimedOnChain = false;
         try {
           if (permitData.type === 'erc20-permit') {
-            console.log(`Validating as ERC20 (nonce: ${permitData.nonce}, amount: ${permitData.amount})`);
+            // console.log(`Validating as ERC20 (nonce: ${permitData.nonce}, amount: ${permitData.amount})`); // Reduce logging
             if (!permitData.owner) {
               console.warn(`Permit nonce ${permit.nonce} identified as ERC20 but missing owner_address. Skipping.`);
               return null;
             }
             isClaimedOnChain = await isErc20NonceClaimed(permitData);
           } else if (permitData.type === 'erc721-permit') {
-            console.log(`Validating as ERC721 (nonce: ${permitData.nonce}, token_id: ${permitData.token_id})`);
+            // console.log(`Validating as ERC721 (nonce: ${permitData.nonce}, token_id: ${permitData.token_id})`); // Reduce logging
             if (!permitData.tokenAddress) {
               console.warn(`Permit nonce ${permit.nonce} identified as ERC721 but missing token_address. Skipping.`);
               return null;
@@ -299,7 +335,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
 
 
         if (isClaimedOnChain) {
-          console.log(`Permit nonce ${permit.nonce} already claimed on-chain.`);
+          // console.log(`Permit nonce ${permit.nonce} already claimed on-chain.`); // Reduce logging
           return null;
         }
 
@@ -347,7 +383,7 @@ app.post("/api/wallet/link", verifyJwtMiddleware, async (c: Context) => {
 
 // Test a single permit
 app.post("/api/permits/test", verifyJwtMiddleware, async (c: Context) => {
-  const payload = c.get('jwtPayload');
+  // const payload = c.get('jwtPayload'); // Payload not strictly needed for this test endpoint
   if (!supabase) return c.json({ error: "Database client not initialized" }, 500);
 
   try {
