@@ -2,6 +2,7 @@ import React from "react";
 import type { PermitData } from "../../../shared/types";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
 import type { Chain } from "viem";
+import { ICONS } from "./icons";
 
 interface PermitRowProps {
   permit: PermitData;
@@ -119,18 +120,18 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     return "Source Link"; // Fallback text
   };
 
-  // Define SVG components
-  const ClaimIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
-      <path d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"></path>
-    </svg>
-  );
+  // // Define SVG components
+  // const ClaimIcon = () => (
+  //   <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
+  //     <path d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z"></path>
+  //   </svg>
+  // );
 
-  const CannotClaimIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"> {/* Adjusted height/width */}
-      <path d="m771.08-104-76.62-76H252.31Q222-180 201-201q-21-21-21-51.31V-330q0-12.77 8.62-21.38Q197.23-360 210-360t21.38 8.62Q240-342.77 240-330v77.69q0 4.62 3.85 8.46 3.84 3.85 8.46 3.85h382.15L513-361.46l-11.15 11.15q-5.62 3.77-10.73 5.46-5.12 1.7-11.5 1.7-8.85 0-14.2-2.62-5.34-2.62-10.34-7.62L330.69-477.38q-8.69-8.7-9-19.54-.3-10.85 6.54-18.92 1.93-1.93 3.85-1.93 1.92 0 3.85 1.93l30.38 30v-22.31L103.39-771.08q-8.7-8.69-8.7-21.07 0-12.39 9.31-21.7 8.69-8.69 21.08-8.69 12.38 0 21.69 8.69l667.08 667.7q8.69 8.69 8.69 21.07 0 12.39-8.69 21.08-9.31 9.31-21.7 9.31-12.38 0-21.07-9.31ZM629.69-524.15q8.69 8.69 8.69 21.07 0 12.39-7.54 19.93l-4.3 4.3q-8.16 8.16-19.93 7.47-11.76-.7-22.23-11.16-8.15-8.15-8.15-19.84 0-11.7 8.15-19.85l3.7-3.69q7.53-7.54 20.23-7.23 12.69.31 21.38 9ZM480-780q12.77 0 21.38 8.62Q510-762.77 510-750v114.62q0 15-9.42 22.19Q491.15-606 480-606q-11.15 0-20.58-7.5Q450-621 450-636v-114q0-12.77 8.62-21.38Q467.23-780 480-780Z"/>
-    </svg>
-  );
+  // const CannotClaimIcon = () => (
+  //   <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"> {/* Adjusted height/width */}
+  //     <path d="m771.08-104-76.62-76H252.31Q222-180 201-201q-21-21-21-51.31V-330q0-12.77 8.62-21.38Q197.23-360 210-360t21.38 8.62Q240-342.77 240-330v77.69q0 4.62 3.85 8.46 3.84 3.85 8.46 3.85h382.15L513-361.46l-11.15 11.15q-5.62 3.77-10.73 5.46-5.12 1.7-11.5 1.7-8.85 0-14.2-2.62-5.34-2.62-10.34-7.62L330.69-477.38q-8.69-8.7-9-19.54-.3-10.85 6.54-18.92 1.93-1.93 3.85-1.93 1.92 0 3.85 1.93l30.38 30v-22.31L103.39-771.08q-8.7-8.69-8.7-21.07 0-12.39 9.31-21.7 8.69-8.69 21.08-8.69 12.38 0 21.69 8.69l667.08 667.7q8.69 8.69 8.69 21.07 0 12.39-8.69 21.08-9.31 9.31-21.7 9.31-12.38 0-21.07-9.31ZM629.69-524.15q8.69 8.69 8.69 21.07 0 12.39-7.54 19.93l-4.3 4.3q-8.16 8.16-19.93 7.47-11.76-.7-22.23-11.16-8.15-8.15-8.15-19.84 0-11.7 8.15-19.85l3.7-3.69q7.53-7.54 20.23-7.23 12.69.31 21.38 9ZM480-780q12.77 0 21.38 8.62Q510-762.77 510-750v114.62q0 15-9.42 22.19Q491.15-606 480-606q-11.15 0-20.58-7.5Q450-621 450-636v-114q0-12.77 8.62-21.38Q467.23-780 480-780Z"/>
+  //   </svg>
+  // );
 
   // Determine which icon to show
   const showCannotClaimIcon = !canAttemptClaim && !isClaimed && !isClaimingThis;
@@ -162,7 +163,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
           className="button-with-icon" // Apply CSS class
           title={statusDisplayText} // Add title attribute for tooltip
         >
-          {showCannotClaimIcon ? <CannotClaimIcon /> : <ClaimIcon />}
+          {showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM}
           {buttonText}
         </button>
         {/* Display Claim Error */}
