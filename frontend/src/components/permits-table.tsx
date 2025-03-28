@@ -38,12 +38,9 @@ export function PermitsTable({
     <table className="permits-table">
       <thead>
         <tr>
-          {/* Removed Type */}
-          {/* Removed Token Address */}
-          <th>Source</th> {/* Moved Source to first */}
+          <th>Source</th>
           <th>Reward</th>
           <th>Actions</th>
-          {/* Removed Status */}
         </tr>
       </thead>
       <tbody>

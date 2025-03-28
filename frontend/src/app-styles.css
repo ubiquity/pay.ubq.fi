@@ -1060,7 +1060,9 @@ div#controls > button {
   margin: 0 1px;
   background-color: transparent;
 }
-
+div#controls > button:hover{
+  background-color: #ffffff08;
+}
 /* Class for buttons containing text and an SVG icon */
 .button-with-icon {
   display: inline-flex;
