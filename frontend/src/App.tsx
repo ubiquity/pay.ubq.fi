@@ -1,50 +1,20 @@
-import React from "react"; // Removed unused useEffect, useState
-import { Route, Routes } from "react-router-dom"; // Removed useLocation, useNavigate
-import { useAuth } from "./auth-context"; // Import useAuth hook
+import React from "react";
+import { useAccount } from "wagmi"; // Import useAccount hook from wagmi
 
-// Import extracted components
+// Import page components
 import { LoginPage } from "./components/login-page";
 import { DashboardPage } from "./components/dashboard-page";
-import { GitHubCallback } from "./components/github-callback";
 
-// --- Configuration ---
-// Moved GITHUB_CLIENT_ID, BACKEND_API_URL to relevant components
-// Kept GITHUB_AUTH_URL here as it's used in App component logic
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID; // Still needed for GITHUB_AUTH_URL
-const GITHUB_REDIRECT_URI = `${window.location.origin}/github/callback`;
-const GITHUB_AUTH_URL = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-  GITHUB_REDIRECT_URI
-)}&scope=read:user`;
-
-if (!GITHUB_CLIENT_ID) {
-  console.error("Error: VITE_GITHUB_CLIENT_ID is not defined in your .env file.");
-}
-
-// --- Permit2 Contract Details ---
-// Moved PERMIT2_ADDRESS and permit2ABI import to DashboardPage
-
-// --- Components ---
-// Moved LoginPage, DashboardPage, GitHubCallback definitions to separate files
+// Removed GitHubCallback import and related constants/logic
 
 function App() {
-  const { isLoggedIn, isLoading } = useAuth();
+  // Use wagmi's useAccount hook to check wallet connection status
+  const { isConnected } = useAccount(); // Removed isConnecting, not needed here
 
-  const handleLogin = () => {
-    window.location.href = GITHUB_AUTH_URL;
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <>
-      <Routes>
-        <Route path="/github/callback" element={<GitHubCallback />} />
-        <Route path="/" element={isLoggedIn ? <DashboardPage /> : <LoginPage onLogin={handleLogin} />} />
-      </Routes>
-    </>
-  );
+  // Render LoginPage if not connected, DashboardPage if connected
+  // LoginPage will handle showing its own "Connecting..." state via useConnect status
+  return <>{isConnected ? <DashboardPage /> : <LoginPage />}</>;
+  // Removed Routes as only the root view is needed now
 }
 
 export default App;

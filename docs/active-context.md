@@ -23,8 +23,11 @@
     *   **Fixed Button Disabling:** Corrected logic that incorrectly disabled claim buttons.
     *   **Integrated Grid Background:** Imported and executed the `grid` function from `frontend/src/the-grid.ts` within `main.tsx`, targeting the `#grid` element in `index.html`. Imported `grid-styles.css` and `ubiquity-styles.css`. Verified `index.html` structure includes `<background>` and `<main>`.
     *   **Added Header Logo:** Implemented SVG logo display by importing the raw SVG content (`ubiquity-os-logo.svg?raw`) and rendering it using `dangerouslySetInnerHTML` within a `<span>` in `LoginPage.tsx` and `DashboardPage.tsx`. Updated `vite-env.d.ts` for `?raw` imports. Adjusted CSS (`.header-logo-wrapper svg`) to style the injected SVG. (This approach bypasses issues with `vite-plugin-svgr`).
+    *   **Refactored Authentication:** Replaced GitHub OAuth flow with Wallet Connection (`wagmi`) as the primary authentication/access method. Updated `LoginPage.tsx` to use `useConnect`, updated `App.tsx` to use `useAccount` for conditional rendering, removed `auth-context.tsx`, `github-callback.tsx`, and related routing/logic.
 *   **Shared Types**:
     *   Added `ownerBalanceSufficient`, `permit2AllowanceSufficient`, `checkError` fields to `PermitData` for storing prerequisite check results.
+*   **Docs**:
+    *   Updated `product-context.md`, `system-patterns.md`, and `active-context.md` to reflect the wallet-first authentication flow. Removed `github-auth-flow.md`.
 
 ## 3. Next Steps (Immediate)
 
@@ -32,7 +35,7 @@
 *   **Test Claiming**: Thoroughly test the single permit claim flow with the new checks in place.
 *   **RPC Error Handling**: Improve backend validation functions (`isErc20NonceClaimed`, `isErc721NonceClaimed`) to better handle RPC errors (e.g., return a specific error state instead of fail-safe `true`).
 *   **(Optional)** Implement backend endpoint `/api/permits/update-status` to record successful claims.
-*   **Implement GitHub Scanning**: Add logic to backend to scan GitHub for new permits.
+*   **(Backend)** Ensure backend API (`/api/permits`) correctly fetches permits based on the provided `walletAddress` query parameter.
 
 ## 4. Key Decisions / Open Questions
 
@@ -49,13 +52,13 @@
     *   Multicall Contract: Use existing deployed contracts (for future batching).
     *   RPC Management: Use existing custom RPC handler (needs rewrite eventually).
     *   Frontend Hosting: Deno Deploy.
-    *   Authentication: Custom backend flow with JWT sessions.
-    *   Beneficiary Fetching: Using two-step query in backend.
+    *   Authentication: Wallet Connection (`wagmi` on frontend). Backend assumes authenticated access via wallet address.
+    *   Beneficiary Fetching: Using two-step query in backend (assuming permits are linked to wallets).
 *   **Remaining Questions:**
+    *   How are permits initially associated with wallet addresses in the database? (External process assumed).
     *   Best strategy for handling intermittent RPC errors during validation.
     *   Implementation details for batch claiming (Phase 4/5).
-    *   Database schema details (confirmation needed for all tables/columns/relationships).
-    *   Encryption for GitHub token storage.
+    *   Database schema details (confirmation needed for all tables/columns/relationships, especially wallet-permit linkage).
     *   Is the current RPC endpoint reliable enough, or should we switch (as previously discussed)? The pre-claim checks might mitigate the need if the issue was allowance/balance.
 
 *(This document will be updated frequently as work progresses.)*

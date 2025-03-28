@@ -1,24 +1,29 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import QueryClient things
-import { StrictMode } from 'react'; // Re-enabled import
+import { StrictMode } from 'react'; // Re-add StrictMode import
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { gnosis, mainnet } from 'wagmi/chains'; // Import chains used by the app
+import { injected } from '@wagmi/connectors'; // Revert to injected connector
+import { gnosis, mainnet, sepolia } from 'wagmi/chains'; // Import chains used by the app, ADDED sepolia
 import App from './App.tsx';
-import { AuthProvider } from './auth-context.tsx'; // Import AuthProvider
+// Removed AuthProvider import
 // import './app-styles.css'; // Import global styles - REMOVED, will link in index.html
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
 import { grid } from './the-grid'; // Import the grid function (once)
 
 // Configure wagmi
-// TODO: Consider adding more chains if needed (e.g., localhost for dev)
-// TODO: Add connectors (e.g., MetaMask, WalletConnect) if needed beyond default EIP-6963
+// Configure wagmi with injected connector, added Sepolia chain
 export const config = createConfig({ // Export config
-  chains: [mainnet, gnosis],
+  chains: [mainnet, gnosis, sepolia], // Added sepolia
+  connectors: [
+    injected(), // Use injected connector (removed shimDisconnect)
+    // Add WalletConnect, Coinbase Wallet etc. here if needed later
+  ],
   transports: {
     [mainnet.id]: http(), // Uses default public RPC, override if needed
     [gnosis.id]: http(),  // Uses default public RPC, override if needed
+    [sepolia.id]: http(), // Added transport for sepolia
   },
 });
 
@@ -36,14 +41,13 @@ if (!gridElement) {
 }
 
 createRoot(rootElement).render(
-  <StrictMode> {/* Re-enabled */}
+  <StrictMode> {/* Re-enabled StrictMode */}
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}> {/* Wrap AuthProvider */}
-        <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        {/* Removed AuthProvider wrapper */}
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </QueryClientProvider>
     </WagmiProvider>
   </StrictMode>

@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+// Removed duplicate import line below
+import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi"; // Removed useConnect
 import { multicall } from "@wagmi/core"; // Import multicall
 import { config } from "../main"; // Import config for multicall
-import { injected } from "wagmi/connectors"; // Example connector
+// Removed injected import
 import type { PermitData } from "../../../shared/types"; // Corrected path
 import permit2ABI from "../fixtures/permit2-abi"; // Adjust path
 // Import type and prepare function
 import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract } from "../utils/permit-utils";
 import { PermitsTable } from "./permits-table"; // Import the new table component
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw"; // Import SVG content as raw string
-import { useAuth } from "../auth-context";
+// Removed useAuth import
 import type { MulticallReturnType } from "@wagmi/core"; // Import type for multicall results
 import { ICONS } from "./icons";
 
@@ -26,19 +27,22 @@ export function DashboardPage() {
 
   // State for waiting for transaction receipt
   const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, error: receiptError } = useWaitForTransactionReceipt({ hash });
-  const { isLoggedIn, logout } = useAuth();
-  const handleLogout = () => {
-    logout();
-  };
+  // Removed useAuth hook and related logout logic
+
+  // Fetch permits from backend API and check prerequisites using MULTICALL
+  // Wallet Connection Logic - Moved up for clarity
+  const { address, isConnected, chain } = useAccount(); // Removed isConnecting
+  // Removed useConnect hook call
+  const { disconnect } = useDisconnect();
 
   // Fetch permits from backend API and check prerequisites using MULTICALL
   const fetchPermitsAndCheck = async () => {
     setIsLoading(true);
     setError(null);
     console.log("Fetching permits from backend API...");
-    const token = localStorage.getItem("sessionToken");
-    if (!token) {
-      setError("Not authenticated. Please login.");
+    // Use connected wallet address instead of token
+    if (!isConnected || !address) {
+      setError("Wallet not connected.");
       setIsLoading(false);
       return;
     }
@@ -46,12 +50,13 @@ export function DashboardPage() {
     let initialPermits: PermitData[] = []; // Keep track of initial permits
 
     try {
-      // 1. Fetch initial permits
-      const response = await fetch(`${BACKEND_API_URL}/api/permits`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      // 1. Fetch initial permits using wallet address
+      // Ensure the backend API endpoint supports fetching by wallet address
+      const response = await fetch(`${BACKEND_API_URL}/api/permits?walletAddress=${address}`, {
+        headers: { Accept: "application/json" }, // Removed Authorization header
       });
       if (!response.ok) {
-        let errorMsg = `Failed to fetch permits: ${response.status} ${response.statusText}`;
+        let errorMsg = `Failed to fetch permits for wallet ${address}: ${response.status} ${response.statusText}`;
         try {
           const errorData = await response.json();
           errorMsg = errorData.error || errorMsg;
@@ -213,16 +218,7 @@ export function DashboardPage() {
     }
   };
 
-  // Wallet Connection Logic
-  const { address, isConnected, isConnecting, chain } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
-
-  const handleConnectWallet = () => {
-    if (!isConnecting) {
-      connect({ connector: injected() });
-    }
-  };
+  // Removed handleConnectWallet as connection is handled in LoginPage
 
   // --- Handle Actual Claim ---
   const handleClaimPermit = async (permitToClaim: PermitData) => {
@@ -362,23 +358,18 @@ export function DashboardPage() {
           <span>Ubiquity OS Rewards</span>
         </h1>
       </section>
-      {isConnected ? (
+      {isConnected && address ? ( // Check for address as well
         <section id="controls">
+
           <button onClick={() => disconnect()} className="button-with-icon">
             {ICONS.DISCONNECT}
-            <span>Disconnect Wallet</span>
+            <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
           </button>
-          {isLoggedIn && (
-            <button onClick={handleLogout} className="logout-button button-with-icon">
-              {ICONS.LOGOUT}
-              <span>Logout</span>
-            </button>
-          )}
+
         </section>
       ) : (
-        <button onClick={handleConnectWallet} disabled={isConnecting}>
-          {isConnecting ? "Connecting..." : "Connect Wallet"}
-        </button>
+        // This part should ideally not be reached if App.tsx handles rendering LoginPage
+        <div>Wallet not connected.</div>
       )}
       {error && (
         <section id="error-message-wrapper">

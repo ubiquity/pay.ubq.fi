@@ -1,5 +1,7 @@
 {
-  "dependencies": {},
+  "dependencies": {
+    "@wagmi/connectors": "^5.7.11"
+  },
   "devDependencies": {
     "vite-plugin-svgr": "^4.3.0"
   }

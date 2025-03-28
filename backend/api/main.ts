@@ -193,19 +193,47 @@ async function isErc721NonceClaimed(permitData: PermitData): Promise<boolean> {
   }
 }
 
-// --- Permit Fetching Route ---
-app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
-  const payload = c.get('jwtPayload');
+// --- Permit Fetching Route (Modified for Wallet Address Auth) ---
+// Removed verifyJwtMiddleware
+app.get("/api/permits", async (c: Context) => {
   if (!supabase) return c.json({ error: "Database client not initialized" }, 500);
-  const githubUserId = payload?.sub;
-  if (!githubUserId) return c.json({ error: "Invalid token payload" }, 401);
 
-  console.log(`>>> ENTERING /api/permits for user: ${payload?.gh_login}`); // Entry log
+  // Get walletAddress from query parameters
+  const walletAddress = c.req.query('walletAddress');
+  if (!walletAddress) {
+    return c.json({ error: "Missing walletAddress query parameter" }, 400);
+  }
+  const lowerCaseWalletAddress = walletAddress.toLowerCase();
+  console.log(`>>> ENTERING /api/permits for wallet: ${lowerCaseWalletAddress}`); // Entry log
+
   try {
-    const userGitHubIdInt = parseInt(githubUserId, 10);
+    // Step 1: Find the user (github_id) associated with the wallet address
+    console.log(`Querying user for wallet_address: ${lowerCaseWalletAddress}`);
+    const { data: userData, error: userFetchError } = await supabase
+      .from(USERS_TABLE)
+      .select('github_id')
+      .eq('wallet_address', lowerCaseWalletAddress)
+      .single(); // Assuming one user per wallet address
 
-    // Step 1: Fetch permits with related token, partner, and location data
-    console.log(`Querying permits for beneficiary_id: ${userGitHubIdInt}`);
+    if (userFetchError || !userData) {
+      console.error(`Supabase user fetch error for wallet ${lowerCaseWalletAddress}:`, userFetchError);
+      // If no user found for this wallet, return empty permits array
+      if (!userData) {
+        console.log(`No user found for wallet ${lowerCaseWalletAddress}`);
+        console.log(`<<< EXITING /api/permits for wallet: ${lowerCaseWalletAddress} (No user found)`);
+        return c.json({ permits: [] });
+      }
+      throw new Error(`Supabase user fetch error: ${userFetchError?.message || 'User not found'}`);
+    }
+    // --- DEBUG LOG ---
+    console.log(`User lookup result for wallet ${lowerCaseWalletAddress}:`, userData);
+    // --- END DEBUG LOG ---
+
+    const userGitHubId = userData.github_id;
+    console.log(`Found github_id ${userGitHubId} for wallet ${lowerCaseWalletAddress}`);
+
+    // Step 2: Fetch permits for the found user (beneficiary_id)
+    console.log(`Querying permits for beneficiary_id: ${userGitHubId}`);
     const { data: potentialPermits, error: permitError } = await supabase
         .from(PERMITS_TABLE)
         .select(`
@@ -216,56 +244,39 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
             ),
             location: locations (node_url)
         `)
-        .eq('beneficiary_id', userGitHubIdInt)
+        .eq('beneficiary_id', userGitHubId) // Use the fetched github_id
         .is('transaction', null);
 
     if (permitError) {
         console.error("Supabase permit fetch error:", permitError);
         throw new Error(`Supabase permit fetch error: ${permitError.message}`);
     }
-
-    console.log("Raw potential permits from DB:", potentialPermits?.length);
+    // --- DEBUG LOG ---
+    const rawPermitCount = potentialPermits?.length ?? 0;
+    console.log(`Raw potential permits count from DB for beneficiary_id ${userGitHubId}: ${rawPermitCount}`);
+    // --- END DEBUG LOG ---
 
     if (!potentialPermits || potentialPermits.length === 0) {
-        console.log(`No potential permits found in DB for user ${payload?.gh_login}`);
-        console.log(`<<< EXITING /api/permits for user: ${payload?.gh_login} (No DB results)`);
+        console.log(`No potential permits found in DB for user ${userGitHubId} (wallet: ${lowerCaseWalletAddress})`);
+        console.log(`<<< EXITING /api/permits for wallet: ${lowerCaseWalletAddress} (No DB results)`);
         return c.json({ permits: [] });
     }
 
-    // Step 2: Fetch beneficiary wallet addresses separately
-    const beneficiaryIds = potentialPermits.map(p => String(p.beneficiary_id));
-    const { data: users, error: usersError } = await supabase
-      .from(USERS_TABLE)
-      .select('github_id, wallet_address')
-      .in('github_id', beneficiaryIds);
-
-    if (usersError) {
-      console.error("Supabase user fetch error:", usersError);
-      throw new Error(`Supabase user fetch error: ${usersError.message}`);
-    }
-
-    const beneficiaryWalletMap = new Map(users.map(u => [String(u.github_id), u.wallet_address]));
-    console.log("Beneficiary Wallet Map populated:", beneficiaryWalletMap.size);
-
     // Step 3: Construct final permit data and perform On-Chain Validation
+    // Beneficiary wallet address is already known (it's the input `lowerCaseWalletAddress`)
     console.log(`Processing ${potentialPermits.length} potential permits, validating on-chain...`);
     const validationPromises = potentialPermits.map(async (permit) => {
         const tokenData = permit.token;
         const ownerWalletData = permit.partner?.wallet;
-        const beneficiaryWalletAddress = beneficiaryWalletMap.get(String(permit.beneficiary_id)); // Get address from map
+        // const beneficiaryWalletAddress = beneficiaryWalletMap.get(String(permit.beneficiary_id)); // No longer needed
 
         // console.log(`Raw permit object for nonce ${permit.nonce}:`, permit); // Reduce logging verbosity
 
-        // Skip if beneficiary address couldn't be found
-        if (!beneficiaryWalletAddress) {
-          console.warn(`Permit nonce ${permit.nonce}: Could not find beneficiary wallet address for beneficiary_id ${permit.beneficiary_id}. Skipping.`);
-          return null;
-        } // <-- Add missing closing brace here
         // Re-apply explicit type conversions for safety
         const permitData: PermitData = {
           nonce: String(permit.nonce),
           networkId: Number(permit.networkId || tokenData?.network || 0),
-          beneficiary: String(beneficiaryWalletAddress), // Use address fetched separately
+          beneficiary: lowerCaseWalletAddress, // Use the input wallet address directly
           deadline: String(permit.deadline),
           signature: String(permit.signature),
           type: permit.amount && BigInt(permit.amount) > 0n ? 'erc20-permit' : 'erc721-permit',
@@ -330,13 +341,13 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         return permitData;
     });
     const validPermits = (await Promise.all(validationPromises)).filter(p => p !== null);
-    console.log(`Found ${validPermits.length} valid unclaimed permits for user ${payload?.gh_login}`);
-    console.log(`<<< EXITING /api/permits for user: ${payload?.gh_login} (Success)`);
+    console.log(`Found ${validPermits.length} valid unclaimed permits for wallet ${lowerCaseWalletAddress}`);
+    console.log(`<<< EXITING /api/permits for wallet: ${lowerCaseWalletAddress} (Success)`);
     return c.json({ permits: validPermits });
-  } catch(err) { console.error("Error fetching permits:", err); console.log(`<<< EXITING /api/permits for user: ${payload?.gh_login} (Error)`); return c.json({ error: "Internal server error fetching permits" }, 500); }
+  } catch(err) { console.error("Error fetching permits:", err); console.log(`<<< EXITING /api/permits for wallet: ${lowerCaseWalletAddress} (Error)`); return c.json({ error: "Internal server error fetching permits" }, 500); }
 });
 
-// Link wallet address to user
+// Link wallet address to user - KEEP THIS ROUTE, but it's no longer the primary auth mechanism
 app.post("/api/wallet/link", verifyJwtMiddleware, async (c: Context) => {
   const payload = c.get('jwtPayload');
   if (!supabase) return c.json({ error: "Database client not initialized" }, 500);

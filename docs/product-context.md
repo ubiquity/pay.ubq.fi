@@ -10,9 +10,9 @@ Finding these Permits across numerous repositories and issues is tedious. Furthe
 
 This application aims to streamline the entire Permit claiming process for contributors. It will act as a central hub to:
 
-1.  **Discover:** Automatically scan relevant GitHub repositories and issues to find comments containing Permit data associated with the logged-in user.
+1.  **Discover:** Access permit data associated with the user's connected wallet address. (The backend needs to handle the association between wallets and permits, potentially leveraging existing database links or other mechanisms).
 2.  **Validate:** Check the on-chain status of each discovered Permit to ensure it's valid and claimable.
-3.  **Aggregate & Claim:** Allow users to connect their Web3 wallet and claim all their valid Permits in a single, consolidated blockchain transaction, saving time and gas fees.
+3.  **Aggregate & Claim:** Allow users to use their connected Web3 wallet to claim all their valid Permits in a single, consolidated blockchain transaction (future feature) or individually, saving time and gas fees.
 
 ## 3. Target Users
 
@@ -33,10 +33,10 @@ This application aims to streamline the entire Permit claiming process for contr
 *   **One-Click Claiming:** Simplify the claiming process as much as possible.
 *   **Transparency:** Show the source of Permits (link back to GitHub comment) and the validation status details.
 
-## 6. Initial User Flow
+## 6. User Flow
 
 1.  **Access Application:** The user navigates to the application URL.
-2.  **GitHub Login Prompt:** The user is presented with a clear "Login with GitHub" button.
-3.  **Authentication:** The user clicks the button and is redirected through the standard GitHub OAuth flow to authorize the application.
-4.  **Permit Discovery:** Upon successful authentication, the application uses the user's GitHub credentials (via the backend) to begin scanning relevant repositories/issues for permits associated with their GitHub account.
-5.  **Display & Validation:** Found permits are displayed in the UI, and the validation process begins.
+2.  **Wallet Connection Prompt:** The user is presented with options to connect their Web3 wallet (e.g., MetaMask, WalletConnect).
+3.  **Wallet Connection:** The user selects their preferred wallet and approves the connection request through their wallet extension/application.
+4.  **Permit Discovery & Display:** Upon successful connection, the application uses the user's wallet address to query the backend for associated permits.
+5.  **Validation:** Found permits are displayed in the UI, and the validation process begins (checking on-chain status).
