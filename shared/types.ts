@@ -1,23 +1,39 @@
 // Define shared types between frontend and backend here
 
 // Example placeholder for a Permit type - needs refinement based on actual data
-export interface PermitData {
+export interface PermitDetails {
   nonce: string;
+  amount?: string;
+  token_id?: number | null;
   networkId: number;
-  type: 'erc20-permit' | 'erc721-permit';
-  owner: string; // Funder
-  beneficiary: string; // Recipient
-  tokenAddress: string;
-  amount?: string; // For ERC20
+  beneficiary: string;
   deadline: string;
   signature: string;
-  githubCommentUrl: string;
-  // Add ERC721 specific fields if needed (e.g., from permit.request)
-  erc721Request?: any; // TODO: Define more specific type
+}
 
-  // Frontend-specific status?
-  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching';
+export interface TokenInfo {
+  address: string;
+  network: number;
+}
+
+export interface PartnerInfo {
+  wallet?: {
+    address: string;
+  };
+}
+
+export interface PermitData extends PermitDetails {
+  type: 'erc20-permit' | 'erc721-permit';
+  owner: string; // Funder
+  tokenAddress?: string;
+  githubCommentUrl: string;
+  token?: TokenInfo;
+  partner?: PartnerInfo;
+
+  // Frontend-specific statuses
+  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing' | 'TestFailed' | 'TestSuccess';
   transactionHash?: string;
+  error?: string; // For storing error messages during claim testing
 }
 
 // Add other shared types as needed (e.g., API response types)

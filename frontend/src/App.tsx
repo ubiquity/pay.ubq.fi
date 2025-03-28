@@ -30,12 +30,12 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 }
 
 function DashboardPage() {
-  // Placeholder state for permits etc. - Move state management here or context
+  // State management
   const [permits, setPermits] = useState<PermitData[]>([]); // Use shared type
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO: Implement function to fetch permits from backend API
+  // Fetch permits from backend API
   const fetchPermits = async () => {
     setIsLoading(true);
     setError(null);
@@ -44,37 +44,35 @@ function DashboardPage() {
     if (!token) {
       setError("Not authenticated. Please login.");
       setIsLoading(false);
-      return; // Don't attempt fetch if not logged in
+      return;
     }
 
     try {
-      // Make authenticated request to the backend API
       const response = await fetch(`${BACKEND_API_URL}/api/permits`, {
         headers: {
-          'Authorization': `Bearer ${token}`, // Send JWT
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         }
       });
 
       if (!response.ok) {
-        // Try to parse error message from backend, fallback to status text
         let errorMsg = `Failed to fetch permits: ${response.status} ${response.statusText}`;
         try {
             const errorData = await response.json();
             errorMsg = errorData.error || errorMsg;
-        } catch (e) { /* Ignore JSON parsing error */ }
+        } catch {
+          /* Ignore JSON parsing error */
+        }
         throw new Error(errorMsg);
       }
 
       const data = await response.json();
-
-      // TODO: Add validation for the received permit data structure using Zod or similar
       if (!data || !Array.isArray(data.permits)) {
           console.error("Invalid permit data format received:", data);
           throw new Error("Received invalid data format for permits.");
       }
 
-      setPermits(data.permits); // Update state with the fetched permits
+      setPermits(data.permits);
       console.log("Fetched permits:", data.permits);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -85,71 +83,167 @@ function DashboardPage() {
   };
 
   // Wallet Connection Logic (using wagmi)
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, isConnecting } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
 
+  // Function to link wallet address to backend user record
+  const linkWallet = async (connectedAddress: string) => {
+      console.log(`Attempting to link wallet ${connectedAddress} to user...`);
+      const token = localStorage.getItem('sessionToken');
+      if (!token) {
+          console.error("Cannot link wallet, user not authenticated.");
+          setError("Authentication error, please re-login.");
+          return;
+      }
+      try {
+          const response = await fetch(`${BACKEND_API_URL}/api/wallet/link`, {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ walletAddress: connectedAddress }),
+          });
+          if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ message: 'Failed to link wallet' }));
+              throw new Error(errorData.error || `Failed to link wallet: ${response.status}`);
+          }
+          const result = await response.json();
+          console.log("Wallet link response:", result);
+          fetchPermits();
+      } catch (error) {
+          setError(error instanceof Error ? error.message : 'An unknown error occurred during wallet linking');
+          console.error("Error linking wallet:", error);
+      }
+  };
+
+  // Effect to link wallet once connected
+  useEffect(() => {
+      if (isConnected && address) {
+          linkWallet(address);
+      }
+  }, [isConnected, address]);
+
   const handleConnectWallet = () => {
-    // Example: Connect using the injected provider (MetaMask etc.)
-    connect({ connector: injected() });
+    if (!isConnecting) {
+        connect({ connector: injected() });
+    }
   };
 
-  // TODO: Implement Batch Claim logic
-  const handleClaim = () => {
-    console.log("TODO: Initiate Batch Claim");
+  // Calculate human-readable amount from BigInt wei value
+  const formatAmount = (weiAmount: string): string => {
+    try {
+      const amount = Number(BigInt(weiAmount)) / 10 ** 18;
+      return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (error) {
+      console.warn("Amount formatting failed:", error);
+      return '0.00';
+    }
   };
 
-  // Function to trigger backend scan
-  const handleScan = async () => {
-    console.log("Triggering GitHub scan via backend...");
-    setIsLoading(true); // Use loading state for scan trigger
-    setError(null);
-    const token = localStorage.getItem('sessionToken'); // Get stored JWT
-    if (!token) {
-      setError("Not logged in.");
-      setIsLoading(false);
+  // Check if a permit has all required fields for testing/claiming
+  const hasRequiredFields = (permit: PermitData): boolean => {
+    const baseFields = ['nonce', 'networkId', 'deadline', 'beneficiary', 'owner', 'signature', 'token'];
+    const hasBase = baseFields.every(field => Boolean(permit[field as keyof PermitData]));
+    if (!hasBase || !permit.token?.address) return false;
+
+    // Type-specific checks
+    if (permit.type === 'erc20-permit') {
+      return Boolean(permit.amount);
+    } else if (permit.type === 'erc721-permit') {
+      return permit.token_id !== undefined && permit.token_id !== null;
+    }
+
+    return false; // Should not happen if type is set correctly
+  };
+
+  // Test claiming a single permit
+  const handleTestClaim = async (permitToTest: PermitData) => {
+    if (!isConnected || !address) {
+      setError("Please connect your wallet first");
       return;
     }
 
+    if (!hasRequiredFields(permitToTest)) {
+      setPermits(currentPermits =>
+        currentPermits.map(p =>
+          p.nonce === permitToTest.nonce && p.networkId === permitToTest.networkId
+            ? { ...p, status: 'TestFailed', error: 'Permit missing required fields' }
+            : p
+        )
+      );
+      return;
+    }
+
+    // Update permit status to Testing
+    setPermits(currentPermits =>
+      currentPermits.map(p =>
+        p.nonce === permitToTest.nonce && p.networkId === permitToTest.networkId
+          ? { ...p, status: 'Testing', error: undefined }
+          : p
+      )
+    );
+
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/scan/github`, {
+      // Make API call to test the permit
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch(`${BACKEND_API_URL}/api/permits/test`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json', // Even if body is empty, set content type
+          'Content-Type': 'application/json',
         },
-        // body: JSON.stringify({}) // No body needed for this trigger
+        body: JSON.stringify({
+          ...permitToTest,
+          tokenAddress: permitToTest.token?.address,
+          walletAddress: address,
+          networkId: permitToTest.networkId || permitToTest.token?.network
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to trigger scan' }));
-        throw new Error(errorData.message || `Scan trigger failed with status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Failed to test permit' }));
+        throw new Error(errorData.error || `Failed to test permit: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log("Scan trigger response:", result);
-      // Optionally show a success message to the user
-      alert(result.message || "Scan initiated!"); // Simple alert for now
-      // Maybe trigger fetchPermits again after a delay?
+
+      // Update permit status based on test result
+      setPermits(currentPermits =>
+        currentPermits.map(p =>
+          p.nonce === permitToTest.nonce && p.networkId === permitToTest.networkId
+            ? {
+                ...p,
+                status: result.isValid ? 'TestSuccess' : 'TestFailed',
+                error: result.error
+              }
+            : p
+        )
+      );
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred during scan trigger');
-      console.error("Error triggering scan:", err);
-    } finally {
-      setIsLoading(false);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      // Update permit with error state
+      setPermits(currentPermits =>
+        currentPermits.map(p =>
+          p.nonce === permitToTest.nonce && p.networkId === permitToTest.networkId
+            ? { ...p, status: 'TestFailed', error: errorMessage }
+            : p
+        )
+      );
+      console.error("Error testing permit:", err);
     }
   };
 
-
-  // Fetch permits on component mount
   useEffect(() => {
     fetchPermits();
   }, []);
 
-
   return (
     <div>
       <h1>Permit Claiming App</h1>
-      <p>Welcome! {/* TODO: Display User Info */}</p>
+      <p>Welcome!</p>
 
       {isConnected ? (
         <div>
@@ -157,48 +251,93 @@ function DashboardPage() {
           <button onClick={() => disconnect()}>Disconnect Wallet</button>
         </div>
       ) : (
-        <button onClick={handleConnectWallet}>Connect Wallet</button>
+        <button onClick={handleConnectWallet} disabled={isConnecting}>
+            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        </button>
       )}
-
-      <hr />
-
-      <button onClick={handleScan} disabled={isLoading}>
-        {isLoading ? 'Scanning...' : 'Scan GitHub for Permits'}
-      </button>
 
       <hr />
 
       <h2>Your Permits</h2>
       {isLoading && <p>Loading permits...</p>}
       {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      {/* Summary Info */}
+      {permits.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <p>Found {permits.length} permits total.</p>
+          <p>{permits.filter(hasRequiredFields).length} permits have valid data for testing.</p>
+          <p>{permits.filter(p => p.status === 'TestSuccess').length} permits passed test validation.</p>
+        </div>
+      )}
+
       {permits.length > 0 ? (
         <>
-          <table>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Token/NFT Address</th>
-                <th>Amount</th>
-                <th>Beneficiary</th>
-                <th>Status</th>
-                <th>Source</th>
-                {/* Add more columns as needed */}
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Type</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Token/NFT Address</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>Amount</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Beneficiary</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Status</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Source</th>
+                <th style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {permits.map((permit) => (
-                <tr key={permit.nonce + permit.networkId}> {/* Combine nonce and networkId for key */}
-                  <td>{permit.type}</td>
-                  <td>{permit.tokenAddress}</td>
-                  <td>{permit.amount || 'NFT'}</td>
-                  <td>{permit.beneficiary}</td>
-                  <td>{permit.status || 'Unknown'}</td>
-                  <td><a href={permit.githubCommentUrl} target="_blank" rel="noopener noreferrer">Comment</a></td>
+                <tr key={permit.nonce + permit.networkId} style={{
+                  backgroundColor: !hasRequiredFields(permit) ? '#fff4f4' :
+                                 permit.status === 'TestSuccess' ? '#f4fff4' :
+                                 permit.status === 'TestFailed' ? '#fff4f4' :
+                                 'transparent'
+                }}>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
+                    {permit.amount ? 'ERC20' : 'NFT'}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd', fontFamily: 'monospace', fontSize: '0.9em' }}>
+                    {permit.token?.address || permit.tokenAddress || 'Missing Address'}
+                    {permit.networkId && <span style={{ fontSize: '0.8em', color: '#666', marginLeft: '5px' }}>
+                      ({permit.networkId === 100 ? 'WXDAI' : 'ETH'})
+                    </span>}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right', fontFamily: 'monospace' }}>
+                    {permit.amount ? formatAmount(permit.amount) : 'NFT'}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd', fontFamily: 'monospace', fontSize: '0.9em' }}>{permit.beneficiary}</td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
+                    <div style={{
+                      color: permit.status === 'TestSuccess' ? '#1a8917' :
+                             permit.status === 'TestFailed' ? '#d73a49' :
+                             permit.status === 'Testing' ? '#b08800' : '#666',
+                      fontWeight: permit.status ? 'bold' : 'normal'
+                    }}>
+                      {permit.status || 'Ready'}
+                    </div>
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
+                    {permit.githubCommentUrl ? (
+                      <a href={permit.githubCommentUrl} target="_blank" rel="noopener noreferrer">Comment</a>
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
+                    <button
+                      onClick={() => handleTestClaim(permit)}
+                      disabled={!isConnected || permit.status === 'Testing' || permit.status === 'TestSuccess' || !hasRequiredFields(permit)}
+                    >
+                      {permit.status === 'Testing' ? 'Testing...' :
+                       permit.status === 'TestSuccess' ? 'Valid!' :
+                       permit.status === 'TestFailed' ? 'Test Failed' :
+                       !hasRequiredFields(permit) ? 'Invalid Data' : 'Test Claim'}
+                    </button>
+                    {permit.error && <div style={{ color: 'red', fontSize: '0.8em' }}>{permit.error}</div>}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button onClick={handleClaim}>Claim Selected/All Valid Permits</button>
         </>
       ) : (
         !isLoading && <p>No permits found or fetched yet.</p>
@@ -210,12 +349,11 @@ function DashboardPage() {
 function GitHubCallback() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from context
+  const { login } = useAuth();
   const [message, setMessage] = useState('Processing GitHub callback...');
-  const [isProcessing, setIsProcessing] = useState(false); // Add state to prevent double fetch
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Prevent running the effect twice due to StrictMode or other reasons
     if (isProcessing) return;
 
     const searchParams = new URLSearchParams(location.search);
@@ -225,14 +363,12 @@ function GitHubCallback() {
     if (error) {
       setMessage(`GitHub login failed: ${error}`);
       console.error("GitHub OAuth Error:", error);
-      // Optionally redirect to login page after delay
       setTimeout(() => navigate('/'), 3000);
     } else if (code) {
       setMessage('GitHub login successful! Exchanging code...');
       console.log("GitHub OAuth Code:", code);
-      setIsProcessing(true); // Mark as processing
+      setIsProcessing(true);
 
-      // Send 'code' to backend API to exchange for an access token
       fetch(`${BACKEND_API_URL}/api/auth/github/callback`, {
         method: 'POST',
         headers: {
@@ -247,12 +383,11 @@ function GitHubCallback() {
           return res.json();
         })
         .then(data => {
-          // TODO: Ensure backend returns a consistent token format (e.g., { token: "..." })
           if (data && data.token) {
             console.log("Backend token exchange successful.");
             setMessage('Login complete! Redirecting...');
-            login(data.token); // Store the received session token
-            navigate('/', { replace: true }); // Redirect to the main dashboard
+            login(data.token);
+            navigate('/', { replace: true });
           } else {
             throw new Error("Invalid token data received from backend.");
           }
@@ -260,54 +395,47 @@ function GitHubCallback() {
         .catch(err => {
           console.error("Backend token exchange failed:", err);
           setMessage(`Login failed: ${err.message}`);
-          setIsProcessing(false); // Reset processing state on error
-          setTimeout(() => navigate('/'), 3000); // Redirect back to login on error
+          setIsProcessing(false);
+          setTimeout(() => navigate('/'), 3000);
         });
 
     } else {
       setMessage('Invalid GitHub callback.');
-      setIsProcessing(false); // Reset processing state
+      setIsProcessing(false);
       setTimeout(() => navigate('/'), 3000);
     }
-  }, [location, navigate, login, isProcessing]); // Add dependencies
+  }, [location, navigate, login, isProcessing]);
 
   return <div>{message}</div>;
 }
 
-
 function App() {
-  const { isLoggedIn, isLoading, logout } = useAuth(); // Use auth state and logout
+  const { isLoggedIn, isLoading, logout } = useAuth();
 
   const handleLogin = () => {
-    // Redirect the user to GitHub for authorization
     window.location.href = GITHUB_AUTH_URL;
   };
 
-  // TODO: Implement logout properly in DashboardPage or header component
   const handleLogout = () => {
      logout();
   };
 
-  // Show loading indicator while checking auth status
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  // Return statement requires parenthesis around the JSX
   return (
-    <> {/* Fragment start */}
+    <>
       <Routes>
         <Route path="/github/callback" element={<GitHubCallback />} />
         <Route
           path="/"
           element={isLoggedIn ? <DashboardPage /> : <LoginPage onLogin={handleLogin} />}
         />
-        {/* Add other routes as needed */}
       </Routes>
-      {/* Example Logout button - move to a proper header/layout component later */}
       {isLoggedIn && <button onClick={handleLogout} style={{ position: 'absolute', top: 10, right: 10 }}>Logout</button>}
-    </> // Fragment end
-  ); // Parenthesis for return end
+    </>
+  );
 }
 
 export default App;
