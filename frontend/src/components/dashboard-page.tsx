@@ -313,11 +313,12 @@ export function DashboardPage() {
       <PermitsTable
         permits={permits}
         onClaimPermit={handleClaimPermit}
-        isConnected={isConnected}
-        chain={chain}
-        isConfirming={isConfirming}
-        confirmingHash={hash} // Pass the current hash being confirmed
-      />
-    </div>
+         isConnected={isConnected}
+         chain={chain}
+         isConfirming={isConfirming}
+         confirmingHash={hash} // Pass the current hash being confirmed
+         isLoading={isLoading} // Pass loading state down
+       />
+     </div>
   );
 }
