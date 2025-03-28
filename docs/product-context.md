@@ -10,7 +10,7 @@ Finding these Permits across numerous repositories and issues is tedious. Furthe
 
 This application aims to streamline the entire Permit claiming process for contributors. It will act as a central hub to:
 
-1.  **Discover:** Automatically scan relevant GitHub repositories and issues to find comments containing Permit data.
+1.  **Discover:** Automatically scan relevant GitHub repositories and issues to find comments containing Permit data associated with the logged-in user.
 2.  **Validate:** Check the on-chain status of each discovered Permit to ensure it's valid and claimable.
 3.  **Aggregate & Claim:** Allow users to connect their Web3 wallet and claim all their valid Permits in a single, consolidated blockchain transaction, saving time and gas fees.
 

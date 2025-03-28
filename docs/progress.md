@@ -9,18 +9,25 @@
     *   Defined project goals and requirements.
     *   Created detailed rewrite plan (`docs/rewrite-plan.md`).
     *   Initialized core documentation files.
+    *   Incorporated user feedback on tech stack and structure.
+    *   Recreated documentation after project cleanup.
 
 ## 2. What Works
 
 *   N/A - Implementation has not yet begun.
 
+## 1. Current Status
+
+*   **Phase 1: Backend Foundation & Scanning** - IN PROGRESS
+    *   Standard repository structure setup (`frontend/`, `backend/`, `shared/`).
+    *   Deno projects initialized (`backend/api/`, `backend/scanner/`) with basic config and entry points.
+    *   Frontend project scaffolded (`frontend/`) and dependencies installed.
+    *   Supabase database schema definition - PENDING USER ACTION.
+
 ## 3. What's Next (High Level)
 
 *   **Phase 1: Backend Foundation & Scanning**
-    *   Setup monorepo structure (Bun workspaces).
-    *   Initialize Deno projects (API, Scanner).
-    *   Define Supabase database schema.
-    *   Implement GitHub Scanner Worker.
+    *   Implement GitHub Scanner Worker logic (`backend/scanner/main.ts`).
 *   **Phase 2: Frontend Foundation & Permit Display**
 *   **Phase 3: Validation Logic**
 *   **Phase 4: Batch Claiming**
@@ -31,7 +38,6 @@
 
 ## 4. Known Issues / Blockers
 
-*   Specific error handling strategies need definition during implementation.
-*   Choice of viem-compatible wallet connector library (e.g., `wagmi`, Web3Modal) is pending.
+*   Supabase project setup/access needed for schema definition.
 
 *(This document tracks the overall progress against the implementation phases.)*

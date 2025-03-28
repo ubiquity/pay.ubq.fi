@@ -30,7 +30,7 @@ graph LR
     style GitHub fill:#eee,stroke:#333,stroke-width:2px
 ```
 
-*   **Frontend (React):** Handles user interaction, wallet management, permit display, and initiates claims. Uses raw CSS for styling. Hosted on Deno Deploy.
+*   **Frontend:** Handles user interaction, wallet management, permit display, and initiates claims. Uses raw CSS for styling.
 *   **Backend API Worker (Deno):** Serves data to the frontend using Hono for routing, interacts with the database, potentially performs validation.
 *   **Backend Scanner Worker (Deno):** Periodically scans GitHub for permits and populates the database. Triggered via Deno Deploy's cron feature.
 *   **Database (Supabase):** Stores permit data, claim status, and user information.
@@ -42,11 +42,11 @@ graph LR
 *   **Background Worker:** The GitHub Scanner operates independently as a Deno Deploy function triggered by a cron schedule.
 *   **Database as Cache/Index:** The database stores permit data found on GitHub, acting as an index for efficient retrieval and status tracking.
 *   **Client-Side Claiming:** Claim transactions are constructed and signed on the frontend, leveraging the user's connected wallet.
-*   **Multicall Aggregation:** Batch claiming relies on constructing multicall transactions using existing deployed contracts (e.g., MakerDAO's) to minimize user interactions and gas costs.
+*   **Multicall Aggregation:** Batch claiming relies on constructing multicall transactions to minimize user interactions and gas costs.
 *   **Blockchain Interaction Library:** Use of `viem` for blockchain interactions.
-*   **RPC Management:** Utilizes the existing custom RPC handler (`use-rpc-handler.ts`).
+*   **RPC Management:** Use existing custom RPC handler (`use-rpc-handler.ts`).
 *   **Type Safety:** TypeScript used across frontend and backend. Zod likely for API validation.
-*   **Testing:** `bun test` for unit/integration tests, React Testing Library for component tests.
+*   **Testing:** `bun test` for unit/integration tests, React Testing Library for component tests (if using React).
 
 ## 3. Data Flow
 

@@ -11,7 +11,7 @@ To create a new web application from scratch that allows users to efficiently fi
 *   **Blockchain Validation:** Verify the validity of found Permits on the relevant blockchain network (e.g., check if already claimed, check signature validity, check deadline).
 *   **Batch Claiming:** Allow users to connect their Web3 wallet and claim multiple valid Permits in a single, aggregated transaction for efficiency.
 *   **User Interface:** Provide a clear and intuitive interface for users to:
-    *   Initiate GitHub scans.
+    *   Initiate GitHub scans (or view automatically scanned results).
     *   View found and validated Permits.
     *   Connect their wallet.
     *   Initiate the batch claim process.
@@ -25,7 +25,7 @@ To create a new web application from scratch that allows users to efficiently fi
 
 ## 4. Success Metrics
 
-*   Users can successfully find Permits posted in GitHub comments.
+*   Users can successfully find Permits posted in GitHub comments associated with their account.
 *   Permit validation accurately reflects on-chain status.
 *   Users can successfully claim valid Permits via the batch claim mechanism.
 *   The application is reliable, performant, and easy to use.

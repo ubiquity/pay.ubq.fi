@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts",
+    "start": "deno run main.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx"
+  },
+  "imports": {
+    "hono/": "https://deno.land/x/hono@v4.1.5/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.8"
+    // Add other imports as needed
+  }
+}

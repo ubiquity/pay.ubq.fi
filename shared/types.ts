@@ -1,99 +1,23 @@
-export interface GiftCard {
-  productId: number;
-  productName: string;
-  global: boolean;
-  supportsPreOrder: boolean;
-  senderFee: number;
-  senderFeePercentage: number;
-  discountPercentage: number;
-  denominationType: "FIXED" | "RANGE";
-  recipientCurrencyCode: string;
-  minRecipientDenomination: number;
-  maxRecipientDenomination: number;
-  senderCurrencyCode: string;
-  minSenderDenomination: number;
-  maxSenderDenomination: number;
-  fixedRecipientDenominations: number[];
-  fixedSenderDenominations: number[];
-  fixedRecipientToSenderDenominationsMap: ValueToPriceMap;
-  metadata?: object;
-  logoUrls: string[];
-  brand: {
-    brandId: number;
-    brandName: string;
-  };
-  country: {
-    isoName: string;
-    name: string;
-    flagUrl: string;
-  };
-  redeemInstruction: {
-    concise: string;
-    verbose: string;
-  };
+// Define shared types between frontend and backend here
+
+// Example placeholder for a Permit type - needs refinement based on actual data
+export interface PermitData {
+  nonce: string;
+  networkId: number;
+  type: 'erc20-permit' | 'erc721-permit';
+  owner: string; // Funder
+  beneficiary: string; // Recipient
+  tokenAddress: string;
+  amount?: string; // For ERC20
+  deadline: string;
+  signature: string;
+  githubCommentUrl: string;
+  // Add ERC721 specific fields if needed (e.g., from permit.request)
+  erc721Request?: any; // TODO: Define more specific type
+
+  // Frontend-specific status?
+  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching';
+  transactionHash?: string;
 }
 
-export interface OrderedProduct {
-  productId: number;
-  productName: string;
-  countryCode: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  currencyCode: string;
-  brand: {
-    brandId: number;
-    brandName: string;
-  };
-}
-
-export interface Order {
-  transactionId: number;
-  amount: number;
-  discount: number;
-  currencyCode: string;
-  fee: number;
-  recipientEmail: string;
-  customIdentifier: string;
-  status: string;
-  product: OrderedProduct;
-  smsFee: number;
-  recipientPhone: number;
-  transactionCreatedTime: string; //"2022-02-28 13:46:00",
-  preOrdered: boolean;
-}
-
-export interface OrderTransaction {
-  transactionId: number;
-  amount: number;
-  discount: number;
-  currencyCode: string;
-  fee: number;
-  recipientEmail: string;
-  customIdentifier: string;
-  status: string;
-  product: OrderedProduct;
-  smsFee: number;
-  recipientPhone: number;
-  transactionCreatedTime: string; //"2022-02-28 13:46:00",
-  preOrdered: boolean;
-}
-
-export interface RedeemCode {
-  cardNumber: string;
-  pinCode: string;
-}
-
-export interface ExchangeRate {
-  senderCurrency: string;
-  senderAmount: number;
-  recipientCurrency: string;
-  recipientAmount: number;
-}
-
-export interface PriceToValueMap {
-  [key: string]: number;
-}
-export interface ValueToPriceMap {
-  [key: string]: number;
-}
+// Add other shared types as needed (e.g., API response types)
