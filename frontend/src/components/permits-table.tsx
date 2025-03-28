@@ -25,7 +25,7 @@ export function PermitsTable({
   // Show spinner while loading
   if (isLoading) {
     // You might want a more styled spinner component later
-    return <div className="section-loading-indicator"><div className="spinner"></div> Loading permits...</div>;
+    return <div className="section-loading-indicator"><div className="spinner"></div><span>Loading permits...</span></div>;
   }
 
   // Show message only after loading is finished and there are no permits
@@ -38,12 +38,12 @@ export function PermitsTable({
     <table className="permits-table">
       <thead>
         <tr>
-          <th>Type</th>
-          <th>Token Address</th>
-          <th className="align-right">Amount</th>
-          <th>Status</th>
-          <th>Source</th>
+          {/* Removed Type */}
+          {/* Removed Token Address */}
+          <th>Source</th> {/* Moved Source to first */}
+          <th>Reward</th>
           <th>Actions</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>

@@ -19,7 +19,10 @@ export default defineConfig({
     }), // svgr plugin BEFORE react plugin
     react() // React plugin after svgr
   ],
-  // server: { hmr: false } // Re-enable HMR globally
+  server: {
+    hmr: false // Disable HMR globally
+    // Removed watch config as HMR is disabled
+  },
   css: {
     devSourcemap: true // Ensure CSS source maps are enabled in dev
   },

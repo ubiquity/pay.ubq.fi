@@ -19,6 +19,16 @@
   --font-family: "Ubiquity Nova", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+:root {
+  --left-table-column-width: 120px;
+  --background-color-default-brightness: 2%;
+  --background-color-light-brightness: 6%;
+  --border-brightness: 5%;
+  --background-color-default: hsl(225 50% var(--background-color-default-brightness) / 1);
+  --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
+  --border-color: hsl(225 25% var(--border-brightness) / 1);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #111;
@@ -75,10 +85,13 @@ h1 {
 }
 
 header {
-  margin-bottom: 4px;
+  /* margin-bottom: 4px; */
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
+  max-width: 563px;
+  margin: 4px auto;
+  box-shadow: inset 0 0 36px #00bfff10;
 }
 
 main {
@@ -201,6 +214,8 @@ footer {
   backdrop-filter: blur(12px);
   /* background-color: #00000040; */
   border: 1px solid #ffffff10;
+  margin: 0 auto;
+  max-width: 563px;
 }
 
 .spinner {
@@ -841,20 +856,39 @@ details {
 }
 
 .permits-table {
-  width: 100%;
+  /* width: 100%; */
   border-collapse: collapse;
-  background-color: #000;
+  /* background-color: #000; */
+  /* background-color: var(--background-color-default); */
+  /* position: absolute; */
+  box-shadow: inset 0 0 96px #00bfff10;
+  transition: 0.25s all ease-in-out;
+  /* border: 1px solid var(--border-color); */
+  /* transform: translate(-50%, -50%); */
+  width: 100%;
+  max-width: 563px;
+  overflow: hidden;
+  /* box-shadow: 0 12px 64px #00000010;
 }
 
 .permits-table th,
 .permits-table td {
   padding: 8px;
   /* border-bottom: 1px solid #dddd40; */
+  /* backdrop-filter: blur(24px); */
+  /* margin-bottom: 4px; */
+  backdrop-filter: blur(12px);
+  border: 1px solid #ffffff10;
+  text-align: center;
+  margin: 0 auto;
+  /* border-radius: 4px; */
+  /* box-sizing: border-box; */
 }
 
 .permits-table th {
   text-align: center; /* Default alignment for headers */
   font-weight: bold;
+  padding: 12px;
 }
 
 .permits-table .align-right {
@@ -874,7 +908,8 @@ details {
 }
 
 .permits-table .subtle-text {
-  color: #666640;
+  color: #ffffff80;
+  text-align: center;
 }
 
 .permits-table .margin-left-5 {
@@ -898,7 +933,9 @@ details {
 }
 
 .permits-table .status-error {
-  color: red;
+  /* color: red; */
+  text-align: center;
+  font-size: 13.3333px;
 }
 
 .permits-table .status-test-failed {
@@ -907,6 +944,7 @@ details {
 
 .permits-table .row-invalid {
   background-color: #ffffff20; /* Light red background - Used for invalid, test failed, prerequisite failed */
+  opacity: 0.25;
 }
 
 .permits-table .row-claimed {
@@ -972,10 +1010,53 @@ button {
   padding: 8px 16px;
   border-radius: 4px;
   opacity: 0.75;
+  /* border: 1px solid transparent; */
+  /* margin: 1px; */
 }
 button:hover {
   opacity: 1;
 }
 button:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.section-loading-indicator > .spinner {
+  margin-right: 16px;
+}
+
+.github-comment-url {
+  text-align: right;
+}
+.github-comment-url > a {
+  text-decoration: none;
+  opacity: 0.5;
+}
+.github-comment-url > a:hover {
+  opacity: 1;
+}
+div#controls {
+  text-align: center;
+  /* margin-top: 4px; */
+  /* width: 50vw; */
+  width: 100%;
+  max-width: 563px;
+  margin: 4px auto;
+  backdrop-filter: blur(12px);
+  /* border: 1px solid #ffffff10; */
+  text-align: center;
+  max-width: 563px;
+  margin: 4px auto;
+  /* box-shadow: inset 0 0 36px #00bfff10; */
+}
+div#controls > button {
+  width: calc(50% - 2px);)50% - 4px);)50% - 4px;)50% - 4p;)50% - 4;)50% -;)50%
+  -webkit-fill-available;)50%
+  -webkit-fill-available;)50% -;)50%;)50%;)50;)5;);)4;);
+  margin: 0 1px;
+}
+
+
+thead {
+    display: none;
 }
