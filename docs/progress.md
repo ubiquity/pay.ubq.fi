@@ -1,38 +1,40 @@
 # Progress: Permit Claiming Application (Rewrite)
 
-**Date:** 2025-03-29
+**Date:** 2025-03-29 (Updated)
 
 ## 1. Current Status Summary
 
 Implementation is progressing through multiple phases simultaneously, focusing on core functionality like permit fetching, validation, and claiming.
 
-*   **Phase 1: Backend Foundation & Auth**: Mostly COMPLETE (Auth callback needs full verification, token encryption TBD). JWT middleware implemented. Wallet linking endpoint implemented.
-*   **Phase 2: Frontend Foundation & Auth**: Mostly COMPLETE (Auth context, login flow, basic layout, wallet connection via `wagmi`).
-*   **Phase 3: GitHub Scanning & Permit Display**: IN PROGRESS. Backend `/api/permits` fetches from DB, joins related data (token, owner, location, beneficiary). Frontend displays permits. Actual GitHub scanning logic TBD.
-*   **Phase 4: Validation Logic**: IN PROGRESS. Backend on-chain validation implemented but facing RPC errors. Frontend `hasRequiredFields` check implemented but needs debugging. Test endpoint `/api/permits/test` implemented.
-*   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) partially implemented in frontend using `useWriteContract`. Batching TBD.
-*   **Phase 6: Claim Status Update & Polish**: STARTED. Frontend uses `useWaitForTransactionReceipt` for basic status updates. Backend endpoint `/api/permits/update-status` is placeholder. UI polishing partially done.
+*   **Phase 1: Backend Foundation & Auth**: Mostly COMPLETE.
+*   **Phase 2: Frontend Foundation & Auth**: COMPLETE (Auth context, login flow, basic layout, wallet connection via `wagmi`). Components refactored.
+*   **Phase 3: GitHub Scanning & Permit Display**: IN PROGRESS. Backend `/api/permits` fetches from DB. Frontend displays permits. GitHub scanning TBD.
+*   **Phase 4: Validation Logic**: IN PROGRESS. Backend validation needs RPC error handling. Frontend `hasRequiredFields` implemented. **Frontend pre-claim checks (owner balance, Permit2 allowance) implemented.**
+*   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) implemented in frontend. Batching TBD.
+*   **Phase 6: Claim Status Update & Polish**: IN PROGRESS. Frontend uses `useWaitForTransactionReceipt` and displays prerequisite check results/errors. Backend status update TBD.
 *   **Phase 7: Documentation & Deployment**: IN PROGRESS (Docs update). Deployment TBD.
 
 ## 2. What Works
 
-*   **Project Structure**: Standard monorepo setup.
+*   **Project Structure**: Standard monorepo setup with refactored frontend components.
 *   **Core Tech**: Backend (Deno/Hono), Frontend (React/Vite/Wagmi), Shared Types.
-*   **Authentication**: GitHub OAuth flow redirects, backend callback (needs full test), JWT middleware.
-*   **Wallet Integration**: Connection via `wagmi`, wallet linking API call (DB errors fixed).
-*   **Permit Fetching**: Backend `/api/permits` fetches from DB, joins related tables (token, partner, location), fetches beneficiary address (via 2-step query).
+*   **Authentication**: GitHub OAuth flow redirects, backend callback, JWT middleware.
+*   **Wallet Integration**: Connection via `wagmi`.
+*   **Permit Fetching**: Backend `/api/permits` fetches from DB, joins related tables, fetches beneficiary address. Frontend fetches reliably on connect.
 *   **Permit Display**: Frontend displays permits with formatted amount, type, beneficiary, source link, status colors.
-*   **Permit Testing**: Backend `/api/permits/test` endpoint functional (validates against request data + fetched owner).
-*   **Single Claim (Initial)**: Frontend `handleClaimPermit` uses `useWriteContract` to initiate `permitTransferFrom`, `useWaitForTransactionReceipt` handles confirmation.
+*   **Permit Testing**: Backend `/api/permits/test` endpoint functional.
+*   **Single Claim**: Frontend `handleClaimPermit` uses `useWriteContract` to initiate `permitTransferFrom`, `useWaitForTransactionReceipt` handles confirmation. **Includes pre-claim checks for owner balance and Permit2 allowance.** UI updated to reflect check status and potential issues (low balance/allowance).
+*   **Component Structure**: Frontend components (`App`, `LoginPage`, `DashboardPage`, `GitHubCallback`) refactored into separate files.
+*   **Bug Fixes**: Resolved multiple permit fetch issue. Resolved incorrect claim button disabling.
 
 ## 3. What's Next (High Level)
 
-*   **Debug Frontend Validation**: Fix `hasRequiredFields` check (ensure `owner`/`signature` data is received/checked correctly).
-*   **Finalize Single Claim**: Test `handleClaimPermit` thoroughly, improve UI feedback (loading/error states).
+*   **Verify Pre-Claim Checks**: Confirm frontend balance/allowance checks work correctly and display appropriate warnings/errors.
+*   **Test Single Claim**: Thoroughly test the end-to-end single claim flow, including success and failure cases (due to pre-claim checks or on-chain errors).
 *   **Address RPC Errors**: Improve backend validation error handling.
 *   **Implement GitHub Scanning**: Add logic to backend to scan GitHub for new permits (Phase 3).
 *   **Implement Batch Claiming**: Add multicall logic to frontend (Phase 5).
-*   **Implement Backend Status Update**: Create `/api/permits/update-status` endpoint (Phase 6).
+*   **(Optional)** Implement Backend Status Update: Create `/api/permits/update-status` endpoint (Phase 6).
 *   **UI/UX Polish**: Refine loading states, error messages, overall flow (Phase 6).
 *   **Final Documentation & Deployment** (Phase 7).
 
@@ -40,11 +42,11 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 
 ## 4. Known Issues / Blockers
 
-*   **Frontend Validation**: `hasRequiredFields` check still failing ("Invalid Data" shown), likely due to missing `owner` or `signature` data received from backend. Needs verification.
 *   **RPC Errors**: Intermittent `connection reset` errors from Gnosis RPC during backend on-chain validation.
 *   **GitHub Scanning**: Logic not implemented yet.
 *   **Batch Claiming**: Not implemented yet.
 *   **Token Encryption**: Secure storage for GitHub token not implemented yet.
 *   **Auth Flow**: Full end-to-end verification of GitHub OAuth callback and session management needed.
+*   **Claim Failures**: `TRANSFER_FROM_FAILED` error was occurring; added pre-claim checks for balance/allowance as a likely fix. Needs verification.
 
 *(This document tracks the overall progress against the implementation phases.)*
