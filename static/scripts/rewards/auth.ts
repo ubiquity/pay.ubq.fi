@@ -3,6 +3,7 @@ import { supabase } from "./render-transaction/supabase-getters";
 
 export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
 
+// eslint-disable-next-line  @typescript-eslint/naming-convention
 export interface OAuthToken {
   provider_token: string;
   access_token: string;
