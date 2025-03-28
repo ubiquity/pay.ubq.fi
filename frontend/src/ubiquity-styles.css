@@ -1,3 +1,15 @@
 * {
   font-family: "Ubiquity Nova", sans-serif;
+  color: #fff;
+  background-color: unset;
+  border: unset;
+}
+body {
+  background-color: #000;
+}
+button {
+  cursor: pointer;
+  background-color: #ffffff20;
+  padding: 8px 16px;
+  border-radius: 4px;
 }

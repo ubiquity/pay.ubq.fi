@@ -24,7 +24,7 @@
 .permits-table th,
 .permits-table td {
   padding: 8px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ddd40;
 }
 
 .permits-table th {
@@ -48,7 +48,7 @@
 }
 
 .permits-table .subtle-text {
-  color: #666;
+  color: #66640;
 }
 
 .permits-table .margin-left-5 {
@@ -64,11 +64,11 @@
 }
 
 .permits-table .status-claimed {
-  color: #1a8917; /* Green */
+  color: #1a891740; /* Green */
 }
 
 .permits-table .status-unclaimed {
-  color: #b35f00; /* Orange/Brown */
+  color: #b35f0040; /* Orange/Brown */
 }
 
 .permits-table .status-error {
@@ -80,31 +80,31 @@
 }
 
 .permits-table .row-invalid {
-  background-color: #fff4f4; /* Light red background - Used for invalid, test failed, prerequisite failed */
+  background-color: #fff4f440; /* Light red background - Used for invalid, test failed, prerequisite failed */
 }
 
 .permits-table .row-claimed {
-  background-color: #e6ffed; /* Light green */
+  background-color: #e6ffed40; /* Light green */
 }
 
 .permits-table .row-claim-failed {
-  background-color: #ffebe9; /* Light red/pink */
+  background-color: #ffebe940; /* Light red/pink */
 }
 
 .permits-table .row-claiming {
-  background-color: #fff9e6; /* Light yellow */
+  background-color: #fff9e640; /* Light yellow */
 }
 
 /* .row-prerequisite-failed uses .row-invalid */
 
 .permits-table .row-valid {
-  background-color: #f4fff4; /* Lighter green */
+  background-color: #f4fff440; /* Lighter green */
 }
 
 /* .row-test-failed uses .row-invalid */
 
 .permits-table .row-warning {
-  background-color: #fffbea; /* Light yellow background */
+  background-color: #fffbea40; /* Light yellow background */
 }
 
 .permits-table .warning-text {
@@ -115,7 +115,7 @@
 
 /* Status Colors - Add specific ones */
 .permits-table .status-claiming { /* Same as testing */
-  color: #b08800; /* Yellow/Orange */
+  color: #b0880040; /* Yellow/Orange */
 }
 
 /* .status-valid uses .status-claimed */
