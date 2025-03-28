@@ -25,7 +25,8 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Permit Testing**: Backend `/api/permits/test` endpoint functional.
 *   **Single Claim**: Frontend `handleClaimPermit` (in `DashboardPage`) uses `useWriteContract` to initiate `permitTransferFrom`, `useWaitForTransactionReceipt` handles confirmation. **Includes pre-claim checks (in `permit-utils.ts`) for owner balance and Permit2 allowance.** UI (`PermitRow`) updated to reflect check status and potential issues.
 *   **Component Structure**: Frontend components (`App`, `LoginPage`, `DashboardPage`, `GitHubCallback`, `PermitsTable`, `PermitRow`) refactored into separate files. Helper functions moved to `permit-utils.ts`. `DashboardPage` line count significantly reduced.
-*   **Styling**: Inline styles removed and migrated to `app-styles.css`.
+*   **Styling**: Inline styles removed and migrated to `app-styles.css`. `ubiquity-styles.css` and `grid-styles.css` imported.
+*   **Background**: Integrated WebGL grid animation from `the-grid.ts` into the `#grid` element defined in `index.html`.
 *   **Bug Fixes**: Resolved multiple permit fetch issue. Resolved incorrect claim button disabling.
 
 ## 3. What's Next (High Level)

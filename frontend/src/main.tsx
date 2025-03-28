@@ -7,7 +7,9 @@ import { gnosis, mainnet } from 'wagmi/chains'; // Import chains used by the app
 import App from './App.tsx';
 import { AuthProvider } from './auth-context.tsx'; // Import AuthProvider
 import './app-styles.css'; // Import global styles
-import './ubiquity-styles.css'; // Import global styles
+import './ubiquity-styles.css'; // Import ubiquity styles
+import './grid-styles.css'; // Import grid styles (once)
+import { grid } from './the-grid'; // Import the grid function (once)
 
 // Configure wagmi
 // TODO: Consider adding more chains if needed (e.g., localhost for dev)
@@ -23,8 +25,17 @@ export const config = createConfig({ // Export config
 // Create QueryClient instance
 const queryClient = new QueryClient();
 
+const rootElement = document.getElementById('root');
+const gridElement = document.getElementById('grid'); // Get the grid container
 
-createRoot(document.getElementById('root')!).render(
+if (!rootElement) {
+  throw new Error("Could not find root element to mount React app");
+}
+if (!gridElement) {
+  console.warn("Could not find grid element for background animation"); // Warn if grid element is missing
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}> {/* Wrap AuthProvider */}
@@ -37,3 +48,11 @@ createRoot(document.getElementById('root')!).render(
     </WagmiProvider>
   </StrictMode>,
 );
+
+// Initialize the grid animation, targeting the #grid div if it exists
+if (gridElement) {
+  // Call grid with the element and the callback
+  grid(gridElement, () => document.body.classList.add("grid-loaded"));
+}
+
+// Removed commented out duplicate import and call
