@@ -144,18 +144,31 @@ function DashboardPage() {
 
   // Check if a permit has all required fields for testing/claiming
   const hasRequiredFields = (permit: PermitData): boolean => {
-    const baseFields = ['nonce', 'networkId', 'deadline', 'beneficiary', 'owner', 'signature', 'token'];
-    const hasBase = baseFields.every(field => Boolean(permit[field as keyof PermitData]));
-    if (!hasBase || !permit.token?.address) return false;
+    const logPrefix = `Permit ${permit.nonce}:`;
+    let isValid = true;
+
+    if (!permit.nonce) { console.warn(logPrefix, "Missing nonce"); isValid = false; }
+    if (!permit.networkId) { console.warn(logPrefix, "Missing networkId"); isValid = false; }
+    if (!permit.deadline) { console.warn(logPrefix, "Missing deadline"); isValid = false; }
+    if (!permit.beneficiary) { console.warn(logPrefix, "Missing beneficiary"); isValid = false; }
+    if (!permit.owner) { console.warn(logPrefix, "Missing owner"); isValid = false; }
+    if (!permit.signature) { console.warn(logPrefix, "Missing signature"); isValid = false; }
+    if (!permit.token?.address) { console.warn(logPrefix, "Missing token address"); isValid = false; }
 
     // Type-specific checks
     if (permit.type === 'erc20-permit') {
-      return Boolean(permit.amount);
+      if (!permit.amount) { console.warn(logPrefix, "Missing amount for ERC20"); isValid = false; }
     } else if (permit.type === 'erc721-permit') {
-      return permit.token_id !== undefined && permit.token_id !== null;
+      if (permit.token_id === undefined || permit.token_id === null) { console.warn(logPrefix, "Missing token_id for ERC721"); isValid = false; }
+    } else {
+      console.warn(logPrefix, "Unknown permit type:", permit.type);
+      isValid = false;
     }
 
-    return false; // Should not happen if type is set correctly
+    if (!isValid) {
+      console.warn(logPrefix, "Permit data:", permit);
+    }
+    return isValid;
   };
 
   // Test claiming a single permit

@@ -180,7 +180,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
   try {
     const userGitHubIdInt = parseInt(githubUserId, 10);
 
-    // Fetch permits JOINED with tokens and owner wallet, filtering by beneficiary_id and transaction IS NULL
+    // Step 1: Fetch permits with related token, partner, and location data
     console.log(`Querying permits for beneficiary_id: ${userGitHubIdInt}`);
     const { data: potentialPermits, error: permitError } = await supabase
         .from(PERMITS_TABLE)
@@ -200,7 +200,7 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         throw new Error(`Supabase permit fetch error: ${permitError.message}`);
     }
 
-    console.log("Raw potential permits from DB:", potentialPermits); // Log raw results
+    console.log("Raw potential permits from DB:", potentialPermits);
 
     if (!potentialPermits || potentialPermits.length === 0) {
         console.log(`No potential permits found in DB for user ${payload?.gh_login}`);
@@ -208,21 +208,42 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         return c.json({ permits: [] });
     }
 
-    // 3. Perform On-Chain Validation
-    console.log(`Found ${potentialPermits.length} potential permits in DB, validating on-chain...`);
+    // Step 2: Fetch beneficiary wallet addresses separately
+    const beneficiaryIds = potentialPermits.map(p => String(p.beneficiary_id));
+    const { data: users, error: usersError } = await supabase
+      .from(USERS_TABLE)
+      .select('github_id, wallet_address')
+      .in('github_id', beneficiaryIds);
+
+    if (usersError) {
+      console.error("Supabase user fetch error:", usersError);
+      throw new Error(`Supabase user fetch error: ${usersError.message}`);
+    }
+
+    const beneficiaryWalletMap = new Map(users.map(u => [String(u.github_id), u.wallet_address]));
+    console.log("Beneficiary Wallet Map:", beneficiaryWalletMap);
+
+    // Step 3: Construct final permit data and perform On-Chain Validation
+    console.log(`Processing ${potentialPermits.length} potential permits, validating on-chain...`);
     const validationPromises = potentialPermits.map(async (permit) => {
         const tokenData = permit.token;
         const ownerWalletData = permit.partner?.wallet;
-        // Construct permit data with all required fields
+        const beneficiaryWalletAddress = beneficiaryWalletMap.get(String(permit.beneficiary_id)); // Get address from map
+
+        console.log(`Raw permit object for nonce ${permit.nonce}:`, permit);
+
+        // Skip if beneficiary address couldn't be found
+        if (!beneficiaryWalletAddress) {
+          console.warn(`Permit nonce ${permit.nonce}: Could not find beneficiary wallet address for beneficiary_id ${permit.beneficiary_id}. Skipping.`);
+          return null;
+        }
+
         const permitData: PermitData = {
-          // Required base fields
           nonce: permit.nonce,
           networkId: permit.networkId || tokenData?.network || 0,
-          beneficiary: permit.beneficiary,
+          beneficiary: beneficiaryWalletAddress, // Use address fetched separately
           deadline: permit.deadline,
           signature: permit.signature,
-
-          // Token and ownership info
           type: permit.amount && BigInt(permit.amount) > 0n ? 'erc20-permit' : 'erc721-permit',
           owner: ownerWalletData?.address || '',
           tokenAddress: tokenData?.address,
@@ -230,12 +251,8 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
             address: tokenData?.address || '',
             network: tokenData?.network || 0
           },
-
-          // Type-specific fields
           amount: permit.amount,
           token_id: permit.token_id,
-
-          // Metadata
           githubCommentUrl: permit.location?.node_url || '',
           partner: {
             wallet: {
@@ -245,35 +262,41 @@ app.get("/api/permits", verifyJwtMiddleware, async (c: Context) => {
         };
 
         if (!permitData.networkId || !permitData.nonce || !permitData.deadline) {
-          console.warn(`Permit nonce ${permit.nonce} is missing essential data. Skipping.`);
+          console.warn(`Permit nonce ${permit.nonce} is missing essential data (networkId, nonce, deadline). Skipping.`);
           return null;
         }
 
-        const deadline = parseInt(permitData.deadline, 10);
-        if (isNaN(deadline) || deadline < Math.floor(Date.now() / 1000)) {
+        const deadlineInt = parseInt(permitData.deadline, 10);
+        if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
           console.log(`Permit nonce ${permit.nonce} is expired or has invalid deadline.`);
           return null;
         }
 
         let isClaimedOnChain = false;
-        if (permitData.amount && BigInt(permitData.amount) > 0n) {
-          console.log(`Validating as ERC20 (nonce: ${permitData.nonce}, amount: ${permitData.amount})`);
-          if (!permitData.owner) {
-            console.warn(`Permit nonce ${permit.nonce} identified as ERC20 but missing owner_address. Skipping.`);
+        try {
+          if (permitData.type === 'erc20-permit') {
+            console.log(`Validating as ERC20 (nonce: ${permitData.nonce}, amount: ${permitData.amount})`);
+            if (!permitData.owner) {
+              console.warn(`Permit nonce ${permit.nonce} identified as ERC20 but missing owner_address. Skipping.`);
+              return null;
+            }
+            isClaimedOnChain = await isErc20NonceClaimed(permitData);
+          } else if (permitData.type === 'erc721-permit') {
+            console.log(`Validating as ERC721 (nonce: ${permitData.nonce}, token_id: ${permitData.token_id})`);
+            if (!permitData.tokenAddress) {
+              console.warn(`Permit nonce ${permit.nonce} identified as ERC721 but missing token_address. Skipping.`);
+              return null;
+            }
+            isClaimedOnChain = await isErc721NonceClaimed(permitData);
+          } else {
+            console.warn(`Cannot determine permit type for nonce ${permit.nonce}.`);
             return null;
           }
-          isClaimedOnChain = await isErc20NonceClaimed(permitData);
-        } else if (permitData.token_id !== null && permitData.token_id !== undefined) {
-          console.log(`Validating as ERC721 (nonce: ${permitData.nonce}, token_id: ${permitData.token_id})`);
-          if (!permitData.tokenAddress) {
-            console.warn(`Permit nonce ${permit.nonce} identified as ERC721 but missing token_address. Skipping.`);
-            return null;
-          }
-          isClaimedOnChain = await isErc721NonceClaimed(permitData);
-        } else {
-          console.warn(`Cannot determine permit type for nonce ${permit.nonce}.`);
-          return null;
+        } catch (validationError) {
+            console.error(`On-chain validation failed for permit nonce ${permit.nonce}:`, validationError);
+            return null; // Skip permits where validation fails
         }
+
 
         if (isClaimedOnChain) {
           console.log(`Permit nonce ${permit.nonce} already claimed on-chain.`);
@@ -304,17 +327,14 @@ app.post("/api/wallet/link", verifyJwtMiddleware, async (c: Context) => {
       return c.json({ error: "Wallet address is required" }, 400);
     }
 
-    // Store wallet <-> user association
-    const { error: insertError } = await supabase
-      .from(WALLETS_TABLE)
-      .upsert({
-        address: walletAddress.toLowerCase(),
-        user_id: githubUserId
-        // removed updated_at as it doesn't exist
-      });
+    // Update wallet address for the authenticated user in permit_app_users table
+    const { error: updateError } = await supabase
+      .from(USERS_TABLE)
+      .update({ wallet_address: walletAddress.toLowerCase() })
+      .eq('github_id', githubUserId);
 
-    if (insertError) {
-      console.error("Error linking wallet:", insertError);
+    if (updateError) {
+      console.error("Error linking wallet:", updateError);
       return c.json({ error: "Failed to link wallet" }, 500);
     }
 
@@ -360,74 +380,76 @@ app.post("/api/permits/test", verifyJwtMiddleware, async (c: Context) => {
       }, 400);
     }
 
-    // Fetch the permit details from the database for validation
-    const { data: permit, error: permitError } = await supabase
+    // Fetch only the owner address needed for validation
+    const { data: ownerData, error: ownerError } = await supabase
       .from(PERMITS_TABLE)
       .select(`
-        *,
-        token: ${TOKENS_TABLE} (address, network),
-        partner: ${PARTNERS_TABLE} (
-          wallet: ${WALLETS_TABLE} (address)
+        partner: ${PARTNERS_TABLE}!inner(
+          wallet: ${WALLETS_TABLE}!inner(address)
         )
       `)
       .eq('nonce', nonce)
-      .eq('networkId', networkId)
+      // .eq('networkId', networkId) // networkId is not in permits table
+      .eq('token_id', token_id ?? null) // Use token_id or amount to help identify permit
+      .eq('amount', amount ?? null)
       .single();
 
-    if (permitError || !permit) {
-      console.error("Error fetching permit:", permitError);
+    if (ownerError || !ownerData?.partner?.wallet?.address) {
+      console.error("Error fetching owner address for test:", ownerError);
       return c.json({
-        error: permitError ? `Database error: ${permitError.message}` : "Permit not found",
+        error: ownerError ? `Database error: ${ownerError.message}` : "Could not find owner for permit",
         isValid: false
-      }, permitError ? 500 : 404);
+      }, 500);
     }
+    const ownerAddress = ownerData.partner.wallet.address;
 
-    // Additional validation against database record
-    if (permit.token?.address.toLowerCase() !== tokenAddress.toLowerCase()) {
-      return c.json({
-        error: "Token address mismatch with database record",
-        isValid: false
-      });
-    }
 
-    // Check deadline
-    const deadline = parseInt(permit.deadline, 10);
-    if (isNaN(deadline) || deadline < Math.floor(Date.now() / 1000)) {
+    // Check deadline from request body
+    const deadlineInt = parseInt(requestDeadline, 10);
+    if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
       return c.json({
         isValid: false,
         error: "Permit has expired"
       });
     }
 
-    // Check if wallet matches beneficiary
-    if (walletAddress.toLowerCase() !== permit.beneficiary.toLowerCase()) {
+    // Check if requesting wallet matches beneficiary from request body
+    if (walletAddress.toLowerCase() !== beneficiary.toLowerCase()) {
       return c.json({
         isValid: false,
         error: "Wallet address does not match permit beneficiary"
       });
     }
 
-    // Check claim status on-chain
-    const tokenData = permit.token;
-    const ownerWalletData = permit.partner?.wallet;
-    const permitWithJoinData = {
-      ...permit,
-      network_id: tokenData?.network,
-      token_address: tokenData?.address,
-      owner_address: ownerWalletData?.address
+    // Check claim status on-chain using data from request body + fetched owner address
+    const permitTestData: PermitData = {
+        nonce,
+        networkId,
+        beneficiary,
+        deadline: requestDeadline,
+        signature: body.signature, // Assuming signature is passed in body
+        type: amount ? 'erc20-permit' : 'erc721-permit',
+        owner: ownerAddress, // Use fetched owner address
+        tokenAddress,
+        token: { address: tokenAddress, network: networkId },
+        amount,
+        token_id,
+        githubCommentUrl: body.githubCommentUrl || '', // Assuming passed in body
+        partner: { wallet: { address: ownerAddress || '' } } // Use fetched ownerAddress
     };
 
+
     let isClaimedOnChain = false;
-    if (permitWithJoinData.amount && BigInt(permitWithJoinData.amount) > 0n) {
-      if (!permitWithJoinData.owner_address) {
+    if (permitTestData.type === 'erc20-permit') {
+      if (!permitTestData.owner) {
         return c.json({ isValid: false, error: "Missing owner address for ERC20 permit" });
       }
-      isClaimedOnChain = await isErc20NonceClaimed(permitWithJoinData);
-    } else if (permitWithJoinData.token_id !== null && permitWithJoinData.token_id !== undefined) {
-      if (!permitWithJoinData.token_address) {
+      isClaimedOnChain = await isErc20NonceClaimed(permitTestData);
+    } else if (permitTestData.type === 'erc721-permit') {
+      if (!permitTestData.tokenAddress) {
         return c.json({ isValid: false, error: "Missing token address for ERC721 permit" });
       }
-      isClaimedOnChain = await isErc721NonceClaimed(permitWithJoinData);
+      isClaimedOnChain = await isErc721NonceClaimed(permitTestData);
     } else {
       return c.json({ isValid: false, error: "Invalid permit type" });
     }
