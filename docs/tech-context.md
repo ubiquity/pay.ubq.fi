@@ -1,0 +1,58 @@
+# Tech Context: Permit Claiming Application (Rewrite)
+
+This document outlines the technology stack and development environment for the rewritten Permit Claiming application, based on the initial `rewrite-plan.md`.
+
+## 1. Core Technologies
+
+*   **Language:** TypeScript (across frontend, backend, shared code)
+*   **Frontend:**
+    *   Framework: React
+    *   Wallet Integration: TBD (e.g., `wagmi`, Web3Modal) - Must be viem-compatible.
+    *   Styling: Raw CSS
+*   **Backend:**
+    *   Platform: Deno Deploy
+    *   Routing: Hono
+*   **Database:** Supabase (PostgreSQL)
+*   **Blockchain Interaction:**
+    *   Library: viem (latest)
+    *   RPC Management: Existing custom RPC handler (`use-rpc-handler.ts`)
+    *   Contracts: Uniswap Permit2, Custom NFT Reward Contract, Existing deployed Multicall Contracts (e.g., MakerDAO's)
+
+## 2. Development Environment & Tooling
+
+*   **Package Manager:** Bun (as per user instructions)
+*   **Repository Structure:** Standard repository structure (e.g., separate directories for frontend, backend, shared code).
+*   **Build Tools:** Esbuild (from existing setup), Deno CLI tools
+*   **Testing:**
+    *   Unit/Integration: bun test
+    *   Component: React Testing Library (if using React)
+*   **Linting/Formatting:** ESLint, Prettier (using existing configurations), Deno fmt/lint
+*   **Version Control:** Git, GitHub
+
+## 3. Key Libraries & Dependencies (Anticipated)
+
+*   `viem`: Blockchain interaction.
+*   `@octokit/rest`: GitHub API interaction (backend scanner).
+*   `@supabase/supabase-js`: Database interaction.
+*   `react`, `react-dom`: Frontend framework (if React).
+*   `hono`: Backend routing.
+*   `zod`: Data validation (likely).
+*   Wallet Connector Library compatible with viem (e.g., `wagmi`, Web3Modal).
+*   Testing libraries (`@testing-library/react`).
+
+## 4. Infrastructure & Deployment
+
+*   **Backend Hosting:** Deno Deploy.
+*   **Frontend Hosting:** Deno Deploy.
+*   **Database Hosting:** Supabase Cloud.
+*   **Deployment:** Deno Deploy CLI/GitHub Integration, GitHub Actions (TBD).
+
+## 5. Technical Constraints & Considerations
+
+*   Deno Deploy environment specifics and limitations.
+*   GitHub API rate limits.
+*   RPC provider reliability and rate limits.
+*   Security of GitHub tokens and other secrets within Deno Deploy environment variables.
+*   Browser compatibility for frontend features (Wallet connection, etc.).
+
+*(This document will be updated as technology choices are finalized and new dependencies are added.)*
