@@ -48,7 +48,7 @@ function App() {
           element={isLoggedIn ? <DashboardPage /> : <LoginPage onLogin={handleLogin} />}
         />
       </Routes>
-      {isLoggedIn && <button onClick={handleLogout} style={{ position: 'absolute', top: 10, right: 10 }}>Logout</button>}
+      {isLoggedIn && <button onClick={handleLogout} className="logout-button">Logout</button>}
     </>
   );
 }

@@ -21,10 +21,11 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Authentication**: GitHub OAuth flow redirects, backend callback, JWT middleware.
 *   **Wallet Integration**: Connection via `wagmi`.
 *   **Permit Fetching**: Backend `/api/permits` fetches from DB, joins related tables, fetches beneficiary address. Frontend fetches reliably on connect.
-*   **Permit Display**: Frontend displays permits with formatted amount, type, beneficiary, source link, status colors.
+*   **Permit Display**: Frontend displays permits using dedicated `PermitsTable` and `PermitRow` components. Styling is handled via `app-styles.css`.
 *   **Permit Testing**: Backend `/api/permits/test` endpoint functional.
-*   **Single Claim**: Frontend `handleClaimPermit` uses `useWriteContract` to initiate `permitTransferFrom`, `useWaitForTransactionReceipt` handles confirmation. **Includes pre-claim checks for owner balance and Permit2 allowance.** UI updated to reflect check status and potential issues (low balance/allowance).
-*   **Component Structure**: Frontend components (`App`, `LoginPage`, `DashboardPage`, `GitHubCallback`) refactored into separate files.
+*   **Single Claim**: Frontend `handleClaimPermit` (in `DashboardPage`) uses `useWriteContract` to initiate `permitTransferFrom`, `useWaitForTransactionReceipt` handles confirmation. **Includes pre-claim checks (in `permit-utils.ts`) for owner balance and Permit2 allowance.** UI (`PermitRow`) updated to reflect check status and potential issues.
+*   **Component Structure**: Frontend components (`App`, `LoginPage`, `DashboardPage`, `GitHubCallback`, `PermitsTable`, `PermitRow`) refactored into separate files. Helper functions moved to `permit-utils.ts`. `DashboardPage` line count significantly reduced.
+*   **Styling**: Inline styles removed and migrated to `app-styles.css`.
 *   **Bug Fixes**: Resolved multiple permit fetch issue. Resolved incorrect claim button disabling.
 
 ## 3. What's Next (High Level)

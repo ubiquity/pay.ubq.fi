@@ -1,0 +1,125 @@
+/* Global styles and component-specific styles */
+
+/* App.tsx */
+.logout-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* dashboard-page.tsx */
+.error-message {
+  color: red;
+}
+
+.summary-info {
+  margin-bottom: 20px;
+}
+
+.permits-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.permits-table th,
+.permits-table td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.permits-table th {
+  text-align: left; /* Default alignment for headers */
+}
+
+.permits-table .align-right {
+  text-align: right;
+}
+
+.permits-table .monospace {
+  font-family: monospace;
+}
+
+.permits-table .small-font {
+  font-size: 0.9em;
+}
+
+.permits-table .extra-small-font {
+  font-size: 0.8em;
+}
+
+.permits-table .subtle-text {
+  color: #666;
+}
+
+.permits-table .margin-left-5 {
+  margin-left: 5px;
+}
+
+.permits-table .margin-top-4 {
+  margin-top: 4px;
+}
+
+.permits-table .bold-text {
+  font-weight: bold;
+}
+
+.permits-table .status-claimed {
+  color: #1a8917; /* Green */
+}
+
+.permits-table .status-unclaimed {
+  color: #b35f00; /* Orange/Brown */
+}
+
+.permits-table .status-error {
+  color: red;
+}
+
+.permits-table .status-test-failed {
+  color: orange; /* Also used for prerequisite warnings */
+}
+
+.permits-table .row-invalid {
+  background-color: #fff4f4; /* Light red background - Used for invalid, test failed, prerequisite failed */
+}
+
+.permits-table .row-claimed {
+  background-color: #e6ffed; /* Light green */
+}
+
+.permits-table .row-claim-failed {
+  background-color: #ffebe9; /* Light red/pink */
+}
+
+.permits-table .row-claiming {
+  background-color: #fff9e6; /* Light yellow */
+}
+
+/* .row-prerequisite-failed uses .row-invalid */
+
+.permits-table .row-valid {
+  background-color: #f4fff4; /* Lighter green */
+}
+
+/* .row-test-failed uses .row-invalid */
+
+.permits-table .row-warning {
+  background-color: #fffbea; /* Light yellow background */
+}
+
+.permits-table .warning-text {
+  color: orange;
+  font-size: 0.8em;
+  margin-top: 4px;
+}
+
+/* Status Colors - Add specific ones */
+.permits-table .status-claiming { /* Same as testing */
+  color: #b08800; /* Yellow/Orange */
+}
+
+/* .status-valid uses .status-claimed */
+
+/* .status-testing uses .status-claiming */
+
+/* .status-default uses .subtle-text */

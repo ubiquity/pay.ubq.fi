@@ -6,6 +6,8 @@ import { WagmiProvider, createConfig, http } from 'wagmi';
 import { gnosis, mainnet } from 'wagmi/chains'; // Import chains used by the app
 import App from './App.tsx';
 import { AuthProvider } from './auth-context.tsx'; // Import AuthProvider
+import './app-styles.css'; // Import global styles
+import './ubiquity-styles.css'; // Import global styles
 
 // Configure wagmi
 // TODO: Consider adding more chains if needed (e.g., localhost for dev)
