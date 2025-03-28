@@ -10,7 +10,7 @@ import { AuthProvider } from './auth-context.tsx'; // Import AuthProvider
 // Configure wagmi
 // TODO: Consider adding more chains if needed (e.g., localhost for dev)
 // TODO: Add connectors (e.g., MetaMask, WalletConnect) if needed beyond default EIP-6963
-const config = createConfig({
+export const config = createConfig({ // Export config
   chains: [mainnet, gnosis],
   transports: {
     [mainnet.id]: http(), // Uses default public RPC, override if needed

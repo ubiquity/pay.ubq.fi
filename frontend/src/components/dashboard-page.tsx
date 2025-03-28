@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { readContract } from '@wagmi/core'; // Import readContract
+import { erc20Abi } from 'viem'; // Import erc20Abi for allowance check
+import { config } from '../main'; // Assuming config is exported from main.tsx
 import { injected } from 'wagmi/connectors'; // Example connector
 import type { PermitData } from '../../../shared/types'; // Corrected path
 import permit2ABI from '../fixtures/permit2-abi'; // Adjust path
@@ -103,16 +106,21 @@ export function DashboardPage() {
     if (!permit.beneficiary) errors.push("beneficiary");
     if (!permit.owner) errors.push("owner"); // Check owner explicitly
     if (!permit.signature) errors.push("signature"); // Check signature explicitly
-    if (!permit.token?.address) errors.push("token.address");
+    // Ensure token address exists for ERC20 check
+    if (!permit.token?.address && permit.type === 'erc20-permit') errors.push("token.address");
 
     // Type-specific checks
     if (permit.type === 'erc20-permit') {
       if (!permit.amount) errors.push("amount (for ERC20)");
+      if (!permit.token?.address) errors.push("token.address (for ERC20)"); // Redundant but safe
     } else if (permit.type === 'erc721-permit') {
+      // ERC721 might not need token.address if tokenAddress is present, adjust if needed
+      if (!permit.tokenAddress && !permit.token?.address) errors.push("token address (for ERC721)");
       if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id (for ERC721)");
     } else {
       errors.push(`unknown type (${permit.type})`);
     }
+
 
     if (errors.length > 0) {
       console.warn(logPrefix, `Missing required fields: ${errors.join(', ')}`);
@@ -139,7 +147,106 @@ export function DashboardPage() {
         return;
     }
 
-    // Update UI state to Pending
+    // Ensure it's an ERC20 permit for the allowance/balance checks
+    if (permitToClaim.type !== 'erc20-permit' || !permitToClaim.token?.address || !permitToClaim.amount) {
+        setError("Invalid permit type or missing data for allowance/balance check.");
+        // Update specific permit state to error
+        setPermits(currentPermits =>
+          currentPermits.map(p =>
+            p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+              ? { ...p, claimStatus: 'Error', claimError: "Invalid permit type or missing data for allowance/balance check." }
+              : p
+          )
+        );
+        return;
+    }
+
+    // Add Allowance Check before proceeding
+    try {
+        console.log(`Checking allowance for owner ${permitToClaim.owner} on token ${permitToClaim.token.address}`);
+        const allowance = await readContract(config, {
+            abi: erc20Abi,
+            address: permitToClaim.token.address as `0x${string}`, // Cast needed
+              functionName: 'allowance',
+              args: [permitToClaim.owner as `0x${string}`, PERMIT2_ADDRESS], // owner, spender
+              chainId: permitToClaim.networkId as (1 | 100), // Cast networkId to match configured chains
+          });
+
+        console.log(`Allowance: ${allowance}, Required: ${permitToClaim.amount}`);
+
+        if (BigInt(allowance) < BigInt(permitToClaim.amount)) {
+            const errorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
+            console.error(errorMsg);
+            // Update specific permit state to error
+            setPermits(currentPermits =>
+              currentPermits.map(p =>
+                p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+                  ? { ...p, claimStatus: 'Error', claimError: errorMsg }
+                  : p
+              )
+            );
+            return; // Stop claim process
+        }
+        console.log("Allowance check passed.");
+
+    } catch (allowanceError) {
+        console.error("Failed to check allowance:", allowanceError);
+        const errorMsg = allowanceError instanceof Error ? allowanceError.message : "Failed to check token allowance.";
+         // Update specific permit state to error
+         setPermits(currentPermits =>
+           currentPermits.map(p =>
+             p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+               ? { ...p, claimStatus: 'Error', claimError: errorMsg }
+               : p
+           )
+         );
+        return; // Stop claim process
+    }
+
+    // Add Balance Check
+    try {
+        console.log(`Checking balance for owner ${permitToClaim.owner} on token ${permitToClaim.token.address}`);
+        const balance = await readContract(config, {
+            abi: erc20Abi,
+            address: permitToClaim.token.address as `0x${string}`,
+            functionName: 'balanceOf',
+            args: [permitToClaim.owner as `0x${string}`],
+            chainId: permitToClaim.networkId as (1 | 100),
+        });
+
+        console.log(`Balance: ${balance}, Required: ${permitToClaim.amount}`);
+
+        if (BigInt(balance) < BigInt(permitToClaim.amount)) {
+            const errorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
+            console.error(errorMsg);
+            // Update specific permit state to error
+            setPermits(currentPermits =>
+              currentPermits.map(p =>
+                p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+                  ? { ...p, claimStatus: 'Error', claimError: errorMsg }
+                  : p
+              )
+            );
+            return; // Stop claim process
+        }
+        console.log("Balance check passed.");
+
+    } catch (balanceError) {
+        console.error("Failed to check balance:", balanceError);
+        const errorMsg = balanceError instanceof Error ? balanceError.message : "Failed to check token balance.";
+         // Update specific permit state to error
+         setPermits(currentPermits =>
+           currentPermits.map(p =>
+             p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+               ? { ...p, claimStatus: 'Error', claimError: errorMsg }
+               : p
+           )
+         );
+        return; // Stop claim process
+    }
+
+
+    // Update UI state to Pending ONLY after checks pass
     setPermits(currentPermits =>
       currentPermits.map(p =>
         p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
@@ -152,16 +259,16 @@ export function DashboardPage() {
       // Prepare arguments for permitTransferFrom
       const permitArgs = {
         permitted: {
-          token: permitToClaim.token!.address, // Non-null assertion as checked in hasRequiredFields
-          amount: BigInt(permitToClaim.amount!), // Non-null assertion for ERC20
+          token: permitToClaim.token.address as `0x${string}`, // Cast needed
+          amount: BigInt(permitToClaim.amount),
         },
         nonce: BigInt(permitToClaim.nonce),
         deadline: BigInt(permitToClaim.deadline),
       };
 
       const transferDetailsArgs = {
-        to: permitToClaim.beneficiary,
-        requestedAmount: BigInt(permitToClaim.amount!), // Claim full amount
+        to: permitToClaim.beneficiary as `0x${string}`, // Cast needed
+        requestedAmount: BigInt(permitToClaim.amount),
       };
 
       console.log("Calling permitTransferFrom with args:", {
@@ -179,8 +286,8 @@ export function DashboardPage() {
         args: [
           permitArgs,
           transferDetailsArgs,
-          permitToClaim.owner,
-          permitToClaim.signature as `0x${string}`, // Cast signature to Hex type
+          permitToClaim.owner as `0x${string}`, // Cast needed
+          permitToClaim.signature as `0x${string}`,
         ],
       });
 
@@ -198,6 +305,7 @@ export function DashboardPage() {
     } catch (err) {
       console.error("Claiming failed:", err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      // Update specific permit state to error
       setPermits(currentPermits =>
         currentPermits.map(p =>
           p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
@@ -239,15 +347,19 @@ export function DashboardPage() {
     if (writeContractError) {
       console.error("Claim submission failed:", writeContractError);
       // Find the permit that was pending and set its status to Error
-      setPermits(currentPermits =>
-        currentPermits.map(p =>
-          p.claimStatus === 'Pending' // Assume only one can be pending from this hook instance
-            ? { ...p, claimStatus: 'Error', claimError: writeContractError.message }
-            : p
-        )
-      );
+      // Check if the error is already handled by the allowance check or tx confirmation effect
+      const isAlreadyHandled = permits.some(p => p.claimStatus === 'Error' && p.claimError === writeContractError.message);
+      if (!isAlreadyHandled) {
+          setPermits(currentPermits =>
+            currentPermits.map(p =>
+              p.claimStatus === 'Pending' // Assume only one can be pending from this hook instance
+                ? { ...p, claimStatus: 'Error', claimError: writeContractError.message }
+                : p
+            )
+          );
+      }
     }
-   }, [writeContractError]);
+   }, [writeContractError, permits]); // Added permits dependency
 
    // Fetch permits when connected
    useEffect(() => {
