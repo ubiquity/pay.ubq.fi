@@ -7,15 +7,15 @@ This document outlines the technology stack and development environment for the 
 *   **Language:** TypeScript (across frontend, backend, shared code)
 *   **Frontend:**
     *   Framework: React
-    *   Wallet Integration: TBD (e.g., `wagmi`, Web3Modal) - Must be viem-compatible.
+    *   Wallet Integration: `wagmi` (using viem)
     *   Styling: Raw CSS
 *   **Backend:**
     *   Platform: Deno Deploy
     *   Routing: Hono
 *   **Database:** Supabase (PostgreSQL)
 *   **Blockchain Interaction:**
-    *   Library: viem (latest)
-    *   RPC Management: Existing custom RPC handler (`use-rpc-handler.ts`)
+    *   Library: `viem` (latest)
+    *   RPC Management: `@pavlovcik/permit2-rpc-manager` (to be integrated).
     *   Contracts: Uniswap Permit2, Custom NFT Reward Contract, Existing deployed Multicall Contracts (e.g., MakerDAO's)
 
 ## 2. Development Environment & Tooling
@@ -31,13 +31,13 @@ This document outlines the technology stack and development environment for the 
 
 ## 3. Key Libraries & Dependencies (Anticipated)
 
-*   `viem`: Blockchain interaction.
-*   `@octokit/rest`: GitHub API interaction (backend scanner).
+*   `viem`: Blockchain interaction (frontend & backend).
+*   `@octokit/rest`: GitHub API interaction (planned for backend scanner).
 *   `@supabase/supabase-js`: Database interaction.
-*   `react`, `react-dom`: Frontend framework (if React).
+*   `react`, `react-dom`: Frontend framework.
 *   `hono`: Backend routing.
-*   `zod`: Data validation (likely).
-*   Wallet Connector Library compatible with viem (e.g., `wagmi`, Web3Modal).
+*   `wagmi`: React hooks for wallet connection and interaction.
+*   `@pavlovcik/permit2-rpc-manager`: RPC management library (to be integrated).
 *   Testing libraries (`@testing-library/react`).
 
 ## 4. Infrastructure & Deployment

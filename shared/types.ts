@@ -30,10 +30,14 @@ export interface PermitData extends PermitDetails {
   token?: TokenInfo;
   partner?: PartnerInfo;
 
-  // Frontend-specific statuses
-  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing' | 'TestFailed' | 'TestSuccess';
-  transactionHash?: string;
-  error?: string; // For storing error messages during claim testing
+  // Frontend-specific statuses for validation/testing
+  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing' | 'TestFailed' | 'TestSuccess' | 'Ready';
+  testError?: string; // For storing error messages during claim testing
+
+  // Frontend-specific statuses for actual claiming
+  claimStatus?: 'Idle' | 'Pending' | 'Success' | 'Error';
+  claimError?: string;
+  transactionHash?: string; // Store claim tx hash
 }
 
 // Add other shared types as needed (e.g., API response types)
