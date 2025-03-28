@@ -43,7 +43,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     ? "row-invalid"
     : "";
 
-  // Determine status text class
+  // Determine status text class - REMOVED as the status column is gone
+  /*
   const statusTextClass = ` ${
     isClaimed
       ? "status-claimed"
@@ -72,8 +73,9 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
                                ? "bold-text"
                                : ""
                            }`;
+  */
 
-  // Determine status display text
+  // Determine status display text (still needed for button title)
   const statusDisplayText = isClaimed
     ? "Claimed"
     : isClaimingThis
@@ -158,6 +160,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
           onClick={() => onClaimPermit(permit)}
           disabled={!isConnected || !canAttemptClaim || isClaimingThis || isClaimed}
           className="button-with-icon" // Apply CSS class
+          title={statusDisplayText} // Add title attribute for tooltip
         >
           {showCannotClaimIcon ? <CannotClaimIcon /> : <ClaimIcon />}
           {buttonText}
@@ -183,12 +186,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         )}
       </td>
 
-      {/* Status Column (Now 4th/Last) */}
-      <td>
-        <div className={statusTextClass}>{statusDisplayText}</div>
-        {/* Display Prerequisite Check Error */}
-        {permit.checkError && !permit.claimError && <div className="status-error extra-small-font margin-top-4">Check Error: {permit.checkError}</div>}
-      </td>
+      {/* Status Column REMOVED */}
     </tr>
   );
 }

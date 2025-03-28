@@ -43,7 +43,7 @@ export function PermitsTable({
           <th>Source</th> {/* Moved Source to first */}
           <th>Reward</th>
           <th>Actions</th>
-          <th>Status</th>
+          {/* Removed Status */}
         </tr>
       </thead>
       <tbody>
