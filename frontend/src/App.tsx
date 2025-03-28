@@ -39,19 +39,43 @@ function DashboardPage() {
   const fetchPermits = async () => {
     setIsLoading(true);
     setError(null);
-    console.log("TODO: Fetch permits from backend API");
+    console.log("Fetching permits from backend API...");
+    const token = localStorage.getItem('sessionToken'); // Get JWT from storage
+    if (!token) {
+      setError("Not authenticated. Please login.");
+      setIsLoading(false);
+      return; // Don't attempt fetch if not logged in
+    }
+
     try {
-      // const token = localStorage.getItem('sessionToken');
-      // if (!token) throw new Error("Not authenticated");
-      // const response = await fetch(`${BACKEND_API_URL}/api/permits`, {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // if (!response.ok) {
-      //   throw new Error('Failed to fetch permits');
-      // }
-      // const data = await response.json();
-      // setPermits(data.permits || []); // Assuming API returns { permits: [...] }
-      setPermits([]); // Placeholder
+      // Make authenticated request to the backend API
+      const response = await fetch(`${BACKEND_API_URL}/api/permits`, {
+        headers: {
+          'Authorization': `Bearer ${token}`, // Send JWT
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        // Try to parse error message from backend, fallback to status text
+        let errorMsg = `Failed to fetch permits: ${response.status} ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            errorMsg = errorData.error || errorMsg;
+        } catch (e) { /* Ignore JSON parsing error */ }
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+
+      // TODO: Add validation for the received permit data structure using Zod or similar
+      if (!data || !Array.isArray(data.permits)) {
+          console.error("Invalid permit data format received:", data);
+          throw new Error("Received invalid data format for permits.");
+      }
+
+      setPermits(data.permits); // Update state with the fetched permits
+      console.log("Fetched permits:", data.permits);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error("Error fetching permits:", err);

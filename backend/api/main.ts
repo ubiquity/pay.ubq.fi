@@ -66,7 +66,6 @@ app.use('*', async (c, next) => {
 
 // --- JWT Verification Middleware ---
 const verifyJwtMiddleware = async (c: Context, next: Next) => {
-  // ... (JWT verification logic remains the same) ...
   if (!jwtKey) { return c.json({ error: "Server initialization error" }, 500); }
   const authHeader = c.req.header("Authorization");
   const token = authHeader?.split(" ")[1];
@@ -120,37 +119,27 @@ app.post("/api/auth/github/callback", async (c: Context) => {
           headers: { "Authorization": `Bearer ${accessToken}`, "Accept": "application/json" },
         });
         if (!userResponse.ok) {
-          // Log error but don't throw, allow proceeding
           console.warn("GitHub user profile fetch failed:", userResponse.status, await userResponse.text());
-          // Use a placeholder structure if fetch fails, try to get ID from token if possible (though not standard)
-          // For now, we MUST have an ID later, so this path might still lead to failure if ID is truly unavailable.
           githubUser = { id: undefined, login: undefined, avatar_url: undefined };
         } else {
           githubUser = await userResponse.json();
-          // Check essential fields after successful fetch
           if (!githubUser || !githubUser.id) {
               console.warn("Incomplete user data received from GitHub:", githubUser);
-              // If ID is missing even on success, treat as failure for JWT/DB linking
               throw new Error("Incomplete user ID received from GitHub.");
           }
           console.log("GitHub User:", githubUser.login, githubUser.id);
         }
     } catch (profileError) {
         console.error("Error during GitHub user profile fetch:", profileError);
-        // Allow proceeding, but log that profile data might be missing/stale
-        githubUser = { id: undefined, login: undefined, avatar_url: undefined }; // Ensure githubUser is defined
+        githubUser = { id: undefined, login: undefined, avatar_url: undefined };
     }
 
-    // Ensure we have the ID before proceeding - this is critical
     if (!githubUser?.id) {
-        // If profile fetch failed AND we couldn't get ID otherwise, we must fail here.
         throw new Error("Could not obtain GitHub user ID after token exchange.");
     }
     const githubIdStr = githubUser.id.toString();
-    // Use login if available, otherwise null (since column is now nullable)
     const githubLogin = githubUser.login || null;
     const githubAvatarUrl = githubUser.avatar_url || null;
-
 
     // 3. Store/Update user in DB & Store Encrypted GitHub Token
     console.log(`Upserting user ${githubLogin || githubIdStr} (ID: ${githubIdStr}) into DB...`);
@@ -159,8 +148,8 @@ app.post("/api/auth/github/callback", async (c: Context) => {
       .from(USERS_TABLE)
       .upsert({
          github_id: githubIdStr,
-         username: githubLogin, // Now nullable
-         avatar_url: githubAvatarUrl, // Now nullable
+         username: githubLogin,
+         avatar_url: githubAvatarUrl,
          encrypted_github_token: encryptToken(accessToken)
        }, { onConflict: 'github_id' })
       .select('github_id')
@@ -172,13 +161,12 @@ app.post("/api/auth/github/callback", async (c: Context) => {
     }
     console.log("Supabase user upsert successful (or existing user updated).");
 
-
     // 4. Generate Session Token (JWT)
     console.log("Generating JWT...");
     const payload = {
-      sub: githubIdStr, // Use github_id as subject
+      sub: githubIdStr,
       gh_id: githubUser.id,
-      gh_login: githubLogin, // Use potentially null login
+      gh_login: githubLogin,
       exp: getNumericDate(60 * 60 * 24 * 7),
       iat: getNumericDate(0),
     };
@@ -196,39 +184,51 @@ app.post("/api/auth/github/callback", async (c: Context) => {
 });
 
 // --- Authenticated Routes ---
-// ... (rest of the authenticated routes remain the same) ...
 app.use('/api/scan/*', verifyJwtMiddleware);
-app.use('/api/permits/*', verifyJwtMiddleware);
+app.use('/api/permits', verifyJwtMiddleware); // Apply only to the base /api/permits GET route
 
+// Fetch permits for the logged-in user - IMPLEMENTED
 app.get("/api/permits", async (c: Context) => {
   const payload = c.get('jwtPayload');
   if (!supabase) return c.json({ error: "Database client not initialized" }, 500);
-  const githubUserId = payload?.sub;
+  const githubUserId = payload?.sub; // Use 'sub' which is github_id string
 
   if (!githubUserId) return c.json({ error: "Invalid token payload" }, 401);
 
   console.log("Fetching permits for user:", payload?.gh_login);
   try {
+    // Fetch permits assigned to the user, excluding already claimed ones
     const { data: permits, error } = await supabase
         .from(PERMITS_TABLE)
-        .select('*')
-        .eq('assigned_github_id', githubUserId);
+        .select('*') // Select all columns for now
+        .eq('assigned_github_id', githubUserId) // Filter by user's GitHub ID (from JWT sub)
+        .is('claimed_at', null); // Only fetch permits that haven't been claimed
 
-    if (error) { throw new Error(`Supabase permit fetch error: ${error.message}`); }
+    if (error) {
+        console.error("Supabase permit fetch error:", error);
+        throw new Error(`Supabase permit fetch error: ${error.message}`);
+    }
+    console.log(`Found ${permits?.length || 0} unclaimed permits for user ${payload?.gh_login}`);
+    // TODO: Add on-chain validation logic here before returning
     return c.json({ permits: permits || [] });
   } catch(err) {
       console.error("Error fetching permits:", err);
-      return c.json({ error: "Internal server error" }, 500);
+      return c.json({ error: "Internal server error fetching permits" }, 500);
   }
 });
 
-app.post("/api/permits/update-status", (c: Context) => {
+// Update permit status (placeholder) - Apply middleware if needed
+app.post("/api/permits/update-status", verifyJwtMiddleware, async (c: Context) => {
    const payload = c.get('jwtPayload');
    console.log("Updating permit status for user:", payload?.gh_login);
+  // TODO: Implement DB update logic - receive nonce/network_id/txHash in body
+  // const { nonce, networkId, transactionHash } = await c.req.json();
+  // Check if permit belongs to user (payload.sub) before updating
   return c.json({ message: `TODO: Update permit status for ${payload?.gh_login}` });
 });
 
-app.post("/api/scan/github", async (c: Context) => {
+// --- GitHub Scan Route (authenticated) ---
+app.post("/api/scan/github", verifyJwtMiddleware, async (c: Context) => {
   const payload = c.get('jwtPayload');
   if (!supabase) return c.json({ error: "Database client not initialized" }, 500);
   const githubUserId = payload?.sub;
@@ -238,6 +238,7 @@ app.post("/api/scan/github", async (c: Context) => {
   console.log(`Scan request received for user: ${payload?.gh_login} (ID: ${githubUserId})`);
 
   try {
+    // 1. Retrieve the user's *encrypted* GitHub access token from DB
     const { data: userData, error: userError } = await supabase
         .from(USERS_TABLE)
         .select('encrypted_github_token')
@@ -254,16 +255,21 @@ app.post("/api/scan/github", async (c: Context) => {
         return c.json({ error: "GitHub token not configured for user." }, 500);
     }
 
+    // TODO: Implement actual decryption
     const decryptToken = (encrypted: string) => encrypted.replace('encrypted(', '').replace(')', ''); // Placeholder
     const userGithubToken = decryptToken(userData.encrypted_github_token);
+
+    // 2. Initialize Octokit with user's token
     const userOctokit = new Octokit({ auth: userGithubToken });
 
+    // 3. Perform Scan (Run async - fire and forget for now)
     setTimeout(() => {
         scanGitHubForUser(userOctokit, githubUserId).catch(scanError => {
             console.error(`Background scan failed for user ${payload?.gh_login}:`, scanError);
         });
     }, 0);
 
+    // 4. Return immediate success response
     return c.json({ message: "GitHub scan initiated successfully. Results will appear shortly." });
 
   } catch (error) {
