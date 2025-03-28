@@ -11,6 +11,49 @@ import permit2ABI from '../fixtures/permit2-abi'; // Adjust path
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8000';
 const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3'; // Universal Permit2 address
 
+// Function to check owner balance and Permit2 allowance for an ERC20 permit
+async function checkPermitPrerequisites(permit: PermitData): Promise<{ ownerBalanceSufficient?: boolean; permit2AllowanceSufficient?: boolean; checkError?: string }> {
+  if (permit.type !== 'erc20-permit' || !permit.token?.address || !permit.amount) {
+    // Don't treat this as an error, just return empty for non-applicable permits
+    return {};
+  }
+
+  try {
+    const requiredAmount = BigInt(permit.amount);
+    const ownerAddress = permit.owner as `0x${string}`;
+    const tokenAddress = permit.token.address as `0x${string}`;
+    const networkId = permit.networkId as (1 | 100); // Cast for config
+
+    // Check balance
+    const balance = await readContract(config, {
+      abi: erc20Abi,
+      address: tokenAddress,
+      functionName: 'balanceOf',
+      args: [ownerAddress],
+      chainId: networkId,
+    });
+    const ownerBalanceSufficient = BigInt(balance) >= requiredAmount;
+
+    // Check allowance
+    const allowance = await readContract(config, {
+      abi: erc20Abi,
+      address: tokenAddress,
+      functionName: 'allowance',
+      args: [ownerAddress, PERMIT2_ADDRESS],
+      chainId: networkId,
+    });
+    const permit2AllowanceSufficient = BigInt(allowance) >= requiredAmount;
+
+    console.log(`Prereq check for nonce ${permit.nonce}: Balance OK: ${ownerBalanceSufficient}, Allowance OK: ${permit2AllowanceSufficient}`);
+    return { ownerBalanceSufficient, permit2AllowanceSufficient };
+
+  } catch (error) {
+    console.error(`Failed prerequisite check for nonce ${permit.nonce}:`, error);
+    return { checkError: error instanceof Error ? error.message : "Failed to check balance/allowance." };
+  }
+}
+
+
 export function DashboardPage() {
   // State management
   const [permits, setPermits] = useState<PermitData[]>([]);
@@ -21,8 +64,8 @@ export function DashboardPage() {
    // State for waiting for transaction receipt
   const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, error: receiptError } = useWaitForTransactionReceipt({ hash });
 
-  // Fetch permits from backend API
-  const fetchPermits = async () => {
+  // Fetch permits from backend API and check prerequisites
+  const fetchPermitsAndCheck = async () => {
     setIsLoading(true);
     setError(null);
     console.log("Fetching permits from backend API...");
@@ -58,10 +101,31 @@ export function DashboardPage() {
           throw new Error("Received invalid data format for permits.");
       }
 
-      // Initialize claimStatus for fetched permits
-      const initialPermits = data.permits.map((p: PermitData) => ({ ...p, claimStatus: 'Idle' }));
-      setPermits(initialPermits);
-      console.log("Fetched permits:", initialPermits);
+      // Use PermitData type here
+      const initialPermits: PermitData[] = data.permits.map((p: PermitData) => ({ ...p, claimStatus: 'Idle' }));
+      console.log("Fetched permits, checking prerequisites:", initialPermits.length);
+
+      // Check prerequisites concurrently
+      const prerequisiteChecks = await Promise.allSettled(
+          initialPermits.map(permit => checkPermitPrerequisites(permit)) // Check all permits, function handles non-ERC20
+      );
+
+      // Merge results with permits
+      const checkedPermits = initialPermits.map((permit, index) => {
+          const checkResult = prerequisiteChecks[index];
+          if (checkResult.status === 'fulfilled') {
+              // Add check results only if they exist (i.e., was an ERC20 check)
+              return { ...permit, ...checkResult.value };
+          } else {
+              // Handle case where the check itself failed
+              console.error(`Prerequisite check failed for permit ${permit.nonce}:`, checkResult.reason);
+              return { ...permit, checkError: "Failed to perform checks." };
+          }
+      });
+
+      setPermits(checkedPermits);
+      console.log("Finished checking prerequisites, updated permits state.");
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error("Error fetching permits:", err);
@@ -132,6 +196,7 @@ export function DashboardPage() {
   };
 
   // --- Handle Actual Claim ---
+  // NOTE: This function now assumes prerequisites were checked on fetch
   const handleClaimPermit = async (permitToClaim: PermitData) => {
     console.log("Attempting to claim permit:", permitToClaim);
     if (!isConnected || !address || !chain || !writeContractAsync) {
@@ -147,102 +212,26 @@ export function DashboardPage() {
         return;
     }
 
-    // Ensure it's an ERC20 permit for the allowance/balance checks
-    if (permitToClaim.type !== 'erc20-permit' || !permitToClaim.token?.address || !permitToClaim.amount) {
-        setError("Invalid permit type or missing data for allowance/balance check.");
-        // Update specific permit state to error
-        setPermits(currentPermits =>
-          currentPermits.map(p =>
-            p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
-              ? { ...p, claimStatus: 'Error', claimError: "Invalid permit type or missing data for allowance/balance check." }
-              : p
-          )
-        );
-        return;
-    }
-
-    // Add Allowance Check before proceeding
-    try {
-        console.log(`Checking allowance for owner ${permitToClaim.owner} on token ${permitToClaim.token.address}`);
-        const allowance = await readContract(config, {
-            abi: erc20Abi,
-            address: permitToClaim.token.address as `0x${string}`, // Cast needed
-              functionName: 'allowance',
-              args: [permitToClaim.owner as `0x${string}`, PERMIT2_ADDRESS], // owner, spender
-              chainId: permitToClaim.networkId as (1 | 100), // Cast networkId to match configured chains
-          });
-
-        console.log(`Allowance: ${allowance}, Required: ${permitToClaim.amount}`);
-
-        if (BigInt(allowance) < BigInt(permitToClaim.amount)) {
-            const errorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
-            console.error(errorMsg);
-            // Update specific permit state to error
-            setPermits(currentPermits =>
-              currentPermits.map(p =>
-                p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
-                  ? { ...p, claimStatus: 'Error', claimError: errorMsg }
-                  : p
-              )
-            );
-            return; // Stop claim process
+    // Re-check prerequisites just before sending, using stored state
+    if (permitToClaim.type === 'erc20-permit') {
+        if (permitToClaim.ownerBalanceSufficient === false) {
+             const errorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
+             console.error(errorMsg);
+             setPermits(currentPermits => currentPermits.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: 'Error', claimError: errorMsg } : p));
+             return;
         }
-        console.log("Allowance check passed.");
-
-    } catch (allowanceError) {
-        console.error("Failed to check allowance:", allowanceError);
-        const errorMsg = allowanceError instanceof Error ? allowanceError.message : "Failed to check token allowance.";
-         // Update specific permit state to error
-         setPermits(currentPermits =>
-           currentPermits.map(p =>
-             p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
-               ? { ...p, claimStatus: 'Error', claimError: errorMsg }
-               : p
-           )
-         );
-        return; // Stop claim process
-    }
-
-    // Add Balance Check
-    try {
-        console.log(`Checking balance for owner ${permitToClaim.owner} on token ${permitToClaim.token.address}`);
-        const balance = await readContract(config, {
-            abi: erc20Abi,
-            address: permitToClaim.token.address as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [permitToClaim.owner as `0x${string}`],
-            chainId: permitToClaim.networkId as (1 | 100),
-        });
-
-        console.log(`Balance: ${balance}, Required: ${permitToClaim.amount}`);
-
-        if (BigInt(balance) < BigInt(permitToClaim.amount)) {
-            const errorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
-            console.error(errorMsg);
-            // Update specific permit state to error
-            setPermits(currentPermits =>
-              currentPermits.map(p =>
-                p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
-                  ? { ...p, claimStatus: 'Error', claimError: errorMsg }
-                  : p
-              )
-            );
-            return; // Stop claim process
+        if (permitToClaim.permit2AllowanceSufficient === false) {
+             const errorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
+             console.error(errorMsg);
+             setPermits(currentPermits => currentPermits.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: 'Error', claimError: errorMsg } : p));
+             return;
         }
-        console.log("Balance check passed.");
-
-    } catch (balanceError) {
-        console.error("Failed to check balance:", balanceError);
-        const errorMsg = balanceError instanceof Error ? balanceError.message : "Failed to check token balance.";
-         // Update specific permit state to error
-         setPermits(currentPermits =>
-           currentPermits.map(p =>
-             p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
-               ? { ...p, claimStatus: 'Error', claimError: errorMsg }
-               : p
-           )
-         );
-        return; // Stop claim process
+         if (permitToClaim.checkError) {
+             const errorMsg = `Prerequisite check failed: ${permitToClaim.checkError}`;
+             console.error(errorMsg);
+             setPermits(currentPermits => currentPermits.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: 'Error', claimError: errorMsg } : p));
+             return;
+         }
     }
 
 
@@ -257,6 +246,11 @@ export function DashboardPage() {
 
     try {
       // Prepare arguments for permitTransferFrom
+       // Ensure amount is defined for ERC20
+       if (permitToClaim.type !== 'erc20-permit' || !permitToClaim.amount || !permitToClaim.token?.address) {
+         throw new Error("Cannot prepare arguments: Invalid ERC20 permit data.");
+       }
+
       const permitArgs = {
         permitted: {
           token: permitToClaim.token.address as `0x${string}`, // Cast needed
@@ -364,7 +358,7 @@ export function DashboardPage() {
    // Fetch permits when connected
    useEffect(() => {
      if (isConnected) { // Only fetch if connected
-       fetchPermits();
+       fetchPermitsAndCheck(); // Use the new function
      }
      // Optional: Clear permits if disconnected?
      // else { setPermits([]); }
@@ -421,16 +415,25 @@ export function DashboardPage() {
                   const isClaimed = permit.claimStatus === 'Success' || permit.status === 'Claimed'; // Consider both frontend and backend status
                   const isClaimingThis = permit.claimStatus === 'Pending'; // Only check if this specific permit is pending
                   const claimFailed = permit.claimStatus === 'Error';
+                  // Check prerequisite results
+                  const insufficientBalance = permit.ownerBalanceSufficient === false;
+                  const insufficientAllowance = permit.permit2AllowanceSufficient === false;
+                  const prerequisiteCheckFailed = !!permit.checkError;
+                  // Determine if a claim can be attempted (all checks must pass or not be applicable)
+                  const canAttemptClaim = isReadyToClaim && !isClaimingThis && !isClaimed &&
+                                          (permit.type !== 'erc20-permit' || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
+
 
                  return (
                   <tr key={permit.nonce + permit.networkId} style={{
-                    backgroundColor: !hasRequiredFields(permit) ? '#fff4f4' :
-                                   isClaimed ? '#e6ffed' : // Light green for claimed
-                                   claimFailed ? '#ffebe9' : // Light red for failed claim
-                                   isClaimingThis ? '#fff9e6' : // Light yellow for claiming
-                                   (permit.status === 'TestSuccess' || permit.status === 'Valid') ? '#f4fff4' : // Lighter green for tested/valid
-                                   permit.status === 'TestFailed' ? '#fff4f4' : // Lighter red for failed test
-                                   'transparent'
+                    backgroundColor: !hasRequiredFields(permit) ? '#fff4f4' : // Invalid fields
+                                   isClaimed ? '#e6ffed' : // Claimed
+                                   claimFailed ? '#ffebe9' : // Claim failed
+                                   isClaimingThis ? '#fff9e6' : // Claiming
+                                   (insufficientBalance || insufficientAllowance || prerequisiteCheckFailed) ? '#fff4f4' : // Prerequisite failed (light red)
+                                   (permit.status === 'TestSuccess' || permit.status === 'Valid') ? '#f4fff4' : // Tested/Valid
+                                   permit.status === 'TestFailed' ? '#fff4f4' : // Test failed
+                                   'transparent' // Default
                   }}>
                     <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
                       {permit.amount ? 'ERC20' : 'NFT'}
@@ -450,19 +453,29 @@ export function DashboardPage() {
                         color: isClaimed ? '#1a8917' : // Green
                                claimFailed ? '#d73a49' : // Red
                                isClaimingThis ? '#b08800' : // Yellow
+                               (insufficientBalance || insufficientAllowance || prerequisiteCheckFailed) ? '#d73a49' : // Red for prereq fail
                                (permit.status === 'TestSuccess' || permit.status === 'Valid') ? '#1a8917' : // Green
                                permit.status === 'TestFailed' ? '#d73a49' : // Red
                                permit.status === 'Testing' ? '#b08800' : // Yellow
                                '#666', // Default gray
-                       fontWeight: permit.claimStatus !== 'Idle' || permit.status === 'Claimed' || permit.status === 'TestSuccess' || permit.status === 'Valid' ? 'bold' : 'normal'
+                       fontWeight: permit.claimStatus !== 'Idle' || permit.status === 'Claimed' || permit.status === 'TestSuccess' || permit.status === 'Valid' || insufficientBalance || insufficientAllowance || prerequisiteCheckFailed ? 'bold' : 'normal'
                      }}>
                        {/* Prioritize Claim Status Display */}
                        {isClaimed ? 'Claimed' :
                         isClaimingThis ? 'Claiming...' :
                         claimFailed ? 'Claim Failed' :
+                        insufficientBalance ? 'Owner Balance Low' :
+                        insufficientAllowance ? 'Permit2 Allowance Low' :
+                        prerequisiteCheckFailed ? 'Check Failed' :
                         (permit.status === 'TestSuccess' || permit.status === 'Valid') ? 'Valid' : // Show 'Valid' if tested successfully
                         permit.status || 'Ready'} {/* Fallback to permit.status or 'Ready' */}
                       </div>
+                       {/* Display Prerequisite Check Error */}
+                       {permit.checkError && !permit.claimError && ( // Show check error if no claim error
+                         <div style={{ color: 'red', fontSize: '0.8em', marginTop: '4px' }}>
+                           Check Error: {permit.checkError}
+                         </div>
+                       )}
                     </td>
                     <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
                       {permit.githubCommentUrl ? (
@@ -475,11 +488,13 @@ export function DashboardPage() {
                       {/* Claim Button Logic - Updated */}
                       <button
                         onClick={() => handleClaimPermit(permit)}
-                        disabled={!isConnected || !isReadyToClaim || isClaimingThis || isClaimed} // Removed global isSubmitting check
+                        // Disable if not connected, cannot attempt claim, claiming, or claimed
+                        disabled={!isConnected || !canAttemptClaim || isClaimingThis || isClaimed}
                       >
                         {isClaimed ? 'Claimed' :
                          isClaimingThis ? 'Claiming...' :
                          claimFailed ? 'Retry Claim' : // Offer retry if failed
+                         (insufficientBalance || insufficientAllowance || prerequisiteCheckFailed) ? 'Cannot Claim' : // Indicate why disabled
                          'Claim'}
                       </button>
                        {/* Display Claim Error (prioritize over testError if claiming failed) */}
@@ -488,8 +503,8 @@ export function DashboardPage() {
                            Error: {permit.claimError}
                          </div>
                        )}
-                       {/* Display Test Error if no claim error */}
-                       {!permit.claimError && permit.testError && (
+                       {/* Display Test Error if no claim/check error */}
+                       {!permit.claimError && !permit.checkError && permit.testError && (
                          <div style={{ color: 'orange', fontSize: '0.8em', marginTop: '4px' }}>
                            Test Failed: {permit.testError}
                          </div>
