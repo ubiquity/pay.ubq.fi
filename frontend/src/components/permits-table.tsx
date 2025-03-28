@@ -20,21 +20,12 @@ export function PermitsTable({
   chain,
   isConfirming,
   confirmingHash,
-  isLoading, // Destructure isLoading
+  isLoading, // Destructure isLoading - Will be used to conditionally render the table
 }: PermitsTableProps) {
-  // Show spinner while loading
-  if (isLoading) {
-    // You might want a more styled spinner component later
-    return (
-      <div className="section-loading-indicator">
-        <div className="spinner"></div>
-        <span>Loading permits...</span>
-      </div>
-    );
-  }
+  // Loading state is now handled in DashboardPage
 
-  // Show message only after loading is finished and there are no permits
-  if (permits.length === 0) {
+  // Show message only if NOT loading and there are no permits
+  if (permits.length === 0 && !isLoading) {
     return (
       <section>
         <div className="error-message">
@@ -44,29 +35,34 @@ export function PermitsTable({
     );
   }
 
-  // Render table if not loading and permits exist
+  // Render table only if NOT loading and permits exist
   return (
-    <table className="permits-table">
-      <thead>
-        <tr>
-          <th>Source</th>
-          <th>Reward</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {permits.map((permit) => (
-          <PermitRow
-            key={permit.nonce + permit.networkId}
-            permit={permit}
-            onClaimPermit={onClaimPermit}
-            isConnected={isConnected}
-            chain={chain}
-            isConfirming={isConfirming}
-            confirmingHash={confirmingHash}
-          />
-        ))}
-      </tbody>
-    </table>
+    <>
+      {/* Render table only when not loading and permits exist */}
+      {!isLoading && permits.length > 0 && (
+        <table className="permits-table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Reward</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {permits.map((permit) => (
+              <PermitRow
+                key={permit.nonce + permit.networkId}
+                permit={permit}
+                onClaimPermit={onClaimPermit}
+                isConnected={isConnected}
+                chain={chain}
+                isConfirming={isConfirming}
+                confirmingHash={confirmingHash}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
   );
 }

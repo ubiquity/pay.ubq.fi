@@ -1,12 +1,3 @@
-/*
- * Consolidated CSS file for Module Rewards Viewer
- * Combines all previously separate CSS files into a single organized file
- */
-
-/* ========== FONT DEFINITIONS ========== */
-
-/* ========== VARIABLES & THEMING ========== */
-
 :root {
   --bg: #fff;
   --text: #333;
@@ -18,7 +9,6 @@
   --success: #00aa55;
   --font-family: "Ubiquity Nova", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
 :root {
   --left-table-column-width: 120px;
   --background-color-default-brightness: 2%;
@@ -28,7 +18,6 @@
   --background-color-light: hsl(225 50% var(--background-color-light-brightness) / 1);
   --border-color: hsl(225 25% var(--border-brightness) / 1);
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #111;
@@ -41,100 +30,72 @@
     --success: #00cc66;
   }
 }
-
-/* ========== BASE STYLES ========== */
-
 * {
   font-family: var(--font-family);
   box-sizing: border-box;
 }
-
-html,
-body {
-  overflow-x: hidden; /* Prevent horizontal scrollbar on body */
+body,
+html {
+  overflow-x: hidden;
   width: 100%;
   position: relative;
   min-height: 100%;
 }
-
 body {
   line-height: 1.6;
   color: var(--text);
   background: #000;
   margin: 0 auto;
-  /* font-size: 16px; */
-  overflow-x: visible; /* Allow content-columns to overflow */
+  overflow-x: visible;
   max-width: 1280px;
-  /* Add flexbox for vertical centering */
   display: flex;
-  flex-direction: column; /* Stack children vertically */
-  min-height: 100vh; /* Ensure body takes full viewport height */
-  justify-content: center; /* Vertically center content */
+  flex-direction: column;
+  min-height: 100vh;
+  justify-content: center;
 }
-
 h1 {
   font-size: 16px;
   text-transform: uppercase;
-  font-weight: 100;
-  /* margin: 0 0 1.5rem; */
+  /* font-weight: 100; */
   line-height: 1;
   text-rendering: geometricPrecision;
   text-align: center;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   vertical-align: middle;
-  /* color: #808080; */
-  margin: 0;
-  display: inline-block;
-  text-align: left;
-  margin: 12px;
+  margin: 0; /* Remove default margins */
+  display: inline-block; /* Keep inline-block for vertical alignment with icon */
+  /* text-align: left; Removed, will be centered by parent */
+  /* margin: 12px 16px; Removed, handled by parent */
   white-space: nowrap;
 }
-
 section {
-  /* margin-bottom: 4px; */
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
-  max-width: 563px;
+  max-width: 640px;
   margin: 4px auto;
   box-shadow: inset 0 0 36px #00bfff10;
-  /* opacity: 0.5; */
-  /* color: #808080; */
   user-select: none;
-  /* padding: 8px 0; */
+  border-radius: 4px;
 }
 section > span {
   padding: 8px 0;
   display: inline-block;
   vertical-align: middle;
 }
-main {
-  /* No special positioning - just let it flow naturally */
-}
-
 footer {
-  /* Normal document flow - will only be visible when scrolled to the bottom */
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   padding: 16px 0;
-  /* background-color: rgba(0, 0, 0, 0.7); */ /* Semi-transparent background */
 }
-
-/* ========== FORM ELEMENTS ========== */
-
 .analyze-form {
   display: flex;
   gap: 4px;
-  /* margin-bottom: 2rem; */
-  /* max-width: 640px; */
-  /* text-align: center; */
-  /* justify-content: center; */
   margin: auto;
 }
-
 .url-input {
   flex: 1;
   padding: 0.5rem;
@@ -145,53 +106,43 @@ footer {
   color: var(--text);
   text-align: center;
 }
-
 .url-input:focus {
-  outline: none;
+  outline: 0;
   border-color: var(--primary);
 }
-
 .analyze-btn {
   padding: 0.5rem 1rem;
   font-size: 1rem;
   background: var(--primary);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
-
 .analyze-btn:hover {
   opacity: 0.9;
 }
-
-/* ========== LAYOUT & CONTENT STRUCTURE ========== */
-
 .content-columns {
   display: flex;
-  overflow-x: auto; /* Enable horizontal scrolling */
-  width: 100%; /* Use 100% instead of 100vw to prevent overflow */
+  overflow-x: auto;
+  width: 100%;
   max-width: 100%;
   padding: 0;
   gap: 0;
   box-sizing: border-box;
   justify-content: flex-start;
-  position: relative; /* Ensure proper stacking context */
-  left: 0; /* Ensure left alignment doesn't get cut off */
+  position: relative;
+  left: 0;
 }
-
 .column {
   border-radius: 4px;
-  flex: 0 0 auto; /* Don't allow shrinking */
-  /* width: 640px; */ /* Fixed width for columns */
-  max-width: 638px; /* Maximum width on smaller screens */
-  min-width: 280px; /* Minimum width */
+  flex: 0 0 auto;
+  max-width: 638px;
+  min-width: 280px;
 }
-
 .issue-column {
   margin-right: 4px;
 }
-
 .column h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
@@ -199,61 +150,88 @@ footer {
   font-size: 1.3rem;
   color: var(--text);
 }
-
-.conversation {
-}
-
-/* ========== STATUS INDICATORS ========== */
-
 #error-message-wrapper {
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
-  max-width: 563px;
+  max-width: 640px;
   margin: 4px auto;
   box-shadow: inset 0 0 36px #00bfff10;
-  /* display: inline-flex; */
-  /* align-items: center; */
-  /* gap: 4px; */
-  /* justify-content: center; */
 }
-
 .hidden {
   display: none;
 }
 
-.section-loading-indicator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 8px;
-  color: var(--text-light);
-  /* border-radius: 4px; */
-  /* margin: 15px 0; */
-  backdrop-filter: blur(12px);
-  /* background-color: #00000040; */
-  border: 1px solid #ffffff10;
-  margin: 0 auto;
-  max-width: 563px;
-  box-shadow: inset 0 0 36px #00bfff10;
-}
+/* Removed .section-loading-indicator styles */
 
-.spinner {
+/* Re-add spinner styles */
+.spinner { /* Base spinner styles */
   width: 18px;
   height: 18px;
   border: 2px solid transparent;
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  color: #bfbfbf; /* Match header text color */
+}
+
+.header-spinner {
+  /* Specific styles for spinner in header */
+  margin: 0 16px; /* Add horizontal spacing */
 }
 
 @keyframes spin {
   0% {
-    transform: rotate(0deg);
+    transform: rotate(0);
   }
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Container for spinner OR expand button */
+.spinner-or-expand-container {
+  display: flex; /* Use flex to center content */
+  align-items: center;
+  justify-content: center;
+  height: 48px; /* Match other header controls height */
+  width: 56px; /* Approx width of button/spinner + padding */
+  /* No margin needed here, handled by header justify-content */
+}
+
+.expand-button {
+  background-color: transparent;
+  border: none;
+  /* padding: 0; */ /* Remove padding if only icon is shown */
+  padding: 0 16px; /* Add horizontal spacing like the spinner had */
+  cursor: pointer;
+  height: 48px; /* Match other header controls */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bfbfbf; /* Default color */
+}
+
+.expand-button:hover {
+  color: #fff; /* Hover color */
+  background-color: #ffffff08; /* Slight background on hover like controls */
+  border-radius: 0;
+}
+
+.expand-button:disabled {
+  opacity: 0.5; /* Keep opacity for disabled state */
+  cursor: not-allowed;
+  background-color: transparent; /* Ensure no background when disabled */
+  /* Removed transition for disabled state */
+}
+
+/* Style both opener and closer SVGs within the button */
+.expand-button svg.opener,
+.expand-button svg.closer {
+  fill: currentColor; /* Make SVG color inherit from button */
+  width: 24px; /* Match SVG attributes */
+  height: 24px;
+  /* Removed transition and transform as SVGs are swapped now */
 }
 
 .section-error-message {
@@ -264,7 +242,6 @@ footer {
   margin: 10px 0;
   border-left: 3px solid var(--error);
 }
-
 .update-notification {
   position: fixed;
   top: 20px;
@@ -278,7 +255,6 @@ footer {
   transition: opacity 0.3s ease-in-out;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
-
 @keyframes ellipsis-animation {
   0% {
     content: ".";
@@ -290,9 +266,6 @@ footer {
     content: "...";
   }
 }
-
-/* ========== COMMENT STYLES ========== */
-
 .comment {
   border-radius: 4px;
   margin-bottom: 4px;
@@ -303,97 +276,77 @@ footer {
   border: 1px solid #ffffff10;
   overflow: scroll;
 }
-
 .grouped-comment {
   border-left: 3px solid var(--error);
   background-color: rgba(255, 68, 68, 0.05);
 }
-
 .grouped-comment .comment-scores-inner {
   opacity: 0.8;
 }
-
 .badge-base::after {
   display: inline-block;
   font-size: 11px;
-  color: white;
-  padding: 0px 8px;
+  color: #fff;
+  padding: 0 8px;
   border-radius: 3px;
   position: absolute;
   bottom: 12px;
 }
-
 .grouped-comment::after {
   content: "Double Post";
   background-color: var(--error);
 }
-
 .grouped-comment {
   border-left: 3px solid var(--error);
   background-color: rgba(255, 68, 68, 0.05);
 }
-
 .grouped-comment .comment-scores-inner {
   opacity: 0.5;
 }
-
 .slash-command::after {
   content: "Slash Command";
   background-color: var(--primary);
 }
-
 .slash-command {
   border-left: 3px solid var(--primary);
   background-color: rgba(0, 102, 204, 0.05);
 }
-
 .slash-command .comment-scores-inner {
   opacity: 0.5;
 }
-
 .bot-comment::after {
   content: "Bot";
   background-color: var(--success);
 }
-
 .bot-comment {
   border-left: 3px solid var(--success);
   background-color: rgba(0, 170, 85, 0.05);
 }
-
 .bot-comment .comment-scores-inner {
   opacity: 0.5;
 }
-
 .comment-header .avatar {
   width: 32px;
   height: 32px;
   border-radius: 4px;
   vertical-align: middle;
 }
-
 .comment-header .user-info {
   display: inline-block;
   vertical-align: middle;
   margin: 0 12px;
   height: 24px;
 }
-
 .comment-header .username {
-  /* font-weight: 900; */
   color: #fff;
   text-decoration: none;
-  /* margin-right: 5px; */
 }
-
 .comment-header .username:hover {
   text-decoration: underline;
   color: var(--primary);
 }
-
 .comment-header .timestamp {
   font-size: 12px;
-  /* color: var(--text-light); */
   margin-left: 4px;
   text-decoration: none;
   position: absolute;
@@ -402,118 +355,93 @@ footer {
   line-height: 2;
   white-space: nowrap;
 }
-
 .comment-body {
   overflow-wrap: break-word;
   line-height: 1.5;
   color: var(--text);
   padding: 12px 0;
 }
-
-/* Markdown styling */
 .comment-body h1 {
   font-size: 1.6em;
   border-bottom: 1px solid var(--border);
   padding-bottom: 5px;
   margin-bottom: 15px;
 }
-
 .comment-body h2 {
   font-size: 1.4em;
   margin-top: 25px;
   margin-bottom: 15px;
 }
-
 .comment-body h3 {
   font-size: 1.2em;
   margin-top: 20px;
   margin-bottom: 10px;
 }
-
 .comment-body pre {
   background-color: #000;
   border-radius: 3px;
   padding: 12px;
   overflow-x: auto;
 }
-
 .comment-body code {
   background-color: #000;
   padding: 2px 4px;
   border-radius: 3px;
   font-family: monospace;
 }
-
 .comment-body blockquote {
   border-left: 3px solid #80808040;
-  color: #808080;
+  color: grey;
   padding-left: 12px;
   margin-left: 6px;
 }
-
 .comment-body img {
   max-width: 100%;
   height: auto;
 }
-
 .comment-body a {
   color: var(--primary);
   text-decoration: none;
 }
-
 .comment-body a:hover {
   text-decoration: underline;
 }
-
-.comment-body ul,
-.comment-body ol {
+.comment-body ol,
+.comment-body ul {
   padding-left: 25px;
 }
-
 .comment-body table {
   border-collapse: collapse;
   width: 100%;
   margin: 15px 0;
 }
-
-.comment-body table th,
-.comment-body table td {
+.comment-body table td,
+.comment-body table th {
   border: 1px solid var(--border);
   padding: 6px 13px;
 }
-
 .comment-body table th {
   background-color: var(--hover);
 }
-
 .comment-body table tr:nth-child(even) {
   background-color: var(--hover);
 }
-
-/* ========== CONVERSATION HEADERS ========== */
 .conversation-header {
-  /* display: flex; */
-  /* align-items: center; */
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
   margin: 4px auto;
   padding: 16px;
-  /* justify-content: space-between; */
   backdrop-filter: blur(12px);
-  /* background-color: #00000040; */
   border: 1px solid #ffffff10;
   line-height: 1;
   white-space: nowrap;
   text-overflow: ellipsis;
-  /* width: 100%; */
   overflow: hidden;
-  /* direction: rtl; */
   text-overflow: ellipsis;
   border-radius: 4px;
   margin: 4px auto;
 }
-
 .conversation-header svg {
   fill: currentColor;
   height: 16px;
@@ -521,7 +449,6 @@ footer {
   vertical-align: middle;
   margin: 4px;
 }
-
 .empty-state {
   display: flex;
   align-items: center;
@@ -532,83 +459,64 @@ footer {
   min-width: 160px;
   justify-content: center;
   backdrop-filter: blur(12px);
-  /* background-color: #00000040; */
   border: 1px solid #ffffff10;
   margin: 4px auto;
   vertical-align: middle;
   user-select: none;
 }
-
 .empty-state svg {
   fill: currentColor;
 }
-
-/* ========== SCORE DISPLAY ========== */
-
 .comment-scores-outer {
   display: block;
   width: auto;
   max-width: 100%;
-  overflow: hidden; /* Contain inner scrollable content */
+  overflow: hidden;
 }
-
 .comment-scores-inner {
   display: block;
-  white-space: nowrap; /* Keep all content on one line */
-  overflow-x: auto; /* Enable horizontal scrolling */
-  /* padding-bottom: 8px; */ /* Add space for scrollbar */
-  max-width: 100%; /* Prevent extending beyond container */
-  box-sizing: border-box; /* Include padding in width calculation */
+  white-space: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
   text-align: right;
 }
-
 .group-indicator {
   cursor: help;
   font-size: 12px;
-  /* margin-left: 4px; */
 }
-
 .score-info {
   display: inline-block;
   opacity: 0.5;
   padding: 0 2px;
   white-space: nowrap;
-  /* cursor: pointer; */
   user-select: none;
 }
-
 .score-label {
   font-weight: 600;
   font-size: 12px;
 }
-
 .score-value {
   border-radius: 12px;
   color: var(--primary);
   font-weight: 600;
   font-size: 12px;
 }
-
 .score-value[data-high-score="true"] {
   background-color: var(--success);
   color: var(--bg);
   border-color: var(--primary);
 }
-
-/* ========== SCORE SUMMARY STYLES ========== */
-
 .score-summary {
   border-radius: 4px;
   border: 1px solid #ffffff10;
 }
-
 .score-summary h3 {
   color: var(--text);
   font-size: 1.1rem;
   font-weight: 600;
   display: inline-block;
 }
-
 .score-summary-table {
   width: 100%;
   border-radius: 4px;
@@ -616,78 +524,63 @@ footer {
   backdrop-filter: blur(12px);
   background-color: #00000010;
 }
-
-.score-summary-table th,
-.score-summary-table td {
+.score-summary-table td,
+.score-summary-table th {
   text-align: left;
   text-align: right;
   padding: 4px 12px;
 }
-
 .score-summary-table th {
   font-weight: 600;
   color: var(--text);
   text-align: center;
 }
-
 .score-summary-table th.sort-column {
-  color: white;
+  color: #fff;
   position: relative;
   background-color: #00000040;
   border: 1px solid #ffffff10;
 }
-
 .score-summary-table th.sort-column::after {
   content: "▼";
   font-size: 0.8em;
   margin-left: 5px;
 }
-
 .score-summary-table td.sort-column-cell {
-  font-weight: bold;
+  font-weight: 700;
   background-color: #00000040;
   border: 1px solid #ffffff10;
 }
-
 .contributor-cell {
   display: flex;
   align-items: center;
   text-align: left;
 }
-
 .summary-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   margin-right: 8px;
 }
-
 .summary-username {
   color: var(--primary);
   text-decoration: none;
   font-weight: 600;
 }
-
 .summary-username:hover {
   text-decoration: underline;
 }
-
 .contributor-col {
   width: 30%;
 }
-
 .score-col {
   width: 17.5%;
 }
-
-/* ========== LINKED CONTENT STYLES ========== */
-
 .linked-content-header h3 {
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--text);
 }
-
 .linked-issue-spec,
 .linked-prs-list {
   margin: 0 0 2rem;
@@ -696,7 +589,6 @@ footer {
   border-radius: 4px;
   background: var(--hover);
 }
-
 .linked-issue-spec .issue-header,
 .linked-prs-list .prs-header {
   margin-bottom: 1rem;
@@ -704,7 +596,6 @@ footer {
   justify-content: space-between;
   align-items: center;
 }
-
 .linked-issue-spec h3,
 .linked-prs-list h3 {
   margin: 0 0 0.5rem;
@@ -714,137 +605,94 @@ footer {
   align-items: center;
   gap: 0.5rem;
 }
-
 .linked-issue-spec a,
 .linked-prs-list a {
   color: var(--primary);
   text-decoration: none;
   font-weight: 600;
 }
-
 .linked-issue-spec a:hover,
 .linked-prs-list a:hover {
   text-decoration: underline;
 }
-
 .linked-issue-spec .issue-body {
   padding: 1rem;
   background: var(--bg);
   border-radius: 4px;
   border: 1px solid var(--border);
 }
-
-/* ========== RESPONSIVE DESIGN ========== */
-
 @media (max-width: 960px) {
-  body {
-    /* padding: 1rem; */
-  }
-
   .column {
-    max-width: calc(100% - 20px); /* Use percentage with padding to ensure visibility */
-    width: auto; /* Allow natural sizing */
-    min-width: 280px; /* Maintain minimum width */
-    /* margin: 0 10px; */ /* Add horizontal margins for spacing */
+    max-width: calc(100% - 20px);
+    width: auto;
+    min-width: 280px;
   }
-
   .content-columns {
     padding: 0;
     gap: 0;
-    justify-content: flex-start; /* Align to start on mobile for better visibility */
+    justify-content: flex-start;
     width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
   }
 }
-
 .score-info:hover {
   opacity: 1;
 }
-
-.comment-header {
-  /* margin-bottom: 12px; */
-  /* border-bottom: 1px solid transparent; */
-}
-
 pre {
   font-size: 12px;
 }
-
-/* Dynamic state classes */
 .hidden-element {
   opacity: 0;
 }
-
 .display-none {
   display: none;
 }
-
-.display-block {
-  /* display: block; */
-}
-
-/* Error message overlay */
 .error-message-overlay {
   position: fixed;
   top: 20px;
   right: 20px;
   padding: 15px;
   background-color: var(--error);
-  color: white;
+  color: #fff;
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   opacity: 1;
   transition: opacity 0.3s ease-in-out;
 }
-
 div#score-summary-content {
   vertical-align: middle;
 }
-
 .score-info:last-child {
   padding-right: 0;
 }
-
 a.timestamp:hover {
   text-decoration: underline;
   color: #fff;
 }
-
 hr {
   border: 1px solid #ffffff10;
 }
-
 .comment-scores-outer {
   overflow: hidden;
   max-width: 100%;
   width: auto;
 }
-
 p {
   margin: auto;
 }
-
-summary {
-  /* display: inline-block; */
-  /* width: 12px; */
-}
-
 ::marker {
   display: inline-block;
   position: absolute;
 }
-
 b > * {
   display: inline-block;
 }
-
 h6 {
   margin: 0;
   font-size: 16px;
 }
-
 .conversation-header > h6 {
   max-width: calc(100% - 32px);
   display: inline-block;
@@ -852,23 +700,10 @@ h6 {
   text-overflow: ellipsis;
   overflow: hidden;
 }
-
 details {
   cursor: pointer;
 }
-
-/* Global styles and component-specific styles */
-
-/* App.tsx */
-.logout-button {
-  /* position: absolute; */
-  /* top: 10px; */
-  /* right: 10px; */
-}
-
-/* dashboard-page.tsx */
 .error-message {
-  /* color: red; */
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -876,170 +711,111 @@ details {
   opacity: 0.75;
   padding: 8px;
 }
-
 .summary-info {
   margin-bottom: 20px;
 }
-
 .permits-table {
-  /* width: 100%; */
   border-collapse: collapse;
-  /* background-color: #000; */
-  /* background-color: var(--background-color-default); */
-  /* position: absolute; */
   box-shadow: inset 0 0 96px #00bfff10;
   transition: 0.25s all ease-in-out;
-  /* border: 1px solid var(--border-color); */
-  /* transform: translate(-50%, -50%); */
   width: 100%;
-  max-width: 563px;
+  max-width: 640px;
   overflow: hidden;
-  /* box-shadow: 0 12px 64px #00000010;
-}
-
-.permits-table th,
-.permits-table td {
-  padding: 8px;
-  /* border-bottom: 1px solid #dddd40; */
-  /* backdrop-filter: blur(24px); */
-  /* margin-bottom: 4px; */
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
   margin: 0 auto;
-  /* border-radius: 4px; */
-  /* box-sizing: border-box; */
 }
-
 .permits-table th {
-  text-align: center; /* Default alignment for headers */
-  font-weight: bold;
+  text-align: center;
+  font-weight: 700;
   padding: 12px;
 }
-
 .permits-table .align-right {
   text-align: right;
 }
-
 .permits-table .monospace {
   font-family: monospace;
   font-size: 13.3333px;
-  /* font-weight: bold; */
 }
-
 .permits-table .small-font {
   font-size: 0.9em;
 }
-
 .permits-table .extra-small-font {
   font-size: 0.8em;
 }
-
 .permits-table .subtle-text {
   color: #ffffff80;
   text-align: center;
 }
-
 .permits-table .margin-left-5 {
   margin-left: 5px;
 }
-
 .permits-table .margin-top-4 {
   margin-top: 4px;
 }
-
 .permits-table .bold-text {
-  font-weight: bold;
+  font-weight: 700;
 }
-
 .permits-table .status-claimed {
-  color: #1a891740; /* Green */
+  color: #1a891740;
 }
-
 .permits-table .status-unclaimed {
-  color: #b35f0040; /* Orange/Brown */
+  color: #b35f0040;
 }
-
 .permits-table .status-error {
-  /* color: red; */
   text-align: center;
   font-size: 13.3333px;
 }
-
 .permits-table .status-test-failed {
-  color: orange; /* Also used for prerequisite warnings */
+  color: orange;
 }
-
 .permits-table .row-invalid {
-  background-color: #ffffff20; /* Light red background - Used for invalid, test failed, prerequisite failed */
+  background-color: #ffffff20;
   opacity: 0.25;
 }
-
 .permits-table .row-claimed {
-  background-color: #e6ffed40; /* Light green */
+  background-color: #e6ffed40;
 }
-
 .permits-table .row-claim-failed {
-  background-color: #ffebe940; /* Light red/pink */
+  background-color: #ffebe940;
 }
-
 .permits-table .row-claiming {
-  background-color: #fff9e640; /* Light yellow */
+  background-color: #fff9e640;
 }
-
-/* .row-prerequisite-failed uses .row-invalid */
-
 .permits-table .row-valid {
-  background-color: #f4fff440; /* Lighter green */
+  background-color: #f4fff440;
 }
-
-/* .row-test-failed uses .row-invalid */
-
 .permits-table .row-warning {
-  background-color: #fffbea40; /* Light yellow background */
+  background-color: #fffbea40;
 }
-
 .permits-table .warning-text {
   color: orange;
   font-size: 0.8em;
   margin-top: 4px;
 }
-
-/* Status Colors - Add specific ones */
 .permits-table .status-claiming {
-  /* Same as testing */
-  color: #b0880040; /* Yellow/Orange */
+  color: #b0880040;
 }
-
-/* .status-valid uses .status-claimed */
-
-/* .status-testing uses .status-claiming */
-
-/* .status-default uses .subtle-text */
-
-/* Logo Styling */
-/* Target the SVG inside the wrapper span */
 #header-logo-wrapper svg {
-  height: 1em; /* Match the text size */
-  width: auto;
+  /* height: 1em; */
+  /* width: auto; */
   margin-right: 4px;
-  vertical-align: -0.125em; /* Adjust vertical alignment */
-  fill: currentColor; /* Allow color inheritance */
+  /* vertical-align: -0.125em; */
+  fill: currentColor;
   height: 24px;
   width: 24px;
   vertical-align: middle;
 }
 #header-logo-wrapper svg path {
-  fill: currentColor; /* Allow color inheritance */
+  /* fill: currentColor; */
 }
 button {
   cursor: pointer;
   background-color: #ffffff10;
-  padding: 8px 16px;
+  padding: 8px 24px;
   border-radius: 4px;
   opacity: 0.75;
-  /* border: 1px solid transparent; */
-  /* margin: 1px; */
 }
 button:hover {
   opacity: 1;
@@ -1048,10 +824,8 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-.section-loading-indicator > .spinner {
-  margin-right: 16px;
-}
+/* Removed section-loading-indicator > spinner styles */
+/* Removed section-loading-indicator > span styles */
 
 .github-comment-url {
   text-align: right;
@@ -1064,46 +838,25 @@ button:disabled {
   opacity: 1;
 }
 #controls {
-  /* text-align: center; */
-  /* margin-top: 4px; */
-  /* width: 50vw; */
-  /* width: 100%; */
-  /* max-width: 563px; */
-  /* margin: 4px auto; */
-  /* backdrop-filter: blur(12px); */
-  /* border: 1px solid #ffffff10; */
-  /* text-align: right; */
-  /* max-width: 563px; */
-  /* margin: 4px auto; */
-  /* box-shadow: inset 0 0 36px #00bfff10; */
   display: inline-block;
   text-align: right;
-  /* height: 100%; */
-  /* float: right; */
 }
 #controls > button {
-  /* width: calc(50% - 2px); */ /* Corrected corrupted width value */
-  /* margin: 0 1px; */
   background-color: transparent;
-  /* width: 100%; */
-  /* text-align: right; */
-  /* justify-content: end; */
   height: 48px;
 }
 #controls > button:hover {
   background-color: #ffffff08;
-  border-radius: 0px;
+  border-radius: 0;
 }
-
-#controls button span{
+#controls button span {
   vertical-align: middle;
 }
-/* Class for buttons containing text and an SVG icon */
 .button-with-icon {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  justify-content: center; /* Center content within the button */
+  justify-content: center;
 }
 #controls svg {
   margin-right: 4px;
@@ -1111,34 +864,26 @@ button:disabled {
 thead {
   display: none;
 }
-
 h1 > span {
   color: #bfbfbf;
-  /* user-select: none; */
-  font-size: 16px;
+  font-size: 13.3333px;
 }
 h1:hover > span {
   color: #fff;
 }
-
 h1 > #header-logo-wrapper > svg > path {
   fill: #bfbfbf;
 }
 h1:hover > #header-logo-wrapper > svg > path {
   fill: #fff;
 }
-
 svg {
   vertical-align: middle;
 }
-
 .error-message > span {
   vertical-align: middle;
-  /* padding: 8px; */
 }
-
 section#controls > * {
-  /* width: calc(50% - 2px); */
   display: inline-block;
   vertical-align: middle;
 }
@@ -1153,56 +898,34 @@ section#controls > * {
   vertical-align: middle;
   font-family: monospace;
 }
-
-
-section#header {
-    /* padding: 0 12px; */
-    /* display: table; */
-}
-
-section#header>* {
-    /* max-width: calc(50% - 16px); */
-    /* vertical-align: middle; */
-    /* justify-content: end; */
-    /* text-align: right; */
-    /* display: table-cell; */
-    /* height: 36px; */
-    /* margin-left: auto; */
-    /* display: inline-flex; */
-}
-
-/* Header Layout */
 #header {
   display: flex;
-  justify-content: space-between; /* Pushes children to opposite ends */
-  align-items: center; /* Vertically aligns items in the middle */
-  /* padding: 0; */ /* Add some padding */
-  max-width: 563px; /* Override previous max-width */
-  /* Remove conflicting styles */
-  /* display: table; */
+  justify-content: space-between; /* Ensures space between items */
+  align-items: center;
+  max-width: 640px;
+  /* position: absolute; */
+  /* justify-content: space-between; Already set */
 }
 
-/* Ensure direct children of header don't override flex behavior */
-#header > div {
-  /* Remove conflicting styles */
-  /* display: table-cell; */
-  /* display: inline-flex; */ /* Let flexbox handle alignment */
-  /* height: 48px; */ /* Let flexbox handle height */
-  /* margin-left: auto; */ /* Let justify-content handle spacing */
-  /* max-width: calc(50% - 16px); */ /* Allow natural sizing */
-  /* vertical-align: middle; */ /* Keep vertical alignment */
+/* Style direct children for flex layout */
+#header > .spinner-or-expand-container,
+#header > #logo-wrapper,
+#header > #controls {
+  display: flex;
+  align-items: center;
   height: 100%;
-  /* border: 1px solid red; */
 }
 
-/* Specifically target the h1 container and controls container if needed */
-#header > div:first-child { /* Container for h1 */
-  /* Styles for the left side if needed */
+/* Center the logo */
+#header > #logo-wrapper {
+  flex-grow: 1; /* Allow logo to take up space */
+  justify-content: center; /* Center h1 within the wrapper */
 }
 
-#header > #controls { /* The controls div itself */
-  /* Styles for the right side if needed */
-  /* text-align: right; */ /* Keep text alignment within controls */
-  /* float: none; */ /* Remove float */
-  /* display: inline-block; */ /* Override inline-flex if it was causing issues */
+/* Ensure controls stay on the right */
+#header > #controls {
+  justify-content: flex-end;
 }
+
+/* Remove specific spinner targeting as it's inside the container now */
+/* #header > .header-spinner { ... } */

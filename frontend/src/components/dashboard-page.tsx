@@ -22,6 +22,8 @@ export function DashboardPage() {
   // State management
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTableVisible, setIsTableVisible] = useState(false); // <-- Set initial state to false
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false); // <-- Track initial load
   const [error, setError] = useState<string | null>(null); // General dashboard error
   const { data: hash, error: writeContractError, writeContractAsync } = useWriteContract();
 
@@ -44,6 +46,7 @@ export function DashboardPage() {
     if (!isConnected || !address) {
       setError("Wallet not connected.");
       setIsLoading(false);
+      setInitialLoadComplete(true); // Mark as complete even if not connected
       return;
     }
 
@@ -215,7 +218,13 @@ export function DashboardPage() {
       }
     } finally {
       setIsLoading(false);
+      setInitialLoadComplete(true); // <-- Mark initial load as complete
     }
+  };
+
+  // Function to toggle table visibility
+  const toggleTableVisibility = () => {
+    setIsTableVisible((prev) => !prev);
   };
 
   // Removed handleConnectWallet as connection is handled in LoginPage
@@ -345,6 +354,9 @@ export function DashboardPage() {
   useEffect(() => {
     if (isConnected) {
       fetchPermitsAndCheck();
+    } else {
+      // If disconnected, ensure initial load is marked complete so button isn't stuck disabled
+      setInitialLoadComplete(true);
     }
   }, [isConnected]);
 
@@ -353,20 +365,37 @@ export function DashboardPage() {
   return (
     <>
       <section id="header">
+        {/* Container for spinner OR expand button (Moved to the left) */}
+        <div className="spinner-or-expand-container">
+          {isLoading ? (
+            <div className="spinner header-spinner"></div>
+          ) : (
+            <button
+              className="expand-button"
+              disabled={!initialLoadComplete} // Only disable before initial load completes
+              onClick={toggleTableVisibility}
+              title={isTableVisible ? "Collapse" : "Expand"} // Title doesn't need loading state now
+            >
+              {isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
+            </button>
+          )}
+        </div>
+
+        {/* Logo Wrapper (Now in the middle) */}
         <div id="logo-wrapper">
           <h1>
             <LogoSpan />
             <span>Ubiquity OS Rewards</span>
           </h1>
         </div>
-        {/* Moved controls inside header */}
+
+        {/* Controls (Remains on the right) */}
         {isConnected && address ? ( // Check for address as well
           <div id="controls">
             <button onClick={() => disconnect()} className="button-with-icon">
               {ICONS.DISCONNECT}
               <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
             </button>
-            {/* Removed Logout button */}
           </div>
         ) : (
           // This part should ideally not be reached if App.tsx handles rendering LoginPage
@@ -382,15 +411,18 @@ export function DashboardPage() {
           </div>
         </section>
       )}
-      <PermitsTable
-        permits={permits}
-        onClaimPermit={handleClaimPermit}
-        isConnected={isConnected}
-        chain={chain}
-        isConfirming={isConfirming}
-        confirmingHash={hash}
-        isLoading={isLoading}
-      />
+      {/* Conditionally render PermitsTable based on isTableVisible */}
+      {isTableVisible && (
+        <PermitsTable
+          permits={permits}
+          onClaimPermit={handleClaimPermit}
+          isConnected={isConnected}
+          chain={chain}
+          isConfirming={isConfirming}
+          confirmingHash={hash}
+          isLoading={isLoading}
+        />
+      )}
     </>
   );
 }
