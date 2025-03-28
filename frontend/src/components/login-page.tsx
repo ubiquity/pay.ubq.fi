@@ -25,31 +25,33 @@ export function LoginPage(/* Props if needed */) {
   // Basic example using wagmi's useConnect hook
   // This assumes connectors are configured in the WagmiConfig provider
   return (
-    <div>
+    // Add the section wrapper to match DashboardPage
+    <section id="header">
       <div id="logo-wrapper">
         <h1>
           <LogoSpan />
           <span>Ubiquity OS Rewards</span>
         </h1>
       </div>
-      {(() => {
-        // Explicitly find the injected connector from useConnectors result
-        const injectedConnectorInstance = connectors.find((c) => c.id === "injected");
+      {/* Move controls div to be a direct sibling of logo-wrapper */}
+      <div id="controls">
+        {(() => {
+          // Explicitly find the injected connector from useConnectors result
+          const injectedConnectorInstance = connectors.find((c) => c.id === "injected");
 
-        // Removed debugging logs
+          // Removed debugging logs
 
-        if (!injectedConnectorInstance) {
-          return <div>Browser wallet connector not found. Please install MetaMask or a similar wallet.</div>;
-        }
+          if (!injectedConnectorInstance) {
+            return <div>Browser wallet connector not found. Please install MetaMask or a similar wallet.</div>;
+          }
 
-        // Removed the complex/incorrect features check and unused isReady variable
+          // Removed the complex/incorrect features check and unused isReady variable
 
-        // Workaround: Enable button if .ready is undefined but window.ethereum exists
-        const isReady = injectedConnectorInstance.ready ?? (typeof window !== "undefined" && !!window.ethereum);
+          // Workaround: Enable button if .ready is undefined but window.ethereum exists
+          const isReady = injectedConnectorInstance.ready ?? (typeof window !== "undefined" && !!window.ethereum);
 
-        return (
-          // Match structure from DashboardPage
-          <div id="controls">
+          return (
+            // Button is now directly inside #controls
             <button
               className="button-with-icon" // Add class
               disabled={!isReady || status === "pending"} // Use the combined readiness check
@@ -65,12 +67,12 @@ export function LoginPage(/* Props if needed */) {
                 {!isReady && status !== "pending" && " (unsupported)"}
               </span>
             </button>
-          </div>
-        );
-      })()}
-      {/* Show error message if connection fails */}
+          );
+        })()}
+      </div>
+      {/* Show error message if connection fails - keep it outside the header section for now */}
       {error && <div>{error.message}</div>}
-    </div>
+    </section>
   );
 } // Added missing closing brace for the component function
 // Removed stray ); from the end

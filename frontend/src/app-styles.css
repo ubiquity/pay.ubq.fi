@@ -1176,7 +1176,7 @@ section#header>* {
   display: flex;
   justify-content: space-between; /* Pushes children to opposite ends */
   align-items: center; /* Vertically aligns items in the middle */
-  padding: 9; /* Add some padding */
+  /* padding: 0; */ /* Add some padding */
   max-width: 563px; /* Override previous max-width */
   /* Remove conflicting styles */
   /* display: table; */
