@@ -1,5 +1,11 @@
 import { Octokit } from "@octokit/rest";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts"; // Import dotenv loader
+
+// --- Load Environment Variables ---
+// Load .env file. Deno Deploy handles env vars differently, but this is good for local dev.
+// The --allow-read and --allow-env flags are needed.
+await load({ export: true }); // Export variables to Deno.env
 
 // --- Configuration ---
 
@@ -169,18 +175,29 @@ async function processPermitData(base64Data: string, sourceUrl: string, owner: s
   }
 }
 
+// --- DEPRECATED Cron Job / Manual Trigger ---
+// The scanning logic has been moved to the API service (`backend/api/main.ts`)
+// and is triggered on behalf of an authenticated user via the `/api/scan/github` endpoint.
+// This standalone scanner file might be repurposed for other background tasks
+// or removed entirely. The cron job below is no longer relevant for user-specific scans.
+
+/*
 // --- Deno Deploy Cron Handler ---
 // See: https://deno.com/deploy/docs/tasks-and-cron-jobs
 // Ensure this file is the entry point specified in your Deno Deploy project settings.
-Deno.cron("github-permit-scanner", "*/15 * * * *", async () => { // Example: Run every 15 minutes
+Deno.cron("github-permit-scanner", "0 * * * *", async () => { // Example: Run hourly
   console.log("Cron job triggered: github-permit-scanner");
-  await scanGitHubForPermits();
+  // await scanGitHubForPermits(); // This used a global token, which is incorrect.
 });
+*/
 
-
+/*
 // --- Manual Execution ---
 // Run with: deno run --allow-net --allow-env --allow-read main.ts
 if (import.meta.main) {
   console.log("Manual execution triggered.");
-  await scanGitHubForPermits();
+  // await scanGitHubForPermits(); // This used a global token, which is incorrect.
 }
+*/
+
+console.log("Standalone scanner entry point. NOTE: Core scanning logic moved to API service.");

@@ -6,8 +6,15 @@ import type { PermitData } from '../../shared/types'; // Import shared type
 import { useAuth } from './auth-context'; // Import useAuth hook
 
 // --- Configuration ---
-// TODO: Replace with your actual GitHub OAuth App Client ID (use Vite env vars)
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || 'YOUR_GITHUB_CLIENT_ID';
+// Vite automatically loads variables prefixed with VITE_ from .env files
+const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID;
+const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8000'; // Default if not set
+
+if (!GITHUB_CLIENT_ID) {
+  console.error("Error: VITE_GITHUB_CLIENT_ID is not defined in your .env file.");
+  // Optionally, you could throw an error or display a message to the user
+}
+
 const GITHUB_REDIRECT_URI = `${window.location.origin}/github/callback`;
 const GITHUB_AUTH_URL = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=read:user`; // Add more scopes if needed (e.g., repo access for scanning?)
 
@@ -34,12 +41,16 @@ function DashboardPage() {
     setError(null);
     console.log("TODO: Fetch permits from backend API");
     try {
-      // const response = await fetch('/api/permits'); // Adjust API endpoint
+      // const token = localStorage.getItem('sessionToken');
+      // if (!token) throw new Error("Not authenticated");
+      // const response = await fetch(`${BACKEND_API_URL}/api/permits`, {
+      //   headers: { 'Authorization': `Bearer ${token}` }
+      // });
       // if (!response.ok) {
       //   throw new Error('Failed to fetch permits');
       // }
       // const data = await response.json();
-      // setPermits(data); // Assuming API returns an array of permits
+      // setPermits(data.permits || []); // Assuming API returns { permits: [...] }
       setPermits([]); // Placeholder
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -64,6 +75,47 @@ function DashboardPage() {
     console.log("TODO: Initiate Batch Claim");
   };
 
+  // Function to trigger backend scan
+  const handleScan = async () => {
+    console.log("Triggering GitHub scan via backend...");
+    setIsLoading(true); // Use loading state for scan trigger
+    setError(null);
+    const token = localStorage.getItem('sessionToken'); // Get stored JWT
+    if (!token) {
+      setError("Not logged in.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_API_URL}/api/scan/github`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json', // Even if body is empty, set content type
+        },
+        // body: JSON.stringify({}) // No body needed for this trigger
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to trigger scan' }));
+        throw new Error(errorData.message || `Scan trigger failed with status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Scan trigger response:", result);
+      // Optionally show a success message to the user
+      alert(result.message || "Scan initiated!"); // Simple alert for now
+      // Maybe trigger fetchPermits again after a delay?
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred during scan trigger');
+      console.error("Error triggering scan:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   // Fetch permits on component mount
   useEffect(() => {
     fetchPermits();
@@ -83,6 +135,12 @@ function DashboardPage() {
       ) : (
         <button onClick={handleConnectWallet}>Connect Wallet</button>
       )}
+
+      <hr />
+
+      <button onClick={handleScan} disabled={isLoading}>
+        {isLoading ? 'Scanning...' : 'Scan GitHub for Permits'}
+      </button>
 
       <hr />
 
@@ -130,8 +188,12 @@ function GitHubCallback() {
   const navigate = useNavigate();
   const { login } = useAuth(); // Get login function from context
   const [message, setMessage] = useState('Processing GitHub callback...');
+  const [isProcessing, setIsProcessing] = useState(false); // Add state to prevent double fetch
 
   useEffect(() => {
+    // Prevent running the effect twice due to StrictMode or other reasons
+    if (isProcessing) return;
+
     const searchParams = new URLSearchParams(location.search);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
@@ -144,36 +206,46 @@ function GitHubCallback() {
     } else if (code) {
       setMessage('GitHub login successful! Exchanging code...');
       console.log("GitHub OAuth Code:", code);
-      // TODO: Send 'code' to backend API to exchange for an access token
-      // Example:
-      // fetch('/api/auth/github/callback', { method: 'POST', body: JSON.stringify({ code }) })
-      //   .then(res => res.json())
-      //   .then(data => {
-      //     // TODO: Store session token (e.g., in localStorage or context)
-      //     console.log("Backend token exchange successful:", data);
-      //     setMessage('Login complete! Redirecting...');
-      //     // Redirect to the main dashboard
-      //     navigate('/', { replace: true });
-      //   })
-      //   .catch(err => {
-      //     console.error("Backend token exchange failed:", err);
-      //     setMessage('Login failed during token exchange.');
-      //     setTimeout(() => navigate('/'), 3000);
-      //   });
+      setIsProcessing(true); // Mark as processing
 
-      // Placeholder: Simulate backend token exchange and login
-      setTimeout(() => {
-         const fakeToken = `fake-session-token-${Date.now()}`; // Simulate receiving a token
-         console.log("Placeholder: Simulating successful login with token:", fakeToken);
-         login(fakeToken); // Call login from context
-         navigate('/', { replace: true }); // Redirect after login
-      }, 1500);
+      // Send 'code' to backend API to exchange for an access token
+      fetch(`${BACKEND_API_URL}/api/auth/github/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Backend token exchange failed with status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          // TODO: Ensure backend returns a consistent token format (e.g., { token: "..." })
+          if (data && data.token) {
+            console.log("Backend token exchange successful.");
+            setMessage('Login complete! Redirecting...');
+            login(data.token); // Store the received session token
+            navigate('/', { replace: true }); // Redirect to the main dashboard
+          } else {
+            throw new Error("Invalid token data received from backend.");
+          }
+        })
+        .catch(err => {
+          console.error("Backend token exchange failed:", err);
+          setMessage(`Login failed: ${err.message}`);
+          setIsProcessing(false); // Reset processing state on error
+          setTimeout(() => navigate('/'), 3000); // Redirect back to login on error
+        });
 
     } else {
       setMessage('Invalid GitHub callback.');
+      setIsProcessing(false); // Reset processing state
       setTimeout(() => navigate('/'), 3000);
     }
-  }, [location, navigate]);
+  }, [location, navigate, login, isProcessing]); // Add dependencies
 
   return <div>{message}</div>;
 }
@@ -197,18 +269,21 @@ function App() {
     return <div>Loading...</div>;
   }
 
+  // Return statement requires parenthesis around the JSX
   return (
-    <Routes>
-      <Route path="/github/callback" element={<GitHubCallback />} />
-      <Route
-        path="/"
-        element={isLoggedIn ? <DashboardPage /> : <LoginPage onLogin={handleLogin} />}
-      />
-      {/* Example Logout route/button - integrate properly later */}
+    <> {/* Fragment start */}
+      <Routes>
+        <Route path="/github/callback" element={<GitHubCallback />} />
+        <Route
+          path="/"
+          element={isLoggedIn ? <DashboardPage /> : <LoginPage onLogin={handleLogin} />}
+        />
+        {/* Add other routes as needed */}
+      </Routes>
+      {/* Example Logout button - move to a proper header/layout component later */}
       {isLoggedIn && <button onClick={handleLogout} style={{ position: 'absolute', top: 10, right: 10 }}>Logout</button>}
-      {/* Add other routes as needed */}
-    </Routes>
-  );
+    </> // Fragment end
+  ); // Parenthesis for return end
 }
 
 export default App;

@@ -1,14 +1,14 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts",
-    "start": "deno run main.ts"
+    "dev": "deno run --watch --allow-net --allow-env --allow-read main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read main.ts"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },
   "imports": {
-    "hono/": "https://deno.land/x/hono@v4.1.5/",
+    // Hono imports removed - will use full URLs in main.ts
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.8"
     // Add other imports as needed
   }

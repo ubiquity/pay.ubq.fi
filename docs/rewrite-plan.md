@@ -26,8 +26,8 @@ graph LR
         direction TB
         BackendAPI[Backend API Worker] -->|Read/Write| DB[(Database - Supabase)]
         BackendAPI -->|Write Calls| Blockchain
-        GitHubScanner[GitHub Scanner Worker] -->|API Calls| GitHub[GitHub API]
-        GitHubScanner -->|Write| DB
+        BackendAPI -->|API Calls (User Token)| GitHub[GitHub API]
+        # GitHubScanner Worker is deprecated for user-specific scans
     end
 
     Wallet -->|Sign/Send Tx| Blockchain
@@ -39,22 +39,24 @@ graph LR
 
 *   **Frontend:** Single Page Application (SPA) built with TypeScript. Likely React, leveraging existing component testing infrastructure (React Testing Library) and component libraries. Responsible for UI, wallet interaction, initiating scans, displaying permits, and constructing/sending batch claim transactions. Styling will use raw CSS.
 *   **Backend:** Deno (TypeScript), deployed on Deno Deploy.
-    *   **API Worker:** Handles requests from the frontend (e.g., fetching permits for a user, potentially triggering scans). Interacts with the database. May perform some validation checks.
-    *   **GitHub Scanner Worker:** Runs periodically or on trigger. Uses the GitHub API to scan configured repositories/issues for comments containing permit URLs (`?claim=...`). Parses the Base64 data, extracts permit details, and stores them in the database. Needs GitHub credentials/token.
+    *   **API Worker:** Handles requests from the frontend (e.g., fetching permits, triggering scans, GitHub auth callback). Interacts with the database. Performs GitHub scanning using the authenticated user's token. May perform validation checks.
+    *   **GitHub Scanner Worker:** (Deprecated for user-specific scanning). May be removed or repurposed for global tasks if needed later.
 *   **Database:** Supabase (PostgreSQL) is recommended given prior use. Stores:
-    *   Found permit details (type, contract addresses, amounts, nonces, deadlines, signatures, metadata, GitHub source URL).
+    *   User information (GitHub ID, encrypted GitHub access token, etc.).
+    *   Found permit details (type, contract addresses, amounts, nonces, deadlines, signatures, metadata, GitHub source URL, associated user ID).
     *   Claim status (transaction hash, claimed timestamp).
     *   User associations (linking GitHub user ID to permits).
 *   **Blockchain Interaction:** Primarily driven by the Frontend for claiming (requires user signature). Uses `viem` (latest). Validation checks might occur on both frontend and backend. RPC management needs investigation (custom or viem capabilities).
 
 ## 3. Key Features & Implementation Details
 
-### 3.1. GitHub Permit Scanner (Backend Worker)
+### 3.1. GitHub Permit Scanning (via Backend API)
 
-*   **Trigger:** Cron job (via Deno Deploy's cron feature) or manual trigger via API.
-*   **Authentication:** Use a GitHub App or Personal Access Token with appropriate permissions to read repository comments. Store securely (Deno Deploy environment variables).
-*   **Scanning:**
-    *   Fetch list of target repositories/organizations from configuration.
+*   **Trigger:** Authenticated user initiates via frontend call to `POST /api/scan/github`.
+*   **Authentication:** Uses the user's GitHub access token (retrieved from secure storage, associated with the user's session) via the verified JWT.
+*   **Scanning (within API endpoint):**
+    *   Initialize Octokit with the user's token.
+    *   Fetch list of target repositories/organizations relevant to the user or application configuration.
     *   Use GitHub Search API or iterate through issues/comments in target repos.
     *   Identify comments containing the specific `FRONTEND_URL?claim=` pattern.
     *   Extract the Base64 encoded data.
@@ -63,9 +65,10 @@ graph LR
     *   Identify permit type (`erc20-permit` or `erc721-permit`).
     *   Extract all relevant fields (token address, amount, nonce, deadline, beneficiary, owner, signature, networkId, ERC721 request data).
 *   **Storage:**
-    *   Store structured permit data in the database, linking to the GitHub comment URL and potentially the GitHub user ID if identifiable.
-    *   Handle duplicates (e.g., based on nonce, contract, owner).
-*   **Error Handling:** Robustly handle GitHub API rate limits, network errors, parsing errors.
+    *   Store structured permit data in the database, linking to the GitHub comment URL and **associating it with the authenticated user's ID**.
+    *   Handle duplicates (e.g., based on nonce, network_id, user_id).
+*   **Error Handling:** Robustly handle GitHub API rate limits (specific to the user's token), network errors, parsing errors. Return appropriate feedback to the frontend.
+*   **Background Execution:** The API endpoint should return quickly. The actual scan might run asynchronously (consider Deno KV Queues for longer tasks).
 
 ### 3.2. Permit Validation (Backend API / Frontend)
 
@@ -124,38 +127,45 @@ graph LR
 
 ## 5. Data Flow Summary
 
-1.  **Scanning:** GitHub -> Scanner Worker -> DB
-2.  **Fetching:** Frontend -> API Worker -> DB -> Validator (On-chain) -> Frontend
-3.  **Claiming:** Frontend -> Wallet -> Blockchain (Multicall)
+1.  **Auth:** Frontend -> GitHub -> Frontend -> Backend API -> GitHub -> Backend API -> Frontend (JWT)
+2.  **Scanning Trigger:** Frontend (JWT) -> Backend API
+3.  **Scanning Execution:** Backend API (User Token) -> GitHub -> Backend API -> DB
+4.  **Fetching:** Frontend (JWT) -> Backend API -> DB -> Validator (On-chain) -> Frontend
+5.  **Claiming:** Frontend -> Wallet -> Blockchain (Multicall)
 4.  **Updating:** Frontend (Tx Monitor) -> API Worker -> DB
 
 ## 6. Implementation Phases (Suggested)
 
-1.  **Phase 1: Backend Foundation & Scanning**
-    *   Setup standard repository structure (e.g., separate directories for frontend, backend-api, backend-scanner, shared).
-    *   Setup Deno projects (API, Scanner) with basic routing.
-    *   Setup Supabase database schema.
-    *   Implement GitHub Scanner Worker logic (auth, scanning, parsing, DB storage).
-    *   Implement basic Backend API endpoint to fetch raw permits from DB.
-2.  **Phase 2: Frontend Foundation & Permit Display**
+1.  **Phase 1: Backend Foundation & Auth**
+    *   Setup standard repository structure (e.g., separate directories for frontend, backend, shared).
+    *   Setup Deno API project (`backend/api/`) with Hono routing.
+    *   Implement GitHub OAuth callback endpoint (`/api/auth/github/callback`) including code exchange, user lookup/creation, GitHub token storage (encrypted), and JWT generation.
+    *   Setup Supabase database schema (including `users` table with encrypted token storage and `permits` table).
+    *   Implement JWT verification middleware.
+2.  **Phase 2: Frontend Foundation & Auth Integration**
     *   Setup React frontend project (using Raw CSS).
-    *   Implement GitHub OAuth login.
-    *   Implement basic UI layout.
-    *   Fetch and display raw permits from the backend API for the logged-in user.
-    *   Integrate Wallet Connection library.
-3.  **Phase 3: Validation Logic**
-    *   Implement on-chain validation checks (ERC20 & ERC721) in Backend API or shared library.
+    *   Implement GitHub OAuth login flow (redirect, callback handling, storing JWT).
+    *   Integrate Auth Context for global state.
+    *   Implement basic UI layout (Login page, Dashboard page).
+    *   Integrate Wallet Connection library (`wagmi`).
+3.  **Phase 3: GitHub Scanning & Permit Display**
+    *   Implement `POST /api/scan/github` endpoint in backend API, including retrieving user token and basic scanning logic (moved from scanner service).
+    *   Add "Scan" button to frontend dashboard to trigger the API endpoint.
+    *   Implement `GET /api/permits` endpoint in backend API to fetch permits for the authenticated user from DB.
+    *   Implement `fetchPermits` in frontend to call the API and display permits in the table.
+4.  **Phase 4: Validation Logic**
+    *   Implement on-chain validation checks (ERC20 & ERC721) - likely triggered by the backend API when fetching permits or on-demand from frontend.
     *   Integrate validation status into the API response and frontend display.
-4.  **Phase 4: Batch Claiming**
-    *   Implement multicall transaction construction logic on the frontend for both permit types.
+5.  **Phase 5: Batch Claiming**
+    *   Implement multicall transaction construction logic on the frontend using `viem`.
     *   Add "Claim" buttons and associated UI flows.
     *   Implement transaction monitoring.
-5.  **Phase 5: Claim Status Update & Polish**
-    *   Implement Backend API endpoint to receive transaction hashes and update DB.
-    *   Integrate status updates into the frontend.
-    *   Refine UI/UX, add loading states, error handling.
+6.  **Phase 6: Claim Status Update & Polish**
+    *   Implement `POST /api/permits/update-status` endpoint in backend API.
+    *   Call status update endpoint from frontend after successful claim.
+    *   Refine UI/UX, add loading states, detailed error handling.
     *   Add comprehensive tests (`bun test`, RTL).
-6.  **Phase 6: Documentation & Deployment**
+7.  **Phase 7: Documentation & Deployment**
     *   Update/Create all `docs/` files (`system-patterns.md`, `tech-context.md`, `active-context.md`, `progress.md`).
     *   Create `.clinerules` if patterns emerge.
     *   Configure deployment pipelines for Deno Deploy and frontend hosting. Deploy.

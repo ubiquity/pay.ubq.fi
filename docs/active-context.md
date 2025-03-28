@@ -14,28 +14,36 @@
 ## 3. Next Steps (Immediate)
 
 *   Begin Phase 1 of the implementation plan outlined in `docs/rewrite-plan.md`:
-    *   Setup standard repository structure (e.g., create `frontend/`, `backend/`, `shared/` directories).
-    *   Initialize Deno projects (API, Scanner) within the `backend/` directory.
-    *   Define Supabase database schema (requires Supabase setup/access).
-    *   Start implementing the GitHub Scanner Worker in `backend/scanner/`.
+    *   Setup standard repository structure.
+    *   Initialize Deno API project (`backend/api/`).
+    *   Implement GitHub OAuth callback endpoint in API, including JWT generation and placeholder for storing user's GitHub token.
+    *   Implement JWT verification middleware in API.
+    *   Define Supabase database schema (requires Supabase setup/access) - including `users` table with encrypted token storage.
+*   Begin Phase 2:
+    *   Integrate Auth Context and login flow into frontend.
+*   Begin Phase 3:
+    *   Add placeholder API endpoint (`/api/scan/github`) and frontend trigger button.
+    *   Deprecate standalone scanner service (`backend/scanner/`).
 
 ## 4. Key Decisions / Open Questions
 
 *   **Decisions Made:**
     *   Styling: Raw CSS
     *   Blockchain Library: `viem`
-    *   Repository Structure: Standard repository (not a monorepo/workspace)
+    *   Repository Structure: Standard repository
     *   Unit/Integration Testing: `bun test`
     *   Backend Platform: Deno Deploy
     *   Backend Routing: Hono
     *   Frontend Framework: React
-    *   GitHub Scanning Strategy: Use GitHub API, scan latest to earliest issue in permit's repo.
-    *   Multicall Contract: Use existing deployed contracts (e.g., MakerDAO's).
-    *   RPC Management: Use existing custom RPC handler (`use-rpc-handler.ts`).
+    *   GitHub Scanning Strategy: User-triggered via API using stored user OAuth token. Standalone scanner deprecated.
+    *   Multicall Contract: Use existing deployed contracts.
+    *   RPC Management: Use existing custom RPC handler.
     *   Frontend Hosting: Deno Deploy.
+    *   Authentication: Custom backend flow with JWT sessions.
 *   **Remaining Questions:**
-    *   Specific error handling strategies for different failure modes need definition during implementation.
-    *   Choice of viem-compatible wallet connector library (e.g., `wagmi`, Web3Modal).
-    *   Supabase project setup/access needed for schema definition.
+    *   Supabase project setup/access and schema definition (including `users` table with encrypted token storage).
+    *   Implementation details for encrypting/decrypting GitHub token in backend.
+    *   Specific error handling strategies.
+    *   Choice of viem-compatible wallet connector library.
 
 *(This document will be updated frequently as work progresses.)*
