@@ -33,7 +33,12 @@ export function DashboardPage() {
   const { data: claimTxHash, error: writeContractError, writeContractAsync, reset: resetWriteContract } = useWriteContract();
 
   // State for claim confirmation (reused, tracks the *latest* tx)
-  const { data: claimReceipt, isLoading: isClaimConfirming, isSuccess: isClaimConfirmed, error: claimReceiptError } = useWaitForTransactionReceipt({ hash: claimTxHash });
+  const {
+    data: claimReceipt,
+    isLoading: isClaimConfirming,
+    isSuccess: isClaimConfirmed,
+    error: claimReceiptError,
+  } = useWaitForTransactionReceipt({ hash: claimTxHash });
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
@@ -43,12 +48,13 @@ export function DashboardPage() {
   // --- Calculations ---
   // Calculate valid permits for the current chain to display count and enable button
   const claimablePermits = useMemo(() => {
-    return permits.filter(p =>
+    return permits.filter(
+      (p) =>
         p.networkId === chain?.id &&
-        p.type === 'erc20-permit' &&
-        p.status !== 'Claimed' &&
-        p.claimStatus !== 'Success' &&
-        p.claimStatus !== 'Pending' &&
+        p.type === "erc20-permit" &&
+        p.status !== "Claimed" &&
+        p.claimStatus !== "Success" &&
+        p.claimStatus !== "Pending" &&
         p.ownerBalanceSufficient !== false &&
         p.permit2AllowanceSufficient !== false &&
         !p.checkError &&
@@ -88,7 +94,6 @@ export function DashboardPage() {
     return ""; // Return empty string if value is 0
   }, [claimableTotalValue]);
 
-
   // --- Fetching Logic ---
   const fetchPermitsAndCheck = async () => {
     setIsLoading(true);
@@ -106,21 +111,33 @@ export function DashboardPage() {
       const response = await fetch(`${BACKEND_API_URL}/api/permits?walletAddress=${address}`, { headers: { Accept: "application/json" } });
       if (!response.ok) {
         let errorMsg = `Failed to fetch permits for wallet ${address}: ${response.status} ${response.statusText}`;
-        try { const errorData = await response.json(); errorMsg = errorData.error || errorMsg; } catch { /* Ignore */ }
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch {
+          /* Ignore */
+        }
         throw new Error(errorMsg);
       }
       const data = await response.json();
-      if (!data || !Array.isArray(data.permits)) { throw new Error("Received invalid data format for permits."); }
+      if (!data || !Array.isArray(data.permits)) {
+        throw new Error("Received invalid data format for permits.");
+      }
       initialPermits = data.permits.map((p: PermitData) => ({ ...p, claimStatus: "Idle" }));
       const permitsByNetwork: Record<number, PermitData[]> = initialPermits.reduce((acc, permit) => {
         const networkId = permit.networkId;
-        if (networkId) { if (!acc[networkId]) acc[networkId] = []; acc[networkId].push(permit); }
+        if (networkId) {
+          if (!acc[networkId]) acc[networkId] = [];
+          acc[networkId].push(permit);
+        }
         return acc;
       }, {} as Record<number, PermitData[]>);
       const multicallPromises = Object.entries(permitsByNetwork).map(async ([networkIdStr, networkPermits]) => {
         const chainId = parseInt(networkIdStr, 10) as 1 | 100; // Assuming Gnosis (100) or Mainnet (1)
         const erc20Permits = networkPermits.filter((p) => p.type === "erc20-permit" && p.token?.address && p.amount && p.owner);
-        if (erc20Permits.length === 0) { return { chainId, results: [], permitIndices: [] }; }
+        if (erc20Permits.length === 0) {
+          return { chainId, results: [], permitIndices: [] };
+        }
         const contractsToCall: MulticallContract[] = [];
         const permitIndices: number[] = [];
         erc20Permits.forEach((permit) => {
@@ -128,34 +145,84 @@ export function DashboardPage() {
           if (calls) {
             contractsToCall.push(...calls);
             const originalIndex = initialPermits.findIndex((p) => p.nonce === permit.nonce && p.networkId === permit.networkId);
-            permitIndices.push(originalIndex); permitIndices.push(originalIndex);
+            permitIndices.push(originalIndex);
+            permitIndices.push(originalIndex);
           }
         });
-        if (contractsToCall.length === 0) { return { chainId, results: [], permitIndices: [] }; }
+        if (contractsToCall.length === 0) {
+          return { chainId, results: [], permitIndices: [] };
+        }
         try {
-          const results = (await multicall(config, { contracts: contractsToCall, chainId: chainId, allowFailure: true })) as MulticallReturnType<typeof contractsToCall>;
+          const results = (await multicall(config, { contracts: contractsToCall, chainId: chainId, allowFailure: true })) as MulticallReturnType<
+            typeof contractsToCall
+          >;
           return { chainId, results, permitIndices };
-        } catch (multiCallError) { console.error(`Multicall failed for chain ${chainId}:`, multiCallError); return { chainId, error: multiCallError, permitIndices }; }
+        } catch (multiCallError) {
+          console.error(`Multicall failed for chain ${chainId}:`, multiCallError);
+          return { chainId, error: multiCallError, permitIndices };
+        }
       });
       const multicallResults = await Promise.allSettled(multicallPromises);
       const checkedPermitsMap = new Map<string, Partial<PermitData>>();
       multicallResults.forEach((settledResult) => {
         if (settledResult.status === "fulfilled") {
-          const value = settledResult.value as { chainId: number; results?: MulticallReturnType<MulticallContract[]>; error?: unknown; permitIndices?: number[]; };
+          const value = settledResult.value as {
+            chainId: number;
+            results?: MulticallReturnType<MulticallContract[]>;
+            error?: unknown;
+            permitIndices?: number[];
+          };
           const { chainId, results, error, permitIndices } = value;
-          if (error) { permitIndices?.forEach((permitIndex) => { if (permitIndex !== -1 && permitIndex < initialPermits.length) { const key = `${initialPermits[permitIndex].nonce}-${initialPermits[permitIndex].networkId}`; checkedPermitsMap.set(key, { checkError: "Multicall failed." }); } }); return; }
+          if (error) {
+            permitIndices?.forEach((permitIndex) => {
+              if (permitIndex !== -1 && permitIndex < initialPermits.length) {
+                const key = `${initialPermits[permitIndex].nonce}-${initialPermits[permitIndex].networkId}`;
+                checkedPermitsMap.set(key, { checkError: "Multicall failed." });
+              }
+            });
+            return;
+          }
           results?.forEach((result, callIndex) => {
-            const permitIndex = permitIndices ? permitIndices[callIndex] : -1; if (permitIndex === -1 || permitIndex >= initialPermits.length) return;
-            const permit = initialPermits[permitIndex]; if (!permit || permit.amount === undefined || permit.amount === null) return;
-            const key = `${permit.nonce}-${permit.networkId}`; const requiredAmount = BigInt(permit.amount); const updateData = checkedPermitsMap.get(key) || {};
-            if (result.status === "success") { const isBalanceCall = callIndex % 2 === 0; if (isBalanceCall) { updateData.ownerBalanceSufficient = BigInt(result.result as bigint) >= requiredAmount; } else { updateData.permit2AllowanceSufficient = BigInt(result.result as bigint) >= requiredAmount; } } else { console.warn(`Prereq call failed for permit ${permit.nonce} on chain ${chainId}:`, result.error); updateData.checkError = "Check failed."; }
+            const permitIndex = permitIndices ? permitIndices[callIndex] : -1;
+            if (permitIndex === -1 || permitIndex >= initialPermits.length) return;
+            const permit = initialPermits[permitIndex];
+            if (!permit || permit.amount === undefined || permit.amount === null) return;
+            const key = `${permit.nonce}-${permit.networkId}`;
+            const requiredAmount = BigInt(permit.amount);
+            const updateData = checkedPermitsMap.get(key) || {};
+            if (result.status === "success") {
+              const isBalanceCall = callIndex % 2 === 0;
+              if (isBalanceCall) {
+                updateData.ownerBalanceSufficient = BigInt(result.result as bigint) >= requiredAmount;
+              } else {
+                updateData.permit2AllowanceSufficient = BigInt(result.result as bigint) >= requiredAmount;
+              }
+            } else {
+              console.warn(`Prereq call failed for permit ${permit.nonce} on chain ${chainId}:`, result.error);
+              updateData.checkError = "Check failed.";
+            }
             checkedPermitsMap.set(key, updateData);
           });
-        } else { console.error("Multicall promise rejected:", settledResult.reason); }
+        } else {
+          console.error("Multicall promise rejected:", settledResult.reason);
+        }
       });
-      const finalCheckedPermits = initialPermits.map((permit) => { const key = `${permit.nonce}-${permit.networkId}`; const checkData = checkedPermitsMap.get(key); return checkData ? { ...permit, ...checkData } : permit; });
+      const finalCheckedPermits = initialPermits.map((permit) => {
+        const key = `${permit.nonce}-${permit.networkId}`;
+        const checkData = checkedPermitsMap.get(key);
+        return checkData ? { ...permit, ...checkData } : permit;
+      });
       setPermits(finalCheckedPermits);
-    } catch (err) { setError(err instanceof Error ? err.message : "An unknown error occurred during fetch/check"); console.error("Error in fetchPermitsAndCheck:", err); if (initialPermits.length > 0 && permits.length === 0) { setPermits(initialPermits.map((p) => ({ ...p, checkError: "Fetch failed before checks." }))); } } finally { setIsLoading(false); setInitialLoadComplete(true); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred during fetch/check");
+      console.error("Error in fetchPermitsAndCheck:", err);
+      if (initialPermits.length > 0 && permits.length === 0) {
+        setPermits(initialPermits.map((p) => ({ ...p, checkError: "Fetch failed before checks." })));
+      }
+    } finally {
+      setIsLoading(false);
+      setInitialLoadComplete(true);
+    }
   };
 
   // Function to toggle table visibility
@@ -170,52 +237,111 @@ export function DashboardPage() {
     console.log(`Attempting to claim permit: ${permitKey}`);
 
     if (!isConnected || !address || !chain || !writeContractAsync) {
-        setError("Wallet not connected or chain/write function missing.");
-        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: "Wallet not connected." } : p));
-        return false; // Indicate failure
+      setError("Wallet not connected or chain/write function missing.");
+      setPermits((current) =>
+        current.map((p) =>
+          p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: "Wallet not connected." } : p
+        )
+      );
+      return false; // Indicate failure
     }
     if (permitToClaim.networkId !== chain.id) {
-        const networkError = `Please switch wallet to the correct network (ID: ${permitToClaim.networkId})`;
-        setError(networkError); // Show general error as well
-        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: networkError } : p));
-        return false; // Indicate failure
+      const networkError = `Please switch wallet to the correct network (ID: ${permitToClaim.networkId})`;
+      setError(networkError); // Show general error as well
+      setPermits((current) =>
+        current.map((p) =>
+          p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: networkError } : p
+        )
+      );
+      return false; // Indicate failure
     }
-     if (!hasRequiredFields(permitToClaim)) {
-        const incompleteError = "Permit data is incomplete.";
-        setError(incompleteError);
-        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: incompleteError } : p));
-        return false; // Indicate failure
+    if (!hasRequiredFields(permitToClaim)) {
+      const incompleteError = "Permit data is incomplete.";
+      setError(incompleteError);
+      setPermits((current) =>
+        current.map((p) =>
+          p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: incompleteError } : p
+        )
+      );
+      return false; // Indicate failure
     }
     // Re-check prerequisites just before claiming
     if (permitToClaim.type === "erc20-permit") {
       const balanceErrorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
       const allowanceErrorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
       const checkErrorMsg = `Prerequisite check failed: ${permitToClaim.checkError}`;
-      if (permitToClaim.ownerBalanceSufficient === false) { console.error(balanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: balanceErrorMsg } : p)); return false; }
-      if (permitToClaim.permit2AllowanceSufficient === false) { console.error(allowanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: allowanceErrorMsg } : p)); return false; }
-      if (permitToClaim.checkError) { console.error(checkErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: checkErrorMsg } : p)); return false; }
+      if (permitToClaim.ownerBalanceSufficient === false) {
+        console.error(balanceErrorMsg);
+        setPermits((current) =>
+          current.map((p) =>
+            p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: balanceErrorMsg } : p
+          )
+        );
+        return false;
+      }
+      if (permitToClaim.permit2AllowanceSufficient === false) {
+        console.error(allowanceErrorMsg);
+        setPermits((current) =>
+          current.map((p) =>
+            p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: allowanceErrorMsg } : p
+          )
+        );
+        return false;
+      }
+      if (permitToClaim.checkError) {
+        console.error(checkErrorMsg);
+        setPermits((current) =>
+          current.map((p) =>
+            p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: checkErrorMsg } : p
+          )
+        );
+        return false;
+      }
     }
 
     // Reset writeContract state before new call
     resetWriteContract();
 
-    setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Pending", claimError: undefined, transactionHash: undefined } : p));
+    setPermits((currentPermits) =>
+      currentPermits.map((p) =>
+        p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+          ? { ...p, claimStatus: "Pending", claimError: undefined, transactionHash: undefined }
+          : p
+      )
+    );
 
     try {
-      if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) { throw new Error("Invalid ERC20 permit data."); }
-      const permitArgs = { permitted: { token: permitToClaim.token.address as Address, amount: BigInt(permitToClaim.amount) }, nonce: BigInt(permitToClaim.nonce), deadline: BigInt(permitToClaim.deadline) };
+      if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) {
+        throw new Error("Invalid ERC20 permit data.");
+      }
+      const permitArgs = {
+        permitted: { token: permitToClaim.token.address as Address, amount: BigInt(permitToClaim.amount) },
+        nonce: BigInt(permitToClaim.nonce),
+        deadline: BigInt(permitToClaim.deadline),
+      };
       const transferDetailsArgs = { to: permitToClaim.beneficiary as Address, requestedAmount: BigInt(permitToClaim.amount) };
 
       // Use writeContractAsync directly
-      const txHash = await writeContractAsync({ address: PERMIT2_ADDRESS, abi: permit2ABI, functionName: "permitTransferFrom", args: [permitArgs, transferDetailsArgs, permitToClaim.owner as Address, permitToClaim.signature as Hex] });
+      const txHash = await writeContractAsync({
+        address: PERMIT2_ADDRESS,
+        abi: permit2ABI,
+        functionName: "permitTransferFrom",
+        args: [permitArgs, transferDetailsArgs, permitToClaim.owner as Address, permitToClaim.signature as Hex],
+      });
 
       console.log(`Claim transaction sent for ${permitKey}:`, txHash);
-      setPermits((currentPermits) => currentPermits.map((p) => (p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, transactionHash: txHash } : p)));
+      setPermits((currentPermits) =>
+        currentPermits.map((p) => (p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, transactionHash: txHash } : p))
+      );
       return true; // Indicate success (submission)
     } catch (err) {
       console.error(`Claiming failed for ${permitKey}:`, err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-      setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: errorMessage } : p));
+      setPermits((currentPermits) =>
+        currentPermits.map((p) =>
+          p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: errorMessage } : p
+        )
+      );
       return false; // Indicate failure
     }
   };
@@ -226,7 +352,8 @@ export function DashboardPage() {
     setIsClaimingSequentially(true);
     console.log("Attempting sequential claim: Finding all valid permits...");
 
-    if (!publicClient || !address || !chain) { // Check publicClient and address
+    if (!publicClient || !address || !chain) {
+      // Check publicClient and address
       setSequentialClaimError("Wallet not connected or client unavailable.");
       setIsClaimingSequentially(false);
       return;
@@ -236,47 +363,61 @@ export function DashboardPage() {
     const candidatePermits = claimablePermits;
 
     if (candidatePermits.length === 0) {
-        setSequentialClaimError("No valid permits found on this network to claim.");
-        setIsClaimingSequentially(false);
-        return;
+      setSequentialClaimError("No valid permits found on this network to claim.");
+      setIsClaimingSequentially(false);
+      return;
     }
 
     const validPermitsToClaim: PermitData[] = [];
     console.log(`Found ${candidatePermits.length} candidates. Simulating individually...`);
 
     for (const permit of candidatePermits) {
-        // No longer limiting to 3
-        // if (validPermitsToClaim.length >= 3) break;
+      // No longer limiting to 3
+      // if (validPermitsToClaim.length >= 3) break;
 
-        console.log(`  Simulating permit nonce: ${permit.nonce}...`);
-        try {
-            const permitArgs = { permitted: { token: permit.token!.address as Address, amount: BigInt(permit.amount!) }, nonce: BigInt(permit.nonce), deadline: BigInt(permit.deadline) };
-            const transferDetailsArgs = { to: permit.beneficiary as Address, requestedAmount: BigInt(permit.amount!) };
+      console.log(`  Simulating permit nonce: ${permit.nonce}...`);
+      try {
+        const permitArgs = {
+          permitted: { token: permit.token!.address as Address, amount: BigInt(permit.amount!) },
+          nonce: BigInt(permit.nonce),
+          deadline: BigInt(permit.deadline),
+        };
+        const transferDetailsArgs = { to: permit.beneficiary as Address, requestedAmount: BigInt(permit.amount!) };
 
-            // Simulate this single permit claim
-            await publicClient.simulateContract({
-                address: PERMIT2_ADDRESS,
-                abi: permit2ABI,
-                functionName: 'permitTransferFrom',
-                args: [permitArgs, transferDetailsArgs, permit.owner as Address, permit.signature as Hex],
-                account: address, // Account needed for simulation context
-            });
+        // Simulate this single permit claim
+        await publicClient.simulateContract({
+          address: PERMIT2_ADDRESS,
+          abi: permit2ABI,
+          functionName: "permitTransferFrom",
+          args: [permitArgs, transferDetailsArgs, permit.owner as Address, permit.signature as Hex],
+          account: address, // Account needed for simulation context
+        });
 
-            console.log(`    Permit ${permit.nonce} simulation successful.`);
-            validPermitsToClaim.push(permit);
-
-        } catch (simError: unknown) {
-            let reason = "Unknown simulation error";
-             if (simError instanceof BaseError) {
-                // Correctly check type before accessing cause
-                const revertError = simError.walk((err: unknown) => err instanceof Error && err.cause instanceof ContractFunctionRevertedError) as ContractFunctionRevertedError | null;
-                if (revertError) { reason = revertError.reason ?? revertError.shortMessage ?? simError.shortMessage; }
-                else { reason = simError.shortMessage || simError.message; }
-            } else if (simError instanceof Error) { reason = simError.message; }
-            console.warn(`    Permit ${permit.nonce} simulation failed: ${reason}`);
-            // Update state for this specific permit to show simulation failure
-             setPermits(current => current.map(p => p.nonce === permit.nonce && p.networkId === permit.networkId ? {...p, claimStatus: "Error", claimError: `Sim fail: ${reason}`} : p));
+        console.log(`    Permit ${permit.nonce} simulation successful.`);
+        validPermitsToClaim.push(permit);
+      } catch (simError: unknown) {
+        let reason = "Unknown simulation error";
+        if (simError instanceof BaseError) {
+          // Correctly check type before accessing cause
+          const revertError = simError.walk(
+            (err: unknown) => err instanceof Error && err.cause instanceof ContractFunctionRevertedError
+          ) as ContractFunctionRevertedError | null;
+          if (revertError) {
+            reason = revertError.reason ?? revertError.shortMessage ?? simError.shortMessage;
+          } else {
+            reason = simError.shortMessage || simError.message;
+          }
+        } else if (simError instanceof Error) {
+          reason = simError.message;
         }
+        console.warn(`    Permit ${permit.nonce} simulation failed: ${reason}`);
+        // Update state for this specific permit to show simulation failure
+        setPermits((current) =>
+          current.map((p) =>
+            p.nonce === permit.nonce && p.networkId === permit.networkId ? { ...p, claimStatus: "Error", claimError: `Sim fail: ${reason}` } : p
+          )
+        );
+      }
     }
 
     if (validPermitsToClaim.length === 0) {
@@ -285,28 +426,31 @@ export function DashboardPage() {
       return;
     }
 
-    console.log(`Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`, validPermitsToClaim.map(p => p.nonce));
+    console.log(
+      `Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`,
+      validPermitsToClaim.map((p) => p.nonce)
+    );
 
     let successes = 0;
     let failures = 0;
     // Send transactions one by one
     for (const permit of validPermitsToClaim) {
-        const success = await handleClaimPermit(permit); // Reuse single claim logic
-        if (success) {
-            successes++;
-            // Optional: Wait for confirmation before sending the next?
-            // Could add a delay or use useWaitForTransactionReceipt here if needed,
-            // but for now, just fire them off.
-        } else {
-            failures++;
-        }
-        // Small delay between transactions to avoid RPC rate limits?
-        // await new Promise(resolve => setTimeout(resolve, 500));
+      const success = await handleClaimPermit(permit); // Reuse single claim logic
+      if (success) {
+        successes++;
+        // Optional: Wait for confirmation before sending the next?
+        // Could add a delay or use useWaitForTransactionReceipt here if needed,
+        // but for now, just fire them off.
+      } else {
+        failures++;
+      }
+      // Small delay between transactions to avoid RPC rate limits?
+      // await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
     if (failures > 0) {
-        setSequentialClaimError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed. Check individual permits.`);
+      setSequentialClaimError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed. Check individual permits.`);
     }
 
     setIsClaimingSequentially(false);
@@ -326,7 +470,7 @@ export function DashboardPage() {
     }
     if (claimReceiptError && claimTxHash) {
       console.error("Claim tx failed, Tx Hash:", claimTxHash, claimReceiptError.message);
-       // Update status for the permit matching this hash
+      // Update status for the permit matching this hash
       setPermits((current) =>
         current.map((p) => (p.transactionHash === claimTxHash ? { ...p, claimStatus: "Error", claimError: claimReceiptError.message } : p))
       );
@@ -341,11 +485,7 @@ export function DashboardPage() {
       // Find the permit that was 'Pending' but didn't get a hash assigned
       // This is imperfect if multiple are sent quickly, but best effort
       setPermits((current) =>
-        current.map((p) =>
-          p.claimStatus === "Pending" && !p.transactionHash
-            ? { ...p, claimStatus: "Error", claimError: writeContractError.message }
-            : p
-        )
+        current.map((p) => (p.claimStatus === "Pending" && !p.transactionHash ? { ...p, claimStatus: "Error", claimError: writeContractError.message } : p))
       );
     }
   }, [writeContractError]);
@@ -366,22 +506,6 @@ export function DashboardPage() {
     <>
       {/* Header Section */}
       <section id="header">
-        {/* Container for spinner OR expand button (Moved to the left) */}
-        <div className="spinner-or-expand-container">
-          {isLoading ? ( // Show spinner only during initial load
-            <div className="spinner header-spinner"></div>
-          ) : (
-            <button
-              className="expand-button"
-              disabled={!initialLoadComplete} // Only disable before initial load completes
-              onClick={toggleTableVisibility}
-              title={isTableVisible ? "Collapse" : "Expand"}
-            >
-              {isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
-            </button>
-          )}
-        </div>
-
         {/* Logo Wrapper (Now in the middle) */}
         <div id="logo-wrapper">
           <h1>
@@ -393,19 +517,37 @@ export function DashboardPage() {
         {/* Controls (Remains on the right) */}
         {isConnected && address ? ( // Check for address as well
           <div id="controls">
-             {/* Claim All Valid Sequentially Button */}
-             <button onClick={handleClaimAllValidSequential} disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0} className="button-with-icon" style={{ marginRight: '10px' }} title="Claim all valid & available permits sequentially">
-              {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+            {/* Claim All Valid Sequentially Button */}
+            <button
+              onClick={handleClaimAllValidSequential}
+              disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
+              className="button-with-icon"
+              title="Claim all valid & available permits sequentially"
+            >
+              {isClaimingSequentially || isLoading ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
-                {/* Display approximate sum if available, otherwise just "All" */}
-                Claim {claimableTotalValueDisplay ? `${claimableTotalValueDisplay} ` : 'All '}
-                ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? 's' : ''})
+                {isLoading
+                  ? "Loading Rewards..."
+                  : `Claim ${claimableTotalValueDisplay ? `${claimableTotalValueDisplay} ` : "All "} (${claimablePermitCount} Reward${
+                      claimablePermitCount !== 1 ? "s" : ""
+                    })`}
               </span>
             </button>
             <button onClick={() => disconnect()} className="button-with-icon">
               {ICONS.DISCONNECT}
               <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
             </button>
+            {/* Container for spinner OR expand button (Moved to the left) */}
+            <div className="spinner-or-expand-container">
+              <button
+                className="expand-button"
+                disabled={!initialLoadComplete} // Only disable before initial load completes
+                onClick={toggleTableVisibility}
+                title={isTableVisible ? "Collapse" : "Expand"}
+              >
+                {isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
+              </button>
+            </div>
           </div>
         ) : (
           // This part should ideally not be reached if App.tsx handles rendering LoginPage
@@ -424,7 +566,7 @@ export function DashboardPage() {
       )}
       {/* Sequential Claim Error Display */}
       {sequentialClaimError && (
-        <section id="error-message-wrapper" style={{ marginTop: '5px' }}>
+        <section id="error-message-wrapper" style={{ marginTop: "5px" }}>
           <div className="error-message">
             {ICONS.WARNING}
             <span>{sequentialClaimError}</span>

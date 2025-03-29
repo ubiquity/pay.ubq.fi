@@ -47,7 +47,7 @@ body {
   background: #000;
   margin: 0 auto;
   overflow-x: visible;
-  max-width: 1280px;
+  /* max-width: 1280px; */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -62,7 +62,7 @@ h1 {
   text-align: center;
   letter-spacing: 1.5px;
   vertical-align: middle;
-  margin: 0; /* Remove default margins */
+  margin: 12px; /* Remove default margins */
   display: inline-block; /* Keep inline-block for vertical alignment with icon */
   /* text-align: left; Removed, will be centered by parent */
   /* margin: 12px 16px; Removed, handled by parent */
@@ -77,6 +77,7 @@ section {
   box-shadow: inset 0 0 36px #00bfff10;
   user-select: none;
   border-radius: 4px;
+  width: calc(100vw - 8px);
 }
 section > span {
   padding: 8px 0;
@@ -154,7 +155,7 @@ footer {
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
-  max-width: 640px;
+  max-width: unset;
   margin: 4px auto;
   box-shadow: inset 0 0 36px #00bfff10;
 }
@@ -212,11 +213,11 @@ footer {
   font-size: 0.9em;
 }
 
-
 /* Removed .section-loading-indicator styles */
 
 /* Re-add spinner styles */
-.spinner { /* Base spinner styles */
+.spinner {
+  /* Base spinner styles */
   width: 18px;
   height: 18px;
   border: 2px solid transparent;
@@ -770,7 +771,7 @@ details {
   border-collapse: collapse;
   box-shadow: inset 0 0 96px #00bfff10;
   transition: 0.25s all ease-in-out;
-  width: 100%;
+  width: calc(100vw - 8px);
   max-width: 640px;
   overflow: hidden;
   backdrop-filter: blur(12px);
@@ -865,7 +866,7 @@ details {
 button {
   cursor: pointer;
   background-color: #ffffff10;
-  padding: 8px 24px;
+  padding: 8px 8px;
   border-radius: 4px;
   opacity: 0.75;
 }
@@ -893,13 +894,13 @@ button:disabled {
   display: inline-block;
   text-align: right;
 }
-#controls > button {
+#controls > * {
   /* background-color: transparent; */
   height: 48px;
 }
 .button-with-icon:hover {
   background-color: #ffffff08;
-  border-radius: 0;
+  /* border-radius: 0; */
 }
 #controls button span {
   vertical-align: middle;
@@ -908,11 +909,14 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  justify-content: center;
+  /* justify-content: space-evenly; */
   background-color: unset;
 }
 #controls svg {
   margin-right: 4px;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
 }
 thead {
   display: none;
@@ -955,7 +959,7 @@ section#controls > * {
   display: flex;
   justify-content: space-between; /* Ensures space between items */
   align-items: center;
-  max-width: 640px;
+  /* max-width: unset; */
   /* position: absolute; */
   /* justify-content: space-between; Already set */
   opacity: 0.75;
@@ -972,13 +976,14 @@ section#controls > * {
 
 /* Center the logo */
 #header > #logo-wrapper {
-  flex-grow: 1; /* Allow logo to take up space */
-  justify-content: center; /* Center h1 within the wrapper */
+  /* flex-grow: 1; */ /* Allow logo to take up space */
+  /* justify-content: center; */ /* Center h1 within the wrapper */
 }
 
 /* Ensure controls stay on the right */
 #header > #controls {
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-grow: 1;
 }
 
 /* Remove specific spinner targeting as it's inside the container now */
@@ -1014,14 +1019,17 @@ section#controls > * {
   /* color: #00ffff; */
 }
 
-
-button.claim-all-button.button-with-icon>svg {height: 36px;width: 36px;margin-right: 8px;}
+button.claim-all-button.button-with-icon > svg {
+  height: 36px;
+  width: 36px;
+  margin-right: 8px;
+}
 
 section#header:hover {
-    /* opacity: 1; */
+  /* opacity: 1; */
 }
 
 #claim-summary button * {
-    /* color: #00ffff; */
-    font-family: monospace;
+  /* color: #00ffff; */
+  font-family: monospace;
 }
