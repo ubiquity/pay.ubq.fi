@@ -10,4 +10,4 @@ fi
 
 echo "Starting backend API dev server with deno..."
 # Explicitly point to the config file which contains the import map
-deno task --config deno.jsonc dev
+deno task --config deno.jsonc dev --allow-write

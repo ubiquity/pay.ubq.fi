@@ -190,9 +190,10 @@ footer {
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
-  max-width: unset;
+  /* max-width: unset; */
   margin: 4px auto;
-  box-shadow: inset 0 0 36px #00bfff10;
+  /* box-shadow: inset 0 0 36px #00bfff10; */
+  /* padding: 12px; */
 }
 .hidden {
   display: none;
@@ -720,4 +721,9 @@ button[title*="Claim"]:not(:disabled) {
   filter: blur(24px);
   opacity: 0;
   animation: slideIn 0.75s cubic-bezier(0, 1, 1, 1) forwards 2.25s;
+}
+
+
+.error-message {
+    padding: 12px;
 }

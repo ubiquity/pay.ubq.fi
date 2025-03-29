@@ -14,7 +14,7 @@ background .gradient {
   opacity: 0;
 }
 .grid-loaded background .gradient {
-  background-image: radial-gradient(#00bfff00 0, #00bfff20 15%, #00bfff00 34%, #00bfff20 58%, #00bfff00 75%, #00bfff20 100%);
+  background-image: radial-gradient(#0080ff00 0, #2080ff18 15%, #0080ff00 34%, #2080ff18 58%, #0080ff00 75%, #2080ff18 100%);
   animation: background-gradients-fade-in 3s ease-in-out forwards;
 }
 background > :nth-child(1) {
@@ -30,7 +30,7 @@ background > :nth-child(2) {
 }
 @keyframes background-grid-fade-in {
   to {
-    opacity: 1;
+    opacity: 0.66;
   }
 }
 background,
@@ -51,4 +51,11 @@ background {
   pointer-events: none;
   z-index: -1;
   display: flex;
+}
+
+
+.error-message svg {
+    margin-right: 8px;
+    ,
+    list-style: armenian;
 }
