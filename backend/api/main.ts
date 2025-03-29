@@ -6,7 +6,7 @@ import type { PermitData, TokenInfo, PartnerInfo } from "../../shared/types.ts";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { parseAbiItem, encodeFunctionData, type Hex } from "viem"; // Keep viem imports for potential future use
 import { gnosis, localhost, mainnet } from "npm:viem/chains";
-import { RpcHandler, readContract } from "@pavlovcik/permit2-rpc-manager";
+import { Permit2RpcManager, readContract } from "@pavlovcik/permit2-rpc-manager";
 
 // --- Load Environment Variables ---
 await load({ export: true });
@@ -31,7 +31,7 @@ const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3" as const;
 
 let jwtKey: CryptoKey | null = null;
 let supabase: SupabaseClient | null = null;
-let rpcManager: RpcHandler | null = null;
+let rpcManager: Permit2RpcManager | null = null;
 
 // --- ABIs ---
 const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");
@@ -58,9 +58,9 @@ async function initialize() {
 
   // Init RPC Manager
   try {
-    rpcManager = new RpcHandler();
-    console.log("RpcHandler initialized.");
-  } catch (err) { console.error("Failed to initialize RpcHandler:", err); Deno.exit(1); }
+    rpcManager = new Permit2RpcManager();
+    console.log("Permit2RpcManager initialized.");
+  } catch (err) { console.error("Failed to initialize Permit2RpcManager:", err); Deno.exit(1); }
 }
 
 const app = new Hono();
@@ -110,22 +110,22 @@ app.post("/api/auth/github/callback", async (c: Context) => {
 
 // --- On-Chain Validation Logic ---
 async function isErc20NonceClaimed(permitData: PermitData): Promise<boolean> {
-  if (!rpcManager) throw new Error("RpcHandler not initialized.");
+  if (!rpcManager) throw new Error("Permit2RpcManager not initialized.");
   try {
     const wordPos = BigInt(permitData.nonce) >> 8n;
     const owner = permitData.owner;
     if (!owner) return true;
-    const bitmap = await readContract<bigint>({ handler: rpcManager, chainId: permitData.networkId, address: PERMIT2_ADDRESS, abi: [permit2Abi], functionName: "nonceBitmap", args: [owner as `0x${string}`, wordPos] });
+    const bitmap = await readContract<bigint>({ manager: rpcManager, chainId: permitData.networkId, address: PERMIT2_ADDRESS, abi: [permit2Abi], functionName: "nonceBitmap", args: [owner as `0x${string}`, wordPos] });
     const bit = 1n << (BigInt(permitData.nonce) & 255n);
     return Boolean(bitmap & bit);
   } catch (error) { console.error(`Error checking ERC20 permit claim status (nonce: ${permitData.nonce}, chain: ${permitData.networkId}):`, error); return true; }
 }
 
 async function isErc721NonceClaimed(permitData: PermitData): Promise<boolean> {
-  if (!rpcManager) throw new Error("RpcHandler not initialized.");
+  if (!rpcManager) throw new Error("Permit2RpcManager not initialized.");
   try {
     if (!permitData.token?.address) return true;
-    const isRedeemed = await readContract<boolean>({ handler: rpcManager, chainId: permitData.networkId, address: permitData.token.address as `0x${string}`, abi: [nftRewardAbi], functionName: "nonceRedeemed", args: [BigInt(permitData.nonce)] });
+    const isRedeemed = await readContract<boolean>({ manager: rpcManager, chainId: permitData.networkId, address: permitData.token.address as `0x${string}`, abi: [nftRewardAbi], functionName: "nonceRedeemed", args: [BigInt(permitData.nonce)] });
     return Boolean(isRedeemed);
   } catch (error) { console.error(`Error checking ERC721 permit claim status (nonce: ${permitData.nonce}, chain: ${permitData.networkId}):`, error); return true; }
 }

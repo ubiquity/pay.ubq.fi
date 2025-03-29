@@ -29,6 +29,10 @@
     *   Added `ownerBalanceSufficient`, `permit2AllowanceSufficient`, `checkError` fields to `PermitData` for storing prerequisite check results.
 *   **Docs**:
     *   Updated `product-context.md`, `system-patterns.md`, and `active-context.md` to reflect the wallet-first authentication flow. Removed `github-auth-flow.md`.
+*   **Cleanup & Refactoring (2025-03-30):**
+    *   **Removed Unused Code:** Deleted the `backend/scanner/` directory and the `frontend/src/components/icons.tsx` component.
+    *   **Removed Unused Dependency:** Removed `vite-plugin-svgr` from root and frontend `package.json` files and `frontend/vite.config.ts`.
+    *   **Refactored DashboardPage (Hooks):** Extracted data fetching logic into `frontend/src/hooks/use-permit-data.ts` and claiming logic into `frontend/src/hooks/use-permit-claiming.ts`. Updated `DashboardPage.tsx` to use these hooks, reducing its line count significantly.
 
 ## 3. Next Steps (Immediate)
 
