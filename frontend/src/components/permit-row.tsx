@@ -128,12 +128,24 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       {/* Removed Type column */}
       {/* Removed Token Symbol/Network column */}
 
+      {/* <button
+        className="button-as-link monospace" // Add class for styling
+        onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+        title={`View ${ownerAddress}'s balance for token ${tokenAddress}`}
+      >
+        {formatAmount(amount)}
+      </button> */}
+
       {/* Source Column (Now 1st) */}
       <td className="github-comment-url">
         {permit.githubCommentUrl ? (
-          <a href={permit.githubCommentUrl} target="_blank" rel="noopener noreferrer">
+          <button
+            className="button-as-link" // Use button styling
+            onClick={() => window.open(permit.githubCommentUrl, "_blank")} // Open link on click
+            title={`View source on GitHub: ${permit.githubCommentUrl}`} // Add a descriptive title
+          >
             {formatGithubLink(permit.githubCommentUrl)} {/* Use the formatted link text */}
-          </a>
+          </button>
         ) : (
           "N/A"
         )}
