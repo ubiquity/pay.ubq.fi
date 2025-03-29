@@ -9,6 +9,41 @@
   --success: #00aa55;
   --font-family: "Ubiquity Nova", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+/* Responsive Header Text */
+@media (max-width: 640px) {
+  /* Hide disconnect button text */
+  #controls > .button-with-icon:nth-of-type(2) span {
+    display: none;
+  }
+  /* Hide logo text */
+  #logo-wrapper h1 > span:last-of-type {
+    display: none;
+  }
+  /* Make control elements fill space */
+  #controls > .button-with-icon,
+  #controls > .spinner-or-expand-container {
+    flex-grow: 1;
+    justify-content: center; /* Center icon/text within the expanded button */
+  }
+
+  button.button-with-icon span {
+    display: none;
+  }
+
+  /*
+  <button class="button-with-icon" title="">
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+  <path d="M252.309-180.001q-30.308 0-51.308-21t-21-51.308V-360H240v107.691q0 4.616 3.846 8.463 3.847 3.846 8.463 3.846h455.382q4.616 0 8.463-3.846 3.846-3.847 3.846-8.463V-360h59.999v107.691q0 30.308-21 51.308t-51.308 21H252.309ZM480-335.386 309.233-506.153l42.153-43.383 98.615 98.615v-336.001h59.998v336.001l98.615-98.615 42.153 43.383L480-335.386Z">
+  </path>
+  </svg>
+  <span>Claim</span>
+  </button>
+  */
+  button[title*="Claim"] span {
+    display: unset;
+  }
+}
 :root {
   --left-table-column-width: 120px;
   --background-color-default-brightness: 2%;
@@ -243,7 +278,7 @@ footer {
 
 /* Container for spinner OR expand button */
 .spinner-or-expand-container {
-  display: flex; /* Use flex to center content */
+  display: inline-flex; /* Use flex to center content */
   align-items: center;
   justify-content: center;
   height: 48px; /* Match other header controls height */
@@ -257,8 +292,8 @@ footer {
   padding: 0; /* Remove padding as container handles spacing/centering */
   margin: 0; /* Remove margin */
   cursor: pointer;
-  height: 100%; /* Fill container height */
-  width: 100%; /* Fill container width */
+  height: 48px; /* Fill container height */
+  width: 48px; /* Fill container width */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -287,27 +322,6 @@ footer {
   /* Removed transition and transform as SVGs are swapped now */
 }
 
-.section-error-message {
-  background-color: var(--hover);
-  color: var(--error);
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin: 10px 0;
-  border-left: 3px solid var(--error);
-}
-.update-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: var(--success);
-  color: var(--bg);
-  padding: 10px 20px;
-  border-radius: 4px;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
 @keyframes ellipsis-animation {
   0% {
     content: ".";
@@ -318,454 +332,6 @@ footer {
   66% {
     content: "...";
   }
-}
-.comment {
-  border-radius: 4px;
-  margin-bottom: 4px;
-  padding: 8px 16px;
-  position: relative;
-  backdrop-filter: blur(12px);
-  background-color: #00000040;
-  border: 1px solid #ffffff10;
-  overflow: scroll;
-}
-.grouped-comment {
-  border-left: 3px solid var(--error);
-  background-color: rgba(255, 68, 68, 0.05);
-}
-.grouped-comment .comment-scores-inner {
-  opacity: 0.8;
-}
-.badge-base::after {
-  display: inline-block;
-  font-size: 11px;
-  color: #fff;
-  padding: 0 8px;
-  border-radius: 3px;
-  position: absolute;
-  bottom: 12px;
-}
-.grouped-comment::after {
-  content: "Double Post";
-  background-color: var(--error);
-}
-.grouped-comment {
-  border-left: 3px solid var(--error);
-  background-color: rgba(255, 68, 68, 0.05);
-}
-.grouped-comment .comment-scores-inner {
-  opacity: 0.5;
-}
-.slash-command::after {
-  content: "Slash Command";
-  background-color: var(--primary);
-}
-.slash-command {
-  border-left: 3px solid var(--primary);
-  background-color: rgba(0, 102, 204, 0.05);
-}
-.slash-command .comment-scores-inner {
-  opacity: 0.5;
-}
-.bot-comment::after {
-  content: "Bot";
-  background-color: var(--success);
-}
-.bot-comment {
-  border-left: 3px solid var(--success);
-  background-color: rgba(0, 170, 85, 0.05);
-}
-.bot-comment .comment-scores-inner {
-  opacity: 0.5;
-}
-.comment-header .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  vertical-align: middle;
-}
-.comment-header .user-info {
-  display: inline-block;
-  vertical-align: middle;
-  margin: 0 12px;
-  height: 24px;
-}
-.comment-header .username {
-  color: #fff;
-  text-decoration: none;
-}
-.comment-header .username:hover {
-  text-decoration: underline;
-  color: var(--primary);
-}
-.comment-header .timestamp {
-  font-size: 12px;
-  margin-left: 4px;
-  text-decoration: none;
-  position: absolute;
-  right: 16px;
-  color: #ffffffbf;
-  line-height: 2;
-  white-space: nowrap;
-}
-.comment-body {
-  overflow-wrap: break-word;
-  line-height: 1.5;
-  color: var(--text);
-  padding: 12px 0;
-}
-.comment-body h1 {
-  font-size: 1.6em;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 5px;
-  margin-bottom: 15px;
-}
-.comment-body h2 {
-  font-size: 1.4em;
-  margin-top: 25px;
-  margin-bottom: 15px;
-}
-.comment-body h3 {
-  font-size: 1.2em;
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-.comment-body pre {
-  background-color: #000;
-  border-radius: 3px;
-  padding: 12px;
-  overflow-x: auto;
-}
-.comment-body code {
-  background-color: #000;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: monospace;
-}
-.comment-body blockquote {
-  border-left: 3px solid #80808040;
-  color: grey;
-  padding-left: 12px;
-  margin-left: 6px;
-}
-.comment-body img {
-  max-width: 100%;
-  height: auto;
-}
-.comment-body a {
-  color: var(--primary);
-  text-decoration: none;
-}
-.comment-body a:hover {
-  text-decoration: underline;
-}
-.comment-body ol,
-.comment-body ul {
-  padding-left: 25px;
-}
-.comment-body table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 15px 0;
-}
-.comment-body table td,
-.comment-body table th {
-  border: 1px solid var(--border);
-  padding: 6px 13px;
-}
-.comment-body table th {
-  background-color: var(--hover);
-}
-.comment-body table tr:nth-child(even) {
-  background-color: var(--hover);
-}
-.conversation-header {
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  margin: 4px auto;
-  padding: 16px;
-  backdrop-filter: blur(12px);
-  border: 1px solid #ffffff10;
-  line-height: 1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-radius: 4px;
-  margin: 4px auto;
-}
-.conversation-header svg {
-  fill: currentColor;
-  height: 16px;
-  width: 16px;
-  vertical-align: middle;
-  margin: 4px;
-}
-.empty-state {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-light);
-  padding: 16px;
-  border-radius: 4px;
-  min-width: 160px;
-  justify-content: center;
-  backdrop-filter: blur(12px);
-  border: 1px solid #ffffff10;
-  margin: 4px auto;
-  vertical-align: middle;
-  user-select: none;
-}
-.empty-state svg {
-  fill: currentColor;
-}
-.comment-scores-outer {
-  display: block;
-  width: auto;
-  max-width: 100%;
-  overflow: hidden;
-}
-.comment-scores-inner {
-  display: block;
-  white-space: nowrap;
-  overflow-x: auto;
-  max-width: 100%;
-  box-sizing: border-box;
-  text-align: right;
-}
-.group-indicator {
-  cursor: help;
-  font-size: 12px;
-}
-.score-info {
-  display: inline-block;
-  opacity: 0.5;
-  padding: 0 2px;
-  white-space: nowrap;
-  user-select: none;
-}
-.score-label {
-  font-weight: 600;
-  font-size: 12px;
-}
-.score-value {
-  border-radius: 12px;
-  color: var(--primary);
-  font-weight: 600;
-  font-size: 12px;
-}
-.score-value[data-high-score="true"] {
-  background-color: var(--success);
-  color: var(--bg);
-  border-color: var(--primary);
-}
-.score-summary {
-  border-radius: 4px;
-  border: 1px solid #ffffff10;
-}
-.score-summary h3 {
-  color: var(--text);
-  font-size: 1.1rem;
-  font-weight: 600;
-  display: inline-block;
-}
-.score-summary-table {
-  width: 100%;
-  border-radius: 4px;
-  padding: 8px 16px;
-  backdrop-filter: blur(12px);
-  background-color: #00000010;
-}
-.score-summary-table td,
-.score-summary-table th {
-  text-align: left;
-  text-align: right;
-  padding: 4px 12px;
-}
-.score-summary-table th {
-  font-weight: 600;
-  color: var(--text);
-  text-align: center;
-}
-.score-summary-table th.sort-column {
-  color: #fff;
-  position: relative;
-  background-color: #00000040;
-  border: 1px solid #ffffff10;
-}
-.score-summary-table th.sort-column::after {
-  content: "▼";
-  font-size: 0.8em;
-  margin-left: 5px;
-}
-.score-summary-table td.sort-column-cell {
-  font-weight: 700;
-  background-color: #00000040;
-  border: 1px solid #ffffff10;
-}
-.contributor-cell {
-  display: flex;
-  align-items: center;
-  text-align: left;
-}
-.summary-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 8px;
-}
-.summary-username {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-.summary-username:hover {
-  text-decoration: underline;
-}
-.contributor-col {
-  width: 30%;
-}
-.score-col {
-  width: 17.5%;
-}
-.linked-content-header h3 {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--text);
-}
-.linked-issue-spec,
-.linked-prs-list {
-  margin: 0 0 2rem;
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--hover);
-}
-.linked-issue-spec .issue-header,
-.linked-prs-list .prs-header {
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.linked-issue-spec h3,
-.linked-prs-list h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.linked-issue-spec a,
-.linked-prs-list a {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-.linked-issue-spec a:hover,
-.linked-prs-list a:hover {
-  text-decoration: underline;
-}
-.linked-issue-spec .issue-body {
-  padding: 1rem;
-  background: var(--bg);
-  border-radius: 4px;
-  border: 1px solid var(--border);
-}
-@media (max-width: 960px) {
-  .column {
-    max-width: calc(100% - 20px);
-    width: auto;
-    min-width: 280px;
-  }
-  .content-columns {
-    padding: 0;
-    gap: 0;
-    justify-content: flex-start;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-.score-info:hover {
-  opacity: 1;
-}
-pre {
-  font-size: 12px;
-}
-.hidden-element {
-  opacity: 0;
-}
-.display-none {
-  display: none;
-}
-.error-message-overlay {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px;
-  background-color: var(--error);
-  color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  opacity: 1;
-  transition: opacity 0.3s ease-in-out;
-}
-div#score-summary-content {
-  vertical-align: middle;
-}
-.score-info:last-child {
-  padding-right: 0;
-}
-a.timestamp:hover {
-  text-decoration: underline;
-  color: #fff;
-}
-hr {
-  border: 1px solid #ffffff10;
-}
-.comment-scores-outer {
-  overflow: hidden;
-  max-width: 100%;
-  width: auto;
-}
-p {
-  margin: auto;
-}
-::marker {
-  display: inline-block;
-  position: absolute;
-}
-b > * {
-  display: inline-block;
-}
-h6 {
-  margin: 0;
-  font-size: 16px;
-}
-.conversation-header > h6 {
-  max-width: calc(100% - 32px);
-  display: inline-block;
-  vertical-align: middle;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-details {
-  cursor: pointer;
-}
-.error-message {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-  opacity: 0.75;
-  padding: 8px;
-}
-.summary-info {
-  /* margin-bottom: 20px; */ /* Removed margin */
 }
 .permits-table {
   border-collapse: collapse;
@@ -869,6 +435,10 @@ button {
   padding: 8px 8px;
   border-radius: 4px;
   opacity: 0.75;
+  width: 100%;
+  /* text-align: center; */
+  justify-content: center;
+  /* gap: 2px; */
 }
 button:hover {
   opacity: 1;
@@ -886,6 +456,10 @@ button:disabled {
 .github-comment-url > a {
   text-decoration: none;
   opacity: 0.5;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* overflow: hidden; */
 }
 .github-comment-url > a:hover {
   opacity: 1;
@@ -897,6 +471,9 @@ button:disabled {
 #controls > * {
   /* background-color: transparent; */
   height: 48px;
+  flex-grow: 1;
+  justify-content: center;
+  /* padding: 8px 16px; */
 }
 .button-with-icon:hover {
   background-color: #ffffff08;
@@ -904,18 +481,19 @@ button:disabled {
 }
 #controls button span {
   vertical-align: middle;
+  white-space: nowrap;
 }
 .button-with-icon {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  /* gap: 2px; */
   /* justify-content: space-evenly; */
   background-color: unset;
 }
 #controls svg {
   margin-right: 4px;
   display: inline-block;
-  width: 24px;
+  width: 36px;
   height: 24px;
 }
 thead {
@@ -982,7 +560,7 @@ section#controls > * {
 
 /* Ensure controls stay on the right */
 #header > #controls {
-  justify-content: space-between;
+  justify-content: space-around;
   flex-grow: 1;
 }
 
@@ -1032,4 +610,21 @@ section#header:hover {
 #claim-summary button * {
   /* color: #00ffff; */
   font-family: monospace;
+}
+
+button > .spinner.button-spinner {
+  margin-right: 12px;
+}
+.button-with-icon > svg {
+  margin-right: 2px;
+}
+
+td {
+  padding: 0 8px;
+  /* overflow: hidden; */
+  /* text-overflow: ellipsis; */
+}
+
+button[title*="Claim"]:disabled {
+  opacity: 1;
 }
