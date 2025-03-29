@@ -18,6 +18,7 @@
     *   **Implemented Pre-Claim Checks:** Added checks for owner balance and Permit2 allowance (now in `permit-utils.ts`) before initiating a claim. These checks run after permits are fetched and results are stored in state.
     *   **Updated Claim Logic:** `handleClaimPermit` (in `DashboardPage.tsx`) now re-verifies stored prerequisite check results before calling `writeContractAsync`.
     *   **Enhanced UI Feedback:** The permit table (now `PermitRow.tsx`) displays warnings ("Owner Balance Low", "Permit2 Allowance Low", "Check Failed") and updates button state/text based on prerequisite checks, using CSS classes for styling.
+    *   **Implemented Multicall Utility:** Created `frontend/src/utils/multicall-utils.ts` containing the `claimMultiplePermitsViaMulticall` function. This function uses `viem` and `Multicall3.aggregate3` to bundle multiple `Permit2.permitTransferFrom` calls into a single transaction, accepting `PublicClient`, `WalletClient`, permit details, and contract addresses.
     *   **Refactored Components (Previous):** Extracted `LoginPage`, `DashboardPage`, and `GitHubCallback` from `App.tsx` into `frontend/src/components/`.
     *   **Fixed Fetching Bug:** Resolved issue causing multiple permit fetches by removing redundant fetch calls and adjusting `useEffect` dependencies.
     *   **Fixed Button Disabling:** Corrected logic that incorrectly disabled claim buttons.
@@ -36,6 +37,7 @@
 *   **RPC Error Handling**: Improve backend validation functions (`isErc20NonceClaimed`, `isErc721NonceClaimed`) to better handle RPC errors (e.g., return a specific error state instead of fail-safe `true`).
 *   **(Optional)** Implement backend endpoint `/api/permits/update-status` to record successful claims.
 *   **(Backend)** Ensure backend API (`/api/permits`) correctly fetches permits based on the provided `walletAddress` query parameter.
+*   **Integrate Multicall Claiming**: Update the UI (likely `PermitsTable.tsx` or `DashboardPage.tsx`) to allow selecting multiple permits and trigger the `claimMultiplePermitsViaMulticall` function.
 
 ## 4. Key Decisions / Open Questions
 
@@ -57,7 +59,7 @@
 *   **Remaining Questions:**
     *   How are permits initially associated with wallet addresses in the database? (External process assumed).
     *   Best strategy for handling intermittent RPC errors during validation.
-    *   Implementation details for batch claiming (Phase 4/5).
+    *   UI design for selecting multiple permits for batch claiming.
     *   Database schema details (confirmation needed for all tables/columns/relationships, especially wallet-permit linkage).
     *   Is the current RPC endpoint reliable enough, or should we switch (as previously discussed)? The pre-claim checks might mitigate the need if the issue was allowance/balance.
 

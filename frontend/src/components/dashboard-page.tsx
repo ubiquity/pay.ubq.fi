@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from "react"; // Removed useMemo
-// Removed useWriteContracts import attempt
-import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
+import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi"; // Removed useWalletClient
 import { multicall } from "@wagmi/core";
 import { config } from "../main";
+import { type Address, type Hex, BaseError, ContractFunctionRevertedError, formatUnits } from "viem"; // Added formatUnits
 import type { PermitData } from "../../../shared/types";
 import permit2ABI from "../fixtures/permit2-abi";
-// Import type and prepare function
-import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract } from "../utils/permit-utils"; // Removed formatAmount
+import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract } from "../utils/permit-utils";
+// Removed multicall utility import as we send sequentially now
+// import { claimMultiplePermitsViaMulticall, type MulticallPermitInput } from "../utils/multicall-utils";
 import { PermitsTable } from "./permits-table";
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw";
 import type { MulticallReturnType } from "@wagmi/core";
 import { ICONS } from "./ICONS";
-// Removed SendTransactionErrorType import
 
-// Assuming BACKEND_API_URL and PERMIT2_ADDRESS are accessible
+// Assuming BACKEND_API_URL is accessible
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8000";
-const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // Universal Permit2 address
+const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address; // Universal Permit2 address
+// MULTICALL3_ADDRESS is no longer needed for this approach
+// const MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
 
 export function DashboardPage() {
   // State management
@@ -24,28 +26,74 @@ export function DashboardPage() {
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null); // General dashboard error
+  const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null); // Error for sequential claim process
+  const [isClaimingSequentially, setIsClaimingSequentially] = useState(false); // Loading state for sequential claim button
 
-  // Hook for single claims
-  const { data: singleClaimHash, error: writeContractError, writeContractAsync } = useWriteContract();
-  // Removed batch claim hooks and state
+  // Hook for single/sequential claims (reused)
+  const { data: claimTxHash, error: writeContractError, writeContractAsync, reset: resetWriteContract } = useWriteContract();
 
-  // State for single claim confirmation
-  const { data: singleClaimReceipt, isLoading: isSingleClaimConfirming, isSuccess: isSingleClaimConfirmed, error: singleClaimReceiptError } = useWaitForTransactionReceipt({ hash: singleClaimHash });
-  // Removed batch claim confirmation state
-
-  // Removed batch claim specific state
+  // State for claim confirmation (reused, tracks the *latest* tx)
+  const { data: claimReceipt, isLoading: isClaimConfirming, isSuccess: isClaimConfirmed, error: claimReceiptError } = useWaitForTransactionReceipt({ hash: claimTxHash });
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
+  const publicClient = usePublicClient(); // Get PublicClient for simulations
 
-  // Removed Calculations for claimablePermits and totalClaimableAmount
+  // --- Calculations ---
+  // Calculate valid permits for the current chain to display count and enable button
+  const claimablePermits = useMemo(() => {
+    return permits.filter(p =>
+        p.networkId === chain?.id &&
+        p.type === 'erc20-permit' &&
+        p.status !== 'Claimed' &&
+        p.claimStatus !== 'Success' &&
+        p.claimStatus !== 'Pending' &&
+        p.ownerBalanceSufficient !== false &&
+        p.permit2AllowanceSufficient !== false &&
+        !p.checkError &&
+        hasRequiredFields(p)
+    );
+  }, [permits, chain?.id]);
+
+  const claimablePermitCount = claimablePermits.length;
+
+  // Calculate the sum of token amounts for claimable permits, assuming 18 decimals and $1 price
+  const claimableTotalValue = useMemo(() => {
+    const assumedDecimals = 18; // User specified assumption
+    let totalSumInWei = 0n;
+    for (const permit of claimablePermits) {
+      if (permit.amount) {
+        try {
+          totalSumInWei += BigInt(permit.amount);
+        } catch (e) {
+          console.error(`Error parsing amount for permit nonce ${permit.nonce}: ${permit.amount}`, e);
+        }
+      }
+    }
+    // Format the total sum using the assumed decimals
+    try {
+      return parseFloat(formatUnits(totalSumInWei, assumedDecimals));
+    } catch (e) {
+      console.error("Error formatting total sum:", e);
+      return 0;
+    }
+  }, [claimablePermits]);
+
+  // Format the value for display (assuming $1 price)
+  const claimableTotalValueDisplay = useMemo(() => {
+    if (claimableTotalValue > 0) {
+      return `$${claimableTotalValue.toFixed(2)}`; // Format as currency
+    }
+    return ""; // Return empty string if value is 0
+  }, [claimableTotalValue]);
+
 
   // --- Fetching Logic ---
   const fetchPermitsAndCheck = async () => {
     setIsLoading(true);
     setError(null);
-    // Removed setClaimAllError
+    setSequentialClaimError(null); // Clear sequential claim error on fetch
     console.log("Fetching permits from backend API...");
     if (!isConnected || !address) {
       setError("Wallet not connected.");
@@ -70,7 +118,7 @@ export function DashboardPage() {
         return acc;
       }, {} as Record<number, PermitData[]>);
       const multicallPromises = Object.entries(permitsByNetwork).map(async ([networkIdStr, networkPermits]) => {
-        const chainId = parseInt(networkIdStr, 10) as 1 | 100;
+        const chainId = parseInt(networkIdStr, 10) as 1 | 100; // Assuming Gnosis (100) or Mainnet (1)
         const erc20Permits = networkPermits.filter((p) => p.type === "erc20-permit" && p.token?.address && p.amount && p.owner);
         if (erc20Permits.length === 0) { return { chainId, results: [], permitIndices: [] }; }
         const contractsToCall: MulticallContract[] = [];
@@ -116,65 +164,191 @@ export function DashboardPage() {
   };
 
   // --- Handle Single Claim ---
+  // This function is now also used by the sequential claim loop
   const handleClaimPermit = async (permitToClaim: PermitData) => {
-    console.log("Attempting to claim permit:", permitToClaim);
-    if (!isConnected || !address || !chain || !writeContractAsync) { setError("Wallet not connected or chain/write function missing."); return; }
-    if (permitToClaim.networkId !== chain.id) { setError(`Please switch wallet to the correct network (ID: ${permitToClaim.networkId})`); return; }
-    if (!hasRequiredFields(permitToClaim)) { setError("Permit data is incomplete."); return; }
+    const permitKey = `${permitToClaim.nonce}-${permitToClaim.networkId}`;
+    console.log(`Attempting to claim permit: ${permitKey}`);
+
+    if (!isConnected || !address || !chain || !writeContractAsync) {
+        setError("Wallet not connected or chain/write function missing.");
+        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: "Wallet not connected." } : p));
+        return false; // Indicate failure
+    }
+    if (permitToClaim.networkId !== chain.id) {
+        const networkError = `Please switch wallet to the correct network (ID: ${permitToClaim.networkId})`;
+        setError(networkError); // Show general error as well
+        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: networkError } : p));
+        return false; // Indicate failure
+    }
+     if (!hasRequiredFields(permitToClaim)) {
+        const incompleteError = "Permit data is incomplete.";
+        setError(incompleteError);
+        setPermits(current => current.map(p => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: incompleteError } : p));
+        return false; // Indicate failure
+    }
+    // Re-check prerequisites just before claiming
     if (permitToClaim.type === "erc20-permit") {
       const balanceErrorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
       const allowanceErrorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
       const checkErrorMsg = `Prerequisite check failed: ${permitToClaim.checkError}`;
-      if (permitToClaim.ownerBalanceSufficient === false) { console.error(balanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: balanceErrorMsg } : p)); return; }
-      if (permitToClaim.permit2AllowanceSufficient === false) { console.error(allowanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: allowanceErrorMsg } : p)); return; }
-      if (permitToClaim.checkError) { console.error(checkErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: checkErrorMsg } : p)); return; }
+      if (permitToClaim.ownerBalanceSufficient === false) { console.error(balanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: balanceErrorMsg } : p)); return false; }
+      if (permitToClaim.permit2AllowanceSufficient === false) { console.error(allowanceErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: allowanceErrorMsg } : p)); return false; }
+      if (permitToClaim.checkError) { console.error(checkErrorMsg); setPermits((current) => current.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: checkErrorMsg } : p)); return false; }
     }
+
+    // Reset writeContract state before new call
+    resetWriteContract();
+
     setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Pending", claimError: undefined, transactionHash: undefined } : p));
+
     try {
       if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) { throw new Error("Invalid ERC20 permit data."); }
-      const permitArgs = { permitted: { token: permitToClaim.token.address as `0x${string}`, amount: BigInt(permitToClaim.amount) }, nonce: BigInt(permitToClaim.nonce), deadline: BigInt(permitToClaim.deadline) };
-      const transferDetailsArgs = { to: permitToClaim.beneficiary as `0x${string}`, requestedAmount: BigInt(permitToClaim.amount) };
-      const txHash = await writeContractAsync({ address: PERMIT2_ADDRESS, abi: permit2ABI, functionName: "permitTransferFrom", args: [permitArgs, transferDetailsArgs, permitToClaim.owner as `0x${string}`, permitToClaim.signature as `0x${string}`] });
-      console.log("Claim transaction sent:", txHash);
+      const permitArgs = { permitted: { token: permitToClaim.token.address as Address, amount: BigInt(permitToClaim.amount) }, nonce: BigInt(permitToClaim.nonce), deadline: BigInt(permitToClaim.deadline) };
+      const transferDetailsArgs = { to: permitToClaim.beneficiary as Address, requestedAmount: BigInt(permitToClaim.amount) };
+
+      // Use writeContractAsync directly
+      const txHash = await writeContractAsync({ address: PERMIT2_ADDRESS, abi: permit2ABI, functionName: "permitTransferFrom", args: [permitArgs, transferDetailsArgs, permitToClaim.owner as Address, permitToClaim.signature as Hex] });
+
+      console.log(`Claim transaction sent for ${permitKey}:`, txHash);
       setPermits((currentPermits) => currentPermits.map((p) => (p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, transactionHash: txHash } : p)));
-    } catch (err) { console.error("Claiming failed:", err); const errorMessage = err instanceof Error ? err.message : "An unknown error occurred"; setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: errorMessage } : p)); }
+      return true; // Indicate success (submission)
+    } catch (err) {
+      console.error(`Claiming failed for ${permitKey}:`, err);
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: errorMessage } : p));
+      return false; // Indicate failure
+    }
   };
 
-  // Removed handleClaimAllClick function
+  // --- Handle Sequential Claim (All Validated) ---
+  const handleClaimAllValidSequential = async () => {
+    setSequentialClaimError(null);
+    setIsClaimingSequentially(true);
+    console.log("Attempting sequential claim: Finding all valid permits...");
+
+    if (!publicClient || !address || !chain) { // Check publicClient and address
+      setSequentialClaimError("Wallet not connected or client unavailable.");
+      setIsClaimingSequentially(false);
+      return;
+    }
+
+    // Use the pre-calculated claimablePermits based on current state
+    const candidatePermits = claimablePermits;
+
+    if (candidatePermits.length === 0) {
+        setSequentialClaimError("No valid permits found on this network to claim.");
+        setIsClaimingSequentially(false);
+        return;
+    }
+
+    const validPermitsToClaim: PermitData[] = [];
+    console.log(`Found ${candidatePermits.length} candidates. Simulating individually...`);
+
+    for (const permit of candidatePermits) {
+        // No longer limiting to 3
+        // if (validPermitsToClaim.length >= 3) break;
+
+        console.log(`  Simulating permit nonce: ${permit.nonce}...`);
+        try {
+            const permitArgs = { permitted: { token: permit.token!.address as Address, amount: BigInt(permit.amount!) }, nonce: BigInt(permit.nonce), deadline: BigInt(permit.deadline) };
+            const transferDetailsArgs = { to: permit.beneficiary as Address, requestedAmount: BigInt(permit.amount!) };
+
+            // Simulate this single permit claim
+            await publicClient.simulateContract({
+                address: PERMIT2_ADDRESS,
+                abi: permit2ABI,
+                functionName: 'permitTransferFrom',
+                args: [permitArgs, transferDetailsArgs, permit.owner as Address, permit.signature as Hex],
+                account: address, // Account needed for simulation context
+            });
+
+            console.log(`    Permit ${permit.nonce} simulation successful.`);
+            validPermitsToClaim.push(permit);
+
+        } catch (simError: unknown) {
+            let reason = "Unknown simulation error";
+             if (simError instanceof BaseError) {
+                // Correctly check type before accessing cause
+                const revertError = simError.walk((err: unknown) => err instanceof Error && err.cause instanceof ContractFunctionRevertedError) as ContractFunctionRevertedError | null;
+                if (revertError) { reason = revertError.reason ?? revertError.shortMessage ?? simError.shortMessage; }
+                else { reason = simError.shortMessage || simError.message; }
+            } else if (simError instanceof Error) { reason = simError.message; }
+            console.warn(`    Permit ${permit.nonce} simulation failed: ${reason}`);
+            // Update state for this specific permit to show simulation failure
+             setPermits(current => current.map(p => p.nonce === permit.nonce && p.networkId === permit.networkId ? {...p, claimStatus: "Error", claimError: `Sim fail: ${reason}`} : p));
+        }
+    }
+
+    if (validPermitsToClaim.length === 0) {
+      setSequentialClaimError("Could not find any permits that passed simulation.");
+      setIsClaimingSequentially(false);
+      return;
+    }
+
+    console.log(`Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`, validPermitsToClaim.map(p => p.nonce));
+
+    let successes = 0;
+    let failures = 0;
+    // Send transactions one by one
+    for (const permit of validPermitsToClaim) {
+        const success = await handleClaimPermit(permit); // Reuse single claim logic
+        if (success) {
+            successes++;
+            // Optional: Wait for confirmation before sending the next?
+            // Could add a delay or use useWaitForTransactionReceipt here if needed,
+            // but for now, just fire them off.
+        } else {
+            failures++;
+        }
+        // Small delay between transactions to avoid RPC rate limits?
+        // await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
+    if (failures > 0) {
+        setSequentialClaimError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed. Check individual permits.`);
+    }
+
+    setIsClaimingSequentially(false);
+  };
 
   // --- Effects for Handling Transaction Results ---
 
-  // Effect for single claim confirmation
+  // Effect for single/sequential claim confirmation
+  // This now handles confirmations for *any* transaction sent via handleClaimPermit
   useEffect(() => {
-    if (isSingleClaimConfirmed && singleClaimReceipt && singleClaimHash) {
-      console.log("Single claim successful:", singleClaimHash);
+    if (isClaimConfirmed && claimReceipt && claimTxHash) {
+      console.log("Claim successful, Tx Hash:", claimTxHash);
+      // Update status for the permit matching this hash
       setPermits((current) =>
-        current.map((p) => (p.transactionHash === singleClaimHash ? { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined } : p))
+        current.map((p) => (p.transactionHash === claimTxHash ? { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined } : p))
       );
     }
-    if (singleClaimReceiptError && singleClaimHash) {
-      console.error("Single claim tx failed:", singleClaimReceiptError.message);
+    if (claimReceiptError && claimTxHash) {
+      console.error("Claim tx failed, Tx Hash:", claimTxHash, claimReceiptError.message);
+       // Update status for the permit matching this hash
       setPermits((current) =>
-        current.map((p) => (p.transactionHash === singleClaimHash ? { ...p, claimStatus: "Error", claimError: singleClaimReceiptError.message } : p))
+        current.map((p) => (p.transactionHash === claimTxHash ? { ...p, claimStatus: "Error", claimError: claimReceiptError.message } : p))
       );
     }
-  }, [isSingleClaimConfirmed, singleClaimReceipt, singleClaimReceiptError, singleClaimHash]);
+  }, [isClaimConfirmed, claimReceipt, claimReceiptError, claimTxHash]);
 
-  // Effect for single claim submission error
+  // Effect for claim submission error (writeContractError)
+  // This now handles submission errors for *any* transaction sent via handleClaimPermit
   useEffect(() => {
     if (writeContractError) {
-      console.error("Single claim submission failed:", writeContractError.message);
+      console.error("Claim submission failed:", writeContractError.message);
+      // Find the permit that was 'Pending' but didn't get a hash assigned
+      // This is imperfect if multiple are sent quickly, but best effort
       setPermits((current) =>
         current.map((p) =>
-          p.claimStatus === "Pending" && p.transactionHash === undefined // Removed batch state checks
+          p.claimStatus === "Pending" && !p.transactionHash
             ? { ...p, claimStatus: "Error", claimError: writeContractError.message }
             : p
         )
       );
     }
-  }, [writeContractError]); // Removed batch state dependencies
-
-  // Removed useEffect hooks for batch claim results
+  }, [writeContractError]);
 
   // Fetch permits when connected
   useEffect(() => {
@@ -188,12 +362,8 @@ export function DashboardPage() {
 
   const LogoSpan = () => <span id="header-logo-wrapper" dangerouslySetInnerHTML={{ __html: logoSvgContent }} />;
 
-  // Removed showClaimAll and isClaimAllDisabled calculations
-
   return (
     <>
-      {/* Removed Claim Summary Section */}
-
       {/* Header Section */}
       <section id="header">
         {/* Container for spinner OR expand button (Moved to the left) */}
@@ -223,6 +393,15 @@ export function DashboardPage() {
         {/* Controls (Remains on the right) */}
         {isConnected && address ? ( // Check for address as well
           <div id="controls">
+             {/* Claim All Valid Sequentially Button */}
+             <button onClick={handleClaimAllValidSequential} disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0} className="button-with-icon" style={{ marginRight: '10px' }} title="Claim all valid & available permits sequentially">
+              {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+              <span>
+                {/* Display approximate sum if available, otherwise just "All" */}
+                Claim {claimableTotalValueDisplay ? `${claimableTotalValueDisplay} ` : 'All '}
+                ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? 's' : ''})
+              </span>
+            </button>
             <button onClick={() => disconnect()} className="button-with-icon">
               {ICONS.DISCONNECT}
               <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
@@ -235,11 +414,20 @@ export function DashboardPage() {
       </section>
 
       {/* General Error Display */}
-      {error && ( // Removed !claimAllError check
+      {error && (
         <section id="error-message-wrapper">
           <div className="error-message">
             {ICONS.WARNING}
             <span>{error}</span>
+          </div>
+        </section>
+      )}
+      {/* Sequential Claim Error Display */}
+      {sequentialClaimError && (
+        <section id="error-message-wrapper" style={{ marginTop: '5px' }}>
+          <div className="error-message">
+            {ICONS.WARNING}
+            <span>{sequentialClaimError}</span>
           </div>
         </section>
       )}
@@ -248,13 +436,13 @@ export function DashboardPage() {
       {isTableVisible && (
         <PermitsTable
           permits={permits}
-          onClaimPermit={handleClaimPermit}
+          onClaimPermit={handleClaimPermit} // Keep single claim functionality
           isConnected={isConnected}
           chain={chain}
-          // Pass correct confirmation state based on single claim
-          isConfirming={isSingleClaimConfirming}
-          // Pass appropriate hash for single claim
-          confirmingHash={singleClaimHash}
+          // Pass correct confirmation state (tracks latest tx)
+          isConfirming={isClaimConfirming}
+          // Pass appropriate hash (tracks latest tx)
+          confirmingHash={claimTxHash}
           isLoading={isLoading} // Pass general loading state for table skeleton/message
         />
       )}

@@ -14,6 +14,7 @@ export interface PermitDetails {
 export interface TokenInfo {
   address: string;
   network: number;
+  decimals?: number; // Add optional decimals field
 }
 
 export interface PartnerInfo {
@@ -43,6 +44,9 @@ export interface PermitData extends PermitDetails {
    ownerBalanceSufficient?: boolean;
    permit2AllowanceSufficient?: boolean;
    checkError?: string; // Error during balance/allowance check
+
+   // Estimated value (potentially added by backend)
+   usdValue?: number;
  }
 
 // Add other shared types as needed (e.g., API response types)

@@ -10,7 +10,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Phase 2: Frontend Foundation & Auth**: COMPLETE (Auth context, login flow, basic layout, wallet connection via `wagmi`). Components refactored.
 *   **Phase 3: GitHub Scanning & Permit Display**: IN PROGRESS. Backend `/api/permits` fetches from DB. Frontend displays permits. GitHub scanning TBD.
 *   **Phase 4: Validation Logic**: IN PROGRESS. Backend validation needs RPC error handling. Frontend `hasRequiredFields` implemented. **Frontend pre-claim checks (owner balance, Permit2 allowance) implemented.**
-*   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) implemented in frontend. Batching TBD.
+*   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) implemented. **Multicall utility function (`claimMultiplePermitsViaMulticall`) created in `multicall-utils.ts`. UI integration TBD.**
 *   **Phase 6: Claim Status Update & Polish**: IN PROGRESS. Frontend uses `useWaitForTransactionReceipt` and displays prerequisite check results/errors. Backend status update TBD.
 *   **Phase 7: Documentation & Deployment**: IN PROGRESS (Docs update). Deployment TBD.
 
@@ -29,6 +29,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Background**: Integrated WebGL grid animation from `the-grid.ts` into the `#grid` element defined in `index.html`.
 *   **UI Elements**: Added Ubiquity OS logo (`ubiquity-os-logo.svg`) inline next to the main header text in `LoginPage` and `DashboardPage` by importing raw SVG content (`?raw`) and using `dangerouslySetInnerHTML`. Updated type definitions.
 *   **Bug Fixes**: Resolved multiple permit fetch issue. Resolved incorrect claim button disabling.
+*   **Multicall Utility**: Created `claimMultiplePermitsViaMulticall` function in `frontend/src/utils/multicall-utils.ts` using `viem` and `Multicall3.aggregate3` to bundle permit claims.
 
 ## 3. What's Next (High Level)
 
@@ -36,7 +37,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Test Single Claim**: Thoroughly test the end-to-end single claim flow, including success and failure cases (due to pre-claim checks or on-chain errors).
 *   **Address RPC Errors**: Improve backend validation error handling.
 *   **Implement GitHub Scanning**: Add logic to backend to scan GitHub for new permits (Phase 3).
-*   **Implement Batch Claiming**: Add multicall logic to frontend (Phase 5).
+*   **Integrate Multicall Claiming**: Update UI to allow selecting multiple permits and trigger the `claimMultiplePermitsViaMulticall` function (Phase 5).
 *   **(Optional)** Implement Backend Status Update: Create `/api/permits/update-status` endpoint (Phase 6).
 *   **UI/UX Polish**: Refine loading states, error messages, overall flow (Phase 6).
 *   **Final Documentation & Deployment** (Phase 7).
@@ -47,7 +48,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 
 *   **RPC Errors**: Intermittent `connection reset` errors from Gnosis RPC during backend on-chain validation.
 *   **GitHub Scanning**: Logic not implemented yet.
-*   **Batch Claiming**: Not implemented yet.
+*   **Multicall UI Integration**: UI for selecting and triggering batch claims not implemented yet.
 *   **Token Encryption**: Secure storage for GitHub token not implemented yet.
 *   **Auth Flow**: Full end-to-end verification of GitHub OAuth callback and session management needed.
 *   **Claim Failures**: `TRANSFER_FROM_FAILED` error was occurring; added pre-claim checks for balance/allowance as a likely fix. Needs verification.
