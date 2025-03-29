@@ -29,7 +29,7 @@ const nftRewardAbi = parseAbiItem("function nonceRedeemed(uint256 nonce) view re
 let supabase: SupabaseClient | null = null;
 // Instantiate the manager - assuming it can be initialized without args here
 // or receives necessary config via postMessage later.
-const permit2RpcManager = new Permit2RpcManager({ logLevel: "debug" }); // Use debug for worker logs
+const permit2RpcManager = new Permit2RpcManager({ logLevel: "warn" }); // Set logLevel to warn (default)
 
 // Define a type for the permit object potentially augmented with _filterOut
 type MappedPermit = PermitData & { _filterOut?: boolean };
@@ -99,12 +99,12 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
 
     // 4. Perform frontend on-chain checks
     const checkedPermitsMap = new Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>();
-    const checkPromises = initialPermits.flatMap((permit) => {
+    // Define a more specific type for the promise result/error object
+    type CheckResult = { key: string; type: string; result?: unknown; error?: Error; requiredAmount?: bigint }; // Use unknown for result
+    const checkPromises = initialPermits.flatMap((permit): Promise<CheckResult>[] => { // Add return type annotation
         const key = `${permit.nonce}-${permit.networkId}`;
         const chainId = permit.networkId;
         const owner = permit.owner as Address;
-        // Define a more specific type for the promise result/error object
-        type CheckResult = { key: string; type: string; result?: any; error?: Error; requiredAmount?: bigint };
         const promises: Promise<CheckResult>[] = [];
 
         // Nonce Checks
@@ -113,13 +113,13 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
             promises.push(
                 readContract<bigint>({ manager: permit2RpcManager, chainId, address: "0x000000000022D473030F116dDEE9F6B43aC78BA3", abi: [permit2Abi], functionName: "nonceBitmap", args: [owner, wordPos] })
                     .then(bitmap => ({ key, type: "nonce", result: Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n))) }))
-                    .catch((error: Error) => ({ key, type: "nonce", error })) // Add Error type
+                    .catch((error: Error) => ({ key, type: "nonce", error }))
             );
         } else if (permit.type === "erc721-permit" && permit.token?.address) {
             promises.push(
                 readContract<boolean>({ manager: permit2RpcManager, chainId, address: permit.token.address as Address, abi: [nftRewardAbi], functionName: "nonceRedeemed", args: [BigInt(permit.nonce)] })
                     .then(isRedeemed => ({ key, type: "nonce", result: isRedeemed }))
-                    .catch((error: Error) => ({ key, type: "nonce", error })) // Add Error type
+                    .catch((error: Error) => ({ key, type: "nonce", error }))
             );
         }
 
@@ -131,10 +131,10 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
             const [balanceCall, allowanceCall] = calls;
             promises.push(readContract<bigint>({ manager: permit2RpcManager, chainId, address: balanceCall.address, abi: balanceCall.abi as Abi, functionName: balanceCall.functionName, args: balanceCall.args })
                 .then(balance => ({ key, type: "balance", result: balance, requiredAmount }))
-                .catch((error: Error) => ({ key, type: "balance", error }))); // Add Error type
+                .catch((error: Error) => ({ key, type: "balance", error })));
             promises.push(readContract<bigint>({ manager: permit2RpcManager, chainId, address: allowanceCall.address, abi: allowanceCall.abi as Abi, functionName: allowanceCall.functionName, args: allowanceCall.args })
                 .then(allowance => ({ key, type: "allowance", result: allowance, requiredAmount }))
-                .catch((error: Error) => ({ key, type: "allowance", error }))); // Add Error type
+                .catch((error: Error) => ({ key, type: "allowance", error })));
         }
         return promises;
     });
@@ -150,9 +150,10 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
                     console.warn(`Worker: Prereq check failed for permit ${value.key} (${value.type}):`, value.error);
                     updateData.checkError = `Check failed (${value.type}). ${value.error?.message || ''}`;
                 } else if ('result' in value) { // Check if result exists
-                    if (value.type === "balance" && value.requiredAmount !== undefined) updateData.ownerBalanceSufficient = BigInt(value.result) >= value.requiredAmount;
-                    else if (value.type === "allowance" && value.requiredAmount !== undefined) updateData.permit2AllowanceSufficient = BigInt(value.result) >= value.requiredAmount;
-                    else if (value.type === "nonce") updateData.isNonceUsed = value.result;
+                    // Safely cast result based on type after checking for error
+                    if (value.type === "balance" && value.requiredAmount !== undefined) updateData.ownerBalanceSufficient = BigInt(value.result as bigint) >= value.requiredAmount;
+                    else if (value.type === "allowance" && value.requiredAmount !== undefined) updateData.permit2AllowanceSufficient = BigInt(value.result as bigint) >= value.requiredAmount;
+                    else if (value.type === "nonce") updateData.isNonceUsed = value.result as boolean;
                 }
                 checkedPermitsMap.set(value.key, updateData);
             } else { console.error("Worker: Prereq check promise resolved with invalid value:", value); }
@@ -164,7 +165,7 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
         const key = `${permit.nonce}-${permit.networkId}`;
         const checkData = checkedPermitsMap.get(key);
         if (checkData?.checkError?.includes("nonce") || checkData?.isNonceUsed === true) {
-            console.log(`Worker: Filtering out permit ${key} due to nonce check failure or nonce being used.`);
+            // console.log(`Worker: Filtering out permit ${key} due to nonce check failure or nonce being used.`);
             return { ...permit, ...checkData, _filterOut: true };
         }
         return checkData ? { ...permit, ...checkData } : permit;

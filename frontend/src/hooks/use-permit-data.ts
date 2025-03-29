@@ -56,7 +56,6 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         setError(`Worker initialization failed: ${workerError}`);
         setIsWorkerInitialized(false);
       } else if (type === 'PERMITS_RESULT') {
-        console.log(">>> DEBUG: Received Permits from Worker:", JSON.stringify(workerPermits, null, 2));
         setPermits(workerPermits || []);
         setError(null); // Clear previous errors on success
         setIsLoading(false);
