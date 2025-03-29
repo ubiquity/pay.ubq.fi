@@ -1,8 +1,9 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:@pavlovcik/permit2-rpc-manager@*": "0.1.0",
-    "npm:viem@*": "2.24.1_ws@8.18.1"
+    "npm:@pavlovcik/permit2-rpc-manager@latest": "0.1.0",
+    "npm:viem@*": "2.24.2_ws@8.18.1",
+    "npm:viem@2": "2.24.2_ws@8.18.1"
   },
   "npm": {
     "@adraffy/ens-normalize@1.11.0": {
@@ -65,8 +66,8 @@
         "eventemitter3"
       ]
     },
-    "viem@2.24.1_ws@8.18.1": {
-      "integrity": "sha512-xptFlc081SIPz+ZNDeb0XS/Nn5PU28onq+im+UxEAPCXTIuL1kfw1GTnV8NhbUNoEONnrwcZNqoI0AT0ADF5XQ==",
+    "viem@2.24.2_ws@8.18.1": {
+      "integrity": "sha512-lUGoTHhMYlR4ktQiOrbTPmYvrMn3jKUdn2PSmB9QLICxnsQJxMkSCeGRoJFq7hi7K6PCMQgAyLMR/9J1key5cg==",
       "dependencies": [
         "@noble/curves",
         "@noble/hashes",
@@ -174,7 +175,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@pavlovcik/permit2-rpc-manager@0.0.4",
+      "npm:@pavlovcik/permit2-rpc-manager@latest",
       "npm:viem@2"
     ]
   }

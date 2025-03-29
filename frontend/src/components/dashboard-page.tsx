@@ -1,18 +1,17 @@
-import React, { useEffect, useState, useMemo } from "react";
-// Import useWriteContracts directly from wagmi
-import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useSendTransaction } from "wagmi"; // Added useSendTransaction
-// Removed type import from wagmi/actions - will rely on local type or inference
+import React, { useEffect, useState } from "react"; // Removed useMemo
+// Removed useWriteContracts import attempt
+import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { multicall } from "@wagmi/core";
 import { config } from "../main";
 import type { PermitData } from "../../../shared/types";
 import permit2ABI from "../fixtures/permit2-abi";
-// Import type and prepare function, and formatAmount
-import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract, formatAmount } from "../utils/permit-utils";
+// Import type and prepare function
+import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract } from "../utils/permit-utils"; // Removed formatAmount
 import { PermitsTable } from "./permits-table";
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw";
 import type { MulticallReturnType } from "@wagmi/core";
 import { ICONS } from "./ICONS";
-import { type SendTransactionErrorType } from "wagmi/actions"; // Import type for sendTransaction error
+// Removed SendTransactionErrorType import
 
 // Assuming BACKEND_API_URL and PERMIT2_ADDRESS are accessible
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8000";
@@ -28,48 +27,25 @@ export function DashboardPage() {
 
   // Hook for single claims
   const { data: singleClaimHash, error: writeContractError, writeContractAsync } = useWriteContract();
-  // Hook for sending the prepared batch transaction
-  const { data: batchClaimTxHash, error: sendTransactionError, sendTransactionAsync } = useSendTransaction();
+  // Removed batch claim hooks and state
 
   // State for single claim confirmation
   const { data: singleClaimReceipt, isLoading: isSingleClaimConfirming, isSuccess: isSingleClaimConfirmed, error: singleClaimReceiptError } = useWaitForTransactionReceipt({ hash: singleClaimHash });
-  // State for batch claim confirmation
-  const { data: batchClaimReceipt, isLoading: isBatchClaimConfirming, isSuccess: isBatchClaimConfirmed, error: batchClaimReceiptError } = useWaitForTransactionReceipt({ hash: batchClaimTxHash });
+  // Removed batch claim confirmation state
 
-  // State specifically for the "Claim All" button loading state
-  const [isPreparingClaimAll, setIsPreparingClaimAll] = useState(false); // State for backend preparation step
-  const [isSendingClaimAll, setIsSendingClaimAll] = useState(false); // State for sending tx step
-  const [claimAllError, setClaimAllError] = useState<string | null>(null); // Error specific to claim all process
+  // Removed batch claim specific state
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
 
-  // --- Calculations ---
-  const claimablePermits = useMemo(() => {
-    return permits.filter(
-      (p) =>
-        p.type === "erc20-permit" &&
-        p.claimStatus !== "Success" &&
-        p.claimStatus !== "Pending" &&
-        p.status !== "Claimed" &&
-        p.networkId === chain?.id &&
-        hasRequiredFields(p) &&
-        p.ownerBalanceSufficient !== false &&
-        p.permit2AllowanceSufficient !== false &&
-        !p.checkError
-    );
-  }, [permits, chain?.id]);
-
-  const totalClaimableAmount = useMemo(() => {
-    return claimablePermits.reduce((sum, p) => sum + BigInt(p.amount || 0), BigInt(0));
-  }, [claimablePermits]);
+  // Removed Calculations for claimablePermits and totalClaimableAmount
 
   // --- Fetching Logic ---
   const fetchPermitsAndCheck = async () => {
     setIsLoading(true);
     setError(null);
-    setClaimAllError(null); // Clear claim all error on new fetch
+    // Removed setClaimAllError
     console.log("Fetching permits from backend API...");
     if (!isConnected || !address) {
       setError("Wallet not connected.");
@@ -140,7 +116,7 @@ export function DashboardPage() {
   };
 
   // --- Handle Single Claim ---
-  const handleClaimPermit = async (permitToClaim: PermitData) => { // Removed isBatch flag as it's not needed now
+  const handleClaimPermit = async (permitToClaim: PermitData) => {
     console.log("Attempting to claim permit:", permitToClaim);
     if (!isConnected || !address || !chain || !writeContractAsync) { setError("Wallet not connected or chain/write function missing."); return; }
     if (permitToClaim.networkId !== chain.id) { setError(`Please switch wallet to the correct network (ID: ${permitToClaim.networkId})`); return; }
@@ -164,72 +140,7 @@ export function DashboardPage() {
     } catch (err) { console.error("Claiming failed:", err); const errorMessage = err instanceof Error ? err.message : "An unknown error occurred"; setPermits((currentPermits) => currentPermits.map((p) => p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, claimStatus: "Error", claimError: errorMessage } : p)); }
   };
 
-  // --- Handle Batch Claim via Backend ---
-  const handleClaimAllClick = async () => {
-    if (!isConnected || !address || !chain || !sendTransactionAsync) {
-      setError("Wallet not connected or send transaction function missing.");
-      return;
-    }
-    if (claimablePermits.length === 0) {
-      setError("No claimable permits found on the current network.");
-      return;
-    }
-
-    setClaimAllError(null);
-    setIsPreparingClaimAll(true); // Start preparation loading state
-    let claimedNonces: string[] = []; // Keep track of nonces we attempt to claim
-
-    try {
-      // 1. Call backend to prepare the transaction data
-      const token = localStorage.getItem('app_token'); // Assuming JWT is stored here
-      const response = await fetch(`${BACKEND_API_URL}/api/permits/prepare-claim-all`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Include auth token
-        },
-        body: JSON.stringify({ chainId: chain.id, walletAddress: address })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to prepare batch claim: ${response.statusText}`);
-      }
-
-      // Destructure claimedNonces here
-      const { to, data, claimedNonces: backendClaimedNonces } = await response.json();
-      claimedNonces = backendClaimedNonces || []; // Assign to outer scope variable
-
-      if (!to || !data || !claimedNonces || claimedNonces.length === 0) {
-        throw new Error("Invalid or empty data received from backend for batch claim.");
-      }
-
-      setIsPreparingClaimAll(false); // Preparation done
-      setIsSendingClaimAll(true); // Start sending loading state
-
-      // 2. Mark relevant permits as pending
-      const pendingNoncesSet = new Set(claimedNonces);
-      setPermits(current => current.map(p => pendingNoncesSet.has(p.nonce) && p.networkId === chain.id ? { ...p, claimStatus: "Pending", claimError: undefined, transactionHash: undefined } : p));
-
-      // 3. Send the transaction using useSendTransaction
-      await sendTransactionAsync({ to: to as `0x${string}`, data: data as `0x${string}` });
-      // Success/error is handled by useEffect watching batchClaimTxHash/sendTransactionError
-
-    } catch (err) {
-      console.error("Claim All preparation or sending failed:", err);
-      const errorMsg = err instanceof Error ? err.message : "Unknown error during Claim All process.";
-      setClaimAllError(errorMsg);
-      // Revert pending status if preparation failed or if claimedNonces is empty
-      if (isPreparingClaimAll || claimedNonces.length === 0) {
-         const noncesToRevert = new Set(claimedNonces.length > 0 ? claimedNonces : claimablePermits.map(p => p.nonce));
-         setPermits(current => current.map(p => noncesToRevert.has(p.nonce) && p.networkId === chain.id ? { ...p, claimStatus: "Idle" } : p));
-      }
-      setIsPreparingClaimAll(false); // Ensure preparation state is reset on error
-      setIsSendingClaimAll(false); // Ensure sending state is reset on error
-    }
-    // Removed finally block here, state is reset in useEffects or catch
-  };
-
+  // Removed handleClaimAllClick function
 
   // --- Effects for Handling Transaction Results ---
 
@@ -253,54 +164,17 @@ export function DashboardPage() {
   useEffect(() => {
     if (writeContractError) {
       console.error("Single claim submission failed:", writeContractError.message);
-      // Only update if not currently preparing, sending, or confirming a batch claim
       setPermits((current) =>
         current.map((p) =>
-          p.claimStatus === "Pending" && p.transactionHash === undefined && !isPreparingClaimAll && !isSendingClaimAll && !isBatchClaimConfirming
+          p.claimStatus === "Pending" && p.transactionHash === undefined // Removed batch state checks
             ? { ...p, claimStatus: "Error", claimError: writeContractError.message }
             : p
         )
       );
     }
-  }, [writeContractError, isPreparingClaimAll, isSendingClaimAll, isBatchClaimConfirming]); // Added batch states to dependency
+  }, [writeContractError]); // Removed batch state dependencies
 
-  // Effect for batch claim confirmation
-  useEffect(() => {
-    if (isBatchClaimConfirmed && batchClaimReceipt && batchClaimTxHash) {
-      console.log("Batch claim successful, Tx Hash:", batchClaimReceipt.transactionHash);
-      // Mark all permits that were pending for this batch as claimed
-      setPermits((current) =>
-        current.map((p) =>
-          p.claimStatus === "Pending" && p.networkId === chain?.id // Assume pending on current chain were part of batch
-            ? { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined, transactionHash: batchClaimReceipt.transactionHash }
-            : p
-        )
-      );
-      setIsSendingClaimAll(false); // Reset sending state on success
-    }
-    if (batchClaimReceiptError && batchClaimTxHash) {
-      const errorMsg = batchClaimReceiptError.message;
-      console.error("Batch claim tx failed:", errorMsg);
-      setClaimAllError(`Batch transaction failed: ${errorMsg}`);
-      setPermits((current) =>
-        current.map((p) => (p.claimStatus === "Pending" && p.networkId === chain?.id ? { ...p, claimStatus: "Error", claimError: errorMsg } : p))
-      );
-      setIsSendingClaimAll(false); // Reset sending state on error
-    }
-  }, [isBatchClaimConfirmed, batchClaimReceipt, batchClaimReceiptError, batchClaimTxHash, chain?.id]);
-
-   // Effect for batch claim submission error (using sendTransactionError)
-   useEffect(() => {
-    if (sendTransactionError) {
-      const error = sendTransactionError as SendTransactionErrorType; // Use imported type
-      const errorMsg = error.message; // Use message property directly
-      console.error("Batch claim submission failed:", errorMsg);
-      setClaimAllError(`Batch submission failed: ${errorMsg}`);
-      setPermits(current => current.map(p => p.claimStatus === "Pending" && p.networkId === chain?.id ? { ...p, claimStatus: "Error", claimError: errorMsg } : p));
-      setIsSendingClaimAll(false); // Reset sending state
-    }
-  }, [sendTransactionError, chain?.id]);
-
+  // Removed useEffect hooks for batch claim results
 
   // Fetch permits when connected
   useEffect(() => {
@@ -314,33 +188,11 @@ export function DashboardPage() {
 
   const LogoSpan = () => <span id="header-logo-wrapper" dangerouslySetInnerHTML={{ __html: logoSvgContent }} />;
 
-  // Determine if the Claim All button should be shown and enabled
-  const showClaimAll = isConnected && initialLoadComplete && claimablePermits.length > 0;
-  // Disable if preparing, sending, confirming batch, initial load isn't done, or no permits are claimable
-  const isClaimAllDisabled = isPreparingClaimAll || isSendingClaimAll || isBatchClaimConfirming || !initialLoadComplete || claimablePermits.length === 0;
-
+  // Removed showClaimAll and isClaimAllDisabled calculations
 
   return (
     <>
-      {/* Claim Summary Section */}
-      {showClaimAll && (
-         <section id="claim-summary">
-           <div className="summary-info">
-             {/* TODO: Add token symbol logic if needed */}
-             <span>Total Claimable: {formatAmount(totalClaimableAmount.toString())}</span>
-           </div>
-           <button
-             className="claim-all-button button-with-icon"
-             onClick={handleClaimAllClick} // Changed onClick handler
-             disabled={isClaimAllDisabled}
-           >
-             {/* Show spinner inside button when preparing, sending, or confirming batch */}
-             {(isPreparingClaimAll || isSendingClaimAll || isBatchClaimConfirming) ? <div className="spinner"></div> : ICONS.CLAIM}
-             {(isPreparingClaimAll || isSendingClaimAll || isBatchClaimConfirming) ? "Claiming All..." : `Claim All (${claimablePermits.length})`}
-           </button>
-           {claimAllError && <div className="error-message small-font margin-top-4">{claimAllError}</div>}
-         </section>
-      )}
+      {/* Removed Claim Summary Section */}
 
       {/* Header Section */}
       <section id="header">
@@ -383,7 +235,7 @@ export function DashboardPage() {
       </section>
 
       {/* General Error Display */}
-      {error && !claimAllError && ( // Avoid showing general error if claim all error exists
+      {error && ( // Removed !claimAllError check
         <section id="error-message-wrapper">
           <div className="error-message">
             {ICONS.WARNING}
@@ -399,10 +251,10 @@ export function DashboardPage() {
           onClaimPermit={handleClaimPermit}
           isConnected={isConnected}
           chain={chain}
-          // Pass correct confirmation state based on single claim OR batch claim
-          isConfirming={isSingleClaimConfirming || isBatchClaimConfirming}
-          // Pass appropriate hash - prioritize batch hash if confirming, else single hash
-          confirmingHash={isBatchClaimConfirming ? batchClaimTxHash : singleClaimHash}
+          // Pass correct confirmation state based on single claim
+          isConfirming={isSingleClaimConfirming}
+          // Pass appropriate hash for single claim
+          confirmingHash={singleClaimHash}
           isLoading={isLoading} // Pass general loading state for table skeleton/message
         />
       )}
