@@ -14,7 +14,7 @@ import App from './App.tsx';
 import { grid } from './the-grid'; // Import the grid function (once)
 
 // Instantiate and Export Permit2RpcManager
-export const rpcHandler = new Permit2RpcManager(); // Added export
+export const permit2RpcManager = new Permit2RpcManager(); // Added export
 
 // Configure wagmi
 // Configure wagmi with injected connector, added Sepolia chain
