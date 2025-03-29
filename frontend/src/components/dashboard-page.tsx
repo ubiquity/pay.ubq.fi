@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
 import { useAccount, useDisconnect, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi"; // Removed useWalletClient
-import { multicall } from "@wagmi/core";
-import { config } from "../main";
-import { type Address, type Hex, BaseError, ContractFunctionRevertedError, formatUnits } from "viem"; // Added formatUnits
+// Removed multicall import from @wagmi/core
+import { rpcHandler } from "../main"; // Import rpcHandler, removed unused config
+import { readContract } from "@pavlovcik/permit2-rpc-manager"; // Import readContract
+import { type Address, type Hex, BaseError, ContractFunctionRevertedError, formatUnits, type Abi } from "viem"; // Added formatUnits, Abi
 import type { PermitData } from "../../../shared/types";
 import permit2ABI from "../fixtures/permit2-abi";
-import { preparePermitPrerequisiteContracts, hasRequiredFields, type MulticallContract } from "../utils/permit-utils";
+import { preparePermitPrerequisiteContracts, hasRequiredFields } from "../utils/permit-utils"; // Removed unused MulticallContract
 // Removed multicall utility import as we send sequentially now
 // import { claimMultiplePermitsViaMulticall, type MulticallPermitInput } from "../utils/multicall-utils";
 import { PermitsTable } from "./permits-table";
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw";
-import type { MulticallReturnType } from "@wagmi/core";
+// Removed MulticallReturnType import
 import { ICONS } from "./ICONS";
 
 // Assuming BACKEND_API_URL is accessible
@@ -125,87 +126,73 @@ export function DashboardPage() {
         throw new Error("Received invalid data format for permits.");
       }
       initialPermits = data.permits.map((p: PermitData) => ({ ...p, claimStatus: "Idle" }));
-      const permitsByNetwork: Record<number, PermitData[]> = initialPermits.reduce((acc, permit) => {
-        const networkId = permit.networkId;
-        if (networkId) {
-          if (!acc[networkId]) acc[networkId] = [];
-          acc[networkId].push(permit);
-        }
-        return acc;
-      }, {} as Record<number, PermitData[]>);
-      const multicallPromises = Object.entries(permitsByNetwork).map(async ([networkIdStr, networkPermits]) => {
-        const chainId = parseInt(networkIdStr, 10) as 1 | 100; // Assuming Gnosis (100) or Mainnet (1)
-        const erc20Permits = networkPermits.filter((p) => p.type === "erc20-permit" && p.token?.address && p.amount && p.owner);
-        if (erc20Permits.length === 0) {
-          return { chainId, results: [], permitIndices: [] };
-        }
-        const contractsToCall: MulticallContract[] = [];
-        const permitIndices: number[] = [];
-        erc20Permits.forEach((permit) => {
-          const calls = preparePermitPrerequisiteContracts(permit);
-          if (calls) {
-            contractsToCall.push(...calls);
-            const originalIndex = initialPermits.findIndex((p) => p.nonce === permit.nonce && p.networkId === permit.networkId);
-            permitIndices.push(originalIndex);
-            permitIndices.push(originalIndex);
-          }
-        });
-        if (contractsToCall.length === 0) {
-          return { chainId, results: [], permitIndices: [] };
-        }
-        try {
-          const results = (await multicall(config, { contracts: contractsToCall, chainId: chainId, allowFailure: true })) as MulticallReturnType<
-            typeof contractsToCall
-          >;
-          return { chainId, results, permitIndices };
-        } catch (multiCallError) {
-          console.error(`Multicall failed for chain ${chainId}:`, multiCallError);
-          return { chainId, error: multiCallError, permitIndices };
-        }
-      });
-      const multicallResults = await Promise.allSettled(multicallPromises);
+      // Removed unused permitsByNetwork variable
+
+      // Use readContract for checks
       const checkedPermitsMap = new Map<string, Partial<PermitData>>();
-      multicallResults.forEach((settledResult) => {
+      const checkPromises = initialPermits
+        .filter((permit) => permit.type === "erc20-permit" && permit.token?.address && permit.amount && permit.owner && permit.networkId)
+        .flatMap((permit) => {
+          const calls = preparePermitPrerequisiteContracts(permit);
+          if (!calls) return []; // Should not happen due to filter, but safety check
+
+          const key = `${permit.nonce}-${permit.networkId}`;
+          const requiredAmount = BigInt(permit.amount!); // Safe due to filter
+          const chainId = permit.networkId!; // Safe due to filter
+
+          const balanceCall = calls[0];
+          const allowanceCall = calls[1];
+
+          // Create promises for balance and allowance checks using readContract
+          const balancePromise = readContract<bigint>({
+            handler: rpcHandler,
+            chainId: chainId,
+            address: balanceCall.address,
+            abi: balanceCall.abi as Abi, // Cast Abi
+            functionName: balanceCall.functionName,
+            args: balanceCall.args,
+          }).then((balance) => ({ key, type: "balance", result: balance, requiredAmount }))
+            .catch((error) => ({ key, type: "balance", error }));
+
+          const allowancePromise = readContract<bigint>({
+            handler: rpcHandler,
+            chainId: chainId,
+            address: allowanceCall.address,
+            abi: allowanceCall.abi as Abi, // Cast Abi
+            functionName: allowanceCall.functionName,
+            args: allowanceCall.args,
+          }).then((allowance) => ({ key, type: "allowance", result: allowance, requiredAmount }))
+            .catch((error) => ({ key, type: "allowance", error }));
+
+          return [balancePromise, allowancePromise];
+        });
+
+      const settledResults = await Promise.allSettled(checkPromises);
+
+      settledResults.forEach((settledResult) => {
         if (settledResult.status === "fulfilled") {
-          const value = settledResult.value as {
-            chainId: number;
-            results?: MulticallReturnType<MulticallContract[]>;
-            error?: unknown;
-            permitIndices?: number[];
-          };
-          const { chainId, results, error, permitIndices } = value;
-          if (error) {
-            permitIndices?.forEach((permitIndex) => {
-              if (permitIndex !== -1 && permitIndex < initialPermits.length) {
-                const key = `${initialPermits[permitIndex].nonce}-${initialPermits[permitIndex].networkId}`;
-                checkedPermitsMap.set(key, { checkError: "Multicall failed." });
-              }
-            });
-            return;
-          }
-          results?.forEach((result, callIndex) => {
-            const permitIndex = permitIndices ? permitIndices[callIndex] : -1;
-            if (permitIndex === -1 || permitIndex >= initialPermits.length) return;
-            const permit = initialPermits[permitIndex];
-            if (!permit || permit.amount === undefined || permit.amount === null) return;
-            const key = `${permit.nonce}-${permit.networkId}`;
-            const requiredAmount = BigInt(permit.amount);
-            const updateData = checkedPermitsMap.get(key) || {};
-            if (result.status === "success") {
-              const isBalanceCall = callIndex % 2 === 0;
-              if (isBalanceCall) {
-                updateData.ownerBalanceSufficient = BigInt(result.result as bigint) >= requiredAmount;
-              } else {
-                updateData.permit2AllowanceSufficient = BigInt(result.result as bigint) >= requiredAmount;
-              }
-            } else {
-              console.warn(`Prereq call failed for permit ${permit.nonce} on chain ${chainId}:`, result.error);
-              updateData.checkError = "Check failed.";
+          // Type guard to check if the promise resolved successfully or was caught
+          const value = settledResult.value;
+          const updateData = checkedPermitsMap.get(value.key) || {};
+
+          if ('error' in value) {
+            // Handle case where promise was caught and returned an error object
+            console.warn(`Prereq check failed for permit ${value.key} (${value.type}):`, value.error);
+            updateData.checkError = `Check failed (${value.type}).`;
+          } else {
+            // Handle successful promise resolution
+            if (value.type === "balance") {
+              updateData.ownerBalanceSufficient = BigInt(value.result) >= value.requiredAmount;
+            } else if (value.type === "allowance") {
+              updateData.permit2AllowanceSufficient = BigInt(value.result) >= value.requiredAmount;
             }
-            checkedPermitsMap.set(key, updateData);
-          });
+          }
+          checkedPermitsMap.set(value.key, updateData);
         } else {
-          console.error("Multicall promise rejected:", settledResult.reason);
+          // Handle case where promise itself was rejected (e.g., network error before catch)
+          // We don't know the key/type here easily, log the reason
+          console.error("Prereq check promise rejected:", settledResult.reason);
+          // Cannot reliably update map without key/type
         }
       });
       const finalCheckedPermits = initialPermits.map((permit) => {
