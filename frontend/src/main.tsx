@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { WagmiProvider, createConfig, http } from 'wagmi'; // Re-add http import from wagmi
 import { injected } from '@wagmi/connectors'; // Revert to injected connector
 import { gnosis, mainnet, optimism } from 'wagmi/chains'; // Import chains used by the app, ADDED optimism
-import { RpcHandler } from '@pavlovcik/permit2-rpc-manager'; // Import RpcHandler
+import { Permit2RpcManager } from '@pavlovcik/permit2-rpc-manager'; // Import Permit2RpcManager
 import App from './App.tsx';
 // Removed AuthProvider import
 // import './app-styles.css'; // Import global styles - REMOVED, will link in index.html
@@ -13,8 +13,8 @@ import App from './App.tsx';
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
 import { grid } from './the-grid'; // Import the grid function (once)
 
-// Instantiate and Export RpcHandler
-export const rpcHandler = new RpcHandler(); // Added export
+// Instantiate and Export Permit2RpcManager
+export const rpcHandler = new Permit2RpcManager(); // Added export
 
 // Configure wagmi
 // Configure wagmi with injected connector, added Sepolia chain

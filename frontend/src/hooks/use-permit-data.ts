@@ -67,7 +67,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
           const allowanceCall = calls[1];
 
           const balancePromise = readContract<bigint>({
-            handler: rpcHandler,
+            manager: rpcHandler, // Corrected: use 'manager' key
             chainId: chainId,
             address: balanceCall.address,
             abi: balanceCall.abi as Abi,
@@ -77,7 +77,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
             .catch((error) => ({ key, type: "balance", error }));
 
           const allowancePromise = readContract<bigint>({
-            handler: rpcHandler,
+            manager: rpcHandler, // Corrected: use 'manager' key
             chainId: chainId,
             address: allowanceCall.address,
             abi: allowanceCall.abi as Abi,
