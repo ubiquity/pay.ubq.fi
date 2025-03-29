@@ -2,22 +2,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Imp
 import { StrictMode } from 'react'; // Re-add StrictMode import
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { WagmiProvider, createConfig, http } from 'wagmi'; // Re-add http import from wagmi
-import { injected } from '@wagmi/connectors'; // Revert to injected connector
-import { gnosis, mainnet, optimism } from 'wagmi/chains'; // Import chains used by the app, ADDED optimism
-import { Permit2RpcManager } from '@pavlovcik/permit2-rpc-manager'; // Import Permit2RpcManager
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { injected } from '@wagmi/connectors';
+import { gnosis, mainnet, optimism } from 'wagmi/chains';
+// Removed Permit2RpcManager import as it's now used only in the worker
 import App from './App.tsx';
-// Removed AuthProvider import
-// import './app-styles.css'; // Import global styles - REMOVED, will link in index.html
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
-import { grid } from './the-grid'; // Import the grid function (once)
+import { grid } from './the-grid';
 
-// Instantiate and Export Permit2RpcManager
-export const permit2RpcManager = new Permit2RpcManager(); // Added export
+// Removed Permit2RpcManager instantiation and export
 
 // Configure wagmi
-// Configure wagmi with injected connector, added Sepolia chain
 export const config = createConfig({ // Export config
   chains: [mainnet, gnosis, optimism], // Added optimism
   connectors: [
