@@ -28,6 +28,7 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null); // General dashboard error
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null); // Error for sequential claim process
   const [isClaimingSequentially, setIsClaimingSequentially] = useState(false); // Loading state for sequential claim button
+  const [animationsApplied, setAnimationsApplied] = useState(false); // Track if initial animations ran
 
   // Hook for single/sequential claims (reused)
   const { data: claimTxHash, error: writeContractError, writeContractAsync, reset: resetWriteContract } = useWriteContract();
@@ -500,6 +501,27 @@ export function DashboardPage() {
     }
   }, [isConnected]);
 
+  // Effect to apply initial animations only once on mount
+  useEffect(() => {
+    if (!animationsApplied) {
+      const header = document.getElementById("header");
+      const logoWrapper = document.getElementById("logo-wrapper");
+      const controls = document.getElementById("controls");
+
+      if (header) {
+        header.classList.add("initial-fade-in");
+      }
+      if (logoWrapper) {
+        logoWrapper.classList.add("initial-slide-in-logo");
+      }
+      if (controls) {
+        controls.classList.add("initial-slide-in-controls");
+      }
+
+      setAnimationsApplied(true); // Mark animations as applied
+    }
+  }, [animationsApplied]); // Run only once after initial render
+
   const LogoSpan = () => <span id="header-logo-wrapper" dangerouslySetInnerHTML={{ __html: logoSvgContent }} />;
 
   return (
@@ -517,6 +539,11 @@ export function DashboardPage() {
         {/* Controls (Remains on the right) */}
         {isConnected && address ? ( // Check for address as well
           <div id="controls">
+            <button onClick={() => disconnect()} className="button-with-icon">
+              {ICONS.DISCONNECT}
+              <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
+            </button>
+
             {/* Claim All Valid Sequentially Button */}
             <button
               onClick={handleClaimAllValidSequential}
@@ -524,7 +551,7 @@ export function DashboardPage() {
               className="button-with-icon"
               title="Claim all valid & available permits sequentially"
             >
-              {isClaimingSequentially || isLoading ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+              {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
                 {isLoading
                   ? "Loading Rewards..."
@@ -533,10 +560,7 @@ export function DashboardPage() {
                     })`}
               </span>
             </button>
-            <button onClick={() => disconnect()} className="button-with-icon">
-              {ICONS.DISCONNECT}
-              <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
-            </button>
+
             {/* Container for spinner OR expand button (Moved to the left) */}
             <div className="spinner-or-expand-container">
               <button

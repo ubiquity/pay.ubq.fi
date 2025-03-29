@@ -1,54 +1,54 @@
 background #grid {
-    pointer-events: none;
+  pointer-events: none;
+}
+background #grid canvas {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  animation: background-grid-fade-in 3s ease-in-out forwards;
+}
+background .gradient {
+  width: 200vw;
+  height: 200vh;
+  position: absolute;
+  opacity: 0;
+}
+.grid-loaded background .gradient {
+  background-image: radial-gradient(#00bfff00 0, #00bfff20 15%, #00bfff00 34%, #00bfff20 58%, #00bfff00 75%, #00bfff20 100%);
+  animation: background-gradients-fade-in 3s ease-in-out forwards;
+}
+background > :nth-child(1) {
+  transform: translateX(-100vw);
+}
+background > :nth-child(2) {
+  transform: translateY(-50vh);
+}
+@keyframes background-gradients-fade-in {
+  to {
+    opacity: 1;
   }
-  background #grid canvas {
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    animation: background-grid-fade-in 3s ease-in-out forwards;
+}
+@keyframes background-grid-fade-in {
+  to {
+    opacity: 1;
   }
-  background .gradient {
-    width: 200vw;
-    height: 200vh;
-    position: absolute;
-    opacity: 0;
-  }
-  .grid-loaded background .gradient {
-    background-image: radial-gradient(#00bfff00 0, #004080 15%, #00bfff00 34%, #004080 58%, #00bfff00 75%, #004080 100%);
-    animation: background-gradients-fade-in 3s ease-in-out forwards;
-  }
-  background > :nth-child(1) {
-    transform: translateX(-100vw);
-  }
-  background > :nth-child(2) {
-    transform: translateY(-50vh);
-  }
-  @keyframes background-gradients-fade-in {
-    to {
-      opacity: 0.25;
-    }
-  }
-  @keyframes background-grid-fade-in {
-    to {
-      opacity: 1;
-    }
-  }
-  background,
-  background #grid {
+}
+background,
+background #grid {
   width: 100%;
   height: 100%;
   position: fixed;
   top: 0;
   left: 0;
-  }
-  background #grid {
+}
+background #grid {
   pointer-events: none;
   mix-blend-mode: screen;
-  -webkit-mask-image: radial-gradient(transparent, black);
-  }
+  /* -webkit-mask-image: repeating-linear-gradient(0deg, black, transparent, black 24px); */
+}
 
-  background {
+background {
   pointer-events: none;
   z-index: -1;
   display: flex;
-  }
+}
