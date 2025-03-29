@@ -4,11 +4,8 @@
     "dev:front": "scripts/front.sh",
     "dev:back": "scripts/back.sh"
   },
-  "dependencies": {
-    "@wagmi/connectors": "^5.7.11",
-    "npm-run-all": "^4.1.5"
-  },
+
   "devDependencies": {
-    "vite-plugin-svgr": "^4.3.0"
+    "npm-run-all": "^4.1.5"
   }
 }
