@@ -354,8 +354,11 @@ footer {
   text-align: right;
 }
 .permits-table .monospace {
-  font-family: monospace;
+  /* font-family: monospace; */
   font-size: 13.3333px;
+}
+.permits-table .monospace > a {
+  font-family: monospace;
 }
 .permits-table .small-font {
   font-size: 0.9em;
@@ -431,7 +434,7 @@ footer {
 }
 button {
   cursor: pointer;
-  background-color: #ffffff10;
+  /* background-color: #ffffff10; */
   padding: 8px 8px;
   border-radius: 4px;
   opacity: 0.75;
@@ -439,9 +442,13 @@ button {
   /* text-align: center; */
   justify-content: center;
   /* gap: 2px; */
+  height: 48px;
+  /* min-width: 40px; */
+  vertical-align: middle;
 }
 button:hover {
   opacity: 1;
+  background-color: #ffffff08;
 }
 button:disabled {
   opacity: 0.5;
@@ -476,7 +483,7 @@ button:disabled {
   /* padding: 8px 16px; */
 }
 .button-with-icon:hover {
-  background-color: #ffffff08;
+  /* background-color: #ffffff08; */
   /* border-radius: 0; */
 }
 #controls button span {
@@ -488,7 +495,7 @@ button:disabled {
   align-items: center;
   /* gap: 2px; */
   /* justify-content: space-evenly; */
-  background-color: unset;
+  /* background-color: unset; */
 }
 #controls svg {
   margin-right: 4px;
@@ -554,8 +561,8 @@ section#controls > * {
 
 /* Center the logo */
 #header > #logo-wrapper {
-  /* flex-grow: 1; */ /* Allow logo to take up space */
-  /* justify-content: center; */ /* Center h1 within the wrapper */
+  flex-grow: 1; /* Allow logo to take up space */
+  justify-content: space-around; /* Center h1 within the wrapper */
 }
 
 /* Ensure controls stay on the right */
@@ -620,9 +627,10 @@ button > .spinner.button-spinner {
 }
 
 td {
-  padding: 0 8px;
+  /* padding: 0 8px; */
   /* overflow: hidden; */
   /* text-overflow: ellipsis; */
+  padding: 0;
 }
 
 button[title*="Claim"]:disabled {

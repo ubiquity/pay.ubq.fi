@@ -139,9 +139,35 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         )}
       </td>
 
-      {/* Amount (Reward) Column (Now 2nd) */}
-      <td className="align-right monospace">{permit.amount ? formatAmount(permit.amount) : "NFT"}</td>
+      {/* Amount (Reward) Column (Now 2nd) - Button Link to Funder's Token Balance */}
+      <td className="align-right monospace">
+        {(() => {
+          // Check conditions and assign URL to a variable for type safety in onClick
+          if (permit.type === "erc20-permit" && chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress && permit.amount) {
+            const explorerUrl = chain.blockExplorers.default.url; // Guaranteed to be defined here
+            const tokenAddress = permit.tokenAddress;
+            const ownerAddress = permit.owner;
+            const amount = permit.amount; // Guaranteed to be defined here
 
+            return (
+              // Button linking to specific token balance for ERC20 permits
+              <button
+                className="button-as-link monospace" // Add class for styling
+                onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+                title={`View ${ownerAddress}'s balance for token ${tokenAddress}`}
+              >
+                {formatAmount(amount)}
+              </button>
+            );
+          } else if (permit.type === "erc721-permit") {
+            // Display "NFT" for ERC721 permits (no direct balance link)
+            return "NFT";
+          } else {
+            // Fallback for missing data or unknown type
+            return permit.amount ? formatAmount(permit.amount) : "N/A";
+          }
+        })()}
+      </td>
       {/* Actions Column (Now 3rd) */}
       <td>
         <button

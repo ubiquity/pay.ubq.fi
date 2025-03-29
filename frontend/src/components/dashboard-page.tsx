@@ -527,7 +527,7 @@ export function DashboardPage() {
               {isClaimingSequentially || isLoading ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
                 {isLoading
-                  ? "Loading Rewards"
+                  ? "Loading Rewards..."
                   : `${claimableTotalValueDisplay ? `${claimableTotalValueDisplay} ` : "All "} (${claimablePermitCount} Reward${
                       claimablePermitCount !== 1 ? "s" : ""
                     })`}
