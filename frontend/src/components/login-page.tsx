@@ -1,7 +1,7 @@
 import React from "react"; // Removed unused useEffect import
 import { useConnect, useConnectors } from "wagmi"; // Added useConnectors hook
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw"; // Import SVG content as raw string
-import { ICONS } from "./icons"; // Change path back to correct one
+import { ICONS } from "./ICONS"; // <-- Correct casing
 
 // Update props if needed, or remove if connection is handled by context/hooks directly
 // interface LoginPageProps {

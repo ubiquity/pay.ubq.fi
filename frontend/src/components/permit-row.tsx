@@ -2,7 +2,7 @@ import React from "react";
 import type { PermitData } from "../../../shared/types";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
 import type { Chain } from "viem";
-import { ICONS } from "./icons";
+import { ICONS } from "./ICONS"; // <-- Correct casing
 
 interface PermitRowProps {
   permit: PermitData;

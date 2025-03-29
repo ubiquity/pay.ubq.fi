@@ -1,0 +1,6 @@
+{
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": true, // Often needed for newer Deno features or std lib modules
+  "deno.config": "backend/api/deno.jsonc" // Point to the config file for imports (removed ./)
+}

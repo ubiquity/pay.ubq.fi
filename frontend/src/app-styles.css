@@ -72,7 +72,7 @@ section {
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   text-align: center;
-  max-width: 640px;
+  max-width: 640px; /* Increased max-width slightly */
   margin: 4px auto;
   box-shadow: inset 0 0 36px #00bfff10;
   user-select: none;
@@ -162,6 +162,57 @@ footer {
   display: none;
 }
 
+/* Styles for Claim Summary */
+#claim-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px; /* Adjust padding as needed */
+  flex-wrap: wrap; /* Allow wrapping if needed */
+  /* Inherits styles from 'section' like border, background etc. */
+}
+
+#claim-summary .summary-info span {
+  font-weight: 600;
+  color: var(--text);
+  margin-right: 16px; /* Add space between text and button */
+}
+
+#claim-summary .claim-all-button {
+  /* Adjust specific button styles if needed */
+  /* padding: 6px 12px; */ /* Slightly smaller padding */
+  color: #fff; /* White text for claim button */
+  /* background-color: var(--primary); */ /* Use primary color */
+  /* font-family: monospace; */
+}
+#claim-summary .claim-all-button:hover {
+  opacity: 0.9;
+}
+#claim-summary .claim-all-button:disabled {
+  background-color: #ffffff10; /* Keep standard disabled style */
+  opacity: 0.5;
+  color: #bfbfbf;
+}
+
+#claim-summary .claim-all-button .spinner {
+  width: 14px; /* Smaller spinner inside button */
+  height: 14px;
+  margin-right: 6px; /* Space between spinner and text */
+  color: #fff; /* Spinner color for button */
+  border-top-color: #fff; /* Ensure spinner top is visible */
+  border-left-color: #fff; /* Make spinner more visible */
+  border-right-color: #fff;
+}
+
+#claim-summary .error-message {
+  width: 100%; /* Allow error to span width */
+  justify-content: center;
+  padding: 4px 0 0; /* Add some top padding */
+  color: var(--error);
+  font-size: 0.9em;
+}
+
+
 /* Removed .section-loading-indicator styles */
 
 /* Re-add spinner styles */
@@ -177,7 +228,7 @@ footer {
 
 .header-spinner {
   /* Specific styles for spinner in header */
-  margin: 0 16px; /* Add horizontal spacing */
+  margin: 0; /* Remove margin, container handles spacing */
 }
 
 @keyframes spin {
@@ -202,10 +253,11 @@ footer {
 .expand-button {
   background-color: transparent;
   border: none;
-  /* padding: 0; */ /* Remove padding if only icon is shown */
-  padding: 0 16px; /* Add horizontal spacing like the spinner had */
+  padding: 0; /* Remove padding as container handles spacing/centering */
+  margin: 0; /* Remove margin */
   cursor: pointer;
-  height: 48px; /* Match other header controls */
+  height: 100%; /* Fill container height */
+  width: 100%; /* Fill container width */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -712,7 +764,7 @@ details {
   padding: 8px;
 }
 .summary-info {
-  margin-bottom: 20px;
+  /* margin-bottom: 20px; */ /* Removed margin */
 }
 .permits-table {
   border-collapse: collapse;
@@ -842,10 +894,10 @@ button:disabled {
   text-align: right;
 }
 #controls > button {
-  background-color: transparent;
+  /* background-color: transparent; */
   height: 48px;
 }
-#controls > button:hover {
+.button-with-icon:hover {
   background-color: #ffffff08;
   border-radius: 0;
 }
@@ -857,6 +909,7 @@ button:disabled {
   align-items: center;
   gap: 2px;
   justify-content: center;
+  background-color: unset;
 }
 #controls svg {
   margin-right: 4px;
@@ -905,6 +958,7 @@ section#controls > * {
   max-width: 640px;
   /* position: absolute; */
   /* justify-content: space-between; Already set */
+  opacity: 0.75;
 }
 
 /* Style direct children for flex layout */
@@ -913,7 +967,7 @@ section#controls > * {
 #header > #controls {
   display: flex;
   align-items: center;
-  height: 100%;
+  /* height: 100%; */
 }
 
 /* Center the logo */
@@ -929,3 +983,45 @@ section#controls > * {
 
 /* Remove specific spinner targeting as it's inside the container now */
 /* #header > .header-spinner { ... } */
+#claim-summary {
+  /* padding: 16px; */
+  display: flex;
+  background: none;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+}
+#claim-summary h2 {
+  margin: auto;
+  letter-spacing: 2px;
+  font-size: 36px;
+  /* padding: 16px; */
+  font-weight: 100;
+  text-rendering: geometricPrecision;
+  /* margin: 8px auto; */
+}
+
+#claim-summary > * {
+  display: inline-flex;
+  flex-grow: 1;
+  align-items: center;
+  padding: 24px;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  font-family: monospace;
+  font-size: 24px;
+  /* color: #00ffff; */
+}
+
+
+button.claim-all-button.button-with-icon>svg {height: 36px;width: 36px;margin-right: 8px;}
+
+section#header:hover {
+    /* opacity: 1; */
+}
+
+#claim-summary button * {
+    /* color: #00ffff; */
+    font-family: monospace;
+}
