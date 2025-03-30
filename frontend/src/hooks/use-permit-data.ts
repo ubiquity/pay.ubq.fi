@@ -14,7 +14,7 @@ interface UsePermitDataProps {
 
 export function usePermitData({ address, isConnected }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Initialize isLoading to true
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);

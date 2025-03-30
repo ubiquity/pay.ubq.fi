@@ -9,7 +9,9 @@ import { gnosis, mainnet, optimism } from 'wagmi/chains';
 import App from './App.tsx';
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
+import './animation-styles.css'; // Import animation styles
 import { grid } from './the-grid';
+import { AnimationProvider } from './contexts/animation-context'; // Import AnimationProvider
 
 // Removed Permit2RpcManager instantiation and export
 
@@ -46,9 +48,11 @@ createRoot(rootElement).render(
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         {/* Removed AuthProvider wrapper */}
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AnimationProvider> {/* Wrap with AnimationProvider */}
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AnimationProvider>
       </QueryClientProvider>
     </WagmiProvider>
   </StrictMode>

@@ -7,6 +7,7 @@ import { PermitsTable } from "./permits-table";
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw";
 import { usePermitData } from "../hooks/use-permit-data"; // Import the data hook
 import { usePermitClaiming } from "../hooks/use-permit-claiming"; // Import the claiming hook
+import { useAnimationContext } from "../contexts/animation-context"; // Import animation context hook
 // Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS
 
 // Removed constants BACKEND_API_URL, PERMIT2_ADDRESS as they are now in hooks/utils
@@ -15,6 +16,7 @@ export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
   // Removed animationsApplied state
+  const { initialAnimationComplete } = useAnimationContext(); // Removed setInitialAnimationComplete
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
@@ -114,10 +116,14 @@ export function DashboardPage() {
     // No need for else block, usePermitData handles clearing permits on disconnect
   }, [isConnected, isWorkerInitialized, fetchPermitsAndCheck]); // Add isWorkerInitialized to dependencies
 
-  // Removed effect for initial animations
-
   // --- Rendering ---
-  const LogoSpan = () => <span id="header-logo-wrapper" dangerouslySetInnerHTML={{ __html: logoSvgContent }} />;
+  // Logo span no longer needs the class
+  const LogoSpan = () => (
+    <span
+      id="header-logo-wrapper"
+      dangerouslySetInnerHTML={{ __html: logoSvgContent }}
+    />
+  );
 
   // Define ICONS locally or import if needed elsewhere
   const ICONS = {
@@ -153,7 +159,8 @@ export function DashboardPage() {
       {/* Header Section */}
       <section id="header">
         <div id="logo-wrapper">
-          <h1>
+          {/* Apply conditional animation class to H1 */}
+          <h1 className={!initialAnimationComplete ? "logo-wrapper-initial-fade-in" : ""}>
             <LogoSpan />
             <span>Ubiquity OS Rewards</span>
           </h1>

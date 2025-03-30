@@ -1,6 +1,7 @@
 import { useConnect, useConnectors } from "wagmi"; // Added useConnectors hook
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw"; // Import SVG content as raw string
 import { ICONS } from "./iconography"; // <-- Correct casing
+import { useAnimationContext } from "../contexts/animation-context"; // Import animation context hook
 
 // Update props if needed, or remove if connection is handled by context/hooks directly
 // interface LoginPageProps {
@@ -10,10 +11,11 @@ export function LoginPage(/* Props if needed */) {
   // Use `status` to check connection state
   const { connect, error, status } = useConnect(); // Keep useConnect for connect function and status/error
   const connectors = useConnectors(); // Get connector instances separately
+  const { initialAnimationComplete } = useAnimationContext(); // Removed setInitialAnimationComplete
 
   // Removed debugging logs
 
-  // Create a wrapper span for the SVG content
+  // Logo span no longer needs the class
   const LogoSpan = () => (
     <span
       id="header-logo-wrapper" // Use a wrapper class if needed for positioning/sizing
@@ -27,7 +29,8 @@ export function LoginPage(/* Props if needed */) {
     // Add the section wrapper to match DashboardPage
     <section id="header">
       <div id="logo-wrapper">
-        <h1>
+        {/* Apply conditional animation class to H1 */}
+        <h1 className={!initialAnimationComplete ? "logo-wrapper-initial-fade-in" : ""}>
           <LogoSpan />
           <span>Ubiquity OS Rewards</span>
         </h1>
