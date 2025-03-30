@@ -3,14 +3,14 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# Get the raw project name from the current working directory
+RAW_PROJECT_NAME=$(basename "$PWD")
+# Sanitize the project name for Deno Deploy: lowercase, replace dots with hyphens
+SANITIZED_PROJECT_NAME=$(echo "$RAW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+echo "Deploying frontend for project: $SANITIZED_PROJECT_NAME (derived from $RAW_PROJECT_NAME)"
+
 # Define the frontend directory relative to the script location
 FRONTEND_DIR="$(dirname "$0")/../frontend"
-
-# Get the project name from the parent directory of the frontend dir
-# (which is the root project directory)
-PROJECT_NAME=$(basename "$(dirname "$FRONTEND_DIR")")
-
-echo "Deploying frontend for project: $PROJECT_NAME"
 
 # Navigate to the frontend directory
 cd "$FRONTEND_DIR"
@@ -29,7 +29,8 @@ bunx vite build
 
 # Deploy using deployctl
 echo "Deploying to Deno Deploy..."
-# Ensure deployctl is installed: deno install -A -r -f https://deno.land/x/deploy/deployctl.ts
-deployctl deploy --project="$PROJECT_NAME" --entrypoint=server.ts --prod
+# Ensure deployctl is installed: deno install --global -A -r -f https://deno.land/x/deploy@1.12.0/deployctl.ts
+# Rely on PATH now that deployctl is installed
+deployctl deploy --project="$SANITIZED_PROJECT_NAME" --entrypoint=server.ts --prod
 
-echo "Frontend deployment initiated for $PROJECT_NAME."
+echo "Frontend deployment initiated for $SANITIZED_PROJECT_NAME."

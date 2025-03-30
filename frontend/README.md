@@ -1,54 +1,71 @@
-# React + TypeScript + Vite
+# Ubiquity Rewards Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Ubiquity Rewards (Permit Claiming) system. It allows users to connect their Web3 wallet, view available Permit rewards associated with their address, and claim them on the blockchain.
 
-Currently, two official plugins are available:
+Built with React, TypeScript, Vite, and `wagmi`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Setup
 
-## Expanding the ESLint configuration
+1.  Navigate to the `frontend` directory:
+    ```bash
+    cd frontend
+    ```
+2.  Install dependencies using Bun:
+    ```bash
+    bun install
+    ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Development
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+To run the development server:
+
+```bash
+bun run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This will start the Vite development server, typically available at `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Building for Production
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+To create a production build:
+
+```bash
+bun run build
 ```
+
+This command runs `tsc -b` for type checking and then `vite build`. The output files will be generated in the `frontend/dist` directory.
+
+## Deployment to Deno Deploy
+
+This project is configured for deployment to Deno Deploy.
+
+**Prerequisites:**
+
+*   Ensure Deno is installed ([https://deno.com/](https://deno.com/)).
+*   Install the Deno Deploy CLI (`deployctl`) globally:
+    ```bash
+    # Note: Version 1.12.0 is specified due to issues with 1.13.1 as of 2025-03-30
+    deno install --global -A -r -f https://deno.land/x/deploy@1.12.0/deployctl.ts
+    ```
+*   Ensure `deployctl` is authenticated with your Deno Deploy account (it may prompt for login on first use).
+
+**Deployment Command:**
+
+From the `frontend` directory, run the deploy script:
+
+```bash
+bun run deploy
+```
+
+Alternatively, from the project root directory (`pay.ubq.fi`), run:
+
+```bash
+bash scripts/deploy-frontend.sh
+```
+
+This script handles:
+1.  Installing dependencies (`bun install`).
+2.  Running the production build (`bun run build`).
+3.  Deploying the contents of the `dist` directory using `deployctl`.
+    *   It uses `frontend/server.ts` as the entry point to serve static files and handle SPA routing.
+    *   It automatically determines the Deno Deploy project name by sanitizing the root project directory name (e.g., `pay.ubq.fi` becomes `pay-ubq-fi`).

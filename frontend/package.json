@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --debug",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "bash ../scripts/deploy-frontend.sh"
   },
   "dependencies": {
     "@pavlovcik/permit2-rpc-manager": "^0.7.0",
