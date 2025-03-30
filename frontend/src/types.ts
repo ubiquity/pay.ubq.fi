@@ -1,7 +1,18 @@
-// Define shared types between frontend and backend here
+// Define TokenInfo locally within PermitData if needed, or adjust PermitData
+interface TokenInfoInternal {
+  address: string;
+  network: number;
+  decimals?: number;
+}
 
-// Example placeholder for a Permit type - needs refinement based on actual data
-export interface PermitDetails {
+interface PartnerInfoInternal {
+  wallet?: {
+    address: string;
+  };
+}
+
+// Keep PermitData as it seems to be used
+export interface PermitData {
   nonce: string;
   amount?: string;
   token_id?: number | null;
@@ -9,27 +20,12 @@ export interface PermitDetails {
   beneficiary: string;
   deadline: string;
   signature: string;
-}
-
-export interface TokenInfo {
-  address: string;
-  network: number;
-  decimals?: number; // Add optional decimals field
-}
-
-export interface PartnerInfo {
-  wallet?: {
-    address: string;
-  };
-}
-
-export interface PermitData extends PermitDetails {
   type: 'erc20-permit' | 'erc721-permit';
   owner: string; // Funder
   tokenAddress?: string;
   githubCommentUrl: string;
-  token?: TokenInfo;
-  partner?: PartnerInfo;
+  token?: TokenInfoInternal; // Use internal type
+  partner?: PartnerInfoInternal; // Use internal type
 
   // Frontend-specific statuses for validation/testing
   status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing' | 'TestFailed' | 'TestSuccess' | 'Ready';
@@ -44,9 +40,8 @@ export interface PermitData extends PermitDetails {
    ownerBalanceSufficient?: boolean;
    permit2AllowanceSufficient?: boolean;
    checkError?: string; // Error during balance/allowance check
+   isNonceUsed?: boolean; // Added for nonce check result
 
    // Estimated value (potentially added by backend)
    usdValue?: number;
  }
-
-// Add other shared types as needed (e.g., API response types)

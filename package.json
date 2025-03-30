@@ -2,7 +2,8 @@
   "scripts": {
     "dev": "scripts/front.sh"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.49.4"
+  "dependencies": {},
+  "devDependencies": {
+    "knip": "^5.46.3"
   }
 }

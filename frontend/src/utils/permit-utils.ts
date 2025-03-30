@@ -1,42 +1,41 @@
-// Removed readContract import, will use multicall
-import { erc20Abi, type Abi, type Address } from 'viem'; // Import Address and Abi types
-import type { PermitData } from '../../../shared/types';
-// Removed config import, chainId will be passed
+import { erc20Abi, type Abi, type Address } from "viem";
+import type { PermitData } from "../types";
 
-// Define and export a type for the contract call object used by multicall
-export interface MulticallContract { // Added export
+// Removed unused MulticallContractInternal interface
+
+// Define a simpler type for the return value
+type ContractCallConfig = {
   address: Address;
   abi: Abi;
   functionName: string;
   args?: unknown[];
-}
+};
 
-const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3'; // Universal Permit2 address
+const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // Universal Permit2 address
 
 /**
  * Prepares the contract call objects for checking ERC20 permit prerequisites (balance and allowance).
  * Returns an array of contract call objects or null if not applicable.
  */
-export function preparePermitPrerequisiteContracts(permit: PermitData): MulticallContract[] | null { // Use specific type
-  if (permit.type !== 'erc20-permit' || !permit.token?.address || !permit.amount || !permit.owner) {
-    // Not applicable for non-ERC20 or missing data
+export function preparePermitPrerequisiteContracts(permit: PermitData): ContractCallConfig[] | null { // Updated return type
+  if (permit.type !== "erc20-permit" || !permit.token?.address || !permit.amount || !permit.owner) {
     return null;
   }
 
   const ownerAddress = permit.owner as `0x${string}`;
   const tokenAddress = permit.token.address as `0x${string}`;
 
-  const balanceCall = {
+  const balanceCall: ContractCallConfig = { // Use updated type
     abi: erc20Abi,
     address: tokenAddress,
-    functionName: 'balanceOf',
+    functionName: "balanceOf",
     args: [ownerAddress],
   };
 
-  const allowanceCall = {
+  const allowanceCall: ContractCallConfig = { // Use updated type
     abi: erc20Abi,
     address: tokenAddress,
-    functionName: 'allowance',
+    functionName: "allowance",
     args: [ownerAddress, PERMIT2_ADDRESS],
   };
 
@@ -53,7 +52,7 @@ export const formatAmount = (weiAmount: string): string => {
     return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   } catch (error) {
     console.warn("Amount formatting failed:", error);
-    return '0.00'; // Return a default value on error
+    return "0.00"; // Return a default value on error
   }
 };
 
@@ -75,10 +74,10 @@ export const hasRequiredFields = (permit: PermitData): boolean => {
   if (!permit.signature) errors.push("signature");
 
   // Type-specific fields
-  if (permit.type === 'erc20-permit') {
+  if (permit.type === "erc20-permit") {
     if (!permit.amount) errors.push("amount (for ERC20)");
     if (!permit.token?.address) errors.push("token.address (for ERC20)");
-  } else if (permit.type === 'erc721-permit') {
+  } else if (permit.type === "erc721-permit") {
     // ERC721 might use tokenAddress or token.address
     if (!permit.tokenAddress && !permit.token?.address) errors.push("token address (for ERC721)");
     if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id (for ERC721)");
@@ -88,7 +87,7 @@ export const hasRequiredFields = (permit: PermitData): boolean => {
   }
 
   if (errors.length > 0) {
-    console.warn(logPrefix, `Missing required fields: ${errors.join(', ')}`);
+    console.warn(logPrefix, `Missing required fields: ${errors.join(", ")}`);
     console.warn(logPrefix, "Full Permit data:", permit); // Log full data for debugging
     isValid = false;
   }

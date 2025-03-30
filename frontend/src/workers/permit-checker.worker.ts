@@ -1,5 +1,5 @@
 import { type Address, type Abi, parseAbiItem } from "viem";
-import type { PermitData } from "../../../shared/types";
+import type { PermitData } from "../types";
 import { Permit2RpcManager, readContract } from "@pavlovcik/permit2-rpc-manager";
 import { preparePermitPrerequisiteContracts } from "../utils/permit-utils";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -165,7 +165,7 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
         const key = `${permit.nonce}-${permit.networkId}`;
         const checkData = checkedPermitsMap.get(key);
         if (checkData?.checkError?.includes("nonce") || checkData?.isNonceUsed === true) {
-            // console.log(`Worker: Filtering out permit ${key} due to nonce check failure or nonce being used.`);
+            console.log(`Worker: Filtering out permit ${key} due to nonce check failure or nonce being used.`);
             return { ...permit, ...checkData, _filterOut: true };
         }
         return checkData ? { ...permit, ...checkData } : permit;

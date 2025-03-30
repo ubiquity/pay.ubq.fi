@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { type Address } from "viem";
-import type { PermitData } from "../../../shared/types";
+import type { PermitData } from "../types";
 // Removed Supabase and library imports, worker handles them
 
 // Get Supabase config from Vite env vars

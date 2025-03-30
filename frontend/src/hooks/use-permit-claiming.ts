@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
-import { type Address, type Hex, BaseError, ContractFunctionRevertedError } from "viem"; // Removed unused Chain import
-import type { PermitData } from "../../../shared/types";
+import { type Address, type Hex, BaseError, ContractFunctionRevertedError } from "viem";
+import type { PermitData } from "../types";
 import permit2ABI from "../fixtures/permit2-abi";
 import { hasRequiredFields } from "../utils/permit-utils";
 
