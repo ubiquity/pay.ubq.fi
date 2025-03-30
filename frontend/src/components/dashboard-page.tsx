@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { formatUnits } from "viem";
 // Removed unused PermitData import

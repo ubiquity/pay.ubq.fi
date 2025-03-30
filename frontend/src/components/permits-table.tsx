@@ -1,4 +1,3 @@
-import React from "react";
 import type { PermitData } from "../types";
 import { PermitRow } from "./permit-row.tsx";
 import type { Chain } from "viem";

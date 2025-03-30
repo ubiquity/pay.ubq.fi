@@ -33,6 +33,9 @@
     *   **Removed Unused Code:** Deleted the `backend/scanner/` directory and the `frontend/src/components/icons.tsx` component.
     *   **Removed Unused Dependency:** Removed `vite-plugin-svgr` from root and frontend `package.json` files and `frontend/vite.config.ts`.
     *   **Refactored DashboardPage (Hooks):** Extracted data fetching logic into `frontend/src/hooks/use-permit-data.ts` and claiming logic into `frontend/src/hooks/use-permit-claiming.ts`. Updated `DashboardPage.tsx` to use these hooks, reducing its line count significantly.
+*   **Infrastructure**:
+    *   **Frontend Deployment:** Added `frontend/server.ts` to serve the built static assets (from `frontend/dist`) on Deno Deploy, handling SPA routing.
+    *   **Deployment Script:** Created `scripts/deploy-frontend.sh` to automate the frontend build (`bun run build` in `frontend/`) and deployment to Deno Deploy using `deployctl`, dynamically using the project directory name.
 
 ## 3. Next Steps (Immediate)
 
@@ -41,6 +44,7 @@
 *   **RPC Error Handling**: Improve backend validation functions (`isErc20NonceClaimed`, `isErc721NonceClaimed`) to better handle RPC errors (e.g., return a specific error state instead of fail-safe `true`).
 *   **(Optional)** Implement backend endpoint `/api/permits/update-status` to record successful claims.
 *   **(Backend)** Ensure backend API (`/api/permits`) correctly fetches permits based on the provided `walletAddress` query parameter.
+*   **Test Frontend Deployment**: Run `scripts/deploy-frontend.sh` to verify the build and deployment process to Deno Deploy.
 *   **Integrate Multicall Claiming**: Update the UI (likely `PermitsTable.tsx` or `DashboardPage.tsx`) to allow selecting multiple permits and trigger the `claimMultiplePermitsViaMulticall` function.
 
 ## 4. Key Decisions / Open Questions

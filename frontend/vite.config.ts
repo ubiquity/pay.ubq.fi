@@ -6,14 +6,15 @@ export default defineConfig({
   plugins: [
     react() // React plugin
   ],
-  server: {
-    hmr: false // Disable HMR globally
-    // Removed watch config as HMR is disabled
-  },
+  // Restore css and build config, add worker format
   css: {
     devSourcemap: true // Ensure CSS source maps are enabled in dev
   },
   build: {
-    cssCodeSplit: false // Try disabling CSS code splitting
+    cssCodeSplit: false // Keep this from previous config
+  },
+  // Worker options should be at the top level
+  worker: {
+    format: 'es' // Specify ES module format for worker builds
   }
 })

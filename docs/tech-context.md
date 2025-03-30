@@ -43,9 +43,12 @@ This document outlines the technology stack and development environment for the 
 ## 4. Infrastructure & Deployment
 
 *   **Backend Hosting:** Deno Deploy.
-*   **Frontend Hosting:** Deno Deploy.
+*   **Frontend Hosting:** Deno Deploy (serving static build via `frontend/server.ts`).
 *   **Database Hosting:** Supabase Cloud.
-*   **Deployment:** Deno Deploy CLI/GitHub Integration, GitHub Actions (TBD).
+*   **Deployment:**
+    *   Frontend: Automated via `scripts/deploy-frontend.sh` which runs `bun install`, `bun run build`, and `deployctl deploy --project=<dir_name> --entrypoint=frontend/server.ts --prod`.
+    *   Backend: Deno Deploy CLI/GitHub Integration (TBD).
+    *   GitHub Actions: TBD for CI/CD.
 
 ## 5. Technical Constraints & Considerations
 
