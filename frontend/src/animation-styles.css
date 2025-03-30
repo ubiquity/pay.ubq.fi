@@ -2,38 +2,24 @@
 .header-spinner { transition: opacity 0.3s ease-in-out; }
 .hidden { display: none; }
 .spinner { width: 18px; height: 18px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.6s linear infinite; color: #ffffff; opacity: 1; }
-/* #claim-all:not[disabled] { opacity: 0; animation: claim-all 3s forwards ease-in-out 1s; } */
 
 #claim-all[disabled] { opacity: 0; animation: claim-all-disabled 1s forwards ease-in-out 1.5s; }
 #disconnect { opacity: 0; animation: disconnect 1s forwards ease-in-out 2.75s; }
-/* Remove animation from ID selector */
-#logo-wrapper { padding: 0 16px; }
-/* Remove default opacity for h1 - let animation class handle initial state */
-#logo-wrapper h1 { /* No opacity rule here */ }
+.logo-wrapper-initial-fade-in { animation: logo-wrapper-initial-fade-in 1s forwards ease-in-out 3.5s; opacity: 0; }
 
-/* #header { animation: header 3s forwards ease-in-out; backdrop-filter: blur(12px); } */
-button[title*="Claim"]:disabled { }
 
-/* @keyframes logo { from { transform: translateY(-200%); filter: blur(6px); opacity: 0; } to { transform: translateY(0%); filter: blur(0px); opacity: 1; } } */
-/* @keyframes header { from {  border: 1px solid #ffffff00; } to {  border: 1px solid #ffffff10; } } */
-@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-@keyframes logo-wrapper { from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.75; } }
-@keyframes disconnect { from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.75; } }
-/* @keyframes claim-all { from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 1; } } */
-@keyframes claim-all-disabled { from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.5; } }
 
-/* Re-add animation for the initial logo fade-in */
-@keyframes logo-wrapper-initial-fade-in {
-  from {filter:blur(6px);
-    opacity: 0;
-  }
-  to {filter:blur(0px);
-    opacity: 1; /* Fade to full opacity */
-  }
-}
+@keyframes spin
+{ from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
-/* Re-add class to apply the initial fade-in animation */
-.logo-wrapper-initial-fade-in {
-  animation: logo-wrapper-initial-fade-in 1s forwards ease-in-out 3s;
-  opacity: 0; /* Explicitly start hidden when class is applied */
-}
+@keyframes logo-wrapper
+{ from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.75; } }
+
+@keyframes disconnect
+{ from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.75; } }
+
+@keyframes claim-all-disabled
+{ from { filter:blur(6px);opacity: 0; } to { filter:blur(0px);opacity: 0.5; } }
+
+@keyframes logo-wrapper-initial-fade-in
+{ from {filter:blur(6px); opacity: 0; } to {filter:blur(0px); opacity: 1; } } /* Change opacity to 1 */

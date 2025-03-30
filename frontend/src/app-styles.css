@@ -63,7 +63,7 @@ section {
   text-align: center;
   max-width: 640px;
   margin: 4px auto;
-  box-shadow: 0 0 48px 0 #00000080;
+  box-shadow: 0 0 48px 0 #00000060;
   user-select: none;
   border-radius: 4px;
   width: calc(100vw - 8px);
@@ -229,7 +229,7 @@ footer {
   border: 1px solid #ffffff10;
   text-align: center;
   margin: 0 auto;
-  box-shadow: 0 0 96px 0 #0000000;
+  box-shadow: 0 0 96px 0 #00000060;
 }
 .permits-table th {
   text-align: center;
@@ -332,6 +332,9 @@ button {
   padding-block: 0;
   padding: 0 16px;
   flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 button:not([disabled]):hover {
   opacity: 1;
@@ -415,6 +418,8 @@ svg {
   /* padding: 0 8px; */
   flex-grow: 1;
   justify-content: center;
+  padding: 0 16px;
+
 }
 
 /* Ensure buttons have appropriate height and spacing if needed */
