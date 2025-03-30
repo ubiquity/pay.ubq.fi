@@ -14,7 +14,7 @@ import { usePermitClaiming } from "../hooks/use-permit-claiming"; // Import the 
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
-  const [animationsApplied, setAnimationsApplied] = useState(false);
+  // Removed animationsApplied state
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
@@ -29,6 +29,7 @@ export function DashboardPage() {
     error: dataError,
     setError, // Get the setter from usePermitData
     fetchPermitsAndCheck,
+    isWorkerInitialized, // Get the worker initialization state
   } = usePermitData({ address, isConnected });
 
   // --- Calculations (Depend on permits state from usePermitData) ---
@@ -104,28 +105,16 @@ export function DashboardPage() {
 
   // --- Effects ---
 
-  // Fetch permits when connection status changes
+  // Fetch permits when connection status changes AND worker is ready
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && isWorkerInitialized) {
+      // Check both connection and worker init status
       fetchPermitsAndCheck();
     }
     // No need for else block, usePermitData handles clearing permits on disconnect
-  }, [isConnected, fetchPermitsAndCheck]);
+  }, [isConnected, isWorkerInitialized, fetchPermitsAndCheck]); // Add isWorkerInitialized to dependencies
 
-  // Effect for initial animations
-  useEffect(() => {
-    if (!animationsApplied) {
-      const header = document.getElementById("header");
-      const logoWrapper = document.getElementById("logo-wrapper");
-      const controls = document.getElementById("controls");
-
-      if (header) header.classList.add("initial-fade-in");
-      if (logoWrapper) logoWrapper.classList.add("initial-slide-in-logo");
-      if (controls) controls.classList.add("initial-slide-in-controls");
-
-      setAnimationsApplied(true);
-    }
-  }, [animationsApplied]);
+  // Removed effect for initial animations
 
   // --- Rendering ---
   const LogoSpan = () => <span id="header-logo-wrapper" dangerouslySetInnerHTML={{ __html: logoSvgContent }} />;
@@ -173,13 +162,14 @@ export function DashboardPage() {
         {/* Controls */}
         {isConnected && address ? (
           <div id="controls">
-            <button onClick={() => disconnect()} className="button-with-icon">
+            <button id="disconnect" onClick={() => disconnect()} className="button-with-icon">
               {ICONS.DISCONNECT}
               <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
             </button>
 
             {/* Claim All Button */}
             <button
+              id="claim-all"
               onClick={handleClaimAllValidSequential}
               disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
@@ -198,7 +188,7 @@ export function DashboardPage() {
             {/* Expand/Collapse Button */}
             <div className="spinner-or-expand-container">
               <button className="expand-button" disabled={!initialLoadComplete} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
-                {isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
+                {!initialLoadComplete ? <div className="spinner header-spinner"></div> : isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
               </button>
             </div>
           </div>

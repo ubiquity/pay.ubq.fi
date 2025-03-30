@@ -92,10 +92,10 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     if (!workerRef.current) {
       setError("Worker not available.");
       console.error("fetchPermitsAndCheck called but worker is not available.");
-      return;
-    }
-    if (!isWorkerInitialized) {
-       setError("Worker not initialized yet.");
+       return;
+     }
+     if (!isWorkerInitialized) {
+       // setError("Worker not initialized yet."); // No longer set error here
        console.warn("fetchPermitsAndCheck called before worker initialization complete.");
        // Optionally queue the request or wait, for now just return
        return;
@@ -124,8 +124,9 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     setPermits, // Still needed by usePermitClaiming hook
     isLoading,
     initialLoadComplete,
-    error,
-    setError,
-    fetchPermitsAndCheck,
-  };
-}
+     error,
+     setError,
+     fetchPermitsAndCheck,
+     isWorkerInitialized, // Expose worker initialization state
+   };
+ }

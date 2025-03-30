@@ -1,0 +1,31 @@
+@media (max-width: 640px) {
+  #controls > .button-with-icon:nth-of-type(2) span {
+    display: none;
+  }
+  #logo-wrapper h1 > span:last-of-type {
+    display: none;
+  }
+  #controls > .button-with-icon,
+  #controls > .spinner-or-expand-container {
+    flex-grow: 1;
+    justify-content: center;
+  }
+  button.button-with-icon span {
+    display: none;
+  }
+  button[title*="Claim"] span {
+    display: unset;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111;
+    --text: #eee;
+    --text-light: #aaa;
+    --border: #333;
+    --primary: #3399ff;
+    --hover: #222;
+    --error: #ff6666;
+    --success: #00cc66;
+  }
+}
