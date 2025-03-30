@@ -12,7 +12,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Phase 4: Validation Logic**: IN PROGRESS. Backend validation needs RPC error handling. Frontend `hasRequiredFields` implemented. **Frontend pre-claim checks (owner balance, Permit2 allowance) implemented.**
 *   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) implemented. **Multicall utility function (`claimMultiplePermitsViaMulticall`) created in `multicall-utils.ts`. UI integration TBD.**
 *   **Phase 6: Claim Status Update & Polish**: IN PROGRESS. Frontend uses `useWaitForTransactionReceipt` and displays prerequisite check results/errors. Backend status update TBD.
-*   **Phase 7: Documentation & Deployment**: IN PROGRESS (Docs update). Deployment TBD.
+*   **Phase 7: Documentation & Deployment**: IN PROGRESS (Docs update, Frontend deployment script created, Frontend deployed). Backend deployment TBD.
 
 ## 2. What Works
 
@@ -30,6 +30,10 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **UI Elements**: Added Ubiquity OS logo (`ubiquity-os-logo.svg`) inline next to the main header text in `LoginPage` and `DashboardPage` by importing raw SVG content (`?raw`) and using `dangerouslySetInnerHTML`. Updated type definitions.
 *   **Bug Fixes**: Resolved multiple permit fetch issue. Resolved incorrect claim button disabling.
 *   **Multicall Utility**: Created `claimMultiplePermitsViaMulticall` function in `frontend/src/utils/multicall-utils.ts` using `viem` and `Multicall3.aggregate3` to bundle permit claims.
+*   **Frontend Server**: Added `frontend/server.ts` to serve built static assets on Deno Deploy, handling SPA routing.
+*   **Deployment Script**: Created `scripts/deploy-frontend.sh` for automated build and deployment to Deno Deploy using `deployctl`. Includes project name sanitization. Added `deploy` script to `frontend/package.json`.
+*   **Frontend Deployment**: Successfully deployed to Deno Deploy via the script.
+*   **Documentation**: Updated `frontend/README.md` with deployment instructions.
 
 ## 3. What's Next (High Level)
 
@@ -40,6 +44,7 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Integrate Multicall Claiming**: Update UI to allow selecting multiple permits and trigger the `claimMultiplePermitsViaMulticall` function (Phase 5).
 *   **(Optional)** Implement Backend Status Update: Create `/api/permits/update-status` endpoint (Phase 6).
 *   **UI/UX Polish**: Refine loading states, error messages, overall flow (Phase 6).
+*   **Verify Frontend Deployment**: Check the deployed URLs (e.g., `https://pay-ubq-fi.deno.dev`) to ensure the application is running correctly.
 *   **Final Documentation & Deployment** (Phase 7).
 
 *(Refer to `docs/rewrite-plan.md` for detailed phase breakdown)*

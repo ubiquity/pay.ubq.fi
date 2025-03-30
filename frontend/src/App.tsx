@@ -1,4 +1,3 @@
-import React from "react";
 import { useAccount } from "wagmi"; // Import useAccount hook from wagmi
 
 // Import page components

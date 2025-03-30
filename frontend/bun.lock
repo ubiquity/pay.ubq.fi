@@ -4,7 +4,7 @@
     "": {
       "name": "frontend",
       "dependencies": {
-        "@pavlovcik/permit2-rpc-manager": "^0.5.0",
+        "@pavlovcik/permit2-rpc-manager": "^0.7.0",
         "@supabase/supabase-js": "^2.49.4",
         "@tanstack/react-query": "^5.70.0",
         "@wagmi/connectors": "^5.7.11",
@@ -231,7 +231,7 @@
 
     "@paulmillr/qr": ["@paulmillr/qr@0.2.1", "", {}, "sha512-IHnV6A+zxU7XwmKFinmYjUcwlyK9+xkG3/s9KcQhI9BjQKycrJ1JRO+FbNYPwZiPKW3je/DR0k7w8/gLa5eaxQ=="],
 
-    "@pavlovcik/permit2-rpc-manager": ["@pavlovcik/permit2-rpc-manager@0.5.0", "", { "dependencies": { "viem": "^2.24.1" } }, "sha512-AoSiPwGDCdKeSspW1VVwDq7tJfGbAkBVyHe5Syly2ysztOJDs9SNFGQqOi+m5JgO/pcl3Rd0Yj4KQAqK/M6ciQ=="],
+    "@pavlovcik/permit2-rpc-manager": ["@pavlovcik/permit2-rpc-manager@0.7.0", "", { "dependencies": { "viem": "^2.24.1" } }, "sha512-yZh4aHqRLYbYrskzcNd8fsklxowToSxUy9RUfyINjRhVUbc0wjhWBIYxKkFkkdMngU6/kNzGiVckGeRFB1dTmA=="],
 
     "@rollup/rollup-android-arm-eabi": ["@rollup/rollup-android-arm-eabi@4.37.0", "", { "os": "android", "cpu": "arm" }, "sha512-l7StVw6WAa8l3vA1ov80jyetOAEo1FtHvZDbzXDO/02Sq/QVvqlHkYoFwDJPIMj0GKiistsBudfx5tGFnwYWDQ=="],
 

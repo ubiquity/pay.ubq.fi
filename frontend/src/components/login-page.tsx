@@ -1,4 +1,3 @@
-import React from "react"; // Removed unused useEffect import
 import { useConnect, useConnectors } from "wagmi"; // Added useConnectors hook
 import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw"; // Import SVG content as raw string
 import { ICONS } from "./iconography"; // <-- Correct casing

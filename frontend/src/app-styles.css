@@ -212,6 +212,7 @@ footer {
   fill: currentColor;
   transition: opacity 0.3s ease-in-out;
   /* margin-right: 8px; */
+  /* padding-bottom: 4px; */
 }
 
 .permits-table {
@@ -416,6 +417,7 @@ svg {
   /* height: 48px; */ /* Maintain consistent height */
   flex-shrink: 0; /* Prevent buttons from shrinking */
   /* flex-grow: 1; */ /* Allow buttons to grow */
+  /* align-items: center; */
 }
 #header > button {
   justify-content: center; /* Center content within the grown button */
@@ -489,4 +491,5 @@ button#claim-all:hover:not([disabled]) {
   padding: 14px 0;
   flex-grow: 1;
   /* width: 100%; */
+  /* align-items: center; */
 }

@@ -43,9 +43,12 @@ This document outlines the technology stack and development environment for the 
 ## 4. Infrastructure & Deployment
 
 *   **Backend Hosting:** Deno Deploy.
-*   **Frontend Hosting:** Deno Deploy.
+*   **Frontend Hosting:** Deno Deploy (serving static build via `frontend/server.ts`).
 *   **Database Hosting:** Supabase Cloud.
-*   **Deployment:** Deno Deploy CLI/GitHub Integration, GitHub Actions (TBD).
+*   **Deployment:**
+    *   Frontend: Automated via `scripts/deploy-frontend.sh` (runnable via `bun run deploy` in `frontend/` or directly). Script handles build, project name sanitization (`pay.ubq.fi` -> `pay-ubq-fi`), and `deployctl` execution. Requires `deployctl` v1.12.0+.
+    *   Backend: Deno Deploy CLI/GitHub Integration (TBD).
+    *   GitHub Actions: TBD for CI/CD.
 
 ## 5. Technical Constraints & Considerations
 
