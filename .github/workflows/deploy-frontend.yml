@@ -1,0 +1,54 @@
+name: Deploy Frontend to Deno Deploy
+
+on:
+  push:
+    branches:
+      - '**' # Run on pushes to all branches
+
+jobs:
+  deploy:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write # Required for deployment output in PRs if using Deno Deploy GitHub App (optional but good practice)
+      contents: read
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x # Or specify a fixed version like v1.40.0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest # Or specify a fixed version
+
+      - name: Install frontend dependencies
+        run: bun install
+        working-directory: ./frontend
+
+      - name: Build frontend application
+        run: bunx tsc -b && bunx vite build
+        working-directory: ./frontend
+
+      - name: Install deployctl
+        run: deno install --global -A -r -f https://deno.land/x/deploy@1.12.0/deployctl.ts
+
+      - name: Deploy to Deno Deploy (Production)
+        if: github.ref == 'refs/heads/main'
+        run: deployctl deploy --project=pay-ubq-fi --entrypoint=server.ts --no-static --prod
+        working-directory: ./frontend
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+
+      - name: Deploy to Deno Deploy (Preview)
+        if: github.ref != 'refs/heads/main'
+        run: deployctl deploy --project=pay-ubq-fi --entrypoint=server.ts --no-static
+        working-directory: ./frontend
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
