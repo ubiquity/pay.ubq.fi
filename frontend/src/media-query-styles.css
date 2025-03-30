@@ -1,12 +1,14 @@
 @media (max-width: 640px) {
-  #controls > .button-with-icon:nth-of-type(2) span {
+  /* Target button directly under #header */
+  #header > .button-with-icon:nth-of-type(2) span {
     display: none;
   }
   #logo-wrapper h1 > span:last-of-type {
     display: none;
   }
-  #controls > .button-with-icon,
-  #controls > .spinner-or-expand-container {
+  /* Target button and container directly under #header */
+  #header > .button-with-icon,
+  #header > .spinner-or-expand-container {
     flex-grow: 1;
     justify-content: center;
   }

@@ -33,9 +33,8 @@ export function LoginPage(/* Props if needed */) {
           <span>Ubiquity OS Rewards</span>
         </h1>
       </div>
-      {/* Move controls div to be a direct sibling of logo-wrapper */}
-      <div id="controls">
-        {(() => {
+      {/* Button is placed directly under #header */}
+      {(() => {
           // Explicitly find the injected connector from useConnectors result
           const injectedConnectorInstance = connectors.find((c) => c.id === "injected");
 
@@ -50,11 +49,11 @@ export function LoginPage(/* Props if needed */) {
           // Workaround: Enable button if .ready is undefined but window.ethereum exists
           const isReady = injectedConnectorInstance.ready ?? (typeof window !== "undefined" && !!window.ethereum);
 
-          return (
-            // Button is now directly inside #controls
-            <button
-              className="button-with-icon" // Add class
-              disabled={!isReady || status === "pending"} // Use the combined readiness check
+            return (
+              // Button is now directly under #header
+              <button
+                className="button-with-icon" // Add class
+                disabled={!isReady || status === "pending"} // Use the combined readiness check
               key={injectedConnectorInstance.id}
               onClick={() => connect({ connector: injectedConnectorInstance })} // Pass the instance to connect
             >
@@ -69,7 +68,6 @@ export function LoginPage(/* Props if needed */) {
             </button>
           );
         })()}
-      </div>
       {/* Show error message if connection fails - keep it outside the header section for now */}
       {error && <div>{error.message}</div>}
     </section>

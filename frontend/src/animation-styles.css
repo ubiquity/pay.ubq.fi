@@ -1,4 +1,4 @@
-@keyframes slideIn {
+@keyframes logo {
   from {
     transform: translateY(-200%);
     filter: blur(24px);
@@ -13,30 +13,22 @@
 
 #logo-wrapper {
   transform: translateY(-200%);
-  filter: blur(24px);
+  /* filter: blur(24px); */
   opacity: 0;
-  animation: slideIn 2s forwards cubic-bezier(0, 1, 1, 1);
+  animation: logo 2s forwards cubic-bezier(0, 1, 1, 1);
+  padding: 0 16px;
 }
-#controls {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* Removed #controls animation rule */
 
 button[title*="Claim"]:disabled {
   /* opacity: 0; */
 }
-.expand-button:disabled {
-  /* opacity: 0.5; */
-  cursor: not-allowed;
-  background-color: transparent;
-  /* filter: blur(24px); */
-  /* opacity: 0; */
-}
+
 #header {
   opacity: 0;
   animation: header 3s forwards cubic-bezier(0, 1, 1, 1);
 
-  /* backdrop-filter: blur(12px); */
+  backdrop-filter: blur(12px);
   /* text-align: center; */
   /* max-width: 640px;  */
   /* margin: 4px auto; */
@@ -64,13 +56,13 @@ button[title*="Claim"]:disabled {
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   color: #ffffff;
-  margin-right: 16px;
-  display: inline-block;
+  /* margin-right: 16px; */
+  /* display: inline-block; */
   opacity: 1;
-  display: block;
+  /* display: block; */
 }
 .header-spinner {
-  margin: 0;
+  /* margin: 0; */
   transition: opacity 0.3s ease-in-out;
 }
 @keyframes spin {
@@ -93,27 +85,51 @@ button[title*="Claim"]:disabled {
 @keyframes disconnect {
   0% {
     opacity: 0;
-    filter: blur(24px);
+    /* filter: blur(24px); */
   }
   100% {
     opacity: 0.75;
-    filter: blur(0px);
+    /* filter: blur(0px); */
   }
 }
 
-
-#claim-all{
+#claim-all:not[disabled] {
   opacity: 0;
-  animation: claim-all 1s forwards ease-in-out 3s;
+  animation: claim-all 1s forwards ease-in-out 1.5s;
 }
 
 @keyframes claim-all {
   0% {
     opacity: 0;
-    filter: blur(24px);
   }
   100% {
-    opacity: 0.75;
-    filter: blur(0px);
+    opacity: 1;
   }
+}
+
+
+#claim-all[disabled] {
+  opacity: 0.5;
+  /* animation: claim-all-disabled 1s forwards ease-in-out 1.5s; */
+}
+
+/* @keyframes claim-all-disabled {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0.25;
+  }
+} */
+
+.expand-button:disabled {
+  opacity: 0.5;
+  /* opacity: 0.5; */
+  /* cursor: not-allowed; */
+  /* background-color: transparent; */
+  /* filter: blur(24px); */
+  /* opacity: 0; */
+  /* text-align: center; */
+  /* justify-content: center; */
+  display: flex;
 }

@@ -159,14 +159,14 @@ export function DashboardPage() {
           </h1>
         </div>
 
-        {/* Controls */}
+        {/* Header Buttons/Controls (Directly under #header) */}
         {isConnected && address ? (
-          <div id="controls">
+          <>
+            {/* Use fragment instead of #controls div */}
             <button id="disconnect" onClick={() => disconnect()} className="button-with-icon">
               {ICONS.DISCONNECT}
               <span>{`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}</span>
             </button>
-
             {/* Claim All Button */}
             <button
               id="claim-all"
@@ -184,14 +184,13 @@ export function DashboardPage() {
                     })`}
               </span>
             </button>
-
             {/* Expand/Collapse Button */}
             <div className="spinner-or-expand-container">
               <button className="expand-button" disabled={!initialLoadComplete} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
                 {!initialLoadComplete ? <div className="spinner header-spinner"></div> : isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
               </button>
             </div>
-          </div>
+          </>
         ) : (
           <div>Wallet not connected.</div>
         )}

@@ -52,6 +52,10 @@ h1 {
   vertical-align: middle;
   display: inline-block;
   white-space: nowrap;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 4px;
 }
 section {
   backdrop-filter: blur(12px);
@@ -142,7 +146,7 @@ footer {
   text-align: center;
   margin: 4px auto;
 }
-
+/*
 #claim-summary {
   display: flex;
   justify-content: space-between;
@@ -181,29 +185,33 @@ footer {
   padding: 4px 0 0;
   color: var(--error);
   font-size: 0.9em;
-}
+} */
 
 .spinner-or-expand-container {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+  /* height: 48px; */
+  border-radius: 4px;
+  width: 50px;
 }
 .expand-button {
   cursor: pointer;
   min-width: 48px;
   align-items: center;
+  /* padding-right: 8px; */
 }
 .expand-button:hover {
-  color: #fff;
-  background-color: #ffffff08;
-  border-radius: 0;
+  /* color: #fff; */
+  /* background-color: #ffffff08; */
+  /* border-radius: 0; */
 }
 
 .expand-button svg.closer,
 .expand-button svg.opener {
   fill: currentColor;
   transition: opacity 0.3s ease-in-out;
+  /* margin-right: 8px; */
 }
 
 .permits-table {
@@ -303,13 +311,16 @@ button {
   cursor: pointer;
   border-radius: 4px;
   opacity: 0.75;
-  width: 100%;
+  /* width: 100%; */ /* Removed width: 100% from general button */
   justify-content: center;
-  height: 48px;
+  /* height: 48px; */
+  padding-inline: 16px; /* Add some padding to buttons */
+  padding-block: 0;
 }
-button:hover {
+button:not([disabled]):hover {
   opacity: 1;
   background-color: #ffffff08;
+  color: #fff;
 }
 button:disabled {
   opacity: 0.5;
@@ -328,21 +339,11 @@ button:disabled {
 .github-comment-url > a:hover {
   opacity: 1;
 }
-#controls {
-  display: inline-block;
-  text-align: right;
-}
-#controls > * {
-  height: 48px;
-  flex-grow: 1;
-}
-#controls button span {
-  vertical-align: middle;
-  white-space: nowrap;
-}
+
 .button-with-icon {
   display: inline-flex;
   align-items: center;
+  gap: 8px; /* Add gap between icon and text */
 }
 thead {
   display: none;
@@ -367,10 +368,7 @@ svg {
 .error-message > span {
   vertical-align: middle;
 }
-section#controls > * {
-  display: inline-block;
-  vertical-align: middle;
-}
+
 #wallet-address {
   padding: 8px;
   opacity: 0.75;
@@ -384,24 +382,40 @@ section#controls > * {
 }
 #header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Changed from space-evenly */
   align-items: center;
   opacity: 1;
+  /* padding: 0 16px; */ /* Added padding */
+  /* gap: 16px; */ /* Add gap between header items */
+  /* padding: 0 8px 0 0; */
 }
-#header > #controls,
-#header > #logo-wrapper,
-#header > .spinner-or-expand-container {
+
+/* Ensure #logo-wrapper uses flex */
+#header > #logo-wrapper {
   display: flex;
   align-items: center;
+  flex-shrink: 0; /* Prevent logo from shrinking */
+  border-radius: 4px;
+  /* padding: 0 8px; */
 }
-#header > #logo-wrapper {
-  flex-grow: 1;
-  justify-content: space-around;
+
+/* Ensure buttons have appropriate height and spacing if needed */
+#header > button,
+#header > .spinner-or-expand-container {
+  /* height: 48px; */ /* Maintain consistent height */
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+  /* flex-grow: 1; */ /* Allow buttons to grow */
 }
-#header > #controls {
-  justify-content: space-around;
-  flex-grow: 1;
+#header > button {
+  justify-content: center; /* Center content within the grown button */
 }
+
+#header > button span {
+  /* Style spans within header buttons */
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 #claim-summary {
   display: flex;
   background: 0 0;
@@ -439,7 +453,7 @@ button > .spinner.button-spinner {
   margin-right: 12px;
 }
 .button-with-icon > svg {
-  margin-right: 2px;
+  margin-right: 2px; /* Keep original small margin for icon */
 }
 td {
   padding: 0;
@@ -449,8 +463,19 @@ td {
   padding: 12px;
 }
 
-
 button {
-    padding-inline: 0;
-    padding-block: 0;
+  padding-inline: 0; /* Ensure consistent padding */
+  padding-block: 0;
+}
+
+button#claim-all:hover:not([disabled]) {
+  opacity: 1 !important;
+}
+
+#header button {
+  /* background-color: red; */
+  /* height: 100%; */
+  padding: 14px 0;
+  flex-grow: 1;
+  /* width: 100%; */
 }
