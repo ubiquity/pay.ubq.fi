@@ -33,7 +33,8 @@ export function DashboardPage() {
 
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
-    return permits.filter(
+    // Assign filter result to variable first
+    const filteredPermits = permits.filter(
       (p) =>
         p.networkId === chain?.id &&
         p.type === "erc20-permit" &&
@@ -45,6 +46,8 @@ export function DashboardPage() {
         !p.checkError &&
         hasRequiredFields(p)
     );
+    // Explicitly return the filtered array
+    return filteredPermits;
   }, [permits, chain?.id]);
 
   const claimablePermitCount = claimablePermits.length;
@@ -194,12 +197,7 @@ export function DashboardPage() {
 
             {/* Expand/Collapse Button */}
             <div className="spinner-or-expand-container">
-              <button
-                className="expand-button"
-                disabled={!initialLoadComplete}
-                onClick={toggleTableVisibility}
-                title={isTableVisible ? "Collapse" : "Expand"}
-              >
+              <button className="expand-button" disabled={!initialLoadComplete} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
                 {isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
               </button>
             </div>

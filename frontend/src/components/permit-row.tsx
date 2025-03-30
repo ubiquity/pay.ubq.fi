@@ -1,5 +1,5 @@
 import React from "react";
-import type { PermitData } from "../../../shared/types";
+import type { PermitData } from "../types";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
 import type { Chain } from "viem";
 import { ICONS } from "./iconography"; // <-- Correct casing

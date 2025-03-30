@@ -1,7 +1,7 @@
 import React from "react";
-import type { PermitData } from "../../../shared/types";
-import { PermitRow } from "./permit-row.tsx"; // Import the row component with extension
-import type { Chain } from "viem"; // Import Chain type if needed for props
+import type { PermitData } from "../types";
+import { PermitRow } from "./permit-row.tsx";
+import type { Chain } from "viem";
 
 interface PermitsTableProps {
   permits: PermitData[];
