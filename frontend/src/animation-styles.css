@@ -4,7 +4,7 @@
 .spinner { width: 18px; height: 18px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.6s linear infinite; color: #ffffff; opacity: 1; }
 /* #claim-all:not[disabled] { opacity: 0; animation: claim-all 3s forwards ease-in-out 1s; } */
 
-#claim-all[disabled] { opacity: 0; animation: claim-all-disabled 1s forwards ease-in-out 1s; }
+#claim-all[disabled] { opacity: 0; animation: claim-all-disabled 1s forwards ease-in-out 1.5s; }
 #disconnect { opacity: 0; animation: disconnect 1s forwards ease-in-out 2.75s; }
 /* Remove animation from ID selector */
 #logo-wrapper { padding: 0 16px; }
