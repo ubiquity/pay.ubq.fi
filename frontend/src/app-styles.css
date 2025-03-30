@@ -316,6 +316,17 @@ button {
   /* height: 48px; */
   padding-inline: 16px; /* Add some padding to buttons */
   padding-block: 0;
+  height: 48px;
+  width: auto;
+  /* background-color: red; */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  /* padding: 0 8px; */
+  padding-inline: 0;
+  padding-block: 0;
+  padding: 0 16px;
+  flex-grow: 1;
 }
 button:not([disabled]):hover {
   opacity: 1;
@@ -464,8 +475,8 @@ td {
 }
 
 button {
-  padding-inline: 0; /* Ensure consistent padding */
-  padding-block: 0;
+  /* padding-inline: 0; */ /* Ensure consistent padding */
+  /* padding-block: 0; */
 }
 
 button#claim-all:hover:not([disabled]) {
