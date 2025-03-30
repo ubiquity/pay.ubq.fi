@@ -198,7 +198,10 @@ footer {
 .expand-button {
   cursor: pointer;
   min-width: 48px;
+  /* Use flexbox for centering */
+  display: flex;
   align-items: center;
+  justify-content: center; /* Ensure horizontal centering too */
   /* padding-right: 8px; */
 }
 .expand-button:hover {
