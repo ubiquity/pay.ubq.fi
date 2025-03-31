@@ -1,7 +1,8 @@
 import { type Address, type Abi, parseAbiItem } from "viem";
 import type { PermitData } from "../types";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { createRpcClient, type JsonRpcResponse } from '@ubiquity-dao/permit2-rpc-client';
+// Removed unused import: import { createRpcClient, type JsonRpcResponse } from '@ubiquity-dao/permit2-rpc-client';
+import type { JsonRpcResponse } from '@ubiquity-dao/permit2-rpc-client'; // Keep only JsonRpcResponse if needed elsewhere, or define locally
 import { encodeFunctionData } from "viem";
 import { preparePermitPrerequisiteContracts } from "../utils/permit-utils";
 
@@ -26,13 +27,21 @@ const LOCATIONS_TABLE = "locations";
 const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");
 const nftRewardAbi = parseAbiItem("function nonceRedeemed(uint256 nonce) view returns (bool)");
 
-// Initialize Supabase client and RPC client within the worker scope
+// Initialize Supabase client within the worker scope
 let supabase: SupabaseClient | null = null;
 const PROXY_BASE_URL = "https://rpc.ubq.fi";
-const rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL });
+// Removed unused: const rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL });
 
 // Define a type for the permit object potentially augmented with _filterOut
 type MappedPermit = PermitData & { _filterOut?: boolean };
+
+// Define type for JSON-RPC Request object
+interface JsonRpcRequest {
+    jsonrpc: '2.0';
+    method: string;
+    params: unknown[];
+    id: number | string; // Allow string or number ID
+}
 
 
 async function fetchAndCheckPermitsForWorker(address: Address) {
@@ -126,140 +135,160 @@ async function fetchAndCheckPermitsForWorker(address: Address) {
     initialPermits = mappedPermits;
     if (initialPermits.length === 0) return []; // Return early if no valid permits after mapping
 
-    // 4. Perform frontend on-chain checks
+    // 4. Perform frontend on-chain checks using JSON-RPC Batching
     const checkedPermitsMap = new Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>();
-    // Define a more specific type for the promise result/error object
-    type CheckResult = { key: string; type: string; result?: unknown; error?: Error; requiredAmount?: bigint }; // Use unknown for result
-    const checkPromises = initialPermits.flatMap((permit): Promise<CheckResult>[] => { // Add return type annotation
+    // Use the specific JsonRpcRequest type
+    const batchRequests: { request: JsonRpcRequest; key: string; type: string; requiredAmount?: bigint; chainId: number }[] = [];
+    let requestIdCounter = 1; // Counter for unique JSON-RPC request IDs
+
+    // Create a map for quick lookup of permits by key
+    const permitsByKey = new Map<string, PermitData>(initialPermits.map(p => [`${p.nonce}-${p.networkId}`, p]));
+
+    initialPermits.forEach((permit) => {
         const key = `${permit.nonce}-${permit.networkId}`;
         const chainId = permit.networkId;
         const owner = permit.owner as Address;
-        const promises: Promise<CheckResult>[] = [];
 
         // Nonce Checks
         if (permit.type === "erc20-permit") {
             const wordPos = BigInt(permit.nonce) >> 8n;
-            promises.push(
-                rpcClient.request(chainId, {
-                    jsonrpc: '2.0',
-                    method: 'eth_call',
-                    params: [{
-                        to: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-                        data: encodeFunctionData({
-                            abi: [permit2Abi],
-                            functionName: "nonceBitmap",
-                            args: [owner, wordPos]
-                        })
-                    }, 'latest'],
-                    id: Date.now()
-                }).then((response: unknown) => {
-                    const jsonRpcResponse = response as JsonRpcResponse;
-                    if (jsonRpcResponse.error) throw new Error(jsonRpcResponse.error.message);
-                    const bitmap = BigInt(jsonRpcResponse.result as string);
-                    return { key, type: "nonce", result: Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n))) };
-                }).catch((error: Error) => ({ key, type: "nonce", error }))
-            );
+            batchRequests.push({
+                request: {
+                    jsonrpc: '2.0', method: 'eth_call',
+                    params: [{ to: "0x000000000022D473030F116dDEE9F6B43aC78BA3", data: encodeFunctionData({ abi: [permit2Abi], functionName: "nonceBitmap", args: [owner, wordPos] }) }, 'latest'],
+                    id: requestIdCounter++
+                }, key, type: "nonce", chainId
+            });
         } else if (permit.type === "erc721-permit" && permit.token?.address) {
-            promises.push(
-                rpcClient.request(chainId, {
-                    jsonrpc: '2.0',
-                    method: 'eth_call',
-                    params: [{
-                        to: permit.token.address as Address,
-                        data: encodeFunctionData({
-                            abi: [nftRewardAbi],
-                            functionName: "nonceRedeemed",
-                            args: [BigInt(permit.nonce)]
-                        })
-                    }, 'latest'],
-                    id: Date.now()
-                }).then((response: unknown) => {
-                    const jsonRpcResponse = response as JsonRpcResponse;
-                    if (jsonRpcResponse.error) throw new Error(jsonRpcResponse.error.message);
-                    return { key, type: "nonce", result: jsonRpcResponse.result as boolean };
-                }).catch((error: Error) => ({ key, type: "nonce", error }))
-            );
+            batchRequests.push({
+                request: {
+                    jsonrpc: '2.0', method: 'eth_call',
+                    params: [{ to: permit.token.address as Address, data: encodeFunctionData({ abi: [nftRewardAbi], functionName: "nonceRedeemed", args: [BigInt(permit.nonce)] }) }, 'latest'],
+                    id: requestIdCounter++
+                }, key, type: "nonce", chainId
+            });
         }
 
         // Balance & Allowance Checks (ERC20 only)
         if (permit.type === "erc20-permit" && permit.token?.address && permit.amount && permit.owner) {
             const calls = preparePermitPrerequisiteContracts(permit);
-            if (!calls) return promises;
-            const requiredAmount = BigInt(permit.amount);
-            const [balanceCall, allowanceCall] = calls;
-            promises.push(
-                rpcClient.request(chainId, {
-                    jsonrpc: '2.0',
-                    method: 'eth_call',
-                    params: [{
-                        to: balanceCall.address,
-                        data: encodeFunctionData({
-                            abi: balanceCall.abi as Abi,
-                            functionName: balanceCall.functionName,
-                            args: balanceCall.args
-                        })
-                    }, 'latest'],
-                    id: Date.now()
-                }).then((response: unknown) => {
-                    const jsonRpcResponse = response as JsonRpcResponse;
-                    if (jsonRpcResponse.error) throw new Error(jsonRpcResponse.error.message);
-                    return { key, type: "balance", result: BigInt(jsonRpcResponse.result as string), requiredAmount };
-                }).catch((error: Error) => ({ key, type: "balance", error }))
-            );
-            promises.push(
-                rpcClient.request(chainId, {
-                    jsonrpc: '2.0',
-                    method: 'eth_call',
-                    params: [{
-                        to: allowanceCall.address,
-                        data: encodeFunctionData({
-                            abi: allowanceCall.abi as Abi,
-                            functionName: allowanceCall.functionName,
-                            args: allowanceCall.args
-                        })
-                    }, 'latest'],
-                    id: Date.now()
-                }).then((response: unknown) => {
-                    const jsonRpcResponse = response as JsonRpcResponse;
-                    if (jsonRpcResponse.error) throw new Error(jsonRpcResponse.error.message);
-                    return { key, type: "allowance", result: BigInt(jsonRpcResponse.result as string), requiredAmount };
-                }).catch((error: Error) => ({ key, type: "allowance", error }))
-            );
+            if (calls) {
+                const requiredAmount = BigInt(permit.amount);
+                const [balanceCall, allowanceCall] = calls;
+                batchRequests.push({
+                    request: {
+                        jsonrpc: '2.0', method: 'eth_call',
+                        params: [{ to: balanceCall.address, data: encodeFunctionData({ abi: balanceCall.abi as Abi, functionName: balanceCall.functionName, args: balanceCall.args }) }, 'latest'],
+                        id: requestIdCounter++
+                    }, key, type: "balance", requiredAmount, chainId
+                });
+                batchRequests.push({
+                    request: {
+                        jsonrpc: '2.0', method: 'eth_call',
+                        params: [{ to: allowanceCall.address, data: encodeFunctionData({ abi: allowanceCall.abi as Abi, functionName: allowanceCall.functionName, args: allowanceCall.args }) }, 'latest'],
+                        id: requestIdCounter++
+                    }, key, type: "allowance", requiredAmount, chainId
+                });
+            }
         }
-        return promises;
     });
 
-    const settledResults = await Promise.allSettled(checkPromises);
+    if (batchRequests.length > 0) {
+        try {
+            // Group requests by chainId for potential separate batch calls if needed,
+            // but standard JSON-RPC batching usually handles mixed requests in one array.
+            // We'll send one large batch first.
+            const batchPayload = batchRequests.map(br => br.request);
 
-    settledResults.forEach((settledResult) => {
-        if (settledResult.status === "fulfilled") {
-            const value = settledResult.value;
-            if (value && value.key) {
-                const updateData = checkedPermitsMap.get(value.key) || {};
-                if ('error' in value && value.error) { // Check if error exists
-                    console.warn(`Worker: Prereq check failed for permit ${value.key} (${value.type}):`, value.error);
-                    updateData.checkError = `Check failed (${value.type}). ${value.error?.message || ''}`;
-                } else if ('result' in value) { // Check if result exists
-                    // Safely cast result based on type after checking for error
-                    if (value.type === "balance" && value.requiredAmount !== undefined) updateData.ownerBalanceSufficient = BigInt(value.result as bigint) >= value.requiredAmount;
-                    else if (value.type === "allowance" && value.requiredAmount !== undefined) updateData.permit2AllowanceSufficient = BigInt(value.result as bigint) >= value.requiredAmount;
-                    else if (value.type === "nonce") updateData.isNonceUsed = value.result as boolean;
+            // Use standard fetch to send the batch request
+            // Note: The rpcClient might have a way to do this, but fetch is standard.
+            // We assume the PROXY_BASE_URL points to the correct endpoint that handles chain routing or is specific to chain 100.
+            // If it needs chainId in the URL, this needs adjustment. Assuming /100 is handled by the proxy.
+            const response = await fetch(`${PROXY_BASE_URL}/100`, { // Assuming chain 100 is the target or proxy handles it
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(batchPayload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Batch RPC request failed with status ${response.status}: ${await response.text()}`);
+            }
+
+            const batchResponses = await response.json() as JsonRpcResponse[];
+
+            // Process batch responses
+            const responseMap = new Map<number, JsonRpcResponse>(batchResponses.map(res => [res.id as number, res]));
+
+            batchRequests.forEach(batchReq => {
+                // Find the original permit corresponding to this request
+                const permit = permitsByKey.get(batchReq.key);
+                if (!permit) {
+                    console.error(`Worker: Could not find original permit for key ${batchReq.key} during batch response processing.`);
+                    return; // Skip processing if original permit not found
                 }
-                checkedPermitsMap.set(value.key, updateData);
-            } else { console.error("Worker: Prereq check promise resolved with invalid value:", value); }
-        } else { console.error("Worker: Prereq check promise rejected:", settledResult.reason); }
-    });
 
-    // Filter out used nonces and map final data
+                const res = responseMap.get(batchReq.request.id as number);
+                const updateData = checkedPermitsMap.get(batchReq.key) || {};
+
+                if (!res) {
+                    console.warn(`Worker: No response found for request ID ${batchReq.request.id} (Permit ${batchReq.key}, Type ${batchReq.type})`);
+                    updateData.checkError = `Batch response missing (${batchReq.type})`;
+                } else if (res.error) {
+                    console.warn(`Worker: Prereq check failed via batch for permit ${batchReq.key} (${batchReq.type}):`, res.error.message);
+                    updateData.checkError = `Check failed (${batchReq.type}). ${res.error.message}`;
+                } else if (res.result !== undefined && res.result !== null) {
+                    try {
+                        if (batchReq.type === "balance" && batchReq.requiredAmount !== undefined) updateData.ownerBalanceSufficient = BigInt(res.result as string) >= batchReq.requiredAmount;
+                        else if (batchReq.type === "allowance" && batchReq.requiredAmount !== undefined) updateData.permit2AllowanceSufficient = BigInt(res.result as string) >= batchReq.requiredAmount;
+                        else if (batchReq.type === "nonce") {
+                            if (permit.type === "erc20-permit") {
+                                const bitmap = BigInt(res.result as string);
+                                updateData.isNonceUsed = Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n)));
+                            } else { // erc721-permit
+                                updateData.isNonceUsed = res.result as boolean; // Assuming direct boolean result
+                            }
+                        }
+                    } catch (parseError: unknown) {
+                         console.error(`Worker: Error parsing batch result for permit ${batchReq.key} (${batchReq.type}):`, parseError);
+                         updateData.checkError = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+                    }
+                } else {
+                     console.warn(`Worker: Empty result for request ID ${batchReq.request.id} (Permit ${batchReq.key}, Type ${batchReq.type})`);
+                     updateData.checkError = `Empty result (${batchReq.type})`;
+                }
+                checkedPermitsMap.set(batchReq.key, updateData);
+            });
+
+        } catch (error: unknown) {
+            console.error("Worker: Error during batch RPC request:", error);
+            // Mark all permits in this batch as errored? Or handle more gracefully?
+            initialPermits.forEach(permit => {
+                 const key = `${permit.nonce}-${permit.networkId}`;
+                 const updateData = checkedPermitsMap.get(key) || {};
+                 updateData.checkError = `Batch request failed: ${error instanceof Error ? error.message : String(error)}`;
+                 checkedPermitsMap.set(key, updateData);
+            });
+        }
+    }
+
+
+    // Filter out used nonces and map final data (remains the same)
     const finalCheckedPermits = initialPermits.map((permit) => {
         const key = `${permit.nonce}-${permit.networkId}`;
         const checkData = checkedPermitsMap.get(key);
-        if (checkData?.checkError?.includes("nonce") || checkData?.isNonceUsed === true) {
+        // Filter if nonce check specifically failed or nonce is used
+        if (checkData?.checkError?.toLowerCase().includes("nonce") || checkData?.isNonceUsed === true) {
             // console.log(`Worker: Filtering out permit ${key} due to nonce check failure or nonce being used.`);
             return { ...permit, ...checkData, _filterOut: true };
         }
+        // Also filter if any other check failed for this permit
+        if (checkData?.checkError && !checkData.checkError.toLowerCase().includes("nonce")) {
+             console.log(`Worker: Filtering out permit ${key} due to other check failure: ${checkData.checkError}`);
+             return { ...permit, ...checkData, _filterOut: true };
+        }
         return checkData ? { ...permit, ...checkData } : permit;
     }).filter((permit: MappedPermit): permit is PermitData => !permit._filterOut);
+
 
     return finalCheckedPermits;
 }

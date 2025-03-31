@@ -25,10 +25,12 @@
     *   **Integrated Grid Background:** Imported and executed the `grid` function from `frontend/src/the-grid.ts` within `main.tsx`, targeting the `#grid` element in `index.html`. Imported `grid-styles.css` and `ubiquity-styles.css`. Verified `index.html` structure includes `<background>` and `<main>`.
     *   **Added Header Logo:** Implemented SVG logo display by importing the raw SVG content (`ubiquity-os-logo.svg?raw`) and rendering it using `dangerouslySetInnerHTML` within a `<span>` in `LoginPage.tsx` and `DashboardPage.tsx`. Updated `vite-env.d.ts` for `?raw` imports. Adjusted CSS (`.header-logo-wrapper svg`) to style the injected SVG. (This approach bypasses issues with `vite-plugin-svgr`).
     *   **Refactored Authentication:** Replaced GitHub OAuth flow with Wallet Connection (`wagmi`) as the primary authentication/access method. Updated `LoginPage.tsx` to use `useConnect`, updated `App.tsx` to use `useAccount` for conditional rendering, removed `auth-context.tsx`, `github-callback.tsx`, and related routing/logic.
+    *   **Optimized Worker Validation (2025-04-01):** Refactored `frontend/src/workers/permit-checker.worker.ts` to use JSON-RPC batching. Instead of making individual `eth_call` requests for each permit's nonce, balance, and allowance checks, the worker now constructs a single batch request containing all checks and sends it via `fetch` to the RPC endpoint (`https://rpc.ubq.fi/100`). This significantly reduces network traffic and eliminates numerous CORS preflight requests.
 *   **Shared Types**:
     *   Added `ownerBalanceSufficient`, `permit2AllowanceSufficient`, `checkError` fields to `PermitData` for storing prerequisite check results.
 *   **Docs**:
     *   Updated `product-context.md`, `system-patterns.md`, and `active-context.md` to reflect the wallet-first authentication flow. Removed `github-auth-flow.md`.
+    *   Updated `system-patterns.md` (2025-04-01) to reflect the worker using batch RPC calls for validation instead of a backend API or direct frontend calls.
 *   **Cleanup & Refactoring (2025-03-30):**
     *   **Removed Unused Code:** Deleted the `backend/scanner/` directory and the `frontend/src/components/icons.tsx` component.
     *   **Removed Unused Dependency:** Removed `vite-plugin-svgr` from root and frontend `package.json` files and `frontend/vite.config.ts`.
@@ -68,9 +70,9 @@
     *   Beneficiary Fetching: Using two-step query in backend (assuming permits are linked to wallets).
 *   **Remaining Questions:**
     *   How are permits initially associated with wallet addresses in the database? (External process assumed).
-    *   Best strategy for handling intermittent RPC errors during validation.
+    *   Best strategy for handling intermittent RPC errors during validation (currently basic error messages are set in the worker).
     *   UI design for selecting multiple permits for batch claiming.
     *   Database schema details (confirmation needed for all tables/columns/relationships, especially wallet-permit linkage).
-    *   Is the current RPC endpoint reliable enough, or should we switch (as previously discussed)? The pre-claim checks might mitigate the need if the issue was allowance/balance.
+    *   Is the current RPC endpoint (`https://rpc.ubq.fi/100`) reliable enough and configured correctly to handle batch requests efficiently? (The worker now relies solely on this for validation).
 
 *(This document will be updated frequently as work progresses.)*

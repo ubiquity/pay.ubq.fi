@@ -11,16 +11,16 @@ graph LR
     subgraph Browser
         direction LR
         Frontend[Frontend UI (React/TS)] -->|Wallet Ops| Wallet[Web3 Wallet]
-        Frontend -->|API Calls| BackendAPI[Backend API]
-        Frontend -->|Read Calls| Blockchain[Blockchain RPC]
+        Frontend -->|Worker Msgs| Worker[Permit Checker Worker]
+        Worker -->|Batch RPC Calls| Blockchain[Blockchain RPC]
+        # Removed direct Frontend -> RPC link
+        # Removed Frontend -> Backend API link (as backend doesn't exist for validation)
     end
 
-    subgraph Deno Deploy
-        direction TB
-        BackendAPI[Backend API Worker] -->|Read/Write| DB[(Database - Supabase)]
-        BackendAPI -->|Write Calls| Blockchain
-        # Removed GitHub API interaction
-    end
+    # Removed Deno Deploy subgraph as backend API doesn't exist for validation
+    # The only backend interaction is Supabase via the Worker
+
+    Worker -->|Read/Write| DB[(Database - Supabase)]
 
     Wallet -->|Sign/Send Tx| Blockchain
     Blockchain -->|Read Events?| BackendAPI
@@ -30,10 +30,9 @@ graph LR
 ```
 
 *   **Frontend:** Handles user interaction, wallet connection/management (via `wagmi`), permit display, and initiates claims. Uses raw CSS for styling.
-*   **Backend API Worker (Deno):** Serves data to the frontend using Hono for routing. Interacts with the database (fetching permits based on wallet address), performs on-chain validation for permits. No direct GitHub interaction.
-*   **Backend Scanner Worker (Deno):** Deprecated and likely to be removed. Assumes permit data linked to wallets is populated externally or via a separate process.
-*   **Database (Supabase):** Stores user data (primarily wallet address), permit details associated with wallets, related token/partner/location info, and potentially claim status (TBD).
-*   **Blockchain:** Source of truth for permit validity and claim execution.
+*   **Permit Checker Worker:** Runs in the browser background. Fetches permit data from Supabase based on connected wallet address. Performs on-chain validation (nonce, balance, allowance) via **batch JSON-RPC calls** directly to the RPC endpoint. Communicates results back to the main frontend thread.
+*   **Database (Supabase):** Stores user data (primarily wallet address -> github_id mapping), permit details associated with github_ids, related token/partner/location info. Accessed directly by the Permit Checker Worker.
+*   **Blockchain:** Source of truth for permit validity (checked via worker's batch RPC calls) and claim execution (initiated by frontend).
 
 ## 2. Key Patterns & Decisions
 
@@ -49,8 +48,8 @@ graph LR
 ## 3. Data Flow
 
 1.  **Wallet Connection:** Frontend (User Action) -> Wallet (Approve Connection) -> Frontend (`useAccount` hook updates)
-2.  **Presentation:** Frontend (Wallet Connected) -> Backend API (`/api/permits?walletAddress=...`) -> DB -> Backend Validator (On-chain) -> Frontend
+2.  **Permit Fetching & Validation:** Frontend (Wallet Connected) -> Worker (Fetch Supabase) -> Worker (Batch RPC Call to Blockchain) -> Worker (Process Results) -> Frontend (Display Permits & Status)
 3.  **Claiming (Single):** Frontend (`handleClaimPermit`) -> Wallet (Sign Tx) -> Blockchain (`permitTransferFrom`)
-4.  **Confirmation:** Frontend (`useWaitForTransactionReceipt`) monitors transaction -> Updates UI state. (Backend update via `/api/permits/update-status` is TBD).
+4.  **Confirmation:** Frontend (`useWaitForTransactionReceipt`) monitors transaction -> Updates UI state.
 
 *(This document will be updated as implementation progresses and patterns solidify.)*
