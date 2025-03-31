@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useMemo, useEffect } from 'react'; // Import useEffect
+import { createContext, useState, useContext, ReactNode, useMemo, useEffect } from 'react'; // Import useEffect, Removed React
 
 interface AnimationContextType {
   initialAnimationComplete: boolean;
