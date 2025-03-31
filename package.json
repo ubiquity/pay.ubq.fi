@@ -1,9 +1,0 @@
-{
-  "scripts": {
-    "dev": "scripts/front.sh"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "knip": "^5.46.3"
-  }
-}
