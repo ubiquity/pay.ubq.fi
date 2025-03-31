@@ -10,9 +10,10 @@ jobs:
     name: Deploy Frontend
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write # Required for deployment output in PRs if using Deno Deploy GitHub App (optional but good practice)
-      contents: read
+    # Temporarily remove permissions block for testing detection
+    # permissions:
+    #   id-token: write
+    #   contents: read
 
     steps:
       - name: Clone repository
