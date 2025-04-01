@@ -118,7 +118,7 @@ export function DashboardPage() {
     try {
       const formattedValue = parseFloat(formatUnits(totalEstimatedValueInWei, preferredTokenInfo.decimals));
       // Use ~ symbol to indicate estimation
-      return `≈ ${formattedValue.toFixed(preferredTokenInfo.decimals <= 6 ? preferredTokenInfo.decimals : 4)} ${preferredTokenInfo.symbol}`;
+      return `≈ ${formattedValue.toFixed(2)} ${preferredTokenInfo.symbol}`;
     } catch (e) {
       console.error("Error formatting estimated total value:", e);
       return `Error (${preferredTokenInfo.symbol})`;
@@ -228,13 +228,7 @@ export function DashboardPage() {
         )}
       </section>
 
-      {/* Reward Preference Selector */}
-      {isConnected && (
-        <RewardPreferenceSelector
-          chainId={chain?.id}
-          onPreferenceChange={handlePreferenceChange}
-        />
-      )}
+
 
       {/* Error Displays */}
       {dataError && (
@@ -285,6 +279,15 @@ export function DashboardPage() {
           preferredRewardTokenAddress={preferredRewardTokenAddress} // Pass down preference
         />
       )}
+
+      {/* Reward Preference Selector */}
+      {isConnected && (
+        <RewardPreferenceSelector
+          chainId={chain?.id}
+          onPreferenceChange={handlePreferenceChange}
+        />
+      )}
+
     </>
   );
 }

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Address } from 'viem';
+import React, { useState, useEffect, useMemo } from "react";
+import { Address } from "viem";
 // RewardTokenInfo is implicitly used by getSupportedRewardTokensForChain return type
-import { getSupportedRewardTokensForChain } from '../constants/supported-reward-tokens';
+import { getSupportedRewardTokensForChain } from "../constants/supported-reward-tokens";
 
-const LOCAL_STORAGE_KEY = 'preferredRewardToken';
+const LOCAL_STORAGE_KEY = "preferredRewardToken";
 
 interface RewardPreferenceSelectorProps {
   chainId: number | undefined;
@@ -23,7 +23,7 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
     const storedPreference = localStorage.getItem(LOCAL_STORAGE_KEY) as Address | null;
 
     // Validate stored preference against available tokens for the current chain
-    if (storedPreference && availableTokens.some(token => token.address.toLowerCase() === storedPreference.toLowerCase())) {
+    if (storedPreference && availableTokens.some((token) => token.address.toLowerCase() === storedPreference.toLowerCase())) {
       setSelectedTokenAddress(storedPreference);
       // Notify parent immediately on load if a valid preference exists
       onPreferenceChange(storedPreference);
@@ -37,8 +37,8 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
   }, [availableTokens, onPreferenceChange]);
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newAddress = event.target.value as Address | ''; // Cast empty string possibility
-    const finalAddress = newAddress === '' ? null : newAddress; // Convert empty string to null
+    const newAddress = event.target.value as Address | ""; // Cast empty string possibility
+    const finalAddress = newAddress === "" ? null : newAddress; // Convert empty string to null
 
     setSelectedTokenAddress(finalAddress);
 
@@ -50,7 +50,7 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
     }
     // Trigger callback to notify parent component (e.g., DashboardPage)
     onPreferenceChange(finalAddress);
-    console.log(`Preferred reward token set to: ${finalAddress || 'None'}`);
+    console.log(`Preferred reward token set to: ${finalAddress || "None"}`);
   };
 
   // Disable selector if no tokens are available for the current chain
@@ -58,22 +58,22 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
 
   return (
     <div className="reward-preference-selector">
-      <label htmlFor="reward-token-select">Preferred Reward Token: </label>
+      {/* <label htmlFor="reward-token-select">Preferred Reward Token: </label> */}
       <select
         id="reward-token-select"
-        value={selectedTokenAddress || ''}
+        value={selectedTokenAddress || ""}
         onChange={handleChange}
         disabled={isDisabled}
-        title={isDisabled ? "No supported reward tokens found for this network" : "Select your preferred token for receiving rewards"}
+        title={isDisabled ? "No supported reward tokens found for this network" : "Select your preferred token for receiving rewards (or claim original)"}
       >
-        <option value="">-- Select Preferred Token --</option>
+        <option value="">-- Claim Original Token --</option>
         {availableTokens.map((token) => (
           <option key={token.address} value={token.address}>
-            {token.symbol} ({token.address.substring(0, 6)}...)
+            Swap to {token.symbol}
           </option>
         ))}
       </select>
-      {isDisabled && chainId && <span style={{ marginLeft: '10px', fontStyle: 'italic' }}>(Not available on this network)</span>}
+      {isDisabled && chainId && <span style={{ marginLeft: "10px", fontStyle: "italic" }}>(Not available on this network)</span>}
     </div>
   );
 }

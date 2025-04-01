@@ -1,4 +1,4 @@
-import { erc20Abi, type Abi, type Address } from "viem";
+import { erc20Abi, type Abi, type Address, formatUnits } from "viem"; // Import formatUnits
 import type { PermitData } from "../types";
 
 // Removed unused MulticallContractInternal interface
@@ -43,16 +43,40 @@ export function preparePermitPrerequisiteContracts(permit: PermitData): Contract
 }
 
 /**
- * Formats a WEI amount string into a human-readable string with 2 decimal places.
+ * Formats a raw token amount (string or bigint) into a human-readable string.
+ * Uses viem's formatUnits for accuracy.
+ *
+ * @param rawAmount The raw amount in the token's smallest unit (e.g., wei).
+ * @param decimals The number of decimals the token uses.
+ * @param displayDecimals The number of decimal places to show in the output string (default: 2).
+ * @returns A formatted string representation of the amount.
  */
-export const formatAmount = (weiAmount: string): string => {
+export const formatAmount = (
+  rawAmount: string | bigint | undefined | null,
+  decimals: number,
+  displayDecimals = 2
+): string => {
+  if (rawAmount === undefined || rawAmount === null) {
+    return Number(0).toFixed(displayDecimals); // Return "0.00" if amount is missing
+  }
   try {
-    // Use 18 as the default decimal place, adjust if tokens with different decimals are expected
-    const amount = Number(BigInt(weiAmount)) / 10 ** 18;
-    return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const amountBigInt = BigInt(rawAmount);
+    const formatted = formatUnits(amountBigInt, decimals);
+    // Use Number() to parse the formatted string and then toLocaleString for formatting
+    // This handles potential large/small numbers better than direct formatting of the string
+    const numericValue = Number(formatted);
+    if (isNaN(numericValue)) {
+      console.warn(`formatAmount: formatted value "${formatted}" resulted in NaN.`);
+      return Number(0).toFixed(displayDecimals);
+    }
+    // Use toLocaleString with maximumSignificantDigits for better formatting.
+    return numericValue.toLocaleString(undefined, {
+      maximumSignificantDigits: 2,
+    });
   } catch (error) {
-    console.warn("Amount formatting failed:", error);
-    return "0.00"; // Return a default value on error
+    console.warn(`Amount formatting failed for amount: ${rawAmount}, decimals: ${decimals}`, error);
+    // Fallback to fixed decimals on error, as significant digits might not make sense for 0
+    return Number(0).toFixed(displayDecimals);
   }
 };
 

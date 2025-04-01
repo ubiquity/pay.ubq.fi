@@ -1,12 +1,11 @@
-import { OrderKind } from '@cowprotocol/cow-sdk'; // Remove CowSdk import for now
-import { Address, WalletClient, formatUnits } from 'viem'; // Removed unused parseUnits
-import { getTokenInfo } from '../constants/supported-reward-tokens'; // Import token info helper
+import { OrderKind, getQuote } from '@cowprotocol/cow-sdk'; // Import getQuote directly
+import { Address, WalletClient, formatUnits } from 'viem';
+import { getTokenInfo } from '../constants/supported-reward-tokens';
 
 // Use Gnosis Chain ID directly
 const GNOSIS_CHAIN_ID = 100;
 
-// Placeholder for SDK initialization or usage - will depend on actual SDK structure
-// const cowSdk = new CowSdk(GNOSIS_CHAIN_ID); // Removed instantiation
+// No SDK instantiation needed if using exported functions directly
 
 interface CowSwapQuoteParams {
   tokenIn: Address;
@@ -16,13 +15,16 @@ interface CowSwapQuoteParams {
   chainId: number; // Need chainId to get token decimals
 }
 
+import { QuoteAmountsAndCosts } from '@cowprotocol/cow-sdk'; // Import QuoteAmountsAndCosts type
+
 interface CowSwapQuoteResult {
-  estimatedAmountOut: bigint; // Estimated amount in wei
-  feeAmount?: bigint; // Optional fee amount in wei
-  // Add other relevant quote details if needed (e.g., slippage)
+  estimatedAmountOut: bigint; // Final estimated amount after fees/slippage
+  feeAmount?: bigint; // Network fee amount
+  // Use the default generic type for amountsAndCosts, which should resolve to bigints based on SDK usage
+  amountsAndCosts: QuoteAmountsAndCosts;
 }
 
-interface InitiateCowSwapParams extends CowSwapQuoteParams {
+interface InitiateCowSwapParams extends CowSwapQuoteParams { // Fix typo: CowSwapParams -> CowSwapQuoteParams
   walletClient: WalletClient; // Requires a connected wallet client for signing
 }
 
@@ -31,9 +33,14 @@ interface InitiateCowSwapParams extends CowSwapQuoteParams {
  * Does not require signing or submit an order.
  */
 export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSwapQuoteResult> {
-  console.log('Fetching CowSwap quote (placeholder):', params);
+  console.log('Fetching CowSwap quote:', params);
   try {
-    // --- Placeholder Logic ---
+    // Ensure chainId matches SDK instance if necessary (CowSdk constructor already sets it)
+    if (params.chainId !== GNOSIS_CHAIN_ID) {
+      throw new Error(`Chain ID mismatch: SDK is for ${GNOSIS_CHAIN_ID}, params specify ${params.chainId}`);
+    }
+
+    // Fetch token decimals
     const tokenInInfo = getTokenInfo(params.chainId, params.tokenIn);
     const tokenOutInfo = getTokenInfo(params.chainId, params.tokenOut);
 
@@ -41,54 +48,56 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       throw new Error(`Cannot find token info for ${params.tokenIn} or ${params.tokenOut} on chain ${params.chainId}`);
     }
 
-    // 1. Simulate a 0.1% fee/slippage on the input amount (remains in input token's units)
-    const amountInAfterFee = params.amountIn - (params.amountIn / 1000n); // Use parentheses for clarity
-
-    // 2. Convert the post-fee input amount to the output token's decimal scale
-    // Assuming a 1:1 value conversion for stablecoins in this placeholder
-    let estimatedAmountOut: bigint;
-    if (tokenInInfo.decimals > tokenOutInfo.decimals) {
-        // Scale down: e.g., 18 decimals input -> 6 decimals output
-        const factor = 10n ** BigInt(tokenInInfo.decimals - tokenOutInfo.decimals);
-        estimatedAmountOut = amountInAfterFee / factor;
-    } else if (tokenInInfo.decimals < tokenOutInfo.decimals) {
-        // Scale up: e.g., 6 decimals input -> 18 decimals output
-        const factor = 10n ** BigInt(tokenOutInfo.decimals - tokenInInfo.decimals);
-        estimatedAmountOut = amountInAfterFee * factor;
-    } else {
-        // Same decimals
-        estimatedAmountOut = amountInAfterFee;
-    }
-    // estimatedAmountOut is now in the smallest unit of the OUTPUT token
-    console.log(`Placeholder Quote: In: ${params.amountIn} (${tokenInInfo.decimals} dec), Out: ${estimatedAmountOut} (${tokenOutInfo.decimals} dec)`); // Log the result before returning
-    // --- End Placeholder Logic ---
-
-
-    // TODO: Replace placeholder with actual quote fetching logic using cowSdk
-    // Example structure (replace with actual SDK methods):
-    const quoteRequest = {
+    // Construct TradeParameters object
+    const tradeParameters = {
+      kind: OrderKind.SELL,
       sellToken: params.tokenIn,
+      sellTokenDecimals: tokenInInfo.decimals,
       buyToken: params.tokenOut,
-      kind: OrderKind.SELL, // Or OrderKind.BUY depending on whether amountIn is exact input or exact output
-      sellAmountBeforeFee: params.amountIn.toString(), // SDK likely expects string representation of bigint
-      from: params.userAddress,
-      // Add other necessary quote parameters (e.g., receiver, validTo)
+      buyTokenDecimals: tokenOutInfo.decimals,
+      amount: params.amountIn.toString(), // Amount is the sell amount for OrderKind.SELL
+      receiver: params.userAddress, // Optional: defaults to userAddress if not provided? Check SDK docs.
+      // validFor: 600, // Optional: validity in seconds (e.g., 10 minutes)
+      // slippageBps: 50, // Optional: 0.5% slippage tolerance
+      // Explicitly set partnerFee to zero
+      partnerFee: {
+        bps: 0,
+        recipient: '0x0000000000000000000000000000000000000000',
+      },
     };
 
-    // const quoteResponse = await cowSdk.cowApi.getQuote(quoteRequest);
-    // console.log('CowSwap Quote Response:', quoteResponse);
+    // Construct QuoterParameters object
+    const quoterParameters = {
+      chainId: GNOSIS_CHAIN_ID,
+      appCode: 'UbiquityPay', // Provide an app code
+      account: params.userAddress,
+    };
 
-    // TODO: Parse actual quoteResponse to get estimatedAmountOut and feeAmount
-    // const estimatedAmountOut = BigInt(quoteResponse.buyAmount); // Adjust based on actual response structure
-    // const feeAmount = BigInt(quoteResponse.feeAmount);
+    console.log('Calling CowSwap getQuote with:', tradeParameters, quoterParameters);
+    const quoteResponse = await getQuote(tradeParameters, quoterParameters);
+    console.log('CowSwap Quote Response:', quoteResponse);
 
-    if (!estimatedAmountOut) {
-      throw new Error('Failed to parse estimated amount from quote response.');
+    // Parse the response from result.amountsAndCosts
+    const amountsAndCosts = quoteResponse.result?.amountsAndCosts;
+    if (!amountsAndCosts || !amountsAndCosts.afterPartnerFees || !amountsAndCosts.afterPartnerFees.buyAmount) {
+      throw new Error('Invalid quote response structure received from CowSwap API. Expected result.amountsAndCosts.afterPartnerFees.buyAmount.');
     }
 
+    // Use afterPartnerFees.buyAmount for the primary estimated output
+    const estimatedAmountOut = BigInt(amountsAndCosts.afterPartnerFees.buyAmount);
+    // Use network fee in sell currency as the representative fee amount
+    const feeAmount = amountsAndCosts.costs?.networkFee?.amountInSellCurrency
+      ? BigInt(amountsAndCosts.costs.networkFee.amountInSellCurrency)
+      : undefined;
+
+    console.log(`Actual Quote: In: ${params.amountIn}, Out (afterPartnerFees): ${estimatedAmountOut}, Fee (network): ${feeAmount ?? 'N/A'}`);
+    console.log('Full amountsAndCosts:', amountsAndCosts); // Log the full object
+
+    // Return the final amount, fee, and the full breakdown object
     return {
       estimatedAmountOut,
-      // feeAmount, // Include if available
+      feeAmount,
+      amountsAndCosts: amountsAndCosts, // Return the object directly without casting
     };
   } catch (error) {
     console.error('Error fetching CowSwap quote:', error);

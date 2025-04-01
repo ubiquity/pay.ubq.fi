@@ -16,16 +16,7 @@ interface PermitRowProps {
   preferredRewardTokenAddress: Address | null; // Add preferred token prop
 }
 
-export function PermitRow({
-  permit,
-  onClaimPermit,
-  isConnected,
-  chain,
-  isConfirming,
-  confirmingHash,
-  isQuoting,
-  preferredRewardTokenAddress,
-}: PermitRowProps) {
+export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirming, confirmingHash, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
   const isReadyToClaim = hasRequiredFields(permit);
   const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
   const isClaimingThis = permit.claimStatus === "Pending";
@@ -77,17 +68,18 @@ export function PermitRow({
   const isConfirmingThisPermit = isConfirming && permit.transactionHash === confirmingHash;
 
   // Determine button text based on multiple states
-  const buttonText = isClaimed && permit.transactionHash
-    ? "View" // Final state: View Tx
-    : isConfirmingThisPermit
-    ? "Confirming..." // Confirmation in progress
-    : isClaimingThis
-    ? "Claiming..." // Initial claim submission
-    : claimFailed && permit.transactionHash // Claim failed *with* a hash
-    ? "View"
-    : claimFailed // Claim failed *without* a hash (e.g., simulation error)
-    ? "Retry"
-    : "Claim"; // Default/Initial state
+  const buttonText =
+    isClaimed && permit.transactionHash
+      ? "View" // Final state: View Tx
+      : isConfirmingThisPermit
+      ? "Confirming..." // Confirmation in progress
+      : isClaimingThis
+      ? "Claiming..." // Initial claim submission
+      : claimFailed && permit.transactionHash // Claim failed *with* a hash
+      ? "View"
+      : claimFailed // Claim failed *without* a hash (e.g., simulation error)
+      ? "Retry"
+      : "Claim"; // Default/Initial state
 
   // Determine if the button should be disabled
   const isButtonDisabled =
@@ -155,27 +147,53 @@ export function PermitRow({
       const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
       if (preferredTokenInfo) {
         // **** Add More Logging ****
-        console.log(`DEBUG PermitRow ${permit.nonce}: Attempting format. Raw estimatedAmountOut string: '${permit.estimatedAmountOut}', Preferred Token Info:`, preferredTokenInfo);
+        console.log(
+          `DEBUG PermitRow ${permit.nonce}: Attempting format. Raw estimatedAmountOut string: '${permit.estimatedAmountOut}', Preferred Token Info:`,
+          preferredTokenInfo
+        );
         // **** End Logging ****
         try {
           // formatUnits returns a string representation of the decimal value
+          // Use the correct decimals for the preferred token
           const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut), preferredTokenInfo.decimals);
 
           // Determine appropriate display precision
-          // For tokens with few decimals (like 6), show all. For others (like 18), show maybe 4-6.
-          // Directly use the output of formatUnits for display for now
-          const displayValue = estimatedValueString;
+          // Apply toLocaleString with maximumSignificantDigits: 2
+          const numericValue = Number(estimatedValueString);
+          const displayValue = isNaN(numericValue) ? "Error" : numericValue.toLocaleString(undefined, { maximumSignificantDigits: 2 });
 
-          // Show original amount in tooltip
-          const originalAmountFormatted = permit.amount ? formatAmount(permit.amount) : 'N/A';
+
+          // Show original amount in tooltip - use original token's decimals
           const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
-          const originalSymbol = originalTokenInfo?.symbol || 'tokens';
+          const originalSymbol = originalTokenInfo?.symbol || "tokens";
+          const originalAmountFormatted = permit.amount && originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A";
 
-          return (
-            <span title={`Original: ${originalAmountFormatted} ${originalSymbol}`}>
-              ≈ {displayValue} {preferredTokenInfo.symbol}
-            </span>
-          );
+          // Safely access explorer URL
+          const explorerUrl = chain?.blockExplorers?.default?.url;
+          const tokenAddress = permit.tokenAddress;
+          const ownerAddress = permit.owner;
+
+          // Conditionally render button only if explorer URL is available
+          if (explorerUrl && tokenAddress && ownerAddress) {
+            return (
+              <button
+                className="button-as-link monospace"
+                onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+                title={`Original: ${originalAmountFormatted} ${originalSymbol}. Click to view balance on explorer.`}
+              >
+                <span>
+                  ≈ {displayValue} {preferredTokenInfo.symbol}
+                </span>
+              </button>
+            );
+          } else {
+            // Fallback: Render text without link if explorer URL is unavailable
+            return (
+              <span className="monospace" title={`Original: ${originalAmountFormatted} ${originalSymbol}`}>
+                ≈ {displayValue} {preferredTokenInfo.symbol}
+              </span>
+            );
+          }
         } catch (e) {
           console.error("Error formatting estimated amount:", e);
           return <span title="Error formatting estimated amount">{ICONS.WARNING} Format Error</span>;
@@ -183,36 +201,41 @@ export function PermitRow({
       }
     }
 
+    console.trace(permit.amount);
+
     // 4. Fallback to original amount
     if (permit.type === "erc20-permit" && permit.amount) {
-       const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
-       const originalSymbol = originalTokenInfo?.symbol || 'tokens';
-       // Link to funder's balance
-       if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
-         const explorerUrl = chain.blockExplorers.default.url;
-         const tokenAddress = permit.tokenAddress;
-         const ownerAddress = permit.owner;
-         return (
-           <button
-             className="button-as-link monospace"
-             onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-             title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
-           >
-             {ICONS.UUSD} {/* Keep UUSD icon for now? Or make dynamic? */}
-             {formatAmount(permit.amount)} {originalSymbol}
-           </button>
-         );
-       } else {
-         // Fallback if no explorer link possible
-         return <>{ICONS.UUSD}{formatAmount(permit.amount)} {originalSymbol}</>;
-       }
+      const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
+      const originalSymbol = originalTokenInfo?.symbol || "tokens";
+      // Link to funder's balance
+      if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
+        const explorerUrl = chain.blockExplorers.default.url;
+        const tokenAddress = permit.tokenAddress;
+        const ownerAddress = permit.owner;
+        return (
+          <button
+            className="button-as-link monospace"
+              onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+              title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
+            >
+              {/* Use original token's decimals here */}
+              {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : 'N/A'} {originalSymbol}
+            </button>
+          );
+        } else {
+        // Fallback if no explorer link possible - use original token's decimals
+        return (
+          <>
+            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : 'N/A'} {originalSymbol}
+          </>
+        );
+      }
     } else if (permit.type === "erc721-permit") {
       return "NFT";
     } else {
       return "N/A";
     }
   };
-
 
   return (
     <div className={`permit-row ${rowClassName}`}>
@@ -232,9 +255,7 @@ export function PermitRow({
       </div>
 
       {/* Amount (Reward) Column (Now 2nd) */}
-      <div className="permit-cell align-right monospace">
-        {renderAmount()}
-      </div>
+      <div className="permit-cell align-right monospace">{renderAmount()}</div>
 
       {/* Actions Column (Now 3rd) */}
       <div className="permit-cell actions-cell">

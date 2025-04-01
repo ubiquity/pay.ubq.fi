@@ -242,7 +242,7 @@ footer {
 /* Specific column widths/styles */
 .header-cell.source-header,
 .permit-cell.github-comment-url {
-  flex: 2; /* Make source wider */
+  flex: 1; /* Make source wider */
   /* justify-content: flex-start; */ /* Align left */
   /* text-align: left; */
 }
@@ -256,7 +256,7 @@ footer {
 
 .header-cell.actions-header,
 .permit-cell.actions-cell {
-  flex: 1.5; /* Make actions slightly wider */
+  flex: 1; /* Make actions slightly wider */
   justify-content: center; /* Center actions */
   text-align: center;
 }
@@ -606,4 +606,35 @@ button.button-as-link.monospace {
 
 button:hover .currency-icon {
     fill: #fff;
+}
+
+.reward-preference-selector {
+    /* max-width: 640px; */
+    /* background: red; */
+    margin: 0 auto;
+    padding: 0px 16px;
+    backdrop-filter: blur(12px);
+    border: 1px solid #ffffff10;
+    margin: 4px auto;
+    border-radius: 4px;
+    display: inline-block;
+    text-align: center;
+}
+
+.reward-preference-selector > * {
+    /* width: calc( 100% - 13.3333px); */
+    /* display: inline-block; */
+    /* text-align: center; */
+    /* height: 100%; */
+    /* vertical-align: middle; */
+    padding: 13.3333px 0;
+    font-size: 13.3333px;
+    /* appearance: none; */
+    /* min-width: 72px; */
+    text-align: center;
+    /* overflow: unset!important; */!importan;!importa;!import;!impor;!impo;!imp;!im;!i;!;
+}
+
+main#root {
+    text-align: center;
 }
