@@ -527,6 +527,7 @@ button:hover .currency-icon {
 
 .reward-preference-selector {
   padding: 4px;
+  cursor: pointer;
 }
 
 .reward-preference-selector > * {
@@ -546,15 +547,15 @@ main#root {
 
 .preferred-token-button {
   background: none;
-  border: 1px solid #ffffff20;
+  border: 1px solid #ffffff10;
   padding: 11px;
   cursor: pointer;
   border-radius: 4px;
   display: flex;
   align-items: center;
-
   color: #bfbfbf;
   transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  /* background: #000; */
 }
 
 .preferred-token-button > span {
@@ -576,9 +577,17 @@ main#root {
   width: 160px;
   border: 1px solid #ffffff10;
   border-radius: 4px;
+  cursor: pointer;
+  background: #06080d;
 }
 
 .preference-dropdown-container .reward-preference-selector select {
   padding-right: 0;
   height: 38px;
+  cursor: pointer;
+}
+
+
+.preference-dropdown-container:hover {
+    background-color: #111318;
 }
