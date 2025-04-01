@@ -83,8 +83,7 @@ export function PreferredTokenSelectorButton({ chainId, onPreferenceChange }: Pr
       }
     }
     // Default: Use a generic icon or text
-    // return <span>Select Token</span>;
-    return ICONS.SWAP_TWO; // Alternative default
+    return ICONS.SWAP; // Alternative default
   }, [currentPreference, chainId]);
 
   return (
