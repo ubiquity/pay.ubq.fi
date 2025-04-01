@@ -1,14 +1,16 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react"; // Add useCallback
 import { useAccount, useDisconnect } from "wagmi";
-import { formatUnits } from "viem";
+import { formatUnits, Address } from "viem"; // Add Address type
 // Removed unused PermitData import
 import { hasRequiredFields } from "../utils/permit-utils";
 import { PermitsTable } from "./permits-table";
-import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw";
+// Removed unused logoSvgContent import
 import { usePermitData } from "../hooks/use-permit-data"; // Import the data hook
 import { usePermitClaiming } from "../hooks/use-permit-claiming"; // Import the claiming hook
 import { ICONS } from "./iconography";
 import { LogoSpan } from "./login-page";
+import { RewardPreferenceSelector } from "./reward-preference-selector"; // Import the new component
+import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import token info helper
 // Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS
 
 // Removed constants BACKEND_API_URL, PERMIT2_ADDRESS as they are now in hooks/utils
@@ -16,6 +18,7 @@ import { LogoSpan } from "./login-page";
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
+  const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null); // State for selected preference
   // Removed animationsApplied state
 
   // Wallet Connection Logic
@@ -33,7 +36,13 @@ export function DashboardPage() {
     fetchPermitsAndCheck,
     isWorkerInitialized, // Get the worker initialization state
     updatePermitStatusCache, // Get cache update function
-  } = usePermitData({ address, isConnected });
+    isQuoting, // Get quoting status
+  } = usePermitData({
+    address,
+    isConnected,
+    preferredRewardTokenAddress, // Pass the state
+    chainId: chain?.id, // Pass the current chain ID
+  });
 
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
@@ -65,7 +74,7 @@ export function DashboardPage() {
         try {
           totalSumInWei += BigInt(permit.amount);
         } catch (e) {
-          console.error(`Error parsing amount for permit nonce ${permit.nonce}: ${permit.amount}`, e);
+          console.error(`Error parsing amount for claimableTotalValue calc: ${permit.amount}`, e);
         }
       }
     }
@@ -77,10 +86,44 @@ export function DashboardPage() {
     }
   }, [claimablePermits]);
 
-  // Format the value for display, always showing two decimal places
-  const claimableTotalValueDisplay = useMemo(() => {
-    return `$${claimableTotalValue.toFixed(2)}`;
-  }, [claimableTotalValue]);
+  // Calculate and format the *estimated* total value based on preference
+  const estimatedTotalValueDisplay = useMemo(() => {
+    if (!preferredRewardTokenAddress) {
+      // If no preference, show original total value (assuming USD-pegged for '$')
+      return `$${claimableTotalValue.toFixed(2)}`;
+    }
+
+    const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
+    if (!preferredTokenInfo) {
+      // Should not happen if selector is populated correctly
+      return `$${claimableTotalValue.toFixed(2)} (Unknown Pref Token)`;
+    }
+
+    let totalEstimatedValueInWei = 0n;
+    const permitsToConsider = permits.filter(p => claimablePermits.some(cp => cp.nonce === p.nonce && cp.networkId === p.networkId)); // Use permits that passed claimable filter
+
+    permitsToConsider.forEach(permit => {
+      if (permit.tokenAddress?.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
+        // Add original amount if it's already the preferred token
+        if (permit.amount) {
+          try { totalEstimatedValueInWei += BigInt(permit.amount); } catch (e) { console.error(`Error parsing original amount for estimatedTotalValue calc: ${permit.amount}`, e); }
+        }
+      } else if (permit.estimatedAmountOut) {
+        // Add estimated amount if quote exists
+         try { totalEstimatedValueInWei += BigInt(permit.estimatedAmountOut); } catch (e) { console.error(`Error parsing estimated amount for estimatedTotalValue calc: ${permit.estimatedAmountOut}`, e); }
+      }
+      // Ignore permits with quote errors or no quote needed/available
+    });
+
+    try {
+      const formattedValue = parseFloat(formatUnits(totalEstimatedValueInWei, preferredTokenInfo.decimals));
+      // Use ~ symbol to indicate estimation
+      return `≈ ${formattedValue.toFixed(preferredTokenInfo.decimals <= 6 ? preferredTokenInfo.decimals : 4)} ${preferredTokenInfo.symbol}`;
+    } catch (e) {
+      console.error("Error formatting estimated total value:", e);
+      return `Error (${preferredTokenInfo.symbol})`;
+    }
+  }, [claimableTotalValue, preferredRewardTokenAddress, chain?.id, permits, claimablePermits]); // Depends on permits for estimates
 
   // Custom Hook for Claiming Logic
   const {
@@ -91,6 +134,7 @@ export function DashboardPage() {
     // setSequentialClaimError, // Only needed internally in the hook
     isClaimConfirming,
     claimTxHash,
+    swapSubmissionStatus, // Get swap status
   } = usePermitClaiming({
     permits, // Pass current permits
     setPermits, // Allow hook to update permit status
@@ -103,6 +147,14 @@ export function DashboardPage() {
   const toggleTableVisibility = () => {
     setIsTableVisible((prev) => !prev);
   };
+
+  // Handler for preference changes from the selector
+  const handlePreferenceChange = useCallback((selectedAddress: Address | null) => {
+    setPreferredRewardTokenAddress(selectedAddress);
+    // TODO: Trigger quote fetching/recalculation based on the new preference
+    console.log("DashboardPage received preference change:", selectedAddress);
+  }, []);
+
 
   // --- Effects ---
 
@@ -151,11 +203,13 @@ export function DashboardPage() {
               <span>
                 {isLoading ? (
                   "Loading Rewards..."
+                ) : isQuoting ? (
+                   "Calculating..." // Show calculating state while quoting
                 ) : (
                   <>
-                    <span className="claim-amount">{claimableTotalValueDisplay}</span>
+                    <span className="claim-amount">{estimatedTotalValueDisplay}</span> {/* Use estimated value */}
                     <span className="claim-count">
-                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
+                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""}) {/* Count remains the same */}
                     </span>
                   </>
                 )}
@@ -173,6 +227,14 @@ export function DashboardPage() {
           <div>Wallet not connected.</div>
         )}
       </section>
+
+      {/* Reward Preference Selector */}
+      {isConnected && (
+        <RewardPreferenceSelector
+          chainId={chain?.id}
+          onPreferenceChange={handlePreferenceChange}
+        />
+      )}
 
       {/* Error Displays */}
       {dataError && (
@@ -192,6 +254,23 @@ export function DashboardPage() {
         </section>
       )}
 
+      {/* Swap Status Display */}
+      {Object.keys(swapSubmissionStatus).length > 0 && (
+        <section id="swap-status-wrapper" style={{ marginTop: "10px" }}>
+          <h3>Swap Status:</h3>
+          {Object.entries(swapSubmissionStatus).map(([key, status]) => (
+            <div key={key} className={`swap-status ${status.status === 'error' ? 'error-message' : status.status === 'submitted' ? 'success-message' : 'info-message'}`} style={{marginBottom: '5px', padding: '5px', border: '1px solid #ccc', borderRadius: '4px'}}>
+              {status.status === 'error' && ICONS.WARNING}
+              {status.status === 'submitted' && ICONS.CLAIM} {/* Use CLAIM icon as placeholder for SUCCESS */}
+              {status.status === 'submitting' && <div className="spinner" style={{width: '12px', height: '12px', marginRight: '5px', display: 'inline-block'}}></div>}
+              <span>{status.message}</span>
+              {/* Optionally add link to CowSwap explorer using orderUid if available */}
+              {/* {status.orderUid && <a href={`https://explorer.cow.fi/orders/${status.orderUid}`} target="_blank" rel="noopener noreferrer"> View Order</a>} */}
+            </div>
+          ))}
+        </section>
+      )}
+
       {/* Permits Table */}
       {isTableVisible && (
         <PermitsTable
@@ -202,6 +281,8 @@ export function DashboardPage() {
           isConfirming={isClaimConfirming} // Pass down from usePermitClaiming
           confirmingHash={claimTxHash} // Pass down from usePermitClaiming
           isLoading={isLoading} // Pass down from usePermitData
+          isQuoting={isQuoting} // Pass down quoting status
+          preferredRewardTokenAddress={preferredRewardTokenAddress} // Pass down preference
         />
       )}
     </>

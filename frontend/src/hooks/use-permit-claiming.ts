@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount, useWalletClient } from "wagmi"; // Add useWalletClient
 import { type Address, type Hex, BaseError, ContractFunctionRevertedError, UserRejectedRequestError } from "viem";
 import type { PermitData } from "../types";
 import permit2ABI from "../fixtures/permit2-abi";
 import { hasRequiredFields } from "../utils/permit-utils";
+import { initiateCowSwap } from "../utils/cowswap-utils"; // Import swap function
+import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import token info helper
 
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address;
 
@@ -68,10 +70,12 @@ function isNonceUsedError(error: unknown): boolean {
 export function usePermitClaiming({ permits, setPermits, claimablePermits, setError, updatePermitStatusCache }: UsePermitClaimingProps) {
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
   const [isClaimingSequentially, setIsClaimingSequentially] = useState(false);
+  const [swapSubmissionStatus, setSwapSubmissionStatus] = useState<Record<string, { status: 'submitting' | 'submitted' | 'error'; message?: string; orderUid?: string }>>({}); // State for swap feedback
 
   // Wallet and client hooks
   const { address, isConnected, chain } = useAccount();
   const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient(); // Get wallet client for signing swaps
 
   // Wagmi hooks for writing contract and waiting for receipt
   const { data: claimTxHash, error: writeContractError, writeContractAsync, reset: resetWriteContract } = useWriteContract();
@@ -314,8 +318,79 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
       setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
     }
 
-    setIsClaimingSequentially(false);
-  }, [publicClient, address, chain, claimablePermits, setPermits, handleClaimPermit, setError, updatePermitStatusCache]); // Added setError, updatePermitStatusCache
+    console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
+    if (failures > 0) {
+      // Use global error for summary, individual errors handled by handleClaimPermit
+      setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
+    }
+
+    // --- Initiate Swaps After Sequential Claims ---
+    const preferredTokenAddress = localStorage.getItem('preferredRewardToken') as Address | null;
+    if (preferredTokenAddress && walletClient && address && chain) {
+      console.log("Checking for swaps needed after sequential claims...");
+      setSwapSubmissionStatus({}); // Reset swap status
+
+      const successfullyClaimedPermits = permits.filter(p =>
+        validPermitsToClaim.some(vp => vp.nonce === p.nonce && vp.networkId === p.networkId) && // Was part of the batch attempted
+        p.claimStatus === 'Success' // And actually succeeded
+      );
+
+      if (successfullyClaimedPermits.length > 0) {
+        const swapsToInitiate = new Map<Address, bigint>(); // Map<tokenAddress, totalAmount>
+
+        // Group successful claims by token address
+        successfullyClaimedPermits.forEach(p => {
+          if (p.tokenAddress && p.amount && p.tokenAddress.toLowerCase() !== preferredTokenAddress.toLowerCase()) {
+            const currentTotal = swapsToInitiate.get(p.tokenAddress as Address) || 0n;
+            try {
+              swapsToInitiate.set(p.tokenAddress as Address, currentTotal + BigInt(p.amount));
+            } catch (e) { console.error("Error summing amount for swap:", e); }
+          }
+        });
+
+        if (swapsToInitiate.size > 0) {
+          console.log(`Need to initiate ${swapsToInitiate.size} swaps.`);
+          setError(null); // Clear previous claim errors before showing swap status
+
+          for (const [tokenInAddress, totalAmountIn] of swapsToInitiate.entries()) {
+            const tokenInfo = getTokenInfo(chain.id, tokenInAddress);
+            const symbol = tokenInfo?.symbol || tokenInAddress.substring(0, 6);
+            const swapKey = tokenInAddress;
+
+            setSwapSubmissionStatus(prev => ({ ...prev, [swapKey]: { status: 'submitting', message: `Submitting swap for ${symbol}...` } }));
+
+            try {
+              const { orderUid } = await initiateCowSwap({
+                tokenIn: tokenInAddress,
+                tokenOut: preferredTokenAddress,
+                amountIn: totalAmountIn,
+                userAddress: address,
+                walletClient: walletClient,
+              });
+              console.log(`Swap submitted for ${symbol}. Order UID: ${orderUid}`);
+              setSwapSubmissionStatus(prev => ({ ...prev, [swapKey]: { status: 'submitted', message: `Swap for ${symbol} submitted (UID: ${orderUid.substring(0, 8)}...)`, orderUid } }));
+            } catch (swapError) {
+              console.error(`Swap initiation failed for ${symbol}:`, swapError);
+              const message = swapError instanceof Error ? swapError.message : "Unknown swap error";
+              setSwapSubmissionStatus(prev => ({ ...prev, [swapKey]: { status: 'error', message: `Swap failed for ${symbol}: ${message}` } }));
+              // Optionally set a global error as well
+              setError(prevError => `${prevError ? prevError + '; ' : ''}Swap failed for ${symbol}.`);
+            }
+          }
+        } else {
+          console.log("No swaps needed (all claimed tokens are the preferred token or none succeeded).");
+        }
+      } else {
+        console.log("No permits were successfully claimed in this batch, skipping swaps.");
+      }
+    } else if (preferredTokenAddress && !walletClient) {
+        console.warn("Cannot initiate swaps: Wallet client not available.");
+        setError("Could not access wallet to sign swap orders.");
+    }
+
+    setIsClaimingSequentially(false); // Finished claims and swap attempts
+  }, [publicClient, address, chain, claimablePermits, setPermits, handleClaimPermit, setError, updatePermitStatusCache, walletClient, permits]); // Added walletClient and permits
+
 
   // --- Effects for Handling Transaction Results ---
   useEffect(() => {
@@ -441,5 +516,6 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
     setSequentialClaimError, // Expose setter if needed by component
     isClaimConfirming, // Expose confirmation loading state
     claimTxHash, // Expose hash for table row updates
+    swapSubmissionStatus, // Expose swap status
   };
 }

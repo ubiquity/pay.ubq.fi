@@ -1,12 +1,13 @@
 # Active Context: Permit Claiming Application (Rewrite)
 
-**Date:** 2025-03-29 (Updated)
+**Date:** 2025-04-01 (Updated)
 
 ## 1. Current Focus
 
-*   Testing and verifying the recently implemented pre-claim checks (owner balance, Permit2 allowance) in the frontend.
-*   Monitoring claim transactions to ensure the `TRANSFER_FROM_FAILED` error is resolved or properly diagnosed by the new checks.
-*   Refining UI feedback related to prerequisite checks and claim status.
+*   Implementing and testing the CowSwap integration for automatic reward swapping based on user preference.
+*   Refining the UI to display estimated post-swap values and swap submission status.
+*   Obtaining necessary information (UUSD address, CowSwap SDK usage details) to complete the feature.
+*   (Previous focus items like pre-claim checks are assumed stable or superseded by current work).
 
 ## 2. Recent Changes
 
@@ -33,8 +34,18 @@
         *   The hook receives the validated list, merges it into the cache, saves the cache and new timestamp, and updates the UI.
         *   The `usePermitClaiming` hook updates the `localStorage` cache immediately on successful claims.
         *   Worker logic assumes ERC20 only, based on positive amount. NFT logic removed.
+    *   **Reward Preference & CowSwap Integration (Placeholder):**
+        *   Added `RewardPreferenceSelector.tsx` component allowing users to select a preferred reward token (saved to `localStorage`).
+        *   Created `constants/supported-reward-tokens.ts` to define tokens per chain (using placeholders for Gnosis UUSD).
+        *   Integrated the selector into `DashboardPage.tsx`.
+        *   Created `utils/cowswap-utils.ts` with placeholder functions (`getCowSwapQuote`, `initiateCowSwap`) for CowSwap interaction. Added `@cowprotocol/cow-sdk` dependency.
+        *   Modified `hooks/use-permit-data.ts` to fetch placeholder quotes based on preference, store estimates (`estimatedAmountOut`, `quoteError`) in permit data, and update UI accordingly.
+        *   Modified `hooks/use-permit-claiming.ts` to trigger placeholder `initiateCowSwap` after successful sequential claims and added state (`swapSubmissionStatus`) for UI feedback.
+        *   Updated `PermitsTable.tsx` and `PermitRow.tsx` to display estimated amounts and quoting status.
+        *   Updated `DashboardPage.tsx` to display estimated total value and swap submission status.
 *   **Shared Types**:
     *   Added `ownerBalanceSufficient`, `permit2AllowanceSufficient`, `checkError` fields to `PermitData` for storing prerequisite check results.
+    *   Added `estimatedAmountOut` (string) and `quoteError` (string | null) fields to `PermitData` for quote results.
 *   **Docs**:
     *   Updated `product-context.md`, `system-patterns.md`, and `active-context.md` to reflect the wallet-first authentication flow. Removed `github-auth-flow.md`.
     *   Updated `system-patterns.md` (2025-04-01) to detail the simplified fetch/validate flow and `localStorage` caching strategy.
@@ -55,8 +66,11 @@
 *   **RPC Error Handling**: Improve backend validation functions (`isErc20NonceClaimed`, `isErc721NonceClaimed`) to better handle RPC errors (e.g., return a specific error state instead of fail-safe `true`).
 *   **(Optional)** Implement backend endpoint `/api/permits/update-status` to record successful claims.
 *   **(Backend)** Ensure backend API (`/api/permits`) correctly fetches permits based on the provided `walletAddress` query parameter.
-*   **Verify Frontend Deployment**: Check the deployed URLs (e.g., `https://pay-ubq-fi.deno.dev`) to ensure the application is running correctly.
-*   **Integrate Multicall Claiming**: Update the UI (likely `PermitsTable.tsx` or `DashboardPage.tsx`) to allow selecting multiple permits and trigger the `claimMultiplePermitsViaMulticall` function.
+*   **Implement Real CowSwap Logic**: Replace placeholder functions in `cowswap-utils.ts` with actual SDK calls, including handling signing via `viem` WalletClient.
+*   **Obtain UUSD Address**: Get the correct Gnosis Chain address for UUSD and update `supported-reward-tokens.ts`.
+*   **Refactor to Multicall Claiming (Optional but Recommended)**: Replace sequential claiming in `usePermitClaiming` with a multicall approach (using a library or custom implementation) before triggering swaps for better UX and efficiency. The previously mentioned `multicall-utils.ts` was not found.
+*   **Test End-to-End Flow**: Thoroughly test selection, quoting, claiming, and swapping (once implemented).
+*   **Verify Frontend Deployment**: Check deployed URLs.
 
 ## 4. Key Decisions / Open Questions
 
@@ -75,11 +89,16 @@
     *   Frontend Hosting: Deno Deploy.
     *   Authentication: Wallet Connection (`wagmi` on frontend). Backend assumes authenticated access via wallet address.
     *   Beneficiary Fetching: Using two-step query in backend (assuming permits are linked to wallets).
+    *   Reward Preference Storage: Use `localStorage`.
+    *   Supported Reward Tokens: Defined in a constant file per chain.
+    *   Claim/Swap Order: Claim sequentially first, then trigger batched swaps (due to lack of multicall claim implementation).
+    *   Swap Error Handling: Notify user, no automatic retries.
 *   **Remaining Questions:**
+    *   **CowSwap SDK Usage:** How to correctly initialize and use `@cowprotocol/cow-sdk` with `viem`'s `WalletClient` for signing?
+    *   **UUSD Address (Gnosis):** What is the correct contract address?
     *   How are permits initially associated with wallet addresses in the database? (External process assumed).
     *   Best strategy for handling intermittent RPC errors during validation (currently basic error messages are set in the worker).
-    *   UI design for selecting multiple permits for batch claiming.
-    *   Database schema details (confirmation needed for all tables/columns/relationships, especially wallet-permit linkage).
-    *   Is the current RPC endpoint (`https://rpc.ubq.fi/100`) reliable enough and configured correctly to handle batch requests efficiently? (The worker now relies solely on this for validation).
+    *   Database schema details (confirmation needed).
+    *   RPC endpoint reliability (`https://rpc.ubq.fi/100`).
 
 *(This document will be updated frequently as work progresses.)*

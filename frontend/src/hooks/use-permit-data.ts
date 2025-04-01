@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { type Address } from "viem";
 import type { PermitData } from "../types";
+import { getCowSwapQuote } from "../utils/cowswap-utils"; // Import quote function
+import { getTokenInfo } from "../constants/supported-reward-tokens"; // Ensure token info helper is imported
 
 // Constants
 const PERMIT_LAST_CHECK_TIMESTAMP_KEY = "permitLastCheckTimestamp";
@@ -17,14 +19,17 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 interface UsePermitDataProps {
   address: Address | undefined;
   isConnected: boolean;
+  preferredRewardTokenAddress: Address | null; // Add prop for preference
+  chainId: number | undefined; // Add prop for current chain
 }
 
-export function usePermitData({ address, isConnected }: UsePermitDataProps) {
+export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   // Main state holding potentially filtered permits for UI display
   const [displayPermits, setDisplayPermits] = useState<PermitData[]>([]);
-  // Ref to hold the *complete* map of permits from cache + new results
+  // Ref to hold the *complete* map of permits from cache + new results (including quote estimates)
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
-  const [isLoading, setIsLoading] = useState(true); // Start in loading state
+  const [isLoading, setIsLoading] = useState(true); // Covers both permit loading and quoting
+  const [isQuoting, setIsQuoting] = useState(false); // Specific state for quoting process
   // Removed unused state: const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -72,13 +77,13 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed;
 
         // Add detailed logging for the filtering decision
-        const permitKey = `${permit.nonce}-${permit.networkId}`;
-        console.log(`applyFinalFilter: Checking permit ${permitKey}. isNonceUsed=${permit.isNonceUsed}, nonceCheckFailed=${nonceCheckFailed}, shouldFilter=${shouldFilter}`);
+        // const permitKey = `${permit.nonce}-${permit.networkId}`;
+        // console.log(`applyFinalFilter: Checking permit ${permitKey}. isNonceUsed=${permit.isNonceUsed}, nonceCheckFailed=${nonceCheckFailed}, shouldFilter=${shouldFilter}`);
 
         if (!shouldFilter) {
             filteredList.push(permit);
         } else {
-             console.log(`applyFinalFilter: Filtering out permit ${permitKey}.`);
+            //  console.log(`applyFinalFilter: Filtering out permit ${permitKey}.`);
         }
     });
     console.log(`applyFinalFilter: Filtered list size: ${filteredList.length}. Setting display permits.`);
@@ -86,6 +91,131 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     console.log('applyFinalFilter: Filtered permits being set:', JSON.stringify(filteredList.map(p => ({ nonce: p.nonce, isNonceUsed: p.isNonceUsed }))));
     setDisplayPermits(filteredList);
   }, []);
+
+  // Function to fetch quotes and update permits in the map
+  const fetchQuotesAndUpdatePermits = useCallback(async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
+    if (!preferredRewardTokenAddress || !address || !chainId) {
+      // Clear existing quote data if preference is removed or user/chain disconnected
+      permitsMap.forEach(permit => {
+        delete permit.estimatedAmountOut;
+        delete permit.quoteError;
+      });
+      return permitsMap; // No preference set or missing info, return map as is
+    }
+
+    console.log(`Starting quote fetching for preferred token: ${preferredRewardTokenAddress}`);
+    setIsQuoting(true);
+    const updatedPermitsMap = new Map(permitsMap); // Create a mutable copy
+
+    // Group permits by their original token address
+    const permitsByToken = new Map<Address, PermitData[]>();
+    updatedPermitsMap.forEach(permit => {
+      // Only consider claimable ERC20 permits for quoting
+      if (permit.tokenAddress && permit.type === 'erc20-permit' && permit.status !== 'Claimed' && permit.claimStatus !== 'Success' && permit.claimStatus !== 'Pending') {
+        const group = permitsByToken.get(permit.tokenAddress as Address) || [];
+        group.push(permit);
+        permitsByToken.set(permit.tokenAddress as Address, group);
+      }
+    });
+
+    // Fetch quote for each group that needs swapping
+    for (const [tokenInAddress, groupPermits] of permitsByToken.entries()) {
+      // Skip if the group's token is already the preferred token
+      if (tokenInAddress.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
+         // Clear any previous quote errors for this group
+         groupPermits.forEach(p => {
+            delete p.estimatedAmountOut;
+            delete p.quoteError;
+            updatedPermitsMap.set(`${p.nonce}-${p.networkId}`, p);
+         });
+        continue;
+      }
+
+      // Sum total amount for the group
+      let totalAmountInWei = 0n;
+      groupPermits.forEach(p => {
+        if (p.amount) {
+          try {
+            totalAmountInWei += BigInt(p.amount);
+          } catch (e) {
+            console.error(`Error parsing amount for quote: ${p.amount}`, e); // Log the error object
+          }
+        }
+      });
+
+      if (totalAmountInWei === 0n) {
+        // Clear quote fields if total amount is zero
+         groupPermits.forEach(p => {
+            delete p.estimatedAmountOut;
+            delete p.quoteError;
+            updatedPermitsMap.set(`${p.nonce}-${p.networkId}`, p);
+         });
+        continue; // Skip fetching quote if nothing to swap
+      }
+
+      try {
+        console.log(`Fetching quote: ${totalAmountInWei} ${tokenInAddress} -> ${preferredRewardTokenAddress}`);
+        const quoteResult = await getCowSwapQuote({
+          tokenIn: tokenInAddress,
+          tokenOut: preferredRewardTokenAddress,
+          amountIn: totalAmountInWei,
+          userAddress: address,
+          chainId: chainId, // Pass chainId
+        });
+
+        // Placeholder quote returns the total output amount in the output token's smallest unit
+        const groupEstimatedTotalOut_InOutputUnits = quoteResult.estimatedAmountOut;
+
+        groupPermits.forEach(p => {
+          if (p.amount && totalAmountInWei > 0n) { // Ensure permit amount and group total exist and are non-zero
+            try {
+              const permitAmount_InInputUnits = BigInt(p.amount);
+
+              // Calculate the permit's proportional share of the *total estimated output*
+              // individual_output = (permit_input / group_total_input) * group_total_output
+              // Use BigInt math throughout to maintain precision
+              const individualEstimatedOut_InOutputUnits = (permitAmount_InInputUnits * groupEstimatedTotalOut_InOutputUnits) / totalAmountInWei;
+
+              // **** Add Detailed Logging ****
+              console.log(`DEBUG Permit ${p.nonce}: Input Amount (Input Units): ${permitAmount_InInputUnits}, Group Total Input: ${totalAmountInWei}, Group Total Output (Output Units): ${groupEstimatedTotalOut_InOutputUnits}, Calculated Individual Output (Output Units): ${individualEstimatedOut_InOutputUnits}`);
+              // **** End Logging ****
+
+              // **** Add Logging Before toString() ****
+              console.log(`DEBUG Permit ${p.nonce}: Storing estimatedAmountOut = ${individualEstimatedOut_InOutputUnits} (Type: ${typeof individualEstimatedOut_InOutputUnits})`);
+              // **** End Logging ****
+
+              p.estimatedAmountOut = individualEstimatedOut_InOutputUnits.toString(); // Store individual estimate (already in output units)
+              p.quoteError = null; // Clear previous errors
+            } catch (calcError) {
+               console.error(`Error calculating proportional estimate for permit ${p.nonce}:`, calcError);
+               p.estimatedAmountOut = undefined; // Clear estimate on error
+               p.quoteError = "Calculation error";
+            }
+          } else {
+             p.estimatedAmountOut = undefined; // Clear if permit amount is missing or group total is zero
+             p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
+          }
+          updatedPermitsMap.set(`${p.nonce}-${p.networkId}`, p); // Update the map
+        });
+        // Correct variable name in log message
+        console.log(`Quote success for group ${tokenInAddress}: Total Est. Out ${groupEstimatedTotalOut_InOutputUnits} ${preferredRewardTokenAddress}`);
+
+      } catch (quoteError) {
+        console.error(`Quote failed for ${tokenInAddress} -> ${preferredRewardTokenAddress}:`, quoteError);
+        const errorMessage = quoteError instanceof Error ? quoteError.message : "Quote fetching failed";
+        // Apply error to all permits in the group
+        groupPermits.forEach(p => {
+          delete p.estimatedAmountOut; // Clear previous estimate
+          p.quoteError = errorMessage;
+          updatedPermitsMap.set(`${p.nonce}-${p.networkId}`, p); // Update the map
+        });
+      }
+    }
+
+    setIsQuoting(false);
+    console.log("Quote fetching finished.");
+    return updatedPermitsMap; // Return the map with updated quote info
+  }, [preferredRewardTokenAddress, address, chainId]);
 
 
   // Initialize worker on mount
@@ -120,7 +250,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         case 'INIT_SUCCESS':
           console.log("Worker initialized successfully.");
           setIsWorkerInitialized(true);
-          // Trigger initial fetch now that worker is ready
+          // Trigger initial fetch now that worker is ready (fetchPermitsAndCheck handles quoting based on cache)
           fetchPermitsAndCheck();
           break;
         case 'INIT_ERROR':
@@ -171,8 +301,19 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
             console.log(`Saved last check timestamp (${nowISO}) to localStorage after validation.`); // Log timestamp save
           } catch (e) { console.error("Failed to save timestamp", e); }
 
-          applyFinalFilter(allPermitsRef.current); // Re-apply filter with new validation results
-          setIsLoading(false); // Validation complete, stop loading
+          // Apply filter first based on validation results
+          applyFinalFilter(allPermitsRef.current);
+
+          // Now fetch quotes based on the updated map and preference
+          fetchQuotesAndUpdatePermits(allPermitsRef.current).then(mapWithQuotes => {
+              allPermitsRef.current = mapWithQuotes; // Update ref with quote results
+              applyFinalFilter(allPermitsRef.current); // Re-apply filter to update UI with quotes
+              setIsLoading(false); // Stop loading after validation AND quoting
+          }).catch(quoteError => {
+              console.error("Error during post-validation quote fetching:", quoteError);
+              setError(`Failed to fetch swap quotes: ${quoteError instanceof Error ? quoteError.message : quoteError}`);
+              setIsLoading(false); // Still stop loading even if quoting fails
+          });
           break;
         }
         case 'PERMITS_ERROR': // Handles errors from fetch or validate steps in worker
@@ -224,8 +365,22 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         initialMap.set(key, permit);
     });
     allPermitsRef.current = initialMap;
-    applyFinalFilter(allPermitsRef.current); // Show cached data immediately
+    applyFinalFilter(allPermitsRef.current); // Show cached data immediately (without quotes initially)
     console.log(`fetchPermitsAndCheck: Displayed ${initialMap.size} permits from cache.`);
+
+    // Fetch quotes for cached data immediately if preference is set
+    if (preferredRewardTokenAddress && address && chainId) {
+        console.log("fetchPermitsAndCheck: Fetching quotes for cached data...");
+        fetchQuotesAndUpdatePermits(initialMap).then(mapWithQuotes => {
+            allPermitsRef.current = mapWithQuotes; // Update ref with quote results
+            applyFinalFilter(allPermitsRef.current); // Re-apply filter to update UI with quotes
+            console.log("fetchPermitsAndCheck: Updated display with quotes for cached data.");
+        }).catch(quoteError => {
+            console.error("Error fetching quotes for cached data:", quoteError);
+            // Optionally set an error state here, but don't block permit validation
+        });
+    }
+
 
     // Get last check timestamp from localStorage
     let lastCheckTimestamp: string | null = null;
@@ -241,9 +396,10 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     // Ask worker to fetch only new permits since last check
     workerRef.current.postMessage({ type: 'FETCH_NEW_PERMITS', payload: { address, lastCheckTimestamp } }); // Correct message type
 
-  }, [address, isConnected, isWorkerInitialized, loadCache, applyFinalFilter]); // Add dependencies
+  }, [address, isConnected, isWorkerInitialized, loadCache, applyFinalFilter, preferredRewardTokenAddress, chainId, fetchQuotesAndUpdatePermits]); // Add dependencies
 
   // Trigger fetch on initial mount after worker is initialized
+  // Also re-trigger quote fetching if the preference changes
   useEffect(() => {
       if (isConnected && isWorkerInitialized) {
           // Initial fetch is now triggered from the INIT_SUCCESS handler
@@ -254,6 +410,28 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
           setIsLoading(false);
       }
   }, [isConnected, isWorkerInitialized]); // Removed fetchPermitsAndCheck from deps
+
+  // Effect to re-fetch quotes when preference changes
+  useEffect(() => {
+    if (isConnected && address && chainId && isWorkerInitialized && !isLoading) { // Only quote if not already loading permits
+        console.log("Preference changed, re-fetching quotes...");
+        // Use the current state of permits from the ref
+        fetchQuotesAndUpdatePermits(new Map(allPermitsRef.current)).then(mapWithQuotes => {
+            allPermitsRef.current = mapWithQuotes;
+            applyFinalFilter(allPermitsRef.current); // Update display with new quotes
+        }).catch(quoteError => {
+            console.error("Error re-fetching quotes after preference change:", quoteError);
+            setError(`Failed to update swap quotes: ${quoteError instanceof Error ? quoteError.message : quoteError}`);
+            // Clear quotes on error?
+             allPermitsRef.current.forEach(permit => {
+                 delete permit.estimatedAmountOut;
+                 permit.quoteError = `Failed to update quote: ${quoteError instanceof Error ? quoteError.message : quoteError}`;
+             });
+             applyFinalFilter(allPermitsRef.current);
+        });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading]); // Re-run when preference changes
 
 
   // Function to manually update the status cache (e.g., after a successful claim)
@@ -287,6 +465,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
      setError,
      fetchPermitsAndCheck, // Keep for potential manual refresh?
      isWorkerInitialized,
-     updatePermitStatusCache // Expose cache update function
+     updatePermitStatusCache, // Expose cache update function
+     isQuoting // Expose quoting status
    };
  }

@@ -1,7 +1,9 @@
 import type { PermitData } from "../types";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
-import type { Chain } from "viem";
-import { ICONS } from "./iconography"; // <-- Correct casing
+import type { Chain, Address } from "viem"; // Add Address
+import { formatUnits } from "viem"; // Import formatUnits
+import { ICONS } from "./iconography";
+import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import helper
 
 interface PermitRowProps {
   permit: PermitData;
@@ -10,9 +12,20 @@ interface PermitRowProps {
   chain: Chain | undefined;
   isConfirming: boolean;
   confirmingHash: `0x${string}` | undefined;
+  isQuoting: boolean; // Add quoting status prop
+  preferredRewardTokenAddress: Address | null; // Add preferred token prop
 }
 
-export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirming, confirmingHash }: PermitRowProps) {
+export function PermitRow({
+  permit,
+  onClaimPermit,
+  isConnected,
+  chain,
+  isConfirming,
+  confirmingHash,
+  isQuoting,
+  preferredRewardTokenAddress,
+}: PermitRowProps) {
   const isReadyToClaim = hasRequiredFields(permit);
   const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
   const isClaimingThis = permit.claimStatus === "Pending";
@@ -42,38 +55,6 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     : permit.status === "TestFailed"
     ? "row-invalid"
     : "";
-
-  // Determine status text class - REMOVED as the status column is gone
-  /*
-  const statusTextClass = ` ${
-    isClaimed
-      ? "status-claimed"
-      : claimFailed
-      ? "status-error"
-      : isClaimingThis
-      ? "status-claiming"
-      : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-      ? "status-error"
-      : permit.status === "TestSuccess" || permit.status === "Valid"
-      ? "status-claimed"
-      : permit.status === "TestFailed"
-      ? "status-error"
-      : permit.status === "Testing"
-      ? "status-claiming"
-      : "subtle-text"
-  }
-                           ${
-                             permit.claimStatus !== "Idle" ||
-                             permit.status === "Claimed" ||
-                             permit.status === "TestSuccess" ||
-                             permit.status === "Valid" ||
-                             insufficientBalance ||
-                             insufficientAllowance ||
-                             prerequisiteCheckFailed
-                               ? "bold-text"
-                               : ""
-                           }`;
-  */
 
   // Determine status display text (still needed for button title)
   const statusDisplayText = isClaimed
@@ -157,7 +138,81 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     return "Source Link"; // Fallback text
   };
 
-  // Removed the misplaced declaration from here
+  // --- Amount Display Logic ---
+  const renderAmount = () => {
+    // 1. Check if quoting is in progress
+    if (isQuoting && preferredRewardTokenAddress && permit.tokenAddress?.toLowerCase() !== preferredRewardTokenAddress.toLowerCase()) {
+      return <span title="Fetching swap quote...">...</span>;
+    }
+
+    // 2. Check for quote error
+    if (permit.quoteError) {
+      return <span title={`Quote Error: ${permit.quoteError}`}>{ICONS.WARNING} Error</span>;
+    }
+
+    // 3. Check if estimated amount exists (quote successful, swap needed)
+    if (permit.estimatedAmountOut && preferredRewardTokenAddress) {
+      const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
+      if (preferredTokenInfo) {
+        // **** Add More Logging ****
+        console.log(`DEBUG PermitRow ${permit.nonce}: Attempting format. Raw estimatedAmountOut string: '${permit.estimatedAmountOut}', Preferred Token Info:`, preferredTokenInfo);
+        // **** End Logging ****
+        try {
+          // formatUnits returns a string representation of the decimal value
+          const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut), preferredTokenInfo.decimals);
+
+          // Determine appropriate display precision
+          // For tokens with few decimals (like 6), show all. For others (like 18), show maybe 4-6.
+          // Directly use the output of formatUnits for display for now
+          const displayValue = estimatedValueString;
+
+          // Show original amount in tooltip
+          const originalAmountFormatted = permit.amount ? formatAmount(permit.amount) : 'N/A';
+          const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
+          const originalSymbol = originalTokenInfo?.symbol || 'tokens';
+
+          return (
+            <span title={`Original: ${originalAmountFormatted} ${originalSymbol}`}>
+              ≈ {displayValue} {preferredTokenInfo.symbol}
+            </span>
+          );
+        } catch (e) {
+          console.error("Error formatting estimated amount:", e);
+          return <span title="Error formatting estimated amount">{ICONS.WARNING} Format Error</span>;
+        }
+      }
+    }
+
+    // 4. Fallback to original amount
+    if (permit.type === "erc20-permit" && permit.amount) {
+       const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
+       const originalSymbol = originalTokenInfo?.symbol || 'tokens';
+       // Link to funder's balance
+       if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
+         const explorerUrl = chain.blockExplorers.default.url;
+         const tokenAddress = permit.tokenAddress;
+         const ownerAddress = permit.owner;
+         return (
+           <button
+             className="button-as-link monospace"
+             onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+             title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
+           >
+             {ICONS.UUSD} {/* Keep UUSD icon for now? Or make dynamic? */}
+             {formatAmount(permit.amount)} {originalSymbol}
+           </button>
+         );
+       } else {
+         // Fallback if no explorer link possible
+         return <>{ICONS.UUSD}{formatAmount(permit.amount)} {originalSymbol}</>;
+       }
+    } else if (permit.type === "erc721-permit") {
+      return "NFT";
+    } else {
+      return "N/A";
+    }
+  };
+
 
   return (
     <div className={`permit-row ${rowClassName}`}>
@@ -176,36 +231,9 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         )}
       </div>
 
-      {/* Amount (Reward) Column (Now 2nd) - Button Link to Funder's Token Balance */}
+      {/* Amount (Reward) Column (Now 2nd) */}
       <div className="permit-cell align-right monospace">
-        {(() => {
-          // Check conditions and assign URL to a variable for type safety in onClick
-          if (permit.type === "erc20-permit" && chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress && permit.amount) {
-            const explorerUrl = chain.blockExplorers.default.url; // Guaranteed to be defined here
-            const tokenAddress = permit.tokenAddress;
-            const ownerAddress = permit.owner;
-            const amount = permit.amount; // Guaranteed to be defined here
-
-            return (
-              // Button linking to specific token balance for ERC20 permits
-              <button
-                className="button-as-link monospace" // Add class for styling
-                onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-                title={`View ${ownerAddress}'s balance for token ${tokenAddress}`}
-              >
-                {/* Add UUSD icon before the amount */}
-                {ICONS.UUSD}
-                {formatAmount(amount)}
-              </button>
-            );
-          } else if (permit.type === "erc721-permit") {
-            // Display "NFT" for ERC721 permits (no direct balance link)
-            return "NFT";
-          } else {
-            // Fallback for missing data or unknown type - include icon if amount exists
-            return permit.amount ? <>{ICONS.UUSD}{formatAmount(permit.amount)}</> : "N/A";
-          }
-        })()}
+        {renderAmount()}
       </div>
 
       {/* Actions Column (Now 3rd) */}

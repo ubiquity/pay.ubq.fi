@@ -44,4 +44,8 @@ export interface PermitData {
 
    // Estimated value (potentially added by backend)
    usdValue?: number;
+
+   // --- Fields for CowSwap Quote Estimation ---
+   estimatedAmountOut?: string; // Store as string (wei) to handle large numbers
+   quoteError?: string | null; // Error message if quote fetching fails for this permit's group
  }

@@ -1,6 +1,6 @@
 import type { PermitData } from "../types";
 import { PermitRow } from "./permit-row.tsx";
-import type { Chain } from "viem";
+import type { Chain, Address } from "viem"; // Import Address type
 
 interface PermitsTableProps {
   permits: PermitData[];
@@ -9,7 +9,9 @@ interface PermitsTableProps {
   chain: Chain | undefined; // Pass chain info down
   isConfirming: boolean; // Pass confirmation status
   confirmingHash: `0x${string}` | undefined; // Pass the hash being confirmed
-  isLoading: boolean; // Add loading state prop
+  isLoading: boolean; // Covers permit loading
+  isQuoting: boolean; // Add quoting status prop
+  preferredRewardTokenAddress: Address | null; // Add preferred token prop
 }
 
 export function PermitsTable({
@@ -19,12 +21,14 @@ export function PermitsTable({
   chain,
   isConfirming,
   confirmingHash,
-  isLoading, // Destructure isLoading - Will be used to conditionally render the table
+  isLoading,
+  isQuoting,
+  preferredRewardTokenAddress, // Destructure preferred token
 }: PermitsTableProps) {
   // Loading state is now handled in DashboardPage
 
-  // Show message only if NOT loading and there are no permits
-  if (permits.length === 0 && !isLoading) {
+  // Show message only if NOT loading/quoting and there are no permits
+  if (permits.length === 0 && !isLoading && !isQuoting) {
     return (
       <section>
         <div className="error-message">
@@ -34,11 +38,11 @@ export function PermitsTable({
     );
   }
 
-  // Render list only if NOT loading and permits exist
+  // Render list only if NOT loading/quoting and permits exist
   return (
     <>
-      {/* Render list only when not loading and permits exist */}
-      {!isLoading && permits.length > 0 && (
+      {/* Render list only when not loading/quoting and permits exist */}
+      {!isLoading && !isQuoting && permits.length > 0 && (
         <div className="permits-list">
 
           {/* Body Rows */}
@@ -52,6 +56,8 @@ export function PermitsTable({
                 chain={chain}
                 isConfirming={isConfirming}
                 confirmingHash={confirmingHash}
+                isQuoting={isQuoting}
+                preferredRewardTokenAddress={preferredRewardTokenAddress} // Pass down preferred token
               />
             ))}
           </div>
