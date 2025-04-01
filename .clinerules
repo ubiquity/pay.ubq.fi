@@ -1,0 +1,30 @@
+# Cline's Project Intelligence Rules for pay.ubq.fi
+
+This file captures project-specific patterns, user preferences, and key insights to help Cline work more effectively.
+
+## General
+- Use `bun` for all package management (`bun install`) and running TypeScript files (`bun run`).
+- Bun automatically handles `.env` files; no need for `dotenv`. Assume `.env` is populated if present.
+- Use `kebab-case.ts` for new TypeScript filenames.
+- Keep TypeScript file lengths under 256 lines where feasible; refactor if necessary.
+- Delete unused files to reduce clutter before completing tasks.
+- Do not fix ESLint errors unless specifically asked.
+
+## Frontend
+- **Styling:** Use raw CSS (`.css` files), avoid inline styles.
+- **Blockchain Interaction:** Use `viem` and `wagmi`.
+- **State Management:** Primarily React hooks (`useState`, `useRef`, `useEffect`) and `localStorage` for caching/preferences.
+- **Permit Validation:** Handled by `permit-checker.worker.ts` using batch RPC calls.
+- **Claiming:** Initiated client-side via `usePermitClaiming.ts`.
+- **Caching:** `usePermitData.ts` uses `localStorage` to cache permit data (`PermitDataCache`) and last check timestamp (`lastCheckTimestamp`). `usePermitClaiming.ts` updates this cache on successful claims.
+- **Reward Swapping:** Uses CowSwap (`@cowprotocol/cow-sdk`) triggered after claims, based on user preference stored in `localStorage`.
+
+## Backend (Assumed based on Docs - Needs Verification if Backend work is needed)
+- Platform: Deno Deploy
+- Routing: Hono
+- Database: Supabase
+
+## Known Issues & Focus Areas
+- **Permit Nonce Bug:** Critical bug where claiming a permit, refreshing, and trying to claim again causes an infinite RPC loop due to simulation failure (Permit2 nonce used) not being handled correctly in `usePermitClaiming.ts`. (Current Task)
+- **CowSwap Integration:** Needs real implementation details (SDK usage with viem WalletClient, UUSD address).
+- **Multicall Claiming:** Utility exists (`multicall-utils.ts` mentioned but not found in recent file lists?), but UI integration is pending.
