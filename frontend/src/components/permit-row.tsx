@@ -147,10 +147,10 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
       if (preferredTokenInfo) {
         // **** Add More Logging ****
-        console.log(
-          `DEBUG PermitRow ${permit.nonce}: Attempting format. Raw estimatedAmountOut string: '${permit.estimatedAmountOut}', Preferred Token Info:`,
-          preferredTokenInfo
-        );
+        // console.log(
+        //   `DEBUG PermitRow ${permit.nonce}: Attempting format. Raw estimatedAmountOut string: '${permit.estimatedAmountOut}', Preferred Token Info:`,
+        //   preferredTokenInfo
+        // );
         // **** End Logging ****
         try {
           // formatUnits returns a string representation of the decimal value
@@ -161,7 +161,6 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
           // Apply toLocaleString with maximumSignificantDigits: 2
           const numericValue = Number(estimatedValueString);
           const displayValue = isNaN(numericValue) ? "Error" : numericValue.toLocaleString(undefined, { maximumSignificantDigits: 2 });
-
 
           // Show original amount in tooltip - use original token's decimals
           const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
@@ -181,9 +180,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
                 onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
                 title={`Original: ${originalAmountFormatted} ${originalSymbol}. Click to view balance on explorer.`}
               >
-                <span>
-                  ≈ {displayValue} {preferredTokenInfo.symbol}
-                </span>
+                ≈ {displayValue} {preferredTokenInfo.symbol}
               </button>
             );
           } else {
@@ -201,8 +198,6 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       }
     }
 
-    console.trace(permit.amount);
-
     // 4. Fallback to original amount
     if (permit.type === "erc20-permit" && permit.amount) {
       const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
@@ -215,18 +210,18 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         return (
           <button
             className="button-as-link monospace"
-              onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-              title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
-            >
-              {/* Use original token's decimals here */}
-              {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : 'N/A'} {originalSymbol}
-            </button>
-          );
-        } else {
+            onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+            title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
+          >
+            {/* Use original token's decimals here */}
+            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
+          </button>
+        );
+      } else {
         // Fallback if no explorer link possible - use original token's decimals
         return (
           <>
-            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : 'N/A'} {originalSymbol}
+            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
           </>
         );
       }

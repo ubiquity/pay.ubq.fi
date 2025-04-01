@@ -89,7 +89,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
   // --- Handle Single Claim ---
   const handleClaimPermit = useCallback(async (permitToClaim: PermitData): Promise<boolean> => {
     const permitKey = `${permitToClaim.nonce}-${permitToClaim.networkId}`;
-    console.log(`Attempting to claim permit: ${permitKey}`);
+    // console.log(`Attempting to claim permit: ${permitKey}`);
 
     // --- Pre-claim checks ---
     if (!isConnected || !address || !chain || !writeContractAsync) {
@@ -162,7 +162,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         args: [permitArgs, transferDetailsArgs, permitToClaim.owner as Address, permitToClaim.signature as Hex],
       });
 
-      console.log(`Claim transaction sent for ${permitKey}:`, txHash);
+      // console.log(`Claim transaction sent for ${permitKey}:`, txHash);
       // Update permit state with hash (still Pending)
       setPermits((currentPermits) =>
         currentPermits.map((p) => (p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId ? { ...p, transactionHash: txHash } : p))
@@ -174,7 +174,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
 
       // Handle different error types
       if (isUserRejection(err)) {
-        console.log(`User rejected claim for ${permitKey}.`);
+        // console.log(`User rejected claim for ${permitKey}.`);
         // Reset status without error
         setPermits((currentPermits) =>
           currentPermits.map((p) =>
@@ -185,7 +185,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         );
       } else if (isNonceUsedError(err)) {
         // If it's a nonce error, treat as claimed immediately
-        console.log(`Nonce already used for ${permitKey}. Marking as claimed.`);
+        // console.log(`Nonce already used for ${permitKey}. Marking as claimed.`);
         updatePermitStatusCache(permitKey, { isNonceUsed: true, checkError: undefined });
         setPermits((currentPermits) =>
           currentPermits.map((p) =>
@@ -213,7 +213,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
   const handleClaimAllValidSequential = useCallback(async () => {
     setSequentialClaimError(null);
     setIsClaimingSequentially(true);
-    console.log("Attempting sequential claim: Finding all valid permits...");
+    // console.log("Attempting sequential claim: Finding all valid permits...");
 
     if (!publicClient || !address || !chain) {
       setSequentialClaimError("Wallet not connected or client unavailable.");
@@ -230,12 +230,12 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
     }
 
     const validPermitsToClaim: PermitData[] = [];
-    console.log(`Found ${candidatePermits.length} candidates. Simulating individually...`);
+    // console.log(`Found ${candidatePermits.length} candidates. Simulating individually...`);
 
     // --- Simulation Phase ---
     for (const permit of candidatePermits) {
       const permitKey = `${permit.nonce}-${permit.networkId}`;
-      console.log(`  Simulating permit nonce: ${permit.nonce}...`);
+      // console.log(`  Simulating permit nonce: ${permit.nonce}...`);
       try {
         // Ensure required fields for simulation
         if (permit.type !== "erc20-permit" || !permit.amount || !permit.token?.address || !permit.owner || !permit.signature || !permit.beneficiary || !permit.deadline) {
@@ -256,7 +256,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
           account: address,
         });
 
-        console.log(`    Permit ${permit.nonce} simulation successful.`);
+        // console.log(`    Permit ${permit.nonce} simulation successful.`);
         validPermitsToClaim.push(permit);
       } catch (simError: unknown) {
         let reason = "Unknown simulation error";
@@ -270,7 +270,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
 
         // Check if simulation failed due to nonce used
         if (isNonceUsedError(simError)) {
-          console.log(`Nonce already used for ${permitKey} detected during simulation. Marking as claimed.`);
+          // console.log(`Nonce already used for ${permitKey} detected during simulation. Marking as claimed.`);
           updatePermitStatusCache(permitKey, { isNonceUsed: true, checkError: undefined });
           setPermits((current) =>
             current.map((p) =>
@@ -297,7 +297,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
     }
 
     // --- Submission Phase ---
-    console.log(`Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`, validPermitsToClaim.map((p) => p.nonce));
+    // console.log(`Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`, validPermitsToClaim.map((p) => p.nonce));
     let successes = 0;
     let failures = 0;
     for (const permit of validPermitsToClaim) {
@@ -312,13 +312,13 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
       // await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
+    // console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
     if (failures > 0) {
       // Use global error for summary, individual errors handled by handleClaimPermit
       setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
     }
 
-    console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
+    // console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
     if (failures > 0) {
       // Use global error for summary, individual errors handled by handleClaimPermit
       setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
@@ -327,7 +327,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
     // --- Initiate Swaps After Sequential Claims ---
     const preferredTokenAddress = localStorage.getItem('preferredRewardToken') as Address | null;
     if (preferredTokenAddress && walletClient && address && chain) {
-      console.log("Checking for swaps needed after sequential claims...");
+      // console.log("Checking for swaps needed after sequential claims...");
       setSwapSubmissionStatus({}); // Reset swap status
 
       const successfullyClaimedPermits = permits.filter(p =>
@@ -349,7 +349,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         });
 
         if (swapsToInitiate.size > 0) {
-          console.log(`Need to initiate ${swapsToInitiate.size} swaps.`);
+          // console.log(`Need to initiate ${swapsToInitiate.size} swaps.`);
           setError(null); // Clear previous claim errors before showing swap status
 
           for (const [tokenInAddress, totalAmountIn] of swapsToInitiate.entries()) {
@@ -367,7 +367,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
                 userAddress: address,
                 walletClient: walletClient,
               });
-              console.log(`Swap submitted for ${symbol}. Order UID: ${orderUid}`);
+              // console.log(`Swap submitted for ${symbol}. Order UID: ${orderUid}`);
               setSwapSubmissionStatus(prev => ({ ...prev, [swapKey]: { status: 'submitted', message: `Swap for ${symbol} submitted (UID: ${orderUid.substring(0, 8)}...)`, orderUid } }));
             } catch (swapError) {
               console.error(`Swap initiation failed for ${symbol}:`, swapError);
@@ -378,10 +378,10 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
             }
           }
         } else {
-          console.log("No swaps needed (all claimed tokens are the preferred token or none succeeded).");
+          // console.log("No swaps needed (all claimed tokens are the preferred token or none succeeded).");
         }
       } else {
-        console.log("No permits were successfully claimed in this batch, skipping swaps.");
+        // console.log("No permits were successfully claimed in this batch, skipping swaps.");
       }
     } else if (preferredTokenAddress && !walletClient) {
         console.warn("Cannot initiate swaps: Wallet client not available.");
@@ -396,7 +396,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
   useEffect(() => {
     // Effect for successful confirmation
     if (isClaimConfirmed && claimReceipt && claimTxHash) {
-      console.log("Claim successful, Tx Hash:", claimTxHash);
+      // console.log("Claim successful, Tx Hash:", claimTxHash);
       let claimedPermitKey: string | null = null;
       setPermits((current) =>
         current.map((p) => {
@@ -408,7 +408,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         })
       );
       if (claimedPermitKey) {
-        console.log(`Updating cache for claimed permit: ${claimedPermitKey}`);
+        // console.log(`Updating cache for claimed permit: ${claimedPermitKey}`);
         updatePermitStatusCache(claimedPermitKey, { isNonceUsed: true, checkError: undefined });
       }
     }
@@ -432,7 +432,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
 
       if (failedPermitKey && isNonceUsedError(claimReceiptError)) {
          // If confirmation failed due to nonce, treat as claimed
-         console.log(`Nonce already used detected during confirmation for Tx ${claimTxHash}. Marking as claimed.`);
+         // console.log(`Nonce already used detected during confirmation for Tx ${claimTxHash}. Marking as claimed.`);
          updatePermitStatusCache(failedPermitKey, { isNonceUsed: true, checkError: undefined });
          setPermits((current) =>
             current.map((p) =>
@@ -474,7 +474,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
 
       if (pendingPermitKey && isNonceUsedError(writeContractError)) {
          // If submission failed due to nonce, treat as claimed
-         console.log("Nonce already used detected during submission. Marking as claimed.");
+         // console.log("Nonce already used detected during submission. Marking as claimed.");
          updatePermitStatusCache(pendingPermitKey, { isNonceUsed: true, checkError: undefined });
          setPermits((current) =>
             current.map((p) =>
@@ -485,7 +485,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
          );
       } else if (isUserRejection(writeContractError)) {
         // Handle user rejection
-        console.log("User rejected claim submission.");
+        // console.log("User rejected claim submission.");
         setPermits((current) =>
           current.map((p) =>
             p.nonce === permitNonce && p.networkId === permitNetworkId

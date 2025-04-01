@@ -25,16 +25,21 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
     // Validate stored preference against available tokens for the current chain
     if (storedPreference && availableTokens.some((token) => token.address.toLowerCase() === storedPreference.toLowerCase())) {
       setSelectedTokenAddress(storedPreference);
-      // Notify parent immediately on load if a valid preference exists
-      onPreferenceChange(storedPreference);
+      // DO NOT notify parent on initial load, only set local state.
+      // onPreferenceChange(storedPreference); // Removed this call
     } else {
       // Clear selection if no preference stored or if stored preference is not valid for the current chain
       setSelectedTokenAddress(null);
-      localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove invalid preference
-      onPreferenceChange(null); // Notify parent
+      // Only remove invalid preference if one was actually stored
+      if (storedPreference) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+      // DO NOT notify parent on initial load/clear.
+      // onPreferenceChange(null); // Removed this call
     }
     // Rerun effect when availableTokens list changes (which depends on chainId)
-  }, [availableTokens, onPreferenceChange]);
+    // Removed onPreferenceChange from dependency array as it's no longer called here
+  }, [availableTokens]);
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newAddress = event.target.value as Address | ""; // Cast empty string possibility
@@ -56,7 +61,10 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
   // Disable selector if no tokens are available for the current chain
   const isDisabled = availableTokens.length === 0;
 
+  // Removed unused stopPropagation function definition
+
   return (
+    // Removed onClick handler from the container div
     <div className="reward-preference-selector">
       {/* <label htmlFor="reward-token-select">Preferred Reward Token: </label> */}
       <select
@@ -66,10 +74,10 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
         disabled={isDisabled}
         title={isDisabled ? "No supported reward tokens found for this network" : "Select your preferred token for receiving rewards (or claim original)"}
       >
-        <option value="">-- Claim Original Token --</option>
+        <option value="">Claim Original Token</option>
         {availableTokens.map((token) => (
           <option key={token.address} value={token.address}>
-            Swap to {token.symbol}
+            Claim in {token.symbol}
           </option>
         ))}
       </select>

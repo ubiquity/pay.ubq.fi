@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react"; // Add useCallback
+import { useEffect, useState, useMemo, useCallback } from "react"; // Re-added useCallback
 import { useAccount, useDisconnect } from "wagmi";
 import { formatUnits, Address } from "viem"; // Add Address type
 // Removed unused PermitData import
@@ -9,16 +9,17 @@ import { usePermitData } from "../hooks/use-permit-data"; // Import the data hoo
 import { usePermitClaiming } from "../hooks/use-permit-claiming"; // Import the claiming hook
 import { ICONS } from "./iconography";
 import { LogoSpan } from "./login-page";
-import { RewardPreferenceSelector } from "./reward-preference-selector"; // Import the new component
+import { PreferredTokenSelectorButton } from "./preferred-token-selector-button"; // Import the new button component
 import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import token info helper
-// Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS
+// Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS, RewardPreferenceSelector
 
 // Removed constants BACKEND_API_URL, PERMIT2_ADDRESS as they are now in hooks/utils
 
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
-  const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null); // State for selected preference
+  // Restore state setter for preferredRewardTokenAddress
+  const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
   // Removed animationsApplied state
 
   // Wallet Connection Logic
@@ -148,7 +149,7 @@ export function DashboardPage() {
     setIsTableVisible((prev) => !prev);
   };
 
-  // Handler for preference changes from the selector
+  // Restore handlePreferenceChange handler
   const handlePreferenceChange = useCallback((selectedAddress: Address | null) => {
     setPreferredRewardTokenAddress(selectedAddress);
     // TODO: Trigger quote fetching/recalculation based on the new preference
@@ -280,11 +281,11 @@ export function DashboardPage() {
         />
       )}
 
-      {/* Reward Preference Selector */}
+      {/* Reward Preference Selector Button */}
       {isConnected && (
-        <RewardPreferenceSelector
-          chainId={chain?.id}
-          onPreferenceChange={handlePreferenceChange}
+        <PreferredTokenSelectorButton
+          chainId={chain?.id} // Restore chainId prop
+          onPreferenceChange={handlePreferenceChange} // Restore onPreferenceChange prop
         />
       )}
 

@@ -33,7 +33,7 @@ interface InitiateCowSwapParams extends CowSwapQuoteParams { // Fix typo: CowSwa
  * Does not require signing or submit an order.
  */
 export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSwapQuoteResult> {
-  console.log('Fetching CowSwap quote:', params);
+  // console.log('Fetching CowSwap quote:', params);
   try {
     // Ensure chainId matches SDK instance if necessary (CowSdk constructor already sets it)
     if (params.chainId !== GNOSIS_CHAIN_ID) {
@@ -73,9 +73,9 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       account: params.userAddress,
     };
 
-    console.log('Calling CowSwap getQuote with:', tradeParameters, quoterParameters);
+    // console.log('Calling CowSwap getQuote with:', tradeParameters, quoterParameters);
     const quoteResponse = await getQuote(tradeParameters, quoterParameters);
-    console.log('CowSwap Quote Response:', quoteResponse);
+    // console.log('CowSwap Quote Response:', quoteResponse);
 
     // Parse the response from result.amountsAndCosts
     const amountsAndCosts = quoteResponse.result?.amountsAndCosts;
@@ -90,8 +90,8 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       ? BigInt(amountsAndCosts.costs.networkFee.amountInSellCurrency)
       : undefined;
 
-    console.log(`Actual Quote: In: ${params.amountIn}, Out (afterPartnerFees): ${estimatedAmountOut}, Fee (network): ${feeAmount ?? 'N/A'}`);
-    console.log('Full amountsAndCosts:', amountsAndCosts); // Log the full object
+    // console.log(`Actual Quote: In: ${params.amountIn}, Out (afterPartnerFees): ${estimatedAmountOut}, Fee (network): ${feeAmount ?? 'N/A'}`);
+    // console.log('Full amountsAndCosts:', amountsAndCosts); // Log the full object
 
     // Return the final amount, fee, and the full breakdown object
     return {
@@ -111,7 +111,7 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
  * requesting user signature, and submitting to the API.
  */
 export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ orderUid: string }> {
-  console.log('Initiating CowSwap order (placeholder):', params);
+  // console.log('Initiating CowSwap order (placeholder):', params);
   if (!params.walletClient.account) {
     throw new Error('Wallet client account is not available for signing.');
   }
@@ -180,7 +180,7 @@ export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ 
       throw new Error('Failed to submit CowSwap order or retrieve Order UID.');
     }
 
-    console.log('CowSwap Order Submitted. UID:', orderUid);
+    // console.log('CowSwap Order Submitted. UID:', orderUid);
     return { orderUid };
 
   } catch (error) {

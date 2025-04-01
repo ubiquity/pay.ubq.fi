@@ -7,7 +7,7 @@ import { join } from "https://deno.land/std@0.180.0/path/mod.ts";
 const PORT = 8000;
 const STATIC_DIR = "dist"; // Vite's default output directory
 
-console.log(`Static file server running. Access it at: http://localhost:${PORT}/`);
+// console.log(`Static file server running. Access it at: http://localhost:${PORT}/`);
 
 serve(async (req) => {
   const url = new URL(req.url);
@@ -32,7 +32,7 @@ serve(async (req) => {
   }
 
   // If no static file found, serve index.html for SPA routing
-  console.log(`Serving index.html for path: ${pathname}`);
+  // console.log(`Serving index.html for path: ${pathname}`);
   const indexPath = join(STATIC_DIR, "index.html");
   try {
     const indexContent = await Deno.readFile(indexPath);

@@ -85,7 +85,7 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
 
     // Log type determination for the first few permits
     if (index < 10) {
-        console.log(`Worker: Permit [${index}] mapped. Raw: {amount: ${permit.amount}}. Determined type: ${type}`);
+        // console.log(`Worker: Permit [${index}] mapped. Raw: {amount: ${permit.amount}}. Determined type: ${type}`);
     }
 
     const permitData: PermitData = {
@@ -128,7 +128,7 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
 async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
     if (!supabase) throw new Error("Supabase client not initialized.");
 
-    console.log(`Worker: Querying permits for github_id ${userGitHubId} created after: ${lastCheckTimestamp || 'Beginning of time'}`);
+    // console.log(`Worker: Querying permits for github_id ${userGitHubId} created after: ${lastCheckTimestamp || 'Beginning of time'}`);
     let query = supabase.from(PERMITS_TABLE)
         .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
         // IMPORTANT: Using github_id (string) for beneficiary_id (number in generated type) based on observed behavior
@@ -147,11 +147,11 @@ async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: stri
     if (permitError) throw new Error(`Supabase permit fetch error: ${permitError.message}`);
 
     if (!potentialPermitsData || potentialPermitsData.length === 0) {
-        console.log(`Worker: No potential permits found for github_id ${userGitHubId}` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
+        // console.log(`Worker: No potential permits found for github_id ${userGitHubId}` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
         return [];
     }
 
-    console.log(`Worker: Found ${potentialPermitsData.length} potential permits from DB` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
+    // console.log(`Worker: Found ${potentialPermitsData.length} potential permits from DB` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
     // Cast needed because Supabase client doesn't know about the joined types automatically
     return potentialPermitsData as unknown as PermitRow[];
 }
@@ -162,7 +162,7 @@ async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: stri
 async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<PermitData[]> {
     if (!rpcClient) throw new Error("RPC client not initialized.");
     if (permitsToValidate.length === 0) {
-        console.log("Worker: No permits provided for validation.");
+        // console.log("Worker: No permits provided for validation.");
         return [];
     }
 
@@ -209,14 +209,14 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
         }
     });
 
-    console.log(`Worker: Sending validation batch request with ${batchRequests.length} checks.`);
+    // console.log(`Worker: Sending validation batch request with ${batchRequests.length} checks.`);
     if (batchRequests.length === 0) return permitsToValidate; // Return original if nothing to check (e.g., only non-ERC20 passed)
 
     try {
         const batchPayload = batchRequests.map(br => br.request);
         // Assuming chainId 100 for all permits currently
         const batchResponses = await rpcClient.request(100, batchPayload) as JsonRpcResponse[];
-        console.log(`Worker: Received ${batchResponses.length} validation responses in batch.`);
+        // console.log(`Worker: Received ${batchResponses.length} validation responses in batch.`);
 
         const responseMap = new Map<number, JsonRpcResponse>(batchResponses.map(res => [res.id as number, res]));
 
@@ -291,7 +291,7 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
             try {
                 supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
                 rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
-                console.log("Worker: Supabase and RPC clients initialized.");
+                // console.log("Worker: Supabase and RPC clients initialized.");
                 self.postMessage({ type: 'INIT_SUCCESS' });
             } catch (error: unknown) {
                 console.error("Worker: Error initializing clients:", error);
@@ -303,7 +303,7 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
     } else if (type === 'FETCH_NEW_PERMITS') {
         const address = payload.address as Address;
         const lastCheckTimestamp = payload.lastCheckTimestamp;
-        console.log(`Worker: Received FETCH_NEW_PERMITS for ${address}`);
+        // console.log(`Worker: Received FETCH_NEW_PERMITS for ${address}`);
         try {
             if (!supabase) throw new Error("Supabase client not ready.");
             // 1. Find github_id from permit_app_users table
@@ -312,7 +312,7 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
             const { data: userData, error: userFetchError } = await supabase.from("permit_app_users").select("github_id").ilike("wallet_address", lowerCaseWalletAddress).single();
             if (userFetchError && userFetchError.code !== 'PGRST116') throw new Error(`Supabase user fetch error: ${userFetchError.message}`);
             if (!userData) {
-                console.log(`Worker: No user found in permit_app_users for wallet ${lowerCaseWalletAddress}`);
+                // console.log(`Worker: No user found in permit_app_users for wallet ${lowerCaseWalletAddress}`);
                 // Send empty array as no user means no permits
                 self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] }); // Use the correct response type
                 return;
@@ -325,7 +325,7 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
             // 3. Map and pre-filter *new* permits
             // Add explicit types to map parameters
             const mappedNewPermits = newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)).filter((p): p is PermitData => p !== null);
-            console.log(`Worker: Mapped ${mappedNewPermits.length} new permits.`);
+            // console.log(`Worker: Mapped ${mappedNewPermits.length} new permits.`);
 
             // 4. Validate *only* the mapped new permits
             if (mappedNewPermits.length > 0) {
@@ -347,4 +347,4 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
     }
 };
 
-console.log("Permit checker worker started.");
+// console.log("Permit checker worker started.");
