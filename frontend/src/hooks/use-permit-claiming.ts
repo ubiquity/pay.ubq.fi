@@ -12,9 +12,14 @@ interface UsePermitClaimingProps {
   setPermits: React.Dispatch<React.SetStateAction<PermitData[]>>;
   claimablePermits: PermitData[]; // Pass pre-filtered claimable permits
   setError: React.Dispatch<React.SetStateAction<string | null>>; // To set general errors
+  updatePermitStatusCache: (permitKey: string, status: Partial<CachedPermitStatus>) => void; // Add cache update function
 }
 
-export function usePermitClaiming({ setPermits, claimablePermits, setError }: UsePermitClaimingProps) { // Removed unused permits prop
+// Type for cached status (copied from usePermitData for now, consider sharing types)
+type CachedPermitStatus = Pick<PermitData, 'isNonceUsed' | 'checkError' | 'ownerBalanceSufficient' | 'permit2AllowanceSufficient'>;
+
+
+export function usePermitClaiming({ setPermits, claimablePermits, setError, updatePermitStatusCache }: UsePermitClaimingProps) { // Removed unused permits prop, added updatePermitStatusCache
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
   const [isClaimingSequentially, setIsClaimingSequentially] = useState(false);
 
@@ -235,9 +240,22 @@ export function usePermitClaiming({ setPermits, claimablePermits, setError }: Us
   useEffect(() => {
     if (isClaimConfirmed && claimReceipt && claimTxHash) {
       console.log("Claim successful, Tx Hash:", claimTxHash);
+      // Find the permit that was claimed using the hash
+      let claimedPermitKey: string | null = null;
       setPermits((current) =>
-        current.map((p) => (p.transactionHash === claimTxHash ? { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined } : p))
+        current.map((p) => {
+          if (p.transactionHash === claimTxHash) {
+            claimedPermitKey = `${p.nonce}-${p.networkId}`; // Store the key
+            return { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined };
+          }
+          return p;
+        })
       );
+      // Update localStorage cache immediately
+      if (claimedPermitKey) {
+        console.log(`Updating cache for claimed permit: ${claimedPermitKey}`);
+        updatePermitStatusCache(claimedPermitKey, { isNonceUsed: true, checkError: undefined });
+      }
     }
     if (claimReceiptError && claimTxHash) {
       console.error("Claim tx failed, Tx Hash:", claimTxHash, claimReceiptError.message);

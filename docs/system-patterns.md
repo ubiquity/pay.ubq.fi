@@ -30,10 +30,17 @@ graph LR
 ```
 
 *   **Frontend:** Handles user interaction, wallet connection/management (via `wagmi`), permit display, and initiates claims. Uses raw CSS for styling.
-*   **Permit Checker Worker:** Runs in the browser background. Fetches permit data from Supabase based on connected wallet address. Checks `localStorage` for cached nonce statuses. Performs on-chain validation (nonce, balance, allowance) via **batch JSON-RPC calls** directly to the RPC endpoint *only for permits not cached as claimed*. Updates `localStorage` with newly claimed nonces. Communicates results back to the main frontend thread.
-*   **Database (Supabase):** Stores user data (primarily wallet address -> github_id mapping), permit details associated with github_ids, related token/partner/location info. Accessed directly by the Permit Checker Worker.
+*   **Permit Checker Worker:** Runs in the browser background. Handles two main tasks:
+    1.  `FETCH_ALL_PERMITS`: Fetches all potentially claimable permits (ERC20 only, based on positive amount) from Supabase, optionally filtered by a timestamp provided by the main thread. Returns the raw, mapped list.
+    2.  `VALIDATE_PERMITS`: Receives a subset of permits (typically new/uncached ones) from the main thread and performs batch on-chain validation (nonce, balance, allowance) using `rpcClient`. Returns the validation results for the subset.
+*   **Frontend Hook (`usePermitData`):** Orchestrates the process.
+    *   Manages `localStorage` for `lastCheckTimestamp` and `permitStatusCache` (containing `isNonceUsed`, `checkError`, etc.).
+    *   On load, fetches all permits via worker, merges with cache, identifies new/uncached permits, sends them for validation via worker, and updates UI.
+    *   Updates cache and timestamp upon receiving validation results.
+*   **Frontend Hook (`usePermitClaiming`):** Handles claim logic. Upon successful claim confirmation, updates the `localStorage` status cache immediately.
+*   **Database (Supabase):** Stores user data and permit details (currently only ERC20 expected). Queried by the worker.
 *   **Blockchain:** Source of truth for permit validity (checked via worker's batch RPC calls) and claim execution (initiated by frontend).
-*   **LocalStorage:** Used by the worker to cache the status ("claimed") of permit nonces to reduce redundant checks on subsequent loads.
+*   **LocalStorage:** Caches `lastCheckTimestamp` and detailed validation status (`isNonceUsed`, errors, etc.) for permits between sessions.
 
 ## 2. Key Patterns & Decisions
 
@@ -49,8 +56,8 @@ graph LR
 ## 3. Data Flow
 
 1.  **Wallet Connection:** Frontend (User Action) -> Wallet (Approve Connection) -> Frontend (`useAccount` hook updates)
-2.  **Permit Fetching & Validation:** Frontend (Wallet Connected) -> Worker (Fetch Supabase) -> Worker (Check LocalStorage Cache) -> Worker (Batch RPC Call for Uncached Permits) -> Worker (Process Results & Update Cache) -> Frontend (Display Permits & Status)
+2.  **Permit Fetching (Subsequent Load):** Frontend (Wallet Connected) -> Read Timestamp/Cache (LocalStorage) -> Worker (`FETCH_ALL_PERMITS` with timestamp) -> Supabase (Query new) -> Worker (Return new permits) -> Frontend (Merge new with cached, identify subset for validation) -> Worker (`VALIDATE_PERMITS` with subset) -> Blockchain (Batch RPC) -> Worker (Return validation results) -> Frontend (Update state, Update cache/timestamp, Filter for display)
 3.  **Claiming (Single):** Frontend (`handleClaimPermit`) -> Wallet (Sign Tx) -> Blockchain (`permitTransferFrom`)
-4.  **Confirmation:** Frontend (`useWaitForTransactionReceipt`) monitors transaction -> Updates UI state.
+4.  **Confirmation:** Frontend (`useWaitForTransactionReceipt`) monitors transaction -> Updates UI state -> Update Cache (LocalStorage).
 
 *(This document will be updated as implementation progresses and patterns solidify.)*

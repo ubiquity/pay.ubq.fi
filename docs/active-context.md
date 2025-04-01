@@ -25,12 +25,20 @@
     *   **Integrated Grid Background:** Imported and executed the `grid` function from `frontend/src/the-grid.ts` within `main.tsx`, targeting the `#grid` element in `index.html`. Imported `grid-styles.css` and `ubiquity-styles.css`. Verified `index.html` structure includes `<background>` and `<main>`.
     *   **Added Header Logo:** Implemented SVG logo display by importing the raw SVG content (`ubiquity-os-logo.svg?raw`) and rendering it using `dangerouslySetInnerHTML` within a `<span>` in `LoginPage.tsx` and `DashboardPage.tsx`. Updated `vite-env.d.ts` for `?raw` imports. Adjusted CSS (`.header-logo-wrapper svg`) to style the injected SVG. (This approach bypasses issues with `vite-plugin-svgr`).
     *   **Refactored Authentication:** Replaced GitHub OAuth flow with Wallet Connection (`wagmi`) as the primary authentication/access method. Updated `LoginPage.tsx` to use `useConnect`, updated `App.tsx` to use `useAccount` for conditional rendering, removed `auth-context.tsx`, `github-callback.tsx`, and related routing/logic.
-    *   **Optimized Worker Validation (2025-04-01):** Refactored `frontend/src/workers/permit-checker.worker.ts` to use JSON-RPC batching. Instead of making individual `eth_call` requests for each permit's nonce, balance, and allowance checks, the worker now constructs a single batch request containing all checks and sends it via `fetch` to the RPC endpoint (`https://rpc.ubq.fi/100`). This significantly reduces network traffic and eliminates numerous CORS preflight requests. Implemented `localStorage` caching for permit nonce statuses (`isNonceUsed`) within the worker to further reduce the number of checks sent in the batch request on subsequent loads.
+    *   **Optimized Worker Validation & Caching (2025-04-01):**
+        *   Refactored `usePermitData` hook and `permit-checker.worker.ts` to implement a new caching strategy using `localStorage`.
+        *   The hook now stores the timestamp of the last successful check and a cache of permit validation statuses (`isNonceUsed`, errors, etc.).
+        *   On load, the hook sends a message to the worker to fetch *all* permits from the database.
+        *   The hook merges the fetched permits with the cached statuses for immediate UI display.
+        *   It identifies permits that are new (since last timestamp) or uncached and sends *only this subset* to the worker for validation via batch RPC calls (`rpcClient`).
+        *   Upon receiving validation results, the hook updates the UI state and saves the updated status cache and timestamp to `localStorage`.
+        *   The `usePermitClaiming` hook was updated to immediately update the `localStorage` cache upon successful claim confirmation.
+        *   The worker logic was simplified to assume all valid permits are ERC20 (based on positive amount), removing NFT-specific code paths and checks. This resolves previous type misclassification issues.
 *   **Shared Types**:
     *   Added `ownerBalanceSufficient`, `permit2AllowanceSufficient`, `checkError` fields to `PermitData` for storing prerequisite check results.
 *   **Docs**:
     *   Updated `product-context.md`, `system-patterns.md`, and `active-context.md` to reflect the wallet-first authentication flow. Removed `github-auth-flow.md`.
-    *   Updated `system-patterns.md` (2025-04-01) to reflect the worker using batch RPC calls and `localStorage` caching for validation.
+    *   Updated `system-patterns.md` (2025-04-01) to detail the new two-stage fetch/validate flow and `localStorage` caching strategy.
 *   **Cleanup & Refactoring (2025-03-30):**
     *   **Removed Unused Code:** Deleted the `backend/scanner/` directory and the `frontend/src/components/icons.tsx` component.
     *   **Removed Unused Dependency:** Removed `vite-plugin-svgr` from root and frontend `package.json` files and `frontend/vite.config.ts`.
