@@ -113,14 +113,6 @@ button[title*="Claim"]:disabled {
   /* animation: claim-all-disabled 1s forwards ease-in-out 1.5s; */
 }
 
-/* @keyframes claim-all-disabled {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 0.25;
-  }
-} */
 
 .expand-button:disabled {
   opacity: 0.5;
@@ -132,4 +124,18 @@ button[title*="Claim"]:disabled {
   /* text-align: center; */
   /* justify-content: center; */
   display: flex;
+}
+
+.preferred-token-selector-button-wrapper{
+  opacity: 0;
+  animation: preferred-token-selector-button-wrapper 1s forwards ease-in-out 2.5s;
+}
+
+@keyframes preferred-token-selector-button-wrapper {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
