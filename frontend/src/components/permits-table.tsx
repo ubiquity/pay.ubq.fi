@@ -34,20 +34,15 @@ export function PermitsTable({
     );
   }
 
-  // Render table only if NOT loading and permits exist
+  // Render list only if NOT loading and permits exist
   return (
     <>
-      {/* Render table only when not loading and permits exist */}
+      {/* Render list only when not loading and permits exist */}
       {!isLoading && permits.length > 0 && (
-        <table className="permits-table">
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>Reward</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="permits-list">
+
+          {/* Body Rows */}
+          <div className="permits-body">
             {permits.map((permit) => (
               <PermitRow
                 key={permit.nonce + permit.networkId}
@@ -59,8 +54,8 @@ export function PermitsTable({
                 confirmingHash={confirmingHash}
               />
             ))}
-          </tbody>
-        </table>
+          </div>
+        </div>
       )}
     </>
   );

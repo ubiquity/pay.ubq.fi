@@ -179,8 +179,10 @@ footer {
   /* padding-bottom: 4px; */
 }
 
-.permits-table {
-  border-collapse: collapse;
+/* >>> REMOVED OLD .permits-table styles <<< */
+
+/* New Div-based List Styles */
+.permits-list {
   transition: 0.25s all ease-in-out;
   width: calc(100vw - 8px);
   max-width: 640px;
@@ -190,81 +192,186 @@ footer {
   text-align: center;
   margin: 0 auto;
   box-shadow: 0 0 96px 0 #00000040;
+  display: flex; /* Use flex for overall structure */
+  flex-direction: column; /* Stack header and body vertically */
+  border-radius: 4;
 }
-.permits-table th {
-  text-align: center;
+
+.permits-header {
+  display: flex; /* Layout header cells horizontally */
   font-weight: 700;
-  padding: 12px;
+  border-bottom: 1px solid #ffffff10; /* Separator */
+  background-color: #ffffff05; /* Slight header background */
+  color: #bfbfbf; /* Header text color */
 }
-.permits-table .align-right {
+
+.permits-body {
+  display: flex;
+  flex-direction: column; /* Stack rows vertically */
+}
+
+.permit-row {
+  display: flex; /* Layout cells horizontally */
+  border-bottom: 1px solid #ffffff10; /* Separator between rows */
+  transition: background-color 0.2s ease-in-out; /* Smooth background changes */
+}
+.permit-row:last-child {
+  border-bottom: none; /* No border for the last row */
+}
+.permit-row:hover {
+  background-color: #ffffff08; /* Hover effect */
+}
+
+.header-cell,
+.permit-cell {
+  /* padding: 12px; */ /* Consistent padding */
+  /* flex: 1; */ /* Default equal width */
+  /* display: flex; */ /* Allow alignment within cell */
+  /* align-items: center; */ /* Vertical alignment */
+  /* justify-content: center; */ /* Default horizontal alignment */
+  overflow: hidden; /* Prevent content overflow */
+  text-overflow: ellipsis; /* Add ellipsis for overflow */
+  white-space: nowrap; /* Prevent wrapping */
+  /* color: #bfbfbf; */ /* Default cell text color */
+  /* font-size: 13.3333px; */
+}
+.permit-row:hover .permit-cell {
+  color: #fff; /* Text color on row hover */
+}
+
+/* Specific column widths/styles */
+.header-cell.source-header,
+.permit-cell.github-comment-url {
+  flex: 2; /* Make source wider */
+  /* justify-content: flex-start; */ /* Align left */
+  /* text-align: left; */
+}
+
+.header-cell.reward-header,
+.permit-cell.align-right {
+  flex: 1;
+  justify-content: flex-end; /* Align right */
   text-align: right;
 }
-.permits-table .monospace {
+
+.header-cell.actions-header,
+.permit-cell.actions-cell {
+  flex: 1.5; /* Make actions slightly wider */
+  justify-content: center; /* Center actions */
+  text-align: center;
+}
+.permit-cell.actions-cell > * {
+  /* Center content within actions cell */
+  margin: auto;
+}
+
+/* Adapt utility classes */
+.permit-cell.monospace,
+.permit-cell.monospace > button {
+  /* Apply monospace to cell and button inside */
   font-family: monospace;
   font-size: 13.3333px;
 }
-.permits-table .monospace > a {
-  font-family: monospace;
-}
-.permits-table .small-font {
-  font-size: 0.9em;
-}
-.permits-table .extra-small-font {
+
+.permit-cell .extra-small-font {
+  /* Target elements within cells */
   font-size: 0.8em;
 }
-.permits-table .subtle-text {
+.permit-cell .subtle-text {
   color: #ffffff80;
-  text-align: center;
 }
-.permits-table .margin-left-5 {
-  margin-left: 5px;
-}
-.permits-table .margin-top-4 {
+.permit-cell .margin-top-4 {
   margin-top: 4px;
 }
-.permits-table .bold-text {
+.permit-cell .bold-text {
   font-weight: 700;
 }
-.permits-table .status-claimed {
-  color: #1a891740;
-}
-.permits-table .status-unclaimed {
-  color: #b35f0040;
-}
-.permits-table .status-error {
-  text-align: center;
-  font-size: 13.3333px;
-}
-.permits-table .status-test-failed {
-  color: orange;
-}
-.permits-table .row-invalid {
+
+/* Status and Row Backgrounds (Applied to .permit-row) */
+.permit-row.row-invalid {
   background-color: #ffffff20;
   opacity: 0.25;
 }
-.permits-table .row-claimed {
-  background-color: #e6ffed40;
+.permit-row.row-claimed {
+  background-color: #e6ffed10; /* Subtle green */
 }
-.permits-table .row-claim-failed {
-  background-color: #ffebe940;
+.permit-row.row-claim-failed {
+  background-color: #ffebe910; /* Subtle red */
 }
-.permits-table .row-claiming {
-  background-color: #fff9e640;
+.permit-row.row-claiming {
+  background-color: #fff9e610; /* Subtle yellow */
 }
-.permits-table .row-valid {
-  background-color: #f4fff440;
+.permit-row.row-valid {
+  /* background-color: #f4fff410; */ /* Optional: subtle valid background */
 }
-.permits-table .row-warning {
-  background-color: #fffbea40;
+.permit-row.row-warning {
+  /* Assuming this might be used */
+  background-color: #fffbea10; /* Subtle orange */
 }
-.permits-table .warning-text {
+
+/* Status text colors (Applied within cells) */
+.permit-cell .status-claimed {
+  color: #1a8917; /* Make claimed text more visible */
+}
+.permit-cell .status-unclaimed {
+  /* If needed */
+  color: #b35f00;
+}
+.permit-cell .status-error {
+  color: var(--error); /* Use error color */
+  font-size: 13.3333px; /* Keep font size */
+}
+.permit-cell .status-test-failed {
+  color: orange;
+}
+.permit-cell .warning-text {
+  /* If needed */
   color: orange;
   font-size: 0.8em;
   margin-top: 4px;
 }
-.permits-table .status-claiming {
-  color: #b0880040;
+.permit-cell .status-claiming {
+  /* If needed */
+  color: #b08800;
 }
+
+/* Ensure buttons within cells behave correctly */
+.permit-cell button {
+  /* Reset flex-grow if needed, adjust padding/margins */
+  flex-grow: 0;
+  /* padding: 4px 8px; */ /* Smaller padding for buttons in cells */
+  /* height: auto; */ /* Adjust height */
+  /* min-height: 32px; */ /* Minimum height */
+  /* opacity: 0.75; */ /* Default opacity for buttons in cells */
+  width: 100%;
+}
+.permit-cell button:not([disabled]):hover {
+  opacity: 1;
+  background-color: #ffffff1a; /* Slightly stronger hover for cell buttons */
+}
+.permit-cell button:disabled {
+  opacity: 0.3; /* More faded disabled buttons in cells */
+}
+
+.permit-cell .button-as-link {
+  /* padding: 0; */
+  /* border: none; */
+  /* background: none; */
+  /* text-align: inherit; */ /* Inherit text alignment */
+  /* opacity: 0.75; */
+  /* color: inherit; */ /* Inherit color */
+  /* text-decoration: none; */ /* Remove underline by default */
+  /* height: auto; */
+  /* min-height: unset; */
+  /* width: 100%; */
+  /* text-align: left; */
+}
+.permit-cell .button-as-link:hover {
+  opacity: 1;
+  background: none;
+  /* text-decoration: underline; */
+}
+
 #header-logo-wrapper svg {
   margin-right: 4px;
   fill: currentColor;
@@ -291,7 +398,11 @@ button {
   padding-inline: 0;
   padding-block: 0;
   padding: 0 16px;
-  flex-grow: 1;
+  /* flex-grow: 1; */
+  border: none; /* Remove default border */
+  background-color: transparent; /* Default transparent background */
+  color: #bfbfbf; /* Default text color */
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out, color 0.2s ease-in-out; /* Smooth transitions */
 }
 button:not([disabled]):hover {
   opacity: 1;
@@ -303,27 +414,17 @@ button:disabled {
   cursor: not-allowed;
 }
 .github-comment-url {
-  text-align: right;
+  /* text-align: right; */
 }
-.github-comment-url > a {
-  text-decoration: none;
-  opacity: 0.5;
-  line-height: 1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.github-comment-url > a:hover {
-  opacity: 1;
-}
+/* Removed .github-comment-url > a styles as it's now a button */
 
 .button-with-icon {
   display: inline-flex;
   align-items: center;
   gap: 8px; /* Add gap between icon and text */
 }
-thead {
-  display: none;
-}
+/* Removed thead display: none rule */
+
 h1 > span {
   color: #bfbfbf;
   font-size: 13.3333px;
@@ -357,7 +458,7 @@ svg {
   font-family: monospace;
 }
 #header {
-  overflow:hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
   justify-content: space-between; /* Changed from space-evenly */
@@ -433,13 +534,21 @@ button > .spinner.button-spinner {
 }
 .button-with-icon > svg {
   margin-right: 2px; /* Keep original small margin for icon */
+  fill: currentColor; /* Ensure icon takes button color */
 }
-td {
-  padding: 0;
-}
+/* Removed td padding: 0 rule */
 
 .error-message {
   padding: 12px;
+  display: flex; /* Use flex for alignment */
+  align-items: center; /* Center items vertically */
+  justify-content: center; /* Center items horizontally */
+  gap: 8px; /* Add gap between icon and text */
+  color: var(--error); /* Error text color */
+}
+.error-message svg {
+  fill: var(--error); /* Error icon color */
+  flex-shrink: 0; /* Prevent icon shrinking */
 }
 
 button {
@@ -468,4 +577,15 @@ button#claim-all:hover:not([disabled]) {
   justify-content: space-evenly;
 }
 
-.claim-count::before{ content:" "}
+.claim-count::before {
+  content: " ";
+}
+
+
+.github-comment-url>button.button-as-link {
+    text-align: left;
+}
+
+button.button-as-link.monospace {
+    text-align: right;
+}

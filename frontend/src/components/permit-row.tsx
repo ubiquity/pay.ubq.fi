@@ -123,20 +123,9 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
   const showCannotClaimIcon = !canAttemptClaim && !isClaimed && !isClaimingThis;
 
   return (
-    <tr className={rowClassName}>
-      {/* Removed Type column */}
-      {/* Removed Token Symbol/Network column */}
-
-      {/* <button
-        className="button-as-link monospace" // Add class for styling
-        onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-        title={`View ${ownerAddress}'s balance for token ${tokenAddress}`}
-      >
-        {formatAmount(amount)}
-      </button> */}
-
+    <div className={`permit-row ${rowClassName}`}>
       {/* Source Column (Now 1st) */}
-      <td className="github-comment-url">
+      <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button
             className="button-as-link" // Use button styling
@@ -148,10 +137,10 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
         ) : (
           "N/A"
         )}
-      </td>
+      </div>
 
       {/* Amount (Reward) Column (Now 2nd) - Button Link to Funder's Token Balance */}
-      <td className="align-right monospace">
+      <div className="permit-cell align-right monospace">
         {(() => {
           // Check conditions and assign URL to a variable for type safety in onClick
           if (permit.type === "erc20-permit" && chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress && permit.amount) {
@@ -178,9 +167,10 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
             return permit.amount ? formatAmount(permit.amount) : "N/A";
           }
         })()}
-      </td>
+      </div>
+
       {/* Actions Column (Now 3rd) */}
-      <td>
+      <div className="permit-cell actions-cell">
         <button
           onClick={() => onClaimPermit(permit)}
           disabled={!isConnected || !canAttemptClaim || isClaimingThis || isClaimed}
@@ -209,9 +199,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
             </a>
           </div>
         )}
-      </td>
-
-      {/* Status Column REMOVED */}
-    </tr>
+      </div>
+    </div>
   );
 }

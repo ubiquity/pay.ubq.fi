@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [
     react() // React plugin
   ],
+  // Server configuration to disable HMR
+  server: {
+    hmr: false
+  },
   // Restore css and build config, add worker format
   css: {
     devSourcemap: true // Ensure CSS source maps are enabled in dev
