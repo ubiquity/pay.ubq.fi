@@ -1,10 +1,8 @@
 import { OrderKind, getQuote } from '@cowprotocol/cow-sdk';
 import { Address, WalletClient, formatUnits } from 'viem';
-import { getTokenInfo, SUPPORTED_REWARD_TOKENS_BY_CHAIN } from '../constants/supported-reward-tokens'; // Import full list for UUSD lookup
-import { COWSWAP_PARTNER_FEE_RECIPIENT, COWSWAP_PARTNER_FEE_BPS } from '../constants/config'; // Import new constants
-
-// Use Gnosis Chain ID directly
-const GNOSIS_CHAIN_ID = 100;
+import { getTokenInfo, SUPPORTED_REWARD_TOKENS_BY_CHAIN } from '../constants/supported-reward-tokens';
+import { COWSWAP_PARTNER_FEE_RECIPIENT, COWSWAP_PARTNER_FEE_BPS } from '../constants/config';
+import { mainnet, gnosis } from 'viem/chains'; // Import chain definitions from viem
 
 // No SDK instantiation needed if using exported functions directly
 
@@ -36,12 +34,12 @@ interface InitiateCowSwapParams extends CowSwapQuoteParams { // Fix typo: CowSwa
 export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSwapQuoteResult> {
   // console.log('Fetching CowSwap quote:', params);
   try {
-    // Ensure chainId matches SDK instance if necessary (CowSdk constructor already sets it)
-    if (params.chainId !== GNOSIS_CHAIN_ID) {
-      throw new Error(`Chain ID mismatch: SDK is for ${GNOSIS_CHAIN_ID}, params specify ${params.chainId}`);
+    // Validate chainId (ensure it's provided)
+    if (!params.chainId) {
+        throw new Error('Chain ID is required to get CowSwap quote.');
     }
 
-    // Fetch token decimals
+    // Fetch token decimals using the provided chainId
     const tokenInInfo = getTokenInfo(params.chainId, params.tokenIn);
     const tokenOutInfo = getTokenInfo(params.chainId, params.tokenOut);
 
@@ -50,11 +48,14 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
     }
 
     // --- Determine Partner Fee for Quote ---
-    const uusdTokenInfoQuote = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[GNOSIS_CHAIN_ID] || []).find(token => token.symbol === 'UUSD');
+    // Find UUSD address for the specific chainId provided in params
+    const uusdTokenInfoQuote = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[params.chainId] || []).find(token => token.symbol === 'UUSD');
     const uusdAddressQuote = uusdTokenInfoQuote?.address;
-    const feeBpsQuote = (uusdAddressQuote && params.tokenOut.toLowerCase() === uusdAddressQuote.toLowerCase())
-                       ? 0
-                       : COWSWAP_PARTNER_FEE_BPS;
+    // Apply 0 fee only if on Mainnet or Gnosis AND output is UUSD (use viem chain IDs)
+    const isUusdOutputOnSupportedChain = uusdAddressQuote &&
+                                         (params.chainId === mainnet.id || params.chainId === gnosis.id) &&
+                                         params.tokenOut.toLowerCase() === uusdAddressQuote.toLowerCase();
+    const feeBpsQuote = isUusdOutputOnSupportedChain ? 0 : COWSWAP_PARTNER_FEE_BPS;
     // --- End Determine Partner Fee ---
 
     // Construct TradeParameters object
@@ -75,9 +76,9 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       },
     };
 
-    // Construct QuoterParameters object
+    // Construct QuoterParameters object using dynamic chainId
     const quoterParameters = {
-      chainId: GNOSIS_CHAIN_ID,
+      chainId: params.chainId, // Use dynamic chainId
       appCode: 'UbiquityPay', // Provide an app code
       account: params.userAddress,
     };
@@ -132,14 +133,14 @@ export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ 
 
   try {
     // --- Determine Partner Fee ---
-    // Find UUSD address for the current chain (assuming Gnosis for now)
-    const uusdTokenInfo = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[GNOSIS_CHAIN_ID] || []).find(token => token.symbol === 'UUSD');
+    // Find UUSD address for the specific chainId provided in params
+    const uusdTokenInfo = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[params.chainId] || []).find(token => token.symbol === 'UUSD');
     const uusdAddress = uusdTokenInfo?.address;
-
-    // Set fee based on whether the tokenOut is UUSD
-    const feeBps = (uusdAddress && params.tokenOut.toLowerCase() === uusdAddress.toLowerCase()) // Use params.tokenOut
-                   ? 0
-                   : COWSWAP_PARTNER_FEE_BPS;
+    // Apply 0 fee only if on Mainnet or Gnosis AND output is UUSD (use viem chain IDs)
+    const isUusdOutputOnSupportedChainOrder = uusdAddress &&
+                                              (params.chainId === mainnet.id || params.chainId === gnosis.id) &&
+                                              params.tokenOut.toLowerCase() === uusdAddress.toLowerCase();
+    const feeBps = isUusdOutputOnSupportedChainOrder ? 0 : COWSWAP_PARTNER_FEE_BPS;
     // --- End Determine Partner Fee ---
 
 

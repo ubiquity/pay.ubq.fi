@@ -1,9 +1,14 @@
 import type { PermitData } from "../types";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
-import type { Chain, Address } from "viem"; // Add Address
-import { formatUnits } from "viem"; // Import formatUnits
+import { useState } from "react"; // Import useState
+import type { Chain, Address } from "viem";
+import { formatUnits } from "viem";
+import { useAccount } from "wagmi"; // Import useAccount to get connector
+import { switchNetwork } from "wagmi/actions"; // Import the action directly
+import { config } from "../main"; // Import the wagmi config
 import { ICONS } from "./iconography";
-import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import helper
+import { getTokenInfo } from "../constants/supported-reward-tokens";
+import { NETWORK_NAMES } from "../constants/config";
 
 interface PermitRowProps {
   permit: PermitData;
@@ -12,11 +17,18 @@ interface PermitRowProps {
   chain: Chain | undefined;
   isConfirming: boolean;
   confirmingHash: `0x${string}` | undefined;
-  isQuoting: boolean; // Add quoting status prop
-  preferredRewardTokenAddress: Address | null; // Add preferred token prop
+  isQuoting: boolean;
+  preferredRewardTokenAddress: Address | null;
 }
 
 export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirming, confirmingHash, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
+  // Workaround: Use switchNetwork action directly instead of the hook
+  const { connector } = useAccount(); // Get the active connector
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false); // Local loading state
+
+  // Get switchable chains from the config
+  const switchableChains = config.chains ?? [];
+
   const isReadyToClaim = hasRequiredFields(permit);
   const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
   const isClaimingThis = permit.claimStatus === "Pending";
@@ -47,8 +59,16 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     ? "row-invalid"
     : "";
 
-  // Determine status display text (still needed for button title)
-  const statusDisplayText = isClaimed
+  // --- Network Mismatch Check ---
+  const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
+  const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
+  // Add explicit type 'Chain' to parameter 'c'
+  const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
+
+  // Determine status display text (button title)
+  const statusDisplayText = networkMismatch
+    ? `Switch wallet to ${targetNetworkName} to claim`
+    : isClaimed
     ? "Claimed"
     : isClaimingThis
     ? "Claiming..."
@@ -79,40 +99,63 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       ? "View"
       : claimFailed // Claim failed *without* a hash (e.g., simulation error)
       ? "Retry"
-      : "Claim"; // Default/Initial state
+      : "Claim"; // Default/Initial state for non-mismatch case
 
   // Determine if the button should be disabled
-  const isButtonDisabled =
-    !isConnected || // Not connected
-    isClaimingThis || // Claiming in progress
-    isConfirmingThisPermit || // Confirming in progress
-    // Disable if trying to claim but cannot, OR if claimed without hash
-    (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) || // Allow clicking "View Failed Tx" even if canAttemptClaim is false now
-    (isClaimed && !permit.transactionHash) ||
-    // Disable retry if claim failed without a hash and cannot attempt claim now
-    (claimFailed && !permit.transactionHash && !canAttemptClaim);
+  const isButtonDisabled = networkMismatch
+    ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork // Disable if switching, no connector, or cannot switch
+    : !isConnected || // Not connected (original logic)
+      isClaimingThis || // Claiming in progress
+      isConfirmingThisPermit || // Confirming in progress
+      // Disable if trying to claim but cannot, OR if claimed without hash
+      (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) || // Allow clicking "View Failed Tx" even if canAttemptClaim is false now
+      (isClaimed && !permit.transactionHash) ||
+      // Disable retry if claim failed without a hash and cannot attempt claim now
+      (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
-  // Determine which icon to show (Still needed for the NO_CLAIM icon case)
-  const showCannotClaimIcon = !canAttemptClaim && !isClaimed && !isClaimingThis;
+  // Determine which icon to show
+  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis; // Only show NO_CLAIM if network matches but cannot claim
 
-  // Determine which icon to show (hide for "View", "View Failed Tx", and spinners)
+  // Determine which icon to show (hide for "View", "View Failed Tx", spinners, and network switch)
   const showButtonIcon =
+    !networkMismatch && // Hide icon if switching network
     !(isClaimed && permit.transactionHash) && // Not successful View
     !(claimFailed && permit.transactionHash) && // Not failed View
     !isClaimingThis && // Not claiming
     !isConfirmingThisPermit; // Not confirming
-  const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM; // Use original icon logic when shown
 
   // Determine button action
-  const handleButtonClick = () => {
-    // If claimed OR claim failed WITH a hash, open explorer
-    if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
+  const handleButtonClick = async () => { // Make async for action call
+    if (networkMismatch) {
+      if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
+        setIsSwitchingNetwork(true);
+        try {
+          // Call the action directly, passing the config
+          await switchNetwork(config, { chainId: permit.networkId });
+          // No need to set loading false here, as component will re-render on network change
+        } catch (error) {
+          console.error("Failed to switch network:", error);
+          setIsSwitchingNetwork(false); // Reset loading state on error
+        }
+        // Do not set isSwitchingNetwork(false) on success immediately,
+        // let the network change trigger re-renders.
+      }
+    } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
+      // If claimed OR claim failed WITH a hash, open explorer (original logic)
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
     } else if (!isButtonDisabled) {
-      // Otherwise, if not disabled, attempt claim (Retry Claim or initial Claim)
+      // Otherwise, if not disabled, attempt claim (Retry Claim or initial Claim - original logic)
       onClaimPermit(permit);
     }
   };
+
+  // Determine final button text based on network mismatch and other states
+  const finalButtonText = networkMismatch
+    ? isSwitchingNetwork
+      ? "Switching..."
+      : `Switch to ${targetNetworkName}`
+    : buttonText; // Use original buttonText logic if networks match
 
   // Function to parse GitHub URL and return formatted string
   const formatGithubLink = (url: string | undefined): string => {
@@ -200,18 +243,23 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
 
     // 4. Fallback to original amount
     if (permit.type === "erc20-permit" && permit.amount) {
-      const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
+      // IMPORTANT: Use permit.networkId here to get correct token info, regardless of connected chain
+      const originalTokenInfo = getTokenInfo(permit.networkId, permit.tokenAddress as Address);
       const originalSymbol = originalTokenInfo?.symbol || "tokens";
-      // Link to funder's balance
+      // Link to funder's balance - Use the block explorer for the *permit's* network if possible
+      // We don't have easy access to the permit's chain explorer URL here, so we link based on the *connected* chain's explorer for simplicity,
+      // but the link might not work correctly if networks mismatch. The title clarifies the target.
+      // A better solution would involve passing down chain data for all relevant networks.
       if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
-        const explorerUrl = chain.blockExplorers.default.url;
+        const explorerUrl = chain.blockExplorers.default.url; // Use connected chain's explorer for link
         const tokenAddress = permit.tokenAddress;
         const ownerAddress = permit.owner;
         return (
           <button
             className="button-as-link monospace"
             onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-            title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress})`}
+            // Title should reflect the actual token and owner on the permit's network
+            title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress}) on ${targetNetworkName}`}
           >
             {/* Use original token's decimals here */}
             {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
@@ -220,9 +268,9 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       } else {
         // Fallback if no explorer link possible - use original token's decimals
         return (
-          <>
+          <span title={`Token: ${originalSymbol} (${permit.tokenAddress}) on ${targetNetworkName}`}>
             {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
-          </>
+          </span>
         );
       }
     } else if (permit.type === "erc721-permit") {
@@ -258,13 +306,16 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
           onClick={handleButtonClick} // Use the new handler
           disabled={isButtonDisabled} // Use the new disabled logic
           className={`button-with-icon ${isClaimed && permit.transactionHash ? "view-button" : ""}`} // Add class for View state
-          title={statusDisplayText} // Keep title for context
+          title={statusDisplayText} // Use updated statusDisplayText for title
         >
           {/* Conditionally render icon */}
           {showButtonIcon && buttonIcon}
-          <span>{buttonText}</span>
+          <span>{finalButtonText}</span> {/* Use finalButtonText */}
         </button>
-        {/* REMOVED Display Claim Error div */}
+        {/* Display Claim Error (Only if network matches) */}
+        {!networkMismatch && permit.claimError && <div className="status-error extra-small-font margin-top-4">Error: {permit.claimError}</div>}
+        {/* Display Check Error (Only if network matches) */}
+        {!networkMismatch && permit.checkError && <div className="status-error extra-small-font margin-top-4">Check Failed: {permit.checkError}</div>}
         {/* Display Test Error (Keep this) */}
         {!permit.claimError && !permit.checkError && permit.testError && (
           <div className="status-test-failed extra-small-font margin-top-4">Test Failed: {permit.testError}</div>

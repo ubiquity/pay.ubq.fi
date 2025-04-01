@@ -69,8 +69,9 @@
 *   **Implement Real CowSwap Logic**: Replace placeholder functions in `cowswap-utils.ts` with actual SDK calls, including handling signing via `viem` WalletClient.
 *   **Obtain UUSD Address**: Get the correct Gnosis Chain address for UUSD and update `supported-reward-tokens.ts`.
 *   **Refactor to Multicall Claiming (Optional but Recommended)**: Replace sequential claiming in `usePermitClaiming` with a multicall approach (using a library or custom implementation) before triggering swaps for better UX and efficiency. The previously mentioned `multicall-utils.ts` was not found.
-*   **Test End-to-End Flow**: Thoroughly test selection, quoting, claiming, and swapping (once implemented).
-*   **Verify Frontend Deployment**: Check deployed URLs.
+    *   **Test End-to-End Flow**: Thoroughly test selection, quoting, claiming, and swapping (once implemented).
+    *   **Verify Frontend Deployment**: Check deployed URLs.
+    *   **Handle Network Mismatch (2025-04-02):** Implemented logic in `PermitRow.tsx` to detect when a permit's network (`permit.networkId`) differs from the connected wallet's network (`chain.id`). If mismatched, the component now displays the correct token amount but renders a "Switch to [Network Name]" button using `wagmi`'s `useSwitchNetwork` hook instead of the "Claim" button. Added `NETWORK_NAMES` constant in `config.ts`.
 
 ## 4. Key Decisions / Open Questions
 
