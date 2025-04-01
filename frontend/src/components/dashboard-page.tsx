@@ -75,12 +75,9 @@ export function DashboardPage() {
     }
   }, [claimablePermits]);
 
-  // Format the value for display
+  // Format the value for display, always showing two decimal places
   const claimableTotalValueDisplay = useMemo(() => {
-    if (claimableTotalValue > 0) {
-      return `$${claimableTotalValue.toFixed(2)}`;
-    }
-    return "";
+    return `$${claimableTotalValue.toFixed(2)}`;
   }, [claimableTotalValue]);
 
   // Custom Hook for Claiming Logic
@@ -180,11 +177,16 @@ export function DashboardPage() {
             >
               {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
-                {isLoading
-                  ? "Loading Rewards..."
-                  : `${claimableTotalValueDisplay ? `${claimableTotalValueDisplay} ` : "All "} (${claimablePermitCount} Reward${
-                      claimablePermitCount !== 1 ? "s" : ""
-                    })`}
+                {isLoading ? (
+                  "Loading Rewards..."
+                ) : (
+                  <>
+                    <span className="claim-amount">{claimableTotalValueDisplay}</span>
+                    <span className="claim-count">
+                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
+                    </span>
+                  </>
+                )}
               </span>
             </button>
             {/* Expand/Collapse Button */}

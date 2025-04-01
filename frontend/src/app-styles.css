@@ -467,3 +467,5 @@ button#claim-all:hover:not([disabled]) {
 #header.header-logged-out {
   justify-content: space-evenly;
 }
+
+.claim-count::before{ content:" "}
