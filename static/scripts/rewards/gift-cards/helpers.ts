@@ -48,9 +48,9 @@ export async function isReloadlySandbox() {
 
 export async function detectCardsEnv() {
   const isCardsSandbox = await isReloadlySandbox();
-  if (isCardsSandbox) {
+  if (isCardsSandbox && !document.querySelector(".cards-env")) {
     const cardEnvElement = document.createElement("div");
-    cardEnvElement.setAttribute("class", "cards-env");
+    cardEnvElement.classList.add("cards-env");
     cardEnvElement.textContent = "You are using Reloadly Sandbox.";
     const footer = document.getElementsByTagName("footer");
     if (footer.length) {

@@ -1,20 +1,32 @@
 import { JsonRpcSigner, TransactionResponse } from "@ethersproject/providers";
-import { Permit } from "@ubiquibot/permit-generation/types";
+import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { erc20Abi, permit2Abi } from "../abis";
 import { app, AppState } from "../app-state";
 import { getNetworkExplorer, permit2Address } from "@ubiquity-dao/rpc-handler";
-import { supabase } from "../render-transaction/read-claim-data-from-url";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { toaster, errorToast, MetaMaskError } from "../toaster";
 import { connectWallet } from "./connect-wallet";
-import { convertToNetworkId } from "../../../../shared/use-rpc-handler";
+import { supabase } from "../render-transaction/supabase-getters";
+import { convertToNetworkId, useRpcHandler } from "../../../../shared/use-rpc-handler";
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
+import { getClaimedTxs } from "../render-transaction/fetch-permits";
 
-export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
+// runtime treasury cache
+const treasuryCache: Map<string, { balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> = new Map();
+
+export async function fetchTreasury(permit: PermitReward): Promise<{ balance: BigNumber; allowance: BigNumber; decimals: number; symbol: string }> {
   let balance: BigNumber, allowance: BigNumber, decimals: number, symbol: string;
 
   try {
+    const cacheKey = `${permit.tokenAddress}_${permit.owner}`; // unique key per token and owner
+    if (treasuryCache.has(cacheKey)) {
+      const result = treasuryCache.get(cacheKey);
+      if (result) {
+        return result;
+      }
+    }
+
     const tokenAddress = permit.tokenAddress;
     const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, app.provider);
 
@@ -40,6 +52,8 @@ export async function fetchTreasury(permit: Permit): Promise<{ balance: BigNumbe
       localStorage.setItem(tokenAddress, JSON.stringify({ decimals, symbol }));
     }
 
+    // Store the token info in the runtime cache
+    treasuryCache.set(cacheKey, { balance, allowance, decimals, symbol });
     return { balance, allowance, decimals, symbol };
   } catch (error: unknown) {
     return { balance: BigNumber.from(-1), allowance: BigNumber.from(-1), decimals: -1, symbol: "" };
@@ -60,7 +74,7 @@ async function checkPermitClaimability(app: AppState): Promise<boolean> {
   return false;
 }
 
-export async function transferFromPermit(permit2Contract: Contract, reward: Permit, successMessage?: string) {
+export async function transferFromPermit(permit2Contract: Contract, reward: PermitReward, successMessage?: string) {
   const signer = app.signer;
   if (!signer) return null;
 
@@ -99,7 +113,7 @@ export async function transferFromPermit(permit2Contract: Contract, reward: Perm
   }
 }
 
-export async function waitForTransaction(tx: TransactionResponse, successMessage: string, networkId: number) {
+export async function waitForTransaction(tx: TransactionResponse, networkId: number) {
   try {
     const receipt = await tx.wait();
     const networkExplorers = getNetworkExplorer(convertToNetworkId(networkId));
@@ -115,11 +129,7 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
       };
     }
 
-    toaster.create("success", successMessage);
-    buttonController.showViewClaim();
-    buttonController.hideLoader();
-    buttonController.hideMakeClaim();
-    console.log(receipt.transactionHash);
+    console.log("tx hash: ", receipt.transactionHash);
 
     return receipt;
   } catch (error: unknown) {
@@ -130,13 +140,15 @@ export async function waitForTransaction(tx: TransactionResponse, successMessage
     }
   }
 }
-
 export function claimErc20PermitHandlerWrapper(app: AppState) {
   return async function claimErc20PermitHandler() {
+    app.isClaiming = true; // this forbids the user from pagination cause it breaks this flow
+
     const signer = await connectWallet(); // we are re-testing the in-wallet rpc at this point
     if (!signer) {
       buttonController.hideAll();
       toaster.create("error", `Please connect your wallet to claim this reward.`);
+      app.isClaiming = false;
       return;
     }
 
@@ -146,28 +158,54 @@ export function claimErc20PermitHandlerWrapper(app: AppState) {
     buttonController.showLoader();
 
     const isPermitClaimable = await checkPermitClaimability(app);
-    if (!isPermitClaimable) return;
+    if (!isPermitClaimable) {
+      buttonController.hideLoader();
+      app.isClaiming = false;
+      return;
+    }
 
     const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, signer);
-    if (!permit2Contract) return;
+    if (!permit2Contract) {
+      buttonController.hideLoader();
+      app.isClaiming = false;
+      return;
+    }
 
     const tx = await transferFromPermit(permit2Contract, app.reward);
-    if (!tx) return;
+    if (!tx) {
+      buttonController.hideLoader();
+      app.isClaiming = false;
+      return;
+    }
 
-    const receipt = await waitForTransaction(tx, `Claim Complete.`, app.reward.networkId);
-    if (!receipt) return;
+    const receipt = await waitForTransaction(tx, app.reward.networkId);
+    if (!receipt) {
+      buttonController.hideLoader();
+      app.isClaiming = false;
+      return;
+    }
 
-    const isHashUpdated = await updatePermitTxHash(app, receipt.transactionHash);
-    if (!isHashUpdated) return;
+    // saves in supabase
+    const isHashUpdated = await updatePermitTxHash(app.reward.nonce.toString(), receipt.transactionHash);
+    if (!isHashUpdated) {
+      buttonController.hideLoader();
+      app.isClaiming = false;
+      return;
+    }
 
+    // fetches from supabase
+    app.claimTxs = await getClaimedTxs(app);
     getMakeClaimButton().removeEventListener("click", claimErc20PermitHandler);
+    app.isClaiming = false;
+    buttonController.onlyShowViewClaim();
+    toaster.create("success", "Claim Complete.");
   };
 }
 
 export async function checkPermitClaimable(app: AppState): Promise<boolean> {
   let isClaimed: boolean;
   try {
-    isClaimed = await isNonceClaimed(app);
+    isClaimed = await isNonceClaimed(app.reward);
   } catch (error: unknown) {
     console.error("Error in isNonceClaimed: ", error);
     return false;
@@ -264,7 +302,7 @@ const invalidateButton = document.getElementById("invalidator") as HTMLDivElemen
 
 invalidateButton.addEventListener("click", async function invalidateButtonClickHandler() {
   try {
-    const isClaimed = await isNonceClaimed(app);
+    const isClaimed = await isNonceClaimed(app.reward);
     if (isClaimed) {
       toaster.create("error", `This reward has already been claimed or invalidated.`);
       buttonController.hideInvalidator();
@@ -287,22 +325,45 @@ invalidateButton.addEventListener("click", async function invalidateButtonClickH
 });
 
 //mimics https://github.com/Uniswap/permit2/blob/a7cd186948b44f9096a35035226d7d70b9e24eaf/src/SignatureTransfer.sol#L150
-export async function isNonceClaimed(app: AppState): Promise<boolean> {
-  const provider = app.provider;
+export async function isNonceClaimed(permit: PermitReward): Promise<boolean> {
+  // check in localStorage first for performance
+  const stored = localStorage.getItem("claimedNonces");
+  let claimedNonces: Record<string, boolean> = {};
 
+  if (stored) {
+    try {
+      claimedNonces = JSON.parse(stored);
+      // if we have this nonce cached as claimed, return immediately
+      if (claimedNonces[permit.nonce.toString()]) {
+        return true;
+      }
+    } catch (e) {
+      console.error("Error parsing claimedNonces from localStorage", e);
+    }
+  }
+
+  // check on-chain
+  const provider = await useRpcHandler(permit.networkId);
   const permit2Contract = new ethers.Contract(permit2Address, permit2Abi, provider);
 
-  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(app.reward.nonce));
+  const { wordPos, bitPos } = nonceBitmap(BigNumber.from(permit.nonce));
 
-  const bitmap = await permit2Contract.nonceBitmap(app.reward.owner, wordPos).catch((error: MetaMaskError) => {
+  const bitmap = await permit2Contract.nonceBitmap(permit.owner, wordPos).catch((error: MetaMaskError) => {
     console.error("Error in nonceBitmap method: ", error);
     throw error;
   });
 
   const bit = BigNumber.from(1).shl(bitPos);
   const flipped = BigNumber.from(bitmap).xor(bit);
+  const isClaimed = bit.and(flipped).eq(0);
 
-  return bit.and(flipped).eq(0);
+  // store in cache if claimed
+  if (isClaimed) {
+    claimedNonces[permit.nonce.toString()] = true;
+    localStorage.setItem("claimedNonces", JSON.stringify(claimedNonces));
+  }
+
+  return isClaimed;
 }
 
 async function invalidateNonce(signer: JsonRpcSigner, nonce: BigNumberish): Promise<void> {
@@ -324,16 +385,33 @@ function nonceBitmap(nonce: BigNumberish): { wordPos: BigNumber; bitPos: number 
   return { wordPos, bitPos };
 }
 
-async function updatePermitTxHash(app: AppState, hash: string): Promise<boolean> {
-  const { error } = await supabase
-    .from("permits")
-    .update({ transaction: hash })
-    // using only nonce in the condition as it's defined unique on db
-    .eq("nonce", app.reward.nonce.toString());
+export async function updatePermitTxHash(nonce: string, hash: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("permits").update({ transaction: hash }).eq("nonce", nonce);
 
-  if (error !== null) {
-    console.error(error);
+    saveLocalStorageTransaction(nonce, hash);
+
+    if (error) {
+      console.error("Failed to update Supabase:", error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating permit hash:", error);
+    return false;
   }
+}
 
-  return true;
+const LOCAL_STORAGE_TX_KEY = "permit-transactions";
+
+export function getLocalStorageTransactions(): Record<string, string> {
+  const stored = localStorage.getItem(LOCAL_STORAGE_TX_KEY);
+  return stored ? JSON.parse(stored) : {};
+}
+
+export function saveLocalStorageTransaction(nonce: string, hash: string) {
+  const transactions = getLocalStorageTransactions();
+  transactions[nonce] = hash;
+  localStorage.setItem(LOCAL_STORAGE_TX_KEY, JSON.stringify(transactions));
 }

@@ -1,4 +1,4 @@
-import { ERC20Permit, Permit, TokenType } from "@ubiquibot/permit-generation/types";
+import type { PermitReward } from "@ubiquity-os/permit-generation";
 import { app } from "../app-state";
 import { buttonController, getMakeClaimButton, viewClaimButton } from "../button-controller";
 import { claimErc20PermitHandlerWrapper, fetchTreasury } from "../web3/erc20-permit";
@@ -6,12 +6,17 @@ import { claimErc721PermitHandler } from "../web3/erc721-permit";
 import { insertErc20PermitTableData, insertErc721PermitTableData } from "./insert-table-data";
 import { renderEnsName } from "./render-ens-name";
 import { renderNftSymbol, renderTokenSymbol } from "./render-token-symbol";
+import { TokenType } from "@ubiquibot/permit-generation/types";
+import { useRpcHandler } from "../../../../shared/use-rpc-handler";
+import { removeAllEventListeners } from "./utils";
 
 const carousel = document.getElementById("carousel") as Element;
 const table = document.querySelector(`table`) as HTMLTableElement;
 type Success = boolean;
 
 export async function renderTransaction(): Promise<Success> {
+  removeAllEventListeners(getMakeClaimButton()) as HTMLButtonElement;
+
   if (app.claims && app.claims.length > 1) {
     carousel.className = "ready";
     const rewardsCount = document.getElementById("rewardsCount") as Element;
@@ -25,6 +30,10 @@ export async function renderTransaction(): Promise<Success> {
   }
 
   if (isErc20Permit(app.reward)) {
+    if (app.reward.networkId !== app.networkId) {
+      app.provider = await useRpcHandler(app.reward.networkId);
+    }
+
     const treasury = await fetchTreasury(app.reward);
     table.setAttribute(`data-additional-data-size`, "small");
 
@@ -44,9 +53,10 @@ export async function renderTransaction(): Promise<Success> {
     renderEnsName({ element: toElement, address: app.reward.beneficiary }).catch(console.error);
 
     if (app.claimTxs[app.reward.nonce.toString()] !== undefined) {
-      buttonController.showViewClaim();
+      buttonController.onlyShowViewClaim();
       viewClaimButton.addEventListener("click", () => window.open(`${app.currentExplorerUrl}/tx/${app.claimTxs[app.reward.nonce.toString()]}`));
     } else if (window.ethereum) {
+      buttonController.hideViewClaim();
       getMakeClaimButton().addEventListener("click", claimErc20PermitHandlerWrapper(app));
     }
 
@@ -71,6 +81,6 @@ export async function renderTransaction(): Promise<Success> {
   return true;
 }
 
-export function isErc20Permit(permit: Permit): permit is ERC20Permit {
+export function isErc20Permit(permit: PermitReward): boolean {
   return permit.tokenType === TokenType.ERC20;
 }

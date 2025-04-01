@@ -57,7 +57,6 @@ export function errorToast(error: MetaMaskError, errorMessage?: string) {
     toaster.create("error", errorMessage);
     return;
   }
-
   toaster.create("error", error.reason);
 }
 

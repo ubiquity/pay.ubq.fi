@@ -47,7 +47,7 @@ async function mintGiftCard(productId: number, app: AppState) {
     return;
   }
 
-  const txHash: string = getIncompleteMintTx(app.reward.nonce) || (await claimPermitToCardTreasury(app));
+  const txHash: string = getIncompleteMintTx(app.reward.nonce.toString()) || (await claimPermitToCardTreasury(app));
 
   if (txHash) {
     let signedMessage;
@@ -77,7 +77,7 @@ async function mintGiftCard(productId: number, app: AppState) {
 
 async function checkForMintingDelay(app: AppState) {
   if (await hasMintingFinished(app)) {
-    removeIncompleteMintTx(app.reward.nonce);
+    removeIncompleteMintTx(app.reward.nonce.toString());
     await initClaimGiftCard(app);
   } else {
     const interval = setInterval(async () => {
@@ -110,7 +110,7 @@ async function claimPermitToCardTreasury(app: AppState) {
     const tx = await transferFromPermit(permit2Contract, reward, "Processing... Please wait. Do not close this page.");
     if (!tx) return;
 
-    storeIncompleteMintTx(app.reward.nonce, tx.hash);
+    storeIncompleteMintTx(app.reward.nonce.toString(), tx.hash);
     await waitForTransaction(tx, `Transaction confirmed. Minting your card now.`, app.signer.provider.network.chainId);
     return tx.hash;
   }

@@ -193,3 +193,7 @@
     opacity: 0.5;
   }
 }
+
+body:has(table[data-make-claim="error"]) #gift-cards-container {
+  display: none;
+}
