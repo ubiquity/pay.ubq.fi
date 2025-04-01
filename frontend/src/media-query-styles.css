@@ -3,13 +3,13 @@
   #header > .button-with-icon:nth-of-type(2) span {
     display: none;
   }
-  #logo-wrapper h1 > span:last-of-type {
+  #logo-wrapper h1 > span:nth-of-type(2) {
     display: none;
   }
   /* Target button and container directly under #header */
   #header > .button-with-icon,
   #header > .spinner-or-expand-container {
-    flex-grow: 1;
+    flex-grow: unset;
     justify-content: center;
   }
   button.button-with-icon span {
@@ -18,7 +18,14 @@
   button[title*="Claim"] span {
     display: unset;
   }
+
+/*  */
+/*  */
+/*  */
+
+
 }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #111;
@@ -30,4 +37,8 @@
     --error: #ff6666;
     --success: #00cc66;
   }
+}
+
+@media (max-width: 400px) {
+
 }

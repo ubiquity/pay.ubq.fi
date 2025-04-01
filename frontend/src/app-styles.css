@@ -148,7 +148,6 @@ footer {
   background-color: #ff000010;
 }
 
-
 .spinner-or-expand-container {
   display: inline-flex;
   align-items: center;
@@ -358,6 +357,8 @@ svg {
   font-family: monospace;
 }
 #header {
+  overflow:hidden;
+  text-overflow: ellipsis;
   display: flex;
   justify-content: space-between; /* Changed from space-evenly */
   align-items: center;
@@ -457,4 +458,12 @@ button#claim-all:hover:not([disabled]) {
   flex-grow: 1;
   /* width: 100%; */
   /* align-items: center; */
+}
+
+#header.header-logged-out * {
+  display: flex;
+  flex-grow: unset;
+}
+#header.header-logged-out {
+  justify-content: space-evenly;
 }

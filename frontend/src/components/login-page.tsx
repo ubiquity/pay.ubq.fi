@@ -24,52 +24,54 @@ export function LoginPage(/* Props if needed */) {
   // Basic example using wagmi's useConnect hook
   // This assumes connectors are configured in the WagmiConfig provider
   return (
-    // Add the section wrapper to match DashboardPage
-    <section id="header">
+    // Add the section wrapper to match DashboardPage and the logged-out class
+    <section id="header" className="header-logged-out">
       <div id="logo-wrapper">
         <h1>
           <LogoSpan />
-          <span>Ubiquity OS Rewards</span>
+          <span>Ubiquity OS</span>
+          <span>Rewards</span>
         </h1>
       </div>
       {/* Button is placed directly under #header */}
       {(() => {
-          // Explicitly find the injected connector from useConnectors result
-          const injectedConnectorInstance = connectors.find((c) => c.id === "injected");
+        // Explicitly find the injected connector from useConnectors result
+        const injectedConnectorInstance = connectors.find((c) => c.id === "injected");
 
-          // Removed debugging logs
+        // Removed debugging logs
 
-          if (!injectedConnectorInstance) {
-            return <div>Browser wallet connector not found. Please install MetaMask or a similar wallet.</div>;
-          }
+        if (!injectedConnectorInstance) {
+          return <div>Browser wallet connector not found. Please install MetaMask or a similar wallet.</div>;
+        }
 
-          // Removed the complex/incorrect features check and unused isReady variable
+        // Removed the complex/incorrect features check and unused isReady variable
 
-          // Workaround: Enable button if .ready is undefined but window.ethereum exists
-          const isReady = injectedConnectorInstance.ready ?? (typeof window !== "undefined" && !!window.ethereum);
+        // Workaround: Enable button if .ready is undefined but window.ethereum exists
+        const isReady = injectedConnectorInstance.ready ?? (typeof window !== "undefined" && !!window.ethereum);
 
-            return (
-              // Button is now directly under #header
-              <button
-                className="button-with-icon" // Add class
-                disabled={!isReady || status === "pending"} // Use the combined readiness check
-              key={injectedConnectorInstance.id}
-              onClick={() => connect({ connector: injectedConnectorInstance })} // Pass the instance to connect
-            >
-              {/* Always show icon */}
-              {ICONS.CONNECT}
-              {/* Ensure span structure is consistent */}
-              <span>
-                {status === "pending" ? "Connecting..." : "Connect Wallet"}
-                {/* Add unsupported text back inside span, only when applicable */}
-                {!isReady && status !== "pending" && " (unsupported)"}
-              </span>
-            </button>
-          );
-        })()}
+        return (
+          // Button is now directly under #header
+          <button
+            className="button-with-icon" // Add class
+            disabled={!isReady || status === "pending"} // Use the combined readiness check
+            key={injectedConnectorInstance.id}
+            onClick={() => connect({ connector: injectedConnectorInstance })} // Pass the instance to connect
+          >
+            {/* Conditionally show warning or connect icon */}
+            {!isReady ? ICONS.WARNING : ICONS.CONNECT}
+            {/* Ensure span structure is consistent */}
+            <span>
+              {status === "pending"
+                ? "Connecting..."
+                : !isReady
+                ? "Requires Wallet Extension" // New message for !isReady state
+                : "Connect Wallet"}
+            </span>
+          </button>
+        );
+      })()}
       {/* Show error message if connection fails - keep it outside the header section for now */}
       {error && <div>{error.message}</div>}
     </section>
   );
 } // Added missing closing brace for the component function
-// Removed stray ); from the end
