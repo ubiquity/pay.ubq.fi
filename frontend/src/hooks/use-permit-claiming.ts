@@ -20,49 +20,97 @@ interface UsePermitClaimingProps {
 // Type for cached status (consider sharing types later)
 type CachedPermitStatus = Pick<PermitData, "isNonceUsed" | "checkError" | "ownerBalanceSufficient" | "permit2AllowanceSufficient">;
 
+// Helper type guard for errors with a potential 'code' property
+interface MaybeCodedError {
+  code?: number | string;
+  message?: string;
+  cause?: unknown;
+}
+
+function isMaybeCodedError(e: unknown): e is MaybeCodedError {
+  return typeof e === 'object' && e !== null;
+}
+
 // Helper to check for user rejection errors
 function isUserRejection(error: unknown): boolean {
   if (error instanceof UserRejectedRequestError) {
     return true;
   }
   // Recursively check causes for common codes or messages
-  let cause = (error as any)?.cause;
+  let cause = isMaybeCodedError(error) ? error.cause : undefined;
   while (cause) {
-    if ((cause as any)?.code === 4001 || (cause as any)?.code === "ACTION_REJECTED") {
-      return true;
+    if (isMaybeCodedError(cause)) {
+        if (cause.code === 4001 || cause.code === "ACTION_REJECTED") {
+          return true;
+        }
+        if (typeof cause.message === "string" && (cause.message.includes("User rejected") || cause.message.includes("denied transaction signature"))) {
+          return true;
+        }
+        cause = cause.cause; // Move to the next cause in the chain
+    } else {
+        break; // Stop if the cause is not an object we can inspect
     }
-    if (typeof (cause as any)?.message === "string" && ((cause as any).message.includes("User rejected") || (cause as any).message.includes("denied transaction signature"))) {
-      return true;
-    }
-    cause = (cause as any)?.cause;
   }
   // Check top-level message as fallback
-  if (typeof (error as any)?.message === "string" && ((error as any).message.includes("User rejected") || (error as any).message.includes("denied transaction signature"))) {
+  if (isMaybeCodedError(error) && typeof error.message === "string" && (error.message.includes("User rejected") || error.message.includes("denied transaction signature"))) {
     return true;
   }
   return false;
 }
 
-// Helper to check for nonce already used errors
+// Helper to check for nonce already used errors (more robust, targeting specific log structure)
 function isNonceUsedError(error: unknown): boolean {
-  // Recursively check causes for common codes or messages
   let currentError = error;
-  while (currentError) {
-    const message = (currentError as any)?.message?.toLowerCase() || "";
-    // Add known strings indicating nonce issues from Permit2 or RPCs
-    if (message.includes("invalid nonce") || message.includes("nonce already used") || message.includes("nonce too low")) {
-      return true;
+  let depth = 0;
+  const maxDepth = 10; // Prevent infinite loops
+
+  while (currentError && depth < maxDepth) {
+    // Check 1: Direct ContractFunctionRevertedError with specific reason
+    if (currentError instanceof ContractFunctionRevertedError) {
+      const reason = currentError.reason?.toLowerCase();
+      if (reason && (reason.includes("invalid nonce") || reason.includes("nonce already used"))) {
+        // console.log("Nonce error detected via direct revert reason:", reason);
+        return true;
+      }
     }
-    // Check specific revert reasons if available (might need adjustment based on actual contract errors)
+
+    // Check 2: BaseError walk for nested ContractFunctionRevertedError
     if (currentError instanceof BaseError) {
-       const revertError = currentError.walk((err: unknown) => err instanceof Error && err.cause instanceof ContractFunctionRevertedError) as ContractFunctionRevertedError | null;
-       const reason = revertError?.reason?.toLowerCase();
-       if (reason && (reason.includes("invalid nonce") || reason.includes("nonce already used"))) {
-           return true;
-       }
+        const nestedRevert = currentError.walk(e => e instanceof ContractFunctionRevertedError);
+        if (nestedRevert instanceof ContractFunctionRevertedError) {
+            const reason = nestedRevert.reason?.toLowerCase();
+             if (reason && (reason.includes("invalid nonce") || reason.includes("nonce already used"))) {
+                // console.log("Nonce error detected via nested revert reason:", reason);
+                return true;
+            }
+        }
     }
-    currentError = (currentError as any)?.cause;
+
+    // Check 3: Check message strings for common nonce errors
+    if (isMaybeCodedError(currentError) && typeof currentError.message === 'string') {
+      const message = currentError.message.toLowerCase();
+      if (message.includes("invalid nonce") || message.includes("nonce already used") || message.includes("nonce too low")) {
+         // console.log("Nonce error detected via message keyword:", message);
+         return true;
+      }
+    }
+
+    // Check 4: Specifically check for the nested "VM execution error" within details, as seen in logs
+    // This often masks the underlying nonce revert from Permit2 during simulation via RPC.
+    if (currentError instanceof BaseError && 'details' in currentError && typeof currentError.details === 'string') {
+        const details = currentError.details.toLowerCase();
+        if (details.includes("vm execution error")) {
+             // console.log("Nonce error potentially detected via 'VM execution error' in details.");
+             return true; // Treat VM execution error during simulation as likely nonce issue
+        }
+     }
+
+    // Move to the next cause
+    currentError = isMaybeCodedError(currentError) ? currentError.cause : undefined;
+    depth++;
   }
+
+  // console.log("Nonce error not detected in error chain:", error);
   return false;
 }
 
@@ -113,7 +161,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
     if (permitToClaim.type === "erc20-permit") {
       const balanceErrorMsg = `Insufficient balance: Owner (${permitToClaim.owner}) does not have enough tokens.`;
       const allowanceErrorMsg = `Insufficient allowance: Owner (${permitToClaim.owner}) has not approved Permit2 enough tokens.`;
-      const checkErrorMsg = `Prerequisite check failed: ${permitToClaim.checkError}`;
+      // Corrected typo: checkErrorMsg -> permitToClaim.checkError
       if (permitToClaim.ownerBalanceSufficient === false) {
         console.error(balanceErrorMsg);
         setError(balanceErrorMsg); // Show global error
@@ -125,6 +173,8 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         return false;
       }
       if (permitToClaim.checkError) {
+        // Use the actual error message from the permit data
+        const checkErrorMsg = `Prerequisite check failed: ${permitToClaim.checkError}`;
         console.error(checkErrorMsg);
         setError(checkErrorMsg); // Show global error
         return false;
@@ -143,9 +193,81 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
       )
     );
 
+    // --- Pre-Simulation ---
+    let simulationSuccessful = false;
     try {
-      if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) {
-        throw new Error("Invalid ERC20 permit data.");
+        // Add check for publicClient
+        if (!publicClient) {
+            throw new Error("Public client not available for simulation.");
+        }
+        if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) {
+            throw new Error("Invalid ERC20 permit data for simulation.");
+        }
+        const permitArgs = {
+            permitted: { token: permitToClaim.token.address as Address, amount: BigInt(permitToClaim.amount) },
+            nonce: BigInt(permitToClaim.nonce),
+            deadline: BigInt(permitToClaim.deadline),
+        };
+        const transferDetailsArgs = { to: permitToClaim.beneficiary as Address, requestedAmount: BigInt(permitToClaim.amount) };
+
+        // console.log(`Simulating claim for permit: ${permitKey}`);
+        await publicClient.simulateContract({
+            address: PERMIT2_ADDRESS,
+            abi: permit2ABI,
+            functionName: "permitTransferFrom",
+            args: [permitArgs, transferDetailsArgs, permitToClaim.owner as Address, permitToClaim.signature as Hex],
+            account: address, // Use connected address for simulation
+        });
+        // console.log(`Simulation successful for permit: ${permitKey}`);
+        simulationSuccessful = true;
+
+    } catch (simError) {
+        console.warn(`Claim simulation failed for ${permitKey}:`, simError);
+        if (isNonceUsedError(simError)) {
+            // console.log(`Nonce already used for ${permitKey} detected during pre-simulation. Marking as claimed.`);
+            setError("Permit already claimed."); // Set specific global error for the modal
+            updatePermitStatusCache(permitKey, { isNonceUsed: true, checkError: undefined }); // Update cache
+            setPermits((currentPermits) => // Update local state
+                currentPermits.map((p) =>
+                    p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+                        ? { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined, transactionHash: undefined } // Mark as claimed, clear specific error on row
+                        : p
+                )
+            );
+        } else {
+            // For other simulation errors, set the global error but clear the specific permit error
+            const reason = simError instanceof BaseError ? simError.shortMessage : (simError instanceof Error ? simError.message : "Unknown simulation error");
+            setError(`Claim simulation failed: ${reason}`); // Set generic global error for the modal
+            setPermits((currentPermits) =>
+                currentPermits.map((p) =>
+                    p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+                        ? { ...p, claimStatus: "Error", claimError: undefined, transactionHash: undefined } // Set Error status, clear specific claimError
+                        : p
+                )
+            );
+        }
+        return false; // Stop claim process if simulation fails
+    }
+
+    // --- Actual Submission (only if simulation passed) ---
+    if (!simulationSuccessful) {
+        // Should not happen if logic above is correct, but as a safeguard
+        console.error("Simulation did not succeed, but error was not caught. Aborting claim.");
+        setError("Internal error during claim simulation.");
+         setPermits((currentPermits) =>
+            currentPermits.map((p) =>
+                p.nonce === permitToClaim.nonce && p.networkId === permitToClaim.networkId
+                    ? { ...p, claimStatus: "Error", claimError: "Internal simulation error", transactionHash: undefined }
+                    : p
+            )
+        );
+        return false;
+    }
+
+    try {
+      // Re-construct args (or reuse if scope allows, but safer to reconstruct)
+       if (permitToClaim.type !== "erc20-permit" || !permitToClaim.amount || !permitToClaim.token?.address) {
+        throw new Error("Invalid ERC20 permit data for submission."); // Should be caught earlier, but belt-and-suspenders
       }
       const permitArgs = {
         permitted: { token: permitToClaim.token.address as Address, amount: BigInt(permitToClaim.amount) },
@@ -155,6 +277,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
       const transferDetailsArgs = { to: permitToClaim.beneficiary as Address, requestedAmount: BigInt(permitToClaim.amount) };
 
       // Submit transaction
+      // console.log(`Submitting actual claim transaction for permit: ${permitKey}`);
       const txHash = await writeContractAsync({
         address: PERMIT2_ADDRESS,
         abi: permit2ABI,
@@ -207,7 +330,8 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
       }
       return false; // Indicate failure
     }
-  }, [isConnected, address, chain, writeContractAsync, setPermits, setError, resetWriteContract, updatePermitStatusCache]);
+  // Corrected dependency array for useCallback
+  }, [isConnected, address, chain, publicClient, writeContractAsync, setPermits, setError, resetWriteContract, updatePermitStatusCache]);
 
   // --- Handle Sequential Claim ---
   const handleClaimAllValidSequential = useCallback(async () => {
@@ -298,27 +422,18 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
 
     // --- Submission Phase ---
     // console.log(`Proceeding to claim ${validPermitsToClaim.length} validated permits sequentially:`, validPermitsToClaim.map((p) => p.nonce));
-    let successes = 0;
     let failures = 0;
     for (const permit of validPermitsToClaim) {
       const success = await handleClaimPermit(permit); // Reuse single claim logic (handles errors internally)
-      if (success) {
-        successes++;
-      } else {
+      if (!success) {
         // Failure already handled within handleClaimPermit (state set, error potentially shown)
         failures++;
       }
       // Optional: Add a small delay between sequential claims if needed
       // await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    } // Corrected closing brace for the for loop
 
-    // console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
-    if (failures > 0) {
-      // Use global error for summary, individual errors handled by handleClaimPermit
-      setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
-    }
-
-    // console.log(`Sequential claim process finished. Successes: ${successes}, Failures: ${failures}`);
+    // console.log(`Sequential claim process finished. Failures: ${failures}`); // Removed successes
     if (failures > 0) {
       // Use global error for summary, individual errors handled by handleClaimPermit
       setError(`${failures} out of ${validPermitsToClaim.length} claim submissions failed or were rejected. Check individual permits.`);
@@ -366,6 +481,7 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
                 amountIn: totalAmountIn,
                 userAddress: address,
                 walletClient: walletClient,
+                chainId: chain.id, // Add missing chainId
               });
               // console.log(`Swap submitted for ${symbol}. Order UID: ${orderUid}`);
               setSwapSubmissionStatus(prev => ({ ...prev, [swapKey]: { status: 'submitted', message: `Swap for ${symbol} submitted (UID: ${orderUid.substring(0, 8)}...)`, orderUid } }));
