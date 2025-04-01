@@ -23,8 +23,8 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
   const [displayPermits, setDisplayPermits] = useState<PermitData[]>([]);
   // Ref to hold the *complete* list of permits (including those fetched but maybe filtered later) and their statuses
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
-  const [isLoading, setIsLoading] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start in loading state
+  // Removed unused state: const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
@@ -70,6 +70,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
       setError("Supabase URL or Anon Key missing in frontend environment variables.");
       console.error("SupABASE URL or Anon Key missing"); // Keep console concise
       setIsWorkerInitialized(false);
+      setIsLoading(false); // Stop loading on init error
       return;
     }
 
@@ -82,21 +83,29 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     });
 
     workerRef.current.onmessage = (event: MessageEvent) => {
-      const { type, permits: workerPermits, error: workerError } = event.data;
+      // Define a type for the worker message data
+      type WorkerMessageData = {
+          type: 'INIT_SUCCESS' | 'INIT_ERROR' | 'ALL_PERMITS_RESULT' | 'VALIDATION_RESULT' | 'PERMITS_ERROR';
+          permits?: PermitData[];
+          error?: string;
+      };
+      const { type, permits: workerPermits, error: workerError } = event.data as WorkerMessageData;
       console.log("Message received from worker:", type);
 
       switch (type) {
         case 'INIT_SUCCESS':
           console.log("Worker initialized successfully.");
           setIsWorkerInitialized(true);
+          // Note: Loading state remains true until fetch is triggered and completes
           break;
         case 'INIT_ERROR':
           console.error("Worker initialization failed:", workerError);
           setError(`Worker initialization failed: ${workerError}`);
           setIsWorkerInitialized(false);
+          setIsLoading(false); // Stop loading on init error
           break;
-        case 'ALL_PERMITS_RESULT': { // Worker returns all permits from DB
-          setIsLoading(true); // Start loading phase for validation
+        case 'ALL_PERMITS_RESULT': {
+          // setIsLoading(true); // Keep loading true, validation might follow
           const allPermitsFromDb: PermitData[] = workerPermits || [];
           const cachedStatuses = loadCache();
           const currentPermitMap = new Map<string, PermitData>();
@@ -111,56 +120,51 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
             const cachedStatus = cachedStatuses[key];
             let permitToStore: PermitData;
 
-            // Merge with cached status if available
             if (cachedStatus) {
               permitToStore = { ...dbPermit, ...cachedStatus };
             } else {
-              permitToStore = { ...dbPermit }; // No cached status
+              permitToStore = { ...dbPermit };
             }
             currentPermitMap.set(key, permitToStore);
 
-            // Decide if validation is needed (new or uncached)
-            // Need 'created_at' from DB query result to compare with timestamp
-            // Assuming dbPermit has a 'created_at' field for now
-            const createdAt = (dbPermit as any).created_at; // Adjust if field name differs
+            // Explicitly type dbPermit before accessing created_at
+            const permitWithTimestamp = dbPermit as PermitData & { created_at?: string };
+            const createdAt = permitWithTimestamp.created_at;
             const needsValidation = !cachedStatus || (lastCheckTimestamp && createdAt && new Date(createdAt) > new Date(lastCheckTimestamp));
 
             if (needsValidation) {
-              permitsToValidate.push(dbPermit); // Send original DB data for validation
+              permitsToValidate.push(dbPermit);
             }
           });
 
-          allPermitsRef.current = currentPermitMap; // Update ref with merged data
-          applyFinalFilter(allPermitsRef.current); // Update UI immediately with cached statuses
-          setInitialLoadComplete(true); // Mark initial load (from DB) as complete
+          allPermitsRef.current = currentPermitMap;
+          applyFinalFilter(allPermitsRef.current); // Update UI immediately
+          // Removed: setInitialLoadComplete(true); // DB load is done
 
           if (permitsToValidate.length > 0) {
             console.log(`Sending ${permitsToValidate.length} permits to worker for validation.`);
             workerRef.current?.postMessage({ type: 'VALIDATE_PERMITS', payload: { permits: permitsToValidate } });
+            // Keep isLoading = true
           } else {
             console.log("No new permits require validation.");
-            setIsLoading(false); // No validation needed, stop loading
-             // Save timestamp even if no validation needed, to mark this check time
+            setIsLoading(false); // Stop loading ONLY if no validation needed
              try {
                 localStorage.setItem(PERMIT_LAST_CHECK_TIMESTAMP_KEY, new Date().toISOString());
              } catch (e) { console.error("Failed to save timestamp", e); }
           }
           break;
         }
-        case 'VALIDATION_RESULT': { // Worker returns validation results for the subset
+        case 'VALIDATION_RESULT': {
           const validatedPermits: PermitData[] = workerPermits || [];
-          const currentCache = loadCache(); // Load again in case it changed
+          const currentCache = loadCache();
           let cacheUpdated = false;
 
           validatedPermits.forEach(validatedPermit => {
             const key = `${validatedPermit.nonce}-${validatedPermit.networkId}`;
             const existingPermit = allPermitsRef.current.get(key);
             if (existingPermit) {
-              // Update the permit in the ref map
               const updatedPermit = { ...existingPermit, ...validatedPermit };
               allPermitsRef.current.set(key, updatedPermit);
-
-              // Update the cache entry
               currentCache[key] = {
                 isNonceUsed: updatedPermit.isNonceUsed,
                 checkError: updatedPermit.checkError,
@@ -174,24 +178,22 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
           if (cacheUpdated) {
             saveCache(currentCache);
           }
-          // Save the timestamp of this successful validation cycle
           try {
             localStorage.setItem(PERMIT_LAST_CHECK_TIMESTAMP_KEY, new Date().toISOString());
             console.log("Saved last check timestamp to localStorage after validation.");
           } catch (e) { console.error("Failed to save timestamp", e); }
 
-          applyFinalFilter(allPermitsRef.current); // Re-apply filter with new validation results
-          setIsLoading(false); // Validation complete
+          applyFinalFilter(allPermitsRef.current); // Re-apply filter
+          setIsLoading(false); // Validation complete, stop loading
           break;
         }
-        case 'PERMITS_ERROR': // Handles errors from both fetch and validate steps
+        case 'PERMITS_ERROR':
           console.error("Worker error processing permits:", workerError);
           setError(`Error processing permits: ${workerError}`);
-          // Don't clear permits, keep potentially stale data? Or clear? Let's clear for now.
           allPermitsRef.current.clear();
           setDisplayPermits([]);
-          setIsLoading(false);
-          setInitialLoadComplete(true); // Mark load as complete even on error
+          setIsLoading(false); // Stop loading on error
+          // Removed: setInitialLoadComplete(true);
           break;
       }
     };
@@ -199,8 +201,8 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     workerRef.current.onerror = (event) => {
       console.error("Worker error:", event.message, event);
       setError(`Worker error: ${event.message}`);
-      setIsLoading(false);
-      setInitialLoadComplete(true);
+      setIsLoading(false); // Stop loading on worker error
+      // Removed: setInitialLoadComplete(true);
       setIsWorkerInitialized(false);
     };
 
@@ -215,7 +217,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
   // Function to fetch permits (initiates the process)
   const fetchPermitsAndCheck = useCallback(() => {
     if (!workerRef.current) {
-      setError("Worker not available.");
+      // setError("Worker not available."); // Avoid setting error if just not ready
       console.error("fetchPermitsAndCheck called but worker is not available.");
        return;
      }
@@ -224,9 +226,9 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
        return;
     }
     if (!isConnected || !address) {
-      // setError("Wallet not connected."); // Avoid setting error here, let UI handle disconnected state
-      allPermitsRef.current.clear(); // Clear data if disconnected
+      allPermitsRef.current.clear();
       setDisplayPermits([]);
+      setIsLoading(false); // Ensure loading stops if disconnected before fetch
       return;
     }
 
@@ -243,7 +245,6 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
       const currentCache = loadCache();
       currentCache[permitKey] = { ...currentCache[permitKey], ...status };
       saveCache(currentCache);
-      // Optionally update the ref map as well for immediate UI reflection before next fetch cycle
       const existingPermit = allPermitsRef.current.get(permitKey);
       if (existingPermit) {
           allPermitsRef.current.set(permitKey, { ...existingPermit, ...status });
@@ -256,7 +257,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
     permits: displayPermits, // Expose the filtered list for display
     setPermits: setDisplayPermits, // Allow external updates (though cache update is preferred)
     isLoading,
-    initialLoadComplete,
+    // Removed: initialLoadComplete,
      error,
      setError,
      fetchPermitsAndCheck,
