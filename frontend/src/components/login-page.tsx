@@ -1,25 +1,23 @@
 import { useConnect, useConnectors } from "wagmi"; // Added useConnectors hook
-import logoSvgContent from "../assets/ubiquity-os-logo.svg?raw"; // Import SVG content as raw string
 import { ICONS } from "./iconography"; // <-- Correct casing
 
 // Update props if needed, or remove if connection is handled by context/hooks directly
 // interface LoginPageProps {
 // }
-
+// Create a wrapper span for the SVG content
+export const LogoSpan = () => (
+  <span
+    id="header-logo-wrapper" // Use a wrapper class if needed for positioning/sizing
+  >
+    {ICONS.DAO_LOGO}
+  </span>
+);
 export function LoginPage(/* Props if needed */) {
   // Use `status` to check connection state
   const { connect, error, status } = useConnect(); // Keep useConnect for connect function and status/error
   const connectors = useConnectors(); // Get connector instances separately
 
   // Removed debugging logs
-
-  // Create a wrapper span for the SVG content
-  const LogoSpan = () => (
-    <span
-      id="header-logo-wrapper" // Use a wrapper class if needed for positioning/sizing
-      dangerouslySetInnerHTML={{ __html: logoSvgContent }}
-    />
-  );
 
   // Basic example using wagmi's useConnect hook
   // This assumes connectors are configured in the WagmiConfig provider
