@@ -194,7 +194,7 @@ footer {
   box-shadow: 0 0 96px 0 #00000040;
   display: flex; /* Use flex for overall structure */
   flex-direction: column; /* Stack header and body vertically */
-  border-radius: 4;
+  border-radius: 4px;
 }
 
 .permits-header {
@@ -547,8 +547,8 @@ button > .spinner.button-spinner {
   color: var(--error); /* Error text color */
 }
 .error-message svg {
-  fill: var(--error); /* Error icon color */
-  flex-shrink: 0; /* Prevent icon shrinking */
+  /* fill: var(--error); */ /* Error icon color */
+  /* flex-shrink: 0; */ /* Prevent icon shrinking */
 }
 
 button {
@@ -588,4 +588,16 @@ button#claim-all:hover:not([disabled]) {
 
 button.button-as-link.monospace {
     text-align: right;
+}
+
+/* Style for the UUSD currency icon */
+.currency-icon {
+  height: 18px;
+  width: 18px;
+  margin-right: 6px;
+  vertical-align: middle;
+  display: inline-block;
+  margin-bottom: 2px;
+  fill: #bfbfbf; /* Ensure it takes the text color */
+  /* fill: currentColor; */
 }

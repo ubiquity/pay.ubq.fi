@@ -115,11 +115,27 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
           const currentCache = loadCache();
           let cacheUpdated = false;
 
-          // Merge new results into the cache and the ref map
+          // Merge new results into the cache and the ref map, preserving cached 'isNonceUsed' status
           validatedNewPermits.forEach(validatedPermit => {
             const key = `${validatedPermit.nonce}-${validatedPermit.networkId}`;
-            allPermitsRef.current.set(key, validatedPermit); // Update ref map
-            currentCache[key] = validatedPermit; // Update cache object
+            const existingCachedPermit = currentCache[key];
+
+            // Merge, prioritizing existing cache for isNonceUsed if it's true
+            const mergedPermit = {
+              ...existingCachedPermit, // Start with cached data (if any)
+              ...validatedPermit,     // Overwrite with fresh validation results
+            };
+            // Explicitly ensure isNonceUsed remains true if it was ever true in the cache
+            if (existingCachedPermit?.isNonceUsed === true) {
+                console.log(`Preserving isNonceUsed=true for key ${key} from cache.`);
+                mergedPermit.isNonceUsed = true; // Force it to true if cache says so
+            } else {
+                 // Log status only if not preserving true from cache
+                 console.log(`isNonceUsed status for key ${key}: cache=${existingCachedPermit?.isNonceUsed}, worker=${validatedPermit.isNonceUsed}, merged=${mergedPermit.isNonceUsed}`);
+            }
+
+            allPermitsRef.current.set(key, mergedPermit); // Update ref map
+            currentCache[key] = mergedPermit; // Update cache object
             cacheUpdated = true;
           });
 

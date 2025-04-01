@@ -81,7 +81,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     : isClaimingThis
     ? "Claiming..."
     : claimFailed
-    ? "Claim Failed"
+    ? "Failed"
     : insufficientBalance
     ? "Insolvent"
     : insufficientAllowance
@@ -92,16 +92,54 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     ? "Valid"
     : permit.status || "";
 
-  // Determine button text
-  const buttonText = isClaimed
-    ? "Claimed"
+  // --- Button Logic ---
+  const isConfirmingThisPermit = isConfirming && permit.transactionHash === confirmingHash;
+
+  // Determine button text based on multiple states
+  const buttonText = isClaimed && permit.transactionHash
+    ? "View" // Final state: View Tx
+    : isConfirmingThisPermit
+    ? "Confirming..." // Confirmation in progress
     : isClaimingThis
-    ? "Claiming..."
-    : claimFailed
-    ? "Retry Claim"
-    : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-    ? "Claim"
-    : "Claim";
+    ? "Claiming..." // Initial claim submission
+    : claimFailed && permit.transactionHash // Claim failed *with* a hash
+    ? "View Failed Tx"
+    : claimFailed // Claim failed *without* a hash (e.g., simulation error)
+    ? "Retry"
+    : "Claim"; // Default/Initial state
+
+  // Determine if the button should be disabled
+  const isButtonDisabled =
+    !isConnected || // Not connected
+    isClaimingThis || // Claiming in progress
+    isConfirmingThisPermit || // Confirming in progress
+    // Disable if trying to claim but cannot, OR if claimed without hash
+    (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) || // Allow clicking "View Failed Tx" even if canAttemptClaim is false now
+    (isClaimed && !permit.transactionHash) ||
+    // Disable retry if claim failed without a hash and cannot attempt claim now
+    (claimFailed && !permit.transactionHash && !canAttemptClaim);
+
+  // Determine which icon to show (Still needed for the NO_CLAIM icon case)
+  const showCannotClaimIcon = !canAttemptClaim && !isClaimed && !isClaimingThis;
+
+  // Determine which icon to show (hide for "View", "View Failed Tx", and spinners)
+  const showButtonIcon =
+    !(isClaimed && permit.transactionHash) && // Not successful View
+    !(claimFailed && permit.transactionHash) && // Not failed View
+    !isClaimingThis && // Not claiming
+    !isConfirmingThisPermit; // Not confirming
+  const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+
+  // Determine button action
+  const handleButtonClick = () => {
+    // If claimed OR claim failed WITH a hash, open explorer
+    if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
+      window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
+    } else if (!isButtonDisabled) {
+      // Otherwise, if not disabled, attempt claim (Retry Claim or initial Claim)
+      onClaimPermit(permit);
+    }
+  };
 
   // Function to parse GitHub URL and return formatted string
   const formatGithubLink = (url: string | undefined): string => {
@@ -119,8 +157,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     return "Source Link"; // Fallback text
   };
 
-  // Determine which icon to show
-  const showCannotClaimIcon = !canAttemptClaim && !isClaimed && !isClaimingThis;
+  // Removed the misplaced declaration from here
 
   return (
     <div className={`permit-row ${rowClassName}`}>
@@ -156,6 +193,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
                 onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
                 title={`View ${ownerAddress}'s balance for token ${tokenAddress}`}
               >
+                {/* Add UUSD icon before the amount */}
+                {ICONS.UUSD}
                 {formatAmount(amount)}
               </button>
             );
@@ -163,8 +202,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
             // Display "NFT" for ERC721 permits (no direct balance link)
             return "NFT";
           } else {
-            // Fallback for missing data or unknown type
-            return permit.amount ? formatAmount(permit.amount) : "N/A";
+            // Fallback for missing data or unknown type - include icon if amount exists
+            return permit.amount ? <>{ICONS.UUSD}{formatAmount(permit.amount)}</> : "N/A";
           }
         })()}
       </div>
@@ -172,33 +211,21 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
       {/* Actions Column (Now 3rd) */}
       <div className="permit-cell actions-cell">
         <button
-          onClick={() => onClaimPermit(permit)}
-          disabled={!isConnected || !canAttemptClaim || isClaimingThis || isClaimed}
-          className="button-with-icon" // Apply CSS class
-          title={statusDisplayText} // Add title attribute for tooltip
+          onClick={handleButtonClick} // Use the new handler
+          disabled={isButtonDisabled} // Use the new disabled logic
+          className={`button-with-icon ${isClaimed && permit.transactionHash ? "view-button" : ""}`} // Add class for View state
+          title={statusDisplayText} // Keep title for context
         >
-          {showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM}
+          {/* Conditionally render icon */}
+          {showButtonIcon && buttonIcon}
           <span>{buttonText}</span>
         </button>
-        {/* Display Claim Error */}
-        {permit.claimError && <div className="status-error extra-small-font margin-top-4">Error: {permit.claimError}</div>}
-        {/* Display Test Error */}
+        {/* REMOVED Display Claim Error div */}
+        {/* Display Test Error (Keep this) */}
         {!permit.claimError && !permit.checkError && permit.testError && (
           <div className="status-test-failed extra-small-font margin-top-4">Test Failed: {permit.testError}</div>
         )}
-        {/* Display Transaction Hash Link */}
-        {permit.transactionHash && (
-          <div className="extra-small-font margin-top-4">
-            <a
-              href={`${chain?.blockExplorers?.default.url}/tx/${permit.transactionHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={permit.transactionHash}
-            >
-              View Tx {isConfirming && permit.transactionHash === confirmingHash ? "(Confirming...)" : ""}
-            </a>
-          </div>
-        )}
+        {/* REMOVED the separate Transaction Hash Link */}
       </div>
     </div>
   );
