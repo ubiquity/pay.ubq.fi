@@ -2,11 +2,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Imp
 import { StrictMode } from 'react'; // Re-add StrictMode import
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { injected } from '@wagmi/connectors';
-import { gnosis, mainnet, optimism } from 'wagmi/chains';
+import { WagmiProvider, createConfig, http } from "wagmi";
+import { type Chain } from "viem/chains"; // Import Chain type
+import { injected } from "@wagmi/connectors";
+import {
+  mainnet, // 1
+  optimism, // 10
+  bsc, // 56
+  gnosis, // 100
+  polygon, // 137
+  zkSync, // 324
+  base, // 8453
+  arbitrum, // 42161
+  celo, // 42220
+  avalanche, // 43114
+  blast, // 81457
+  zora, // 7777777
+} from "wagmi/chains";
 // Removed Permit2RpcManager import as it's now used only in the worker
-import App from './App.tsx';
+import App from "./App.tsx";
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
 import { grid } from './the-grid';
@@ -14,18 +28,35 @@ import { grid } from './the-grid';
 // Removed Permit2RpcManager instantiation and export
 
 // Configure wagmi
+const supportedChains = [
+  mainnet,
+  optimism,
+  bsc,
+  gnosis,
+  polygon,
+  zkSync,
+  base,
+  arbitrum,
+  celo,
+  avalanche,
+  blast,
+  zora,
+];
+
+// Dynamically create transports for all supported chains
+const transports = supportedChains.reduce((acc, chain) => {
+  acc[chain.id] = http(`https://rpc.ubq.fi/${chain.id}`);
+  return acc;
+}, {} as Record<number, ReturnType<typeof http>>);
+
+
 export const config = createConfig({ // Export config
-  chains: [mainnet, gnosis, optimism], // Added optimism
+  chains: supportedChains as unknown as [Chain, ...Chain[]], // Assert via unknown
   connectors: [
     injected(), // Use injected connector (removed shimDisconnect)
     // Add WalletConnect, Coinbase Wallet etc. here if needed later
   ],
-  transports: {
-    // Revert back to default http transports
-    [mainnet.id]: http(),
-    [gnosis.id]: http(),
-    [optimism.id]: http(),
-  },
+  transports: transports,
 });
 
 // Create QueryClient instance

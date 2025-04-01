@@ -103,7 +103,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isConfirm
     : isClaimingThis
     ? "Claiming..." // Initial claim submission
     : claimFailed && permit.transactionHash // Claim failed *with* a hash
-    ? "View Failed Tx"
+    ? "View"
     : claimFailed // Claim failed *without* a hash (e.g., simulation error)
     ? "Retry"
     : "Claim"; // Default/Initial state

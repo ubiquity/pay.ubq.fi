@@ -33,9 +33,19 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
   // Function to load PermitData cache from localStorage
   const loadCache = useCallback((): PermitDataCache => {
     try {
-      const cached = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
-      console.log(`Loaded cache for ${PERMIT_DATA_CACHE_KEY}: ${cached ? cached.substring(0, 100) + '...' : 'null'}`); // Log cache load
-      return cached ? JSON.parse(cached) : {};
+      const cachedString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
+      console.log(`Loaded cache string for ${PERMIT_DATA_CACHE_KEY}: ${cachedString ? cachedString.substring(0, 100) + '...' : 'null'}`);
+      const cachedData = cachedString ? JSON.parse(cachedString) : {};
+
+      // Log any cached permits marked as used
+      Object.entries(cachedData).forEach(([key, permit]) => {
+        // Type assertion needed here as JSON.parse returns any
+        if ((permit as PermitData).isNonceUsed === true) {
+          console.log(`loadCache: Found cached permit ${key} with isNonceUsed=true.`);
+        }
+      });
+
+      return cachedData;
     } catch (e) {
       console.error("Failed to load permit data cache", e);
       return {};
@@ -60,10 +70,20 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         // Filter if nonce is used OR if the nonce check specifically failed
         const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
         const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed;
+
+        // Add detailed logging for the filtering decision
+        const permitKey = `${permit.nonce}-${permit.networkId}`;
+        console.log(`applyFinalFilter: Checking permit ${permitKey}. isNonceUsed=${permit.isNonceUsed}, nonceCheckFailed=${nonceCheckFailed}, shouldFilter=${shouldFilter}`);
+
         if (!shouldFilter) {
             filteredList.push(permit);
+        } else {
+             console.log(`applyFinalFilter: Filtering out permit ${permitKey}.`);
         }
     });
+    console.log(`applyFinalFilter: Filtered list size: ${filteredList.length}. Setting display permits.`);
+    // Log the permits *being set* to the state, focusing on nonce and used status
+    console.log('applyFinalFilter: Filtered permits being set:', JSON.stringify(filteredList.map(p => ({ nonce: p.nonce, isNonceUsed: p.isNonceUsed }))));
     setDisplayPermits(filteredList);
   }, []);
 
@@ -120,19 +140,20 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
             const key = `${validatedPermit.nonce}-${validatedPermit.networkId}`;
             const existingCachedPermit = currentCache[key];
 
-            // Merge, prioritizing existing cache for isNonceUsed if it's true
+            // Determine the correct isNonceUsed status, prioritizing cache=true
+            const finalIsNonceUsed = existingCachedPermit?.isNonceUsed === true || validatedPermit.isNonceUsed === true;
+            if (existingCachedPermit?.isNonceUsed === true && !finalIsNonceUsed) {
+                 console.warn(`Nonce used status mismatch for key ${key}! Cache: true, Worker: ${validatedPermit.isNonceUsed}. Forcing true.`);
+            } else if (existingCachedPermit?.isNonceUsed === true) {
+                 console.log(`Preserving isNonceUsed=true for key ${key} from cache.`);
+            }
+
+            // Construct the final merged permit object
             const mergedPermit = {
               ...existingCachedPermit, // Start with cached data (if any)
               ...validatedPermit,     // Overwrite with fresh validation results
+              isNonceUsed: finalIsNonceUsed, // Apply the determined status
             };
-            // Explicitly ensure isNonceUsed remains true if it was ever true in the cache
-            if (existingCachedPermit?.isNonceUsed === true) {
-                console.log(`Preserving isNonceUsed=true for key ${key} from cache.`);
-                mergedPermit.isNonceUsed = true; // Force it to true if cache says so
-            } else {
-                 // Log status only if not preserving true from cache
-                 console.log(`isNonceUsed status for key ${key}: cache=${existingCachedPermit?.isNonceUsed}, worker=${validatedPermit.isNonceUsed}, merged=${mergedPermit.isNonceUsed}`);
-            }
 
             allPermitsRef.current.set(key, mergedPermit); // Update ref map
             currentCache[key] = mergedPermit; // Update cache object

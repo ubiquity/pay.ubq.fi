@@ -594,10 +594,16 @@ button.button-as-link.monospace {
 .currency-icon {
   height: 18px;
   width: 18px;
-  margin-right: 6px;
+  margin-right: 10px;
   vertical-align: middle;
   display: inline-block;
-  margin-bottom: 2px;
-  fill: #bfbfbf; /* Ensure it takes the text color */
+  margin-bottom: 2.5px;
+  fill: hsl(0 0% 63% / 1); /* Ensure it takes the text color */
   /* fill: currentColor; */
+  transition: fill 0.2s ease-in-out, background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+
+button:hover .currency-icon {
+    fill: #fff;
 }

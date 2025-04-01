@@ -378,7 +378,8 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         );
       }
     }
-  }, [claimReceiptError, claimTxHash, permits, setPermits, updatePermitStatusCache, setError]); // Dependencies for confirmation error
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClaimConfirmed, claimReceipt, claimReceiptError, claimTxHash, setPermits, updatePermitStatusCache, setError]); // Removed 'permits' dependency
 
   useEffect(() => {
     // Effect for submission error (writeContractError)
@@ -429,7 +430,8 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
         );
       }
     }
-  }, [writeContractError, permits, setPermits, setError, updatePermitStatusCache]); // Dependencies for submission error
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [writeContractError, setPermits, setError, updatePermitStatusCache]); // Removed 'permits' dependency
 
   return {
     handleClaimPermit,
