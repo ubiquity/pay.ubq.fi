@@ -1,4 +1,4 @@
-# System Patterns: Permit Claiming Application (Rewrite)
+0# System Patterns: Permit Claiming Application (Rewrite)
 
 This document outlines the high-level architecture and key design patterns for the rewritten Permit Claiming application, based on the initial `rewrite-plan.md`.
 
@@ -30,9 +30,10 @@ graph LR
 ```
 
 *   **Frontend:** Handles user interaction, wallet connection/management (via `wagmi`), permit display, and initiates claims. Uses raw CSS for styling.
-*   **Permit Checker Worker:** Runs in the browser background. Fetches permit data from Supabase based on connected wallet address. Performs on-chain validation (nonce, balance, allowance) via **batch JSON-RPC calls** directly to the RPC endpoint. Communicates results back to the main frontend thread.
+*   **Permit Checker Worker:** Runs in the browser background. Fetches permit data from Supabase based on connected wallet address. Checks `localStorage` for cached nonce statuses. Performs on-chain validation (nonce, balance, allowance) via **batch JSON-RPC calls** directly to the RPC endpoint *only for permits not cached as claimed*. Updates `localStorage` with newly claimed nonces. Communicates results back to the main frontend thread.
 *   **Database (Supabase):** Stores user data (primarily wallet address -> github_id mapping), permit details associated with github_ids, related token/partner/location info. Accessed directly by the Permit Checker Worker.
 *   **Blockchain:** Source of truth for permit validity (checked via worker's batch RPC calls) and claim execution (initiated by frontend).
+*   **LocalStorage:** Used by the worker to cache the status ("claimed") of permit nonces to reduce redundant checks on subsequent loads.
 
 ## 2. Key Patterns & Decisions
 
@@ -48,7 +49,7 @@ graph LR
 ## 3. Data Flow
 
 1.  **Wallet Connection:** Frontend (User Action) -> Wallet (Approve Connection) -> Frontend (`useAccount` hook updates)
-2.  **Permit Fetching & Validation:** Frontend (Wallet Connected) -> Worker (Fetch Supabase) -> Worker (Batch RPC Call to Blockchain) -> Worker (Process Results) -> Frontend (Display Permits & Status)
+2.  **Permit Fetching & Validation:** Frontend (Wallet Connected) -> Worker (Fetch Supabase) -> Worker (Check LocalStorage Cache) -> Worker (Batch RPC Call for Uncached Permits) -> Worker (Process Results & Update Cache) -> Frontend (Display Permits & Status)
 3.  **Claiming (Single):** Frontend (`handleClaimPermit`) -> Wallet (Sign Tx) -> Blockchain (`permitTransferFrom`)
 4.  **Confirmation:** Frontend (`useWaitForTransactionReceipt`) monitors transaction -> Updates UI state.
 

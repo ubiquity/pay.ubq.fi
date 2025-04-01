@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { type Address } from "viem";
 import type { PermitData } from "../types";
-// Removed Supabase and library imports, worker handles them
+
+// Constants
+const PERMIT_LAST_CHECK_TIMESTAMP_KEY = "permitLastCheckTimestamp";
 
 // Get Supabase config from Vite env vars
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -67,6 +69,7 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
         setIsLoading(false);
         setInitialLoadComplete(true);
       }
+      // Removed duplicate 'PERMITS_RESULT' block
     };
 
     // Error handler for worker itself
@@ -109,10 +112,19 @@ export function usePermitData({ address, isConnected }: UsePermitDataProps) {
 
     setIsLoading(true);
     setError(null);
-    console.log("Posting FETCH_PERMITS message to worker...");
+
+    // Get last check timestamp from localStorage
+    let lastCheckTimestamp: string | null = null;
+    try {
+      lastCheckTimestamp = localStorage.getItem(PERMIT_LAST_CHECK_TIMESTAMP_KEY);
+    } catch (e) {
+      console.error("Failed to read last check timestamp from localStorage", e);
+    }
+    console.log(`Posting FETCH_PERMITS message to worker... Last check: ${lastCheckTimestamp || 'Never'}`);
+
     workerRef.current.postMessage({
       type: 'FETCH_PERMITS',
-      payload: { address }
+      payload: { address, lastCheckTimestamp } // Send timestamp to worker
     });
     // Note: State updates (isLoading, permits, error) are now handled by the worker's onmessage listener
     // We don't call setIsLoading(false) or setInitialLoadComplete(true) here anymore.

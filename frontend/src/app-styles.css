@@ -145,47 +145,9 @@ footer {
   border: 1px solid #ffffff10;
   text-align: center;
   margin: 4px auto;
+  background-color: #ff000010;
 }
-/*
-#claim-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  flex-wrap: wrap;
-}
-#claim-summary .summary-info span {
-  font-weight: 600;
-  color: var(--text);
-  margin-right: 16px;
-}
-#claim-summary .claim-all-button {
-  color: #fff;
-}
-#claim-summary .claim-all-button:hover {
-  opacity: 0.9;
-}
-#claim-summary .claim-all-button:disabled {
-  background-color: #ffffff10;
-  opacity: 0.5;
-  color: #bfbfbf;
-}
-#claim-summary .claim-all-button .spinner {
-  width: 14px;
-  height: 14px;
-  margin-right: 6px;
-  color: #fff;
-  border-top-color: #fff;
-  border-left-color: #fff;
-  border-right-color: #fff;
-}
-#claim-summary .error-message {
-  width: 100%;
-  justify-content: center;
-  padding: 4px 0 0;
-  color: var(--error);
-  font-size: 0.9em;
-} */
+
 
 .spinner-or-expand-container {
   display: inline-flex;
