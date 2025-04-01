@@ -10,7 +10,7 @@ import type { Database, Tables } from "../database.types"; // Import generated t
 
 // Define table names
 const PERMITS_TABLE = "permits";
-const WALLETS_TABLE = "wallets"; // Keep for reference if needed elsewhere
+const WALLETS_TABLE = "wallets";
 const TOKENS_TABLE = "tokens";
 const PARTNERS_TABLE = "partners";
 const LOCATIONS_TABLE = "locations";
@@ -77,8 +77,10 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     if (amountBigInt !== null && amountBigInt > 0n) {
         type = "erc20-permit";
     } else {
-        if (index < 10) { console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no positive amount (${permit.amount}). Filtering out.`); }
-        return null;
+        // Allow permits with 0 amount through mapping, filter later if needed
+        // if (index < 10) { console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no positive amount (${permit.amount}). Filtering out.`); }
+        // return null;
+        type = "erc20-permit"; // Still classify as ERC20 if amount is 0 or null, maybe filter later based on validation?
     }
 
     // Log type determination for the first few permits
@@ -104,11 +106,16 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
         ...(permit.created && { created_at: permit.created }) // Map 'created' from DB
     };
 
-    // Basic validation
-    if (!permitData.nonce || !permitData.deadline || !permitData.signature || !permitData.beneficiary || !permitData.owner || !permitData.amount || !permitData.token?.address) {
+    // Basic validation (ensure essential fields are present)
+    if (!permitData.nonce || !permitData.deadline || !permitData.signature || !permitData.beneficiary || !permitData.owner || !permitData.token?.address) { // Amount check removed as 0 is ok for type
         if (index < 10) { console.warn(`Worker: Permit [${index}] missing essential data. Filtering out. Data:`, JSON.stringify(permitData)); }
         return null;
     }
+    // Validate deadline format before parsing
+     if (typeof permitData.deadline !== 'string' || isNaN(parseInt(permitData.deadline, 10))) {
+         if (index < 10) { console.warn(`Worker: Permit [${index}] has invalid deadline format: ${permitData.deadline}. Filtering out.`); }
+         return null;
+     }
     const deadlineInt = parseInt(permitData.deadline, 10);
     if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
         if (index < 10) { console.warn(`Worker: Permit [${index}] is expired. Filtering out.`); }
@@ -125,7 +132,8 @@ async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: stri
     let query = supabase.from(PERMITS_TABLE)
         .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
         // IMPORTANT: Using github_id (string) for beneficiary_id (number in generated type) based on observed behavior
-        .eq("beneficiary_id", userGitHubId as any) // Use 'as any' to bypass incorrect generated type for this specific comparison
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .eq("beneficiary_id", userGitHubId as any) // Use 'as any' to bypass incorrect generated type & suppress ESLint warning
         .is("transaction", null);
 
     if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
@@ -153,7 +161,10 @@ async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: stri
 // Function to perform batch validation using rpcClient
 async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<PermitData[]> {
     if (!rpcClient) throw new Error("RPC client not initialized.");
-    if (permitsToValidate.length === 0) return [];
+    if (permitsToValidate.length === 0) {
+        console.log("Worker: No permits provided for validation.");
+        return [];
+    }
 
     const checkedPermitsMap = new Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>();
     const batchRequests: { request: JsonRpcRequest; key: string; type: string; requiredAmount?: bigint; chainId: number }[] = [];
@@ -162,7 +173,10 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
 
     permitsToValidate.forEach((permit) => {
         // Only handle ERC20 permits as per simplified logic
-        if (permit.type !== 'erc20-permit') return;
+        if (permit.type !== 'erc20-permit') {
+            console.warn(`Worker: Skipping validation for non-ERC20 permit: ${permit.nonce}`);
+            return;
+        };
 
         const key = `${permit.nonce}-${permit.networkId}`;
         const chainId = permit.networkId;
@@ -190,11 +204,13 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
                     key, type: "allowance", requiredAmount, chainId
                 });
             }
+        } else {
+             console.warn(`Worker: Skipping balance/allowance check for permit ${key} due to missing data.`);
         }
     });
 
     console.log(`Worker: Sending validation batch request with ${batchRequests.length} checks.`);
-    if (batchRequests.length === 0) return permitsToValidate; // Return original if nothing to check
+    if (batchRequests.length === 0) return permitsToValidate; // Return original if nothing to check (e.g., only non-ERC20 passed)
 
     try {
         const batchPayload = batchRequests.map(br => br.request);
@@ -209,7 +225,9 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
             if (!permit) return;
 
             const res = responseMap.get(batchReq.request.id as number);
-            const updateData = checkedPermitsMap.get(batchReq.key) || {};
+            // Initialize updateData with existing permit data to preserve fields not checked
+            const updateData: Partial<PermitData & { isNonceUsed?: boolean }> = checkedPermitsMap.get(batchReq.key) || {};
+
 
             if (!res) {
                 updateData.checkError = `Batch response missing (${batchReq.type})`;
@@ -222,6 +240,10 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
                     else if (batchReq.type === "nonce") {
                         const bitmap = BigInt(res.result as string);
                         updateData.isNonceUsed = Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n)));
+                    }
+                    // Clear checkError if this specific check succeeded
+                    if (updateData.checkError?.includes(`(${batchReq.type})`)) {
+                        updateData.checkError = undefined;
                     }
                 } catch (parseError: unknown) {
                     updateData.checkError = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
@@ -237,16 +259,19 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
         // Mark all permits in this validation batch as errored
         permitsToValidate.forEach(permit => {
              const key = `${permit.nonce}-${permit.networkId}`;
-             const updateData = checkedPermitsMap.get(key) || {};
-             updateData.checkError = `Batch request failed: ${error instanceof Error ? error.message : String(error)}`;
+             const updateData = checkedPermitsMap.get(key) || { checkError: `Batch request failed: ${error instanceof Error ? error.message : String(error)}` };
+             if (!updateData.checkError) { // Don't overwrite specific check errors
+                 updateData.checkError = `Batch request failed: ${error instanceof Error ? error.message : String(error)}`;
+             }
              checkedPermitsMap.set(key, updateData);
         });
     }
 
-    // Map results back
+    // Map results back onto the original permits passed in
     return permitsToValidate.map(permit => {
         const key = `${permit.nonce}-${permit.networkId}`;
         const checkData = checkedPermitsMap.get(key);
+        // Merge validation results onto the permit data
         return checkData ? { ...permit, ...checkData } : permit;
     });
 }
@@ -254,7 +279,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
 
 // --- Worker Message Handling ---
 
-self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_ALL_PERMITS' | 'VALIDATE_PERMITS'; payload: WorkerPayload }>) => {
+self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS' | 'VALIDATE_PERMITS'; payload: WorkerPayload }>) => {
     const { type, payload } = event.data;
 
     if (type === 'INIT') {
@@ -275,52 +300,50 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_ALL_PERMITS'
         } else {
             self.postMessage({ type: 'INIT_ERROR', error: 'Supabase/RPC credentials not received by worker.' });
         }
-    } else if (type === 'FETCH_ALL_PERMITS') {
+    } else if (type === 'FETCH_NEW_PERMITS') {
         const address = payload.address as Address;
         const lastCheckTimestamp = payload.lastCheckTimestamp;
-        console.log(`Worker: Received FETCH_ALL_PERMITS for ${address}`);
+        console.log(`Worker: Received FETCH_NEW_PERMITS for ${address}`);
         try {
             if (!supabase) throw new Error("Supabase client not ready.");
             // 1. Find github_id from permit_app_users table
             const lowerCaseWalletAddress = address.toLowerCase();
-            const { data: userData, error: userFetchError } = await supabase.from("permit_app_users").select("github_id").eq("wallet_address", lowerCaseWalletAddress).single(); // Use correct table name
+            // Use ilike for case-insensitive comparison
+            const { data: userData, error: userFetchError } = await supabase.from("permit_app_users").select("github_id").ilike("wallet_address", lowerCaseWalletAddress).single();
             if (userFetchError && userFetchError.code !== 'PGRST116') throw new Error(`Supabase user fetch error: ${userFetchError.message}`);
             if (!userData) {
                 console.log(`Worker: No user found in permit_app_users for wallet ${lowerCaseWalletAddress}`);
-                self.postMessage({ type: 'ALL_PERMITS_RESULT', permits: [] });
+                // Send empty array as no user means no permits
+                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] }); // Use the correct response type
                 return;
             }
             const userGitHubId = userData.github_id; // This is the string github_id
 
-            // 2. Fetch permits from DB using the github_id string and timestamp
-            const permitsFromDb = await fetchPermitsFromDb(userGitHubId, lastCheckTimestamp ?? null);
+            // 2. Fetch *only new* permits from DB using the github_id string and timestamp
+            const newPermitsFromDb = await fetchPermitsFromDb(userGitHubId, lastCheckTimestamp ?? null); // Correct function name used
 
-            // 3. Map and pre-filter in worker
-            const mappedAndFiltered = permitsFromDb.map((p, i) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)).filter((p): p is PermitData => p !== null);
-            console.log(`Worker: Mapped and pre-filtered ${mappedAndFiltered.length} permits.`);
-            self.postMessage({ type: 'ALL_PERMITS_RESULT', permits: mappedAndFiltered });
+            // 3. Map and pre-filter *new* permits
+            // Add explicit types to map parameters
+            const mappedNewPermits = newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)).filter((p): p is PermitData => p !== null);
+            console.log(`Worker: Mapped ${mappedNewPermits.length} new permits.`);
+
+            // 4. Validate *only* the mapped new permits
+            if (mappedNewPermits.length > 0) {
+                const validatedNewPermits = await validatePermitsBatch(mappedNewPermits);
+                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: validatedNewPermits });
+            } else {
+                // If no new permits were found, still send back an empty array for consistency
+                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] });
+            }
+
         } catch (error: unknown) {
-            console.error("Worker: Error fetching all permits:", error);
+            console.error("Worker: Error fetching/validating new permits:", error);
             self.postMessage({ type: 'PERMITS_ERROR', error: error instanceof Error ? error.message : String(error) });
         }
-    } else if (type === 'VALIDATE_PERMITS') {
-        const permitsToValidate = payload.permits as PermitData[];
-        console.log(`Worker: Received VALIDATE_PERMITS for ${permitsToValidate?.length || 0} permits.`);
-        if (!permitsToValidate || permitsToValidate.length === 0) {
-             self.postMessage({ type: 'VALIDATION_RESULT', permits: [] }); // Nothing to validate
-             return;
-        }
-        try {
-            const validatedPermits = await validatePermitsBatch(permitsToValidate);
-            self.postMessage({ type: 'VALIDATION_RESULT', permits: validatedPermits });
-        } catch (error: unknown) {
-            console.error("Worker: Error validating permits:", error);
-            // Send back original permits but mark with a general validation error?
-             const errorMarkedPermits = permitsToValidate.map(p => ({...p, checkError: `Validation failed: ${error instanceof Error ? error.message : String(error)}`}));
-            self.postMessage({ type: 'VALIDATION_RESULT', permits: errorMarkedPermits }); // Send back with errors marked
-            // Alternatively, send a specific error message type
-            // self.postMessage({ type: 'PERMITS_ERROR', error: error instanceof Error ? error.message : String(error) });
-        }
+    } else if (type === 'VALIDATE_PERMITS') { // This message type might become obsolete with the new flow, but keep for now? Or remove? Let's remove for now.
+       // This case is handled internally now after fetching new permits.
+       console.warn("Worker: Received unexpected VALIDATE_PERMITS message.");
+       // Optionally handle if needed, otherwise ignore.
     }
 };
 
