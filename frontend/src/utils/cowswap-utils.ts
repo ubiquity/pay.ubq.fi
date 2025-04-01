@@ -1,6 +1,7 @@
-import { OrderKind, getQuote } from '@cowprotocol/cow-sdk'; // Import getQuote directly
+import { OrderKind, getQuote } from '@cowprotocol/cow-sdk';
 import { Address, WalletClient, formatUnits } from 'viem';
-import { getTokenInfo } from '../constants/supported-reward-tokens';
+import { getTokenInfo, SUPPORTED_REWARD_TOKENS_BY_CHAIN } from '../constants/supported-reward-tokens'; // Import full list for UUSD lookup
+import { COWSWAP_PARTNER_FEE_RECIPIENT, COWSWAP_PARTNER_FEE_BPS } from '../constants/config'; // Import new constants
 
 // Use Gnosis Chain ID directly
 const GNOSIS_CHAIN_ID = 100;
@@ -48,6 +49,14 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       throw new Error(`Cannot find token info for ${params.tokenIn} or ${params.tokenOut} on chain ${params.chainId}`);
     }
 
+    // --- Determine Partner Fee for Quote ---
+    const uusdTokenInfoQuote = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[GNOSIS_CHAIN_ID] || []).find(token => token.symbol === 'UUSD');
+    const uusdAddressQuote = uusdTokenInfoQuote?.address;
+    const feeBpsQuote = (uusdAddressQuote && params.tokenOut.toLowerCase() === uusdAddressQuote.toLowerCase())
+                       ? 0
+                       : COWSWAP_PARTNER_FEE_BPS;
+    // --- End Determine Partner Fee ---
+
     // Construct TradeParameters object
     const tradeParameters = {
       kind: OrderKind.SELL,
@@ -59,10 +68,10 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
       receiver: params.userAddress, // Optional: defaults to userAddress if not provided? Check SDK docs.
       // validFor: 600, // Optional: validity in seconds (e.g., 10 minutes)
       // slippageBps: 50, // Optional: 0.5% slippage tolerance
-      // Explicitly set partnerFee to zero
+      // Set partnerFee based on conditional logic
       partnerFee: {
-        bps: 0,
-        recipient: '0x0000000000000000000000000000000000000000',
+        bps: feeBpsQuote,
+        recipient: COWSWAP_PARTNER_FEE_RECIPIENT,
       },
     };
 
@@ -117,11 +126,23 @@ export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ 
   }
   // Add chainId check if needed by SDK methods below
   if (!params.chainId) {
-     throw new Error('Chain ID is required to initiate swap.');
+      throw new Error('Chain ID is required to initiate swap.');
   }
   const signerAddress = params.walletClient.account.address;
 
   try {
+    // --- Determine Partner Fee ---
+    // Find UUSD address for the current chain (assuming Gnosis for now)
+    const uusdTokenInfo = (SUPPORTED_REWARD_TOKENS_BY_CHAIN[GNOSIS_CHAIN_ID] || []).find(token => token.symbol === 'UUSD');
+    const uusdAddress = uusdTokenInfo?.address;
+
+    // Set fee based on whether the tokenOut is UUSD
+    const feeBps = (uusdAddress && params.tokenOut.toLowerCase() === uusdAddress.toLowerCase()) // Use params.tokenOut
+                   ? 0
+                   : COWSWAP_PARTNER_FEE_BPS;
+    // --- End Determine Partner Fee ---
+
+
     // TODO: Implement actual order creation and submission logic using cowSdk
     // 1. Get Order Parameters (similar to getQuote but might need more details)
     const orderConfigRequest = {
@@ -133,11 +154,17 @@ export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ 
       receiver: signerAddress, // Usually swap back to self
       // Set a valid timestamp (e.g., 30 minutes from now)
       validTo: Math.floor(Date.now() / 1000) + 1800,
+      // Add partner fee structure
+      partnerFee: {
+        bps: feeBps,
+        recipient: COWSWAP_PARTNER_FEE_RECIPIENT,
+      },
       // Add other necessary parameters like appData, feeAmount (if required)
     };
     // const orderConfig = await cowSdk.cowApi.getOrderConfig(orderConfigRequest); // Or similar method
 
     // --- Placeholder ---
+    // Update placeholder to include partnerFee
     const orderConfig = { // Replace with actual config from SDK
         sellToken: params.tokenIn,
         buyToken: params.tokenOut,
@@ -149,6 +176,11 @@ export async function initiateCowSwap(params: InitiateCowSwapParams): Promise<{ 
         feeAmount: '0', // Placeholder fee
         kind: OrderKind.SELL,
         partiallyFillable: false,
+        // Include partnerFee in placeholder
+        partnerFee: {
+          bps: feeBps,
+          recipient: COWSWAP_PARTNER_FEE_RECIPIENT,
+        },
     };
      // --- End Placeholder ---
 
