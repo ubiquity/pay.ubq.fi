@@ -285,7 +285,7 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
     if (type === 'INIT') {
         const supabaseUrl = payload.supabaseUrl;
         const supabaseAnonKey = payload.supabaseAnonKey;
-        PROXY_BASE_URL = payload.proxyBaseUrl || "https://rpc.ubq.fi"; // Use passed URL or default
+        PROXY_BASE_URL = payload.proxyBaseUrl || import.meta.env.VITE_RPC_OVERRIDE_URL || "https://rpc.ubq.fi"; // Use passed URL, then env var, then default
 
         if (supabaseUrl && supabaseAnonKey) {
             try {

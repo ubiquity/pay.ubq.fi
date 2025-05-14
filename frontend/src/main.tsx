@@ -43,9 +43,12 @@ const supportedChains = [
   zora,
 ];
 
+// Get base RPC URL from env or use default
+const rpcBaseUrl = import.meta.env.VITE_RPC_OVERRIDE_URL || 'https://rpc.ubq.fi';
+
 // Dynamically create transports for all supported chains
 const transports = supportedChains.reduce((acc, chain) => {
-  acc[chain.id] = http(`https://rpc.ubq.fi/${chain.id}`);
+  acc[chain.id] = http(`${rpcBaseUrl}/${chain.id}`);
   return acc;
 }, {} as Record<number, ReturnType<typeof http>>);
 

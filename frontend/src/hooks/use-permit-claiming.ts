@@ -508,27 +508,63 @@ export function usePermitClaiming({ permits, setPermits, claimablePermits, setEr
   }, [publicClient, address, chain, claimablePermits, setPermits, handleClaimPermit, setError, updatePermitStatusCache, walletClient, permits]); // Added walletClient and permits
 
 
+  // Function to record claim in backend
+  const recordClaim = useCallback(async (nonce: string, transactionHash: string) => {
+    if (!address) return false;
+
+    try {
+      const response = await fetch('/api/permits/record-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nonce,
+          transactionHash,
+          claimerAddress: address
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to record claim:', error);
+      return false;
+    }
+  }, [address]);
+
   // --- Effects for Handling Transaction Results ---
   useEffect(() => {
     // Effect for successful confirmation
     if (isClaimConfirmed && claimReceipt && claimTxHash) {
       // console.log("Claim successful, Tx Hash:", claimTxHash);
       let claimedPermitKey: string | null = null;
+      let claimedPermitNonce: string | null = null;
+
       setPermits((current) =>
         current.map((p) => {
           if (p.transactionHash === claimTxHash) {
             claimedPermitKey = `${p.nonce}-${p.networkId}`;
+            claimedPermitNonce = p.nonce;
             return { ...p, claimStatus: "Success", status: "Claimed", claimError: undefined };
           }
           return p;
         })
       );
-      if (claimedPermitKey) {
+
+      if (claimedPermitKey && claimedPermitNonce) {
         // console.log(`Updating cache for claimed permit: ${claimedPermitKey}`);
         updatePermitStatusCache(claimedPermitKey, { isNonceUsed: true, checkError: undefined });
+
+        // Record claim in backend (fire and forget)
+        recordClaim(claimedPermitNonce, claimTxHash).then(success => {
+          if (!success) {
+            console.warn('Failed to record claim in backend, but frontend state was updated');
+          }
+        });
       }
     }
-  }, [isClaimConfirmed, claimReceipt, claimTxHash, setPermits, updatePermitStatusCache]); // Dependencies for success
+  }, [isClaimConfirmed, claimReceipt, claimTxHash, setPermits, updatePermitStatusCache, recordClaim]); // Dependencies for success
 
   useEffect(() => {
     // Effect for confirmation error
