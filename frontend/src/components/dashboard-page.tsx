@@ -1,16 +1,17 @@
+import React from "react";
 import { useEffect, useState, useMemo, useCallback } from "react"; // Re-added useCallback
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
 import { formatUnits, Address } from "viem"; // Add Address type
 // Removed unused PermitData import
-import { hasRequiredFields } from "../utils/permit-utils";
-import { PermitsTable } from "./permits-table";
+import { hasRequiredFields } from "../utils/permit-utils.ts";
+import { PermitsTable } from "./permits-table.tsx";
 // Removed unused logoSvgContent import
-import { usePermitData } from "../hooks/use-permit-data"; // Import the data hook
-import { usePermitClaiming } from "../hooks/use-permit-claiming"; // Import the claiming hook
-import { ICONS } from "./iconography";
-import { LogoSpan } from "./login-page";
-import { PreferredTokenSelectorButton } from "./preferred-token-selector-button"; // Import the new button component
-import { getTokenInfo } from "../constants/supported-reward-tokens"; // Import token info helper
+import { usePermitData } from "../hooks/use-permit-data.ts"; // Import the data hook
+import { usePermitClaiming } from "../hooks/use-permit-claiming.ts"; // Import the claiming hook
+import { ICONS } from "./iconography.tsx";
+import { LogoSpan } from "./login-page.tsx";
+import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx"; // Import the new button component
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts"; // Import token info helper
 // Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS, RewardPreferenceSelector
 
 // Removed constants BACKEND_API_URL, PERMIT2_ADDRESS as they are now in hooks/utils
@@ -127,21 +128,29 @@ export function DashboardPage() {
   }, [claimableTotalValue, preferredRewardTokenAddress, chain?.id, permits, claimablePermits]); // Depends on permits for estimates
 
   // Custom Hook for Claiming Logic
+  // Get publicClient and walletClient from wagmi
+  const publicClient = usePublicClient({ chainId: chain?.id });
+  const { data: walletClient } = useWalletClient();
+
   const {
     handleClaimPermit,
-    handleClaimAllValidSequential,
+    handleClaimAllBatchRpc,
     isClaimingSequentially,
     sequentialClaimError,
-    // setSequentialClaimError, // Only needed internally in the hook
     isClaimConfirming,
     claimTxHash,
-    swapSubmissionStatus, // Get swap status
+    swapSubmissionStatus,
+    walletConnectionError,
   } = usePermitClaiming({
-    permits, // Pass current permits
-    setPermits, // Allow hook to update permit status
-    claimablePermits, // Pass pre-calculated claimable permits
-    setError: setError, // Pass the setter from usePermitData
-    updatePermitStatusCache: updatePermitStatusCache, // Pass down cache update function
+    permits,
+    setPermits,
+    claimablePermits,
+    setError,
+    updatePermitStatusCache,
+    publicClient: (publicClient as any) ?? null,
+    walletClient: (walletClient as any) ?? null,
+    address,
+    chain: chain ?? null,
   });
 
   // --- UI Logic ---
@@ -195,22 +204,22 @@ export function DashboardPage() {
             {/* Claim All Button */}
             <button
               id="claim-all"
-              onClick={handleClaimAllValidSequential}
+              onClick={handleClaimAllBatchRpc}
               disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
-              title="Claim all valid & available permits sequentially"
+              title="Claim all valid & available permits (batch RPC)"
             >
               {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
                 {isLoading ? (
                   "Loading Rewards..."
                 ) : isQuoting ? (
-                   "Calculating..." // Show calculating state while quoting
+                   "Calculating..."
                 ) : (
                   <>
-                    <span className="claim-amount">{estimatedTotalValueDisplay}</span> {/* Use estimated value */}
+                    <span className="claim-amount">{estimatedTotalValueDisplay}</span>
                     <span className="claim-count">
-                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""}) {/* Count remains the same */}
+                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
                     </span>
                   </>
                 )}
@@ -245,6 +254,16 @@ export function DashboardPage() {
           <div className="error-message">
             {ICONS.WARNING}
             <span>{sequentialClaimError}</span>
+          </div>
+        </section>
+      )}
+
+      {/* Wallet/Chain Connection Error */}
+      {walletConnectionError && (
+        <section id="error-message-wrapper" style={{ marginTop: "5px" }}>
+          <div className="error-message">
+            {ICONS.WARNING}
+            <span>{walletConnectionError}</span>
           </div>
         </section>
       )}
