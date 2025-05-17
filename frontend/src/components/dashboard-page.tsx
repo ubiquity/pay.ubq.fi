@@ -144,13 +144,13 @@ export function DashboardPage() {
   } = usePermitClaiming({
     permits,
     setPermits,
-    claimablePermits,
     setError,
     updatePermitStatusCache,
-    publicClient: (publicClient as any) ?? null,
-    walletClient: (walletClient as any) ?? null,
+    publicClient: publicClient ?? null,
+    walletClient: walletClient ?? null,
     address,
     chain: chain ?? null,
+    claimablePermits,
   });
 
   // --- UI Logic ---
