@@ -121,7 +121,24 @@ export function usePermitClaiming({
         );
         updatePermitStatusCache(`${permit.nonce}-${permit.networkId}`, { status: "Claimed" });
 
-        return true;
+        // Record transaction in database
+        try {
+          const txUrl = `https://etherscan.io/tx/${txHash}`;
+          await fetch('/api/permits/record-claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nonce: permit.nonce,
+              transactionHash: txHash,
+              claimerAddress: address,
+              txUrl
+            })
+          });
+        } catch (error) {
+          console.error('Failed to record transaction:', error);
+        }
+
+        return { success: true, txHash };
       } catch (error) {
         console.error("Permit claim failed", {
           error,
@@ -207,9 +224,9 @@ export function usePermitClaiming({
 
         try {
           console.log(`Initiating RPC for permit ${permitKey}`);
-          const success = await handleClaimPermit(permit);
+          const result = await handleClaimPermit(permit);
 
-          if (!success) {
+          if (!result?.success || !result.txHash) {
             console.error(`Batch RPC: Claim failed for permit ${permitKey}`);
             setSequentialClaimError(`Failed to claim permit ${permit.nonce}`);
             continue;
@@ -217,6 +234,23 @@ export function usePermitClaiming({
 
           successCount++;
           console.log(`Successfully processed RPC for permit ${permitKey}`);
+
+          // Record transaction in database
+          try {
+            const txUrl = `https://etherscan.io/tx/${result.txHash}`;
+            await fetch('/api/permits/record-claim', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nonce: permit.nonce,
+                transactionHash: result.txHash,
+                claimerAddress: address,
+                txUrl
+              })
+            });
+          } catch (error) {
+            console.error('Failed to record transaction:', error);
+          }
         } catch (error) {
           console.error(`Batch RPC: Failed to claim permit ${permitKey}`, {
             error,

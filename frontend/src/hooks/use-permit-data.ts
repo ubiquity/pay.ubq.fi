@@ -39,17 +39,18 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const loadCache = useCallback((): PermitDataCache => {
     try {
       const cachedString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
-      // console.log(`Loaded cache string for ${PERMIT_DATA_CACHE_KEY}: ${cachedString ? cachedString.substring(0, 100) + '...' : 'null'}`);
+      console.log(`[DEBUG] loadCache: Loading cache from localStorage for key ${PERMIT_DATA_CACHE_KEY}`);
       const cachedData = cachedString ? JSON.parse(cachedString) : {};
 
       // Log any cached permits marked as used
       Object.entries(cachedData).forEach(([key, permit]) => {
         // Type assertion needed here as JSON.parse returns any
         if ((permit as PermitData).isNonceUsed === true) {
-          // // console.log(`loadCache: Found cached permit ${key} with isNonceUsed=true.`);
+          console.log(`[DEBUG] loadCache: Found cached permit ${key} with isNonceUsed=true`);
         }
       });
 
+      console.log(`[DEBUG] loadCache: Returning ${Object.keys(cachedData).length} cached permits`);
       return cachedData;
     } catch (e) {
       console.error("Failed to load permit data cache", e);
@@ -62,7 +63,12 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     try {
       const cacheString = JSON.stringify(cache);
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, cacheString);
-      // console.log(`Saved cache for ${PERMIT_DATA_CACHE_KEY}: ${cacheString.substring(0,100)}...`); // Log cache save
+      console.log(`[DEBUG] saveCache: Saved ${Object.keys(cache).length} permits to cache`);
+      Object.entries(cache).forEach(([key, permit]) => {
+        if ((permit as PermitData).isNonceUsed === true) {
+          console.log(`[DEBUG] saveCache: Permit ${key} has isNonceUsed=true in saved cache`);
+        }
+      });
     } catch (e) {
       console.error("Failed to save permit data cache", e);
     }
@@ -72,23 +78,31 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
    const applyFinalFilter = useCallback((permitsMap: Map<string, PermitData>) => {
     const filteredList: PermitData[] = [];
     permitsMap.forEach(permit => {
-        // Filter if nonce is used OR if the nonce check specifically failed
+        // Filter if:
+        // 1. Nonce is used OR
+        // 2. Nonce check specifically failed OR
+        // 3. Permit is marked as Claimed
         const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed;
+        const shouldFilter = permit.isNonceUsed === true ||
+                            nonceCheckFailed ||
+                            permit.status === "Claimed";
 
-        // Add detailed logging for the filtering decision
-        // const permitKey = `${permit.nonce}-${permit.networkId}`;
-        // // console.log(`applyFinalFilter: Checking permit ${permitKey}. isNonceUsed=${permit.isNonceUsed}, nonceCheckFailed=${nonceCheckFailed}, shouldFilter=${shouldFilter}`);
+        const permitKey = `${permit.nonce}-${permit.networkId}`;
+        console.log(`[DEBUG] applyFinalFilter: Checking permit ${permitKey}. isNonceUsed=${permit.isNonceUsed}, status=${permit.status}, nonceCheckFailed=${nonceCheckFailed}, shouldFilter=${shouldFilter}`);
 
         if (!shouldFilter) {
             filteredList.push(permit);
         } else {
-            //  // console.log(`applyFinalFilter: Filtering out permit ${permitKey}.`);
+            console.log(`[DEBUG] applyFinalFilter: Filtering out permit ${permitKey} (isNonceUsed=${permit.isNonceUsed}, status=${permit.status})`);
         }
     });
-    // console.log(`applyFinalFilter: Filtered list size: ${filteredList.length}. Setting display permits.`);
-    // Log the permits *being set* to the state, focusing on nonce and used status
-    // console.log('applyFinalFilter: Filtered permits being set:', JSON.stringify(filteredList.map(p => ({ nonce: p.nonce, isNonceUsed: p.isNonceUsed }))));
+    console.log(`[DEBUG] applyFinalFilter: Filtered list size: ${filteredList.length}`);
+    console.log('[DEBUG] applyFinalFilter: Filtered permits being set:',
+      filteredList.map(p => ({
+        nonce: p.nonce,
+        isNonceUsed: p.isNonceUsed,
+        status: p.status
+      })));
     setDisplayPermits(filteredList);
   }, []);
 
@@ -273,10 +287,11 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             // Determine the correct isNonceUsed status, prioritizing cache=true
             const finalIsNonceUsed = existingCachedPermit?.isNonceUsed === true || validatedPermit.isNonceUsed === true;
             if (existingCachedPermit?.isNonceUsed === true && !finalIsNonceUsed) {
-                 console.warn(`Nonce used status mismatch for key ${key}! Cache: true, Worker: ${validatedPermit.isNonceUsed}. Forcing true.`);
+                 console.warn(`[DEBUG] Nonce used status mismatch for key ${key}! Cache: true, Worker: ${validatedPermit.isNonceUsed}. Forcing true.`);
             } else if (existingCachedPermit?.isNonceUsed === true) {
-                 // console.log(`Preserving isNonceUsed=true for key ${key} from cache.`);
+                 console.log(`[DEBUG] Preserving isNonceUsed=true for key ${key} from cache`);
             }
+            console.log(`[DEBUG] Merged permit ${key} - finalIsNonceUsed=${finalIsNonceUsed}`);
 
             // Construct the final merged permit object
             const mergedPermit = {
@@ -436,7 +451,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
   // Function to manually update the status cache (e.g., after a successful claim)
   const updatePermitStatusCache = useCallback((permitKey: string, statusUpdate: Partial<PermitData>) => {
-      // console.log(`Attempting to update cache for key: ${permitKey} with status:`, statusUpdate); // Log cache update attempt
+      console.log(`[DEBUG] updatePermitStatusCache: Updating cache for key ${permitKey} with:`, statusUpdate);
       const currentCache = loadCache();
       const existingCachedPermit = currentCache[permitKey];
       if (existingCachedPermit) {
@@ -448,10 +463,11 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           const existingPermitInRef = allPermitsRef.current.get(permitKey);
           if (existingPermitInRef) {
               allPermitsRef.current.set(permitKey, { ...existingPermitInRef, ...statusUpdate });
+              console.log(`[DEBUG] updatePermitStatusCache: Updated ref map for key ${permitKey}`);
               applyFinalFilter(allPermitsRef.current); // Re-filter display list
           }
       } else {
-          console.warn(`Attempted to update cache for non-existent key: ${permitKey}`);
+          console.warn(`[DEBUG] updatePermitStatusCache: Attempted to update cache for non-existent key: ${permitKey}`);
       }
   }, [loadCache, saveCache, applyFinalFilter]);
 

@@ -21,10 +21,10 @@ serve(async (req: Request) => {
   // API endpoint for recording claims
   if (pathname === '/api/permits/record-claim' && req.method === 'POST') {
     try {
-      const { nonce, transactionHash, claimerAddress } = await req.json();
+      const { nonce, transactionHash, claimerAddress, txUrl } = await req.json();
 
       // Validate input
-      if (!nonce || !transactionHash || !claimerAddress) {
+      if (!nonce || !transactionHash || !claimerAddress || !txUrl) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -33,13 +33,14 @@ serve(async (req: Request) => {
 
       // Update permit record in Supabase
       const { error } = await supabase
-        .from('permits')
+        .from('discovered_permits')
         .update({
           transaction_hash: transactionHash,
           claimed_at: new Date().toISOString(),
-          claimer_address: claimerAddress
+          claimer_address: claimerAddress,
+          tx_url: txUrl
         })
-        .eq('nonce', nonce);
+        .eq('permit_nonce', nonce);
 
       if (error) {
         throw error;

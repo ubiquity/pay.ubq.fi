@@ -12,7 +12,7 @@
 ## 2. Recent Changes
 
 *   **Backend API**:
-    *   (No recent backend changes relevant to this update cycle)
+    *   Added transaction recording endpoint `/api/permits/record-claim` that updates the discovered_permits table with tx_hash and tx_url
 *   **Frontend**:
     *   **CSS Migration:** Removed all inline styles from `App.tsx` and `DashboardPage.tsx`. Created `frontend/src/app-styles.css` and migrated styles to CSS classes. Imported `app-styles.css` in `main.tsx`.
     *   **Refactored DashboardPage:** Extracted helper functions (`checkPermitPrerequisites`, `formatAmount`, `hasRequiredFields`) into `frontend/src/utils/permit-utils.ts`. Extracted table rendering logic into new components: `frontend/src/components/permits-table.tsx` and `frontend/src/components/permit-row.tsx`. This significantly reduced the line count of `DashboardPage.tsx`.
@@ -64,7 +64,7 @@
 *   **Verify Pre-Claim Checks**: Confirm the new balance/allowance checks accurately reflect on-chain state and prevent claims appropriately.
 *   **Test Claiming**: Thoroughly test the single permit claim flow with the new checks in place.
 *   **RPC Error Handling**: Improve backend validation functions (`isErc20NonceClaimed`, `isErc721NonceClaimed`) to better handle RPC errors (e.g., return a specific error state instead of fail-safe `true`).
-*   **(Optional)** Implement backend endpoint `/api/permits/update-status` to record successful claims.
+*   **Implemented Transaction Recording**: Added backend endpoint `/api/permits/record-claim` to record successful claims with transaction hash and URL.
 *   **(Backend)** Ensure backend API (`/api/permits`) correctly fetches permits based on the provided `walletAddress` query parameter.
 *   **Implement Real CowSwap Logic**: Replace placeholder functions in `cowswap-utils.ts` with actual SDK calls, including handling signing via `viem` WalletClient.
 *   **Obtain UUSD Address**: Get the correct Gnosis Chain address for UUSD and update `supported-reward-tokens.ts`.

@@ -59,7 +59,7 @@ h1 {
   margin: 0;
 }
 section {
-  backdrop-filter: blur(12px);
+  background-color: #030b16;
   border: 1px solid #ffffff10;
   text-align: center;
   max-width: 640px;
@@ -78,7 +78,7 @@ footer {
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
-  backdrop-filter: blur(12px);
+  background-color: #030b16;
   border: 1px solid #ffffff10;
   padding: 16px 0;
 }
@@ -142,7 +142,7 @@ footer {
   color: var(--text);
 }
 #error-message-wrapper {
-  backdrop-filter: blur(12px);
+  background-color: #030b16;
   border: 1px solid #ffffff10;
   text-align: center;
   margin: 4px auto;
@@ -177,7 +177,7 @@ footer {
   width: calc(100vw - 8px);
   max-width: 640px;
   overflow: hidden;
-  backdrop-filter: blur(12px);
+  background-color: #030b16;
   border: 1px solid #ffffff10;
   text-align: center;
   margin: 0 auto;
@@ -542,7 +542,7 @@ main#root {
   position: absolute;
   top: 12px;
   left: 12px;
-  backdrop-filter: blur(12px);
+  background-color: #030b16;
 }
 
 .preferred-token-button {
