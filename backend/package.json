@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run server.ts",
-    "start": "bun run server.ts",
+    "dev": "PORT=8000 bun run server.ts",
+    "start": "PORT=8000 bun run server.ts",
     "build": "tsc",
     "test": "bun test"
   },

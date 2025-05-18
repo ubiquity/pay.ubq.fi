@@ -12,7 +12,7 @@
 ## 2. Recent Changes
 
 *   **Backend API**:
-    *   Added transaction recording endpoint `/api/permits/record-claim` that updates the discovered_permits table with tx_hash and tx_url
+    *   Added transaction recording endpoint `/api/permits/record-claim` that updates the `transaction` column in the `permits` table with the transaction hash and URL
 *   **Frontend**:
     *   **CSS Migration:** Removed all inline styles from `App.tsx` and `DashboardPage.tsx`. Created `frontend/src/app-styles.css` and migrated styles to CSS classes. Imported `app-styles.css` in `main.tsx`.
     *   **Refactored DashboardPage:** Extracted helper functions (`checkPermitPrerequisites`, `formatAmount`, `hasRequiredFields`) into `frontend/src/utils/permit-utils.ts`. Extracted table rendering logic into new components: `frontend/src/components/permits-table.tsx` and `frontend/src/components/permit-row.tsx`. This significantly reduced the line count of `DashboardPage.tsx`.
@@ -103,3 +103,10 @@
     *   RPC endpoint reliability (`https://rpc.ubq.fi/100`).
 
 *(This document will be updated frequently as work progresses.)*
+
+## 2025-05-18
+
+- Updated the `/api/permits/record-claim` endpoint in `backend/server.ts`:
+  - Now updates the `transaction` column in the `permits` table using the provided `nonce` and `transactionHash`.
+  - Removed all references to `claimer_address`.
+  - Endpoint returns a clear success or error response.

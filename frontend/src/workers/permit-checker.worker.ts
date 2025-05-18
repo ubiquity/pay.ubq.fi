@@ -1,10 +1,10 @@
 import { type Address, type Abi, parseAbiItem } from "viem";
-import type { PermitData } from "../types";
+import type { PermitData } from "../types.ts";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from '@ubiquity-dao/permit2-rpc-client';
 import { encodeFunctionData } from "viem";
-import { preparePermitPrerequisiteContracts } from "../utils/permit-utils";
-import type { Database, Tables } from "../database.types"; // Import generated types
+import { preparePermitPrerequisiteContracts } from "../utils/permit-utils.ts";
+import type { Database, Tables } from "../database.types.ts"; // Import generated types
 
 // --- Worker Setup ---
 
@@ -125,19 +125,16 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
 }
 
 // Function to fetch permits from Supabase - uses github_id string for beneficiary_id
-async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
+async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
     if (!supabase) throw new Error("Supabase client not initialized.");
 
-    // console.log(`Worker: Querying permits for github_id ${userGitHubId} created after: ${lastCheckTimestamp || 'Beginning of time'}`);
+    // Query permits for wallet address created after lastCheckTimestamp
     let query = supabase.from(PERMITS_TABLE)
         .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
-        // IMPORTANT: Using github_id (string) for beneficiary_id (number in generated type) based on observed behavior
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .eq("beneficiary_id", userGitHubId as any) // Use 'as any' to bypass incorrect generated type & suppress ESLint warning
         .is("transaction", null);
 
     if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-        query = query.gt('created', lastCheckTimestamp); // Use the correct column name 'created'
+        query = query.gt('created', lastCheckTimestamp);
     } else if (lastCheckTimestamp) {
         console.warn(`Worker: Received invalid lastCheckTimestamp: ${lastCheckTimestamp}. Fetching all permits.`);
     }
@@ -153,7 +150,11 @@ async function fetchPermitsFromDb(userGitHubId: string, lastCheckTimestamp: stri
 
     // console.log(`Worker: Found ${potentialPermitsData.length} potential permits from DB` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
     // Cast needed because Supabase client doesn't know about the joined types automatically
-    return potentialPermitsData as unknown as PermitRow[];
+    // Filter in-memory for permits where the joined partner.wallet.address matches the walletAddress
+    const filteredPermits = (potentialPermitsData as unknown as PermitRow[]).filter(
+        (permit) => permit.partner?.wallet?.address?.toLowerCase() === walletAddress.toLowerCase()
+    );
+    return filteredPermits;
 }
 
 // --- On-Chain Validation ---
@@ -306,21 +307,10 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
         // console.log(`Worker: Received FETCH_NEW_PERMITS for ${address}`);
         try {
             if (!supabase) throw new Error("Supabase client not ready.");
-            // 1. Find github_id from permit_app_users table
             const lowerCaseWalletAddress = address.toLowerCase();
-            // Use ilike for case-insensitive comparison
-            const { data: userData, error: userFetchError } = await supabase.from("permit_app_users").select("github_id").ilike("wallet_address", lowerCaseWalletAddress).single();
-            if (userFetchError && userFetchError.code !== 'PGRST116') throw new Error(`Supabase user fetch error: ${userFetchError.message}`);
-            if (!userData) {
-                // console.log(`Worker: No user found in permit_app_users for wallet ${lowerCaseWalletAddress}`);
-                // Send empty array as no user means no permits
-                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] }); // Use the correct response type
-                return;
-            }
-            const userGitHubId = userData.github_id; // This is the string github_id
 
-            // 2. Fetch *only new* permits from DB using the github_id string and timestamp
-            const newPermitsFromDb = await fetchPermitsFromDb(userGitHubId, lastCheckTimestamp ?? null); // Correct function name used
+            // Fetch *only new* permits from DB using the wallet address and timestamp
+            const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
 
             // 3. Map and pre-filter *new* permits
             // Add explicit types to map parameters

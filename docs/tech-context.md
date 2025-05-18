@@ -13,6 +13,9 @@ This document outlines the technology stack and development environment for the 
     *   Platform: Deno Deploy
     *   Routing: Hono
 *   **Database:** Supabase (PostgreSQL)
+      * Required Environment Variables:
+        * `SUPABASE_URL`: Your Supabase project URL
+        * `SUPABASE_SERVICE_ROLE_KEY`: Service role key with write permissions
 *   **Blockchain Interaction:**
     *   Library: `viem` (latest)
     *   RPC Management: `@pavlovcik/permit2-rpc-manager` (to be integrated).
@@ -73,6 +76,12 @@ This document outlines the technology stack and development environment for the 
 ## 4. Infrastructure & Deployment
 
 *   **Backend Hosting:** Deno Deploy.
+      * Required Environment Variables:
+        * `SUPABASE_URL`: Must be set in Deno Deploy environment
+        * `SUPABASE_SERVICE_ROLE_KEY`: Must be set in Deno Deploy environment
+      * API Endpoints:
+        * `POST /api/permits/record-claim`: Records successful permit claims
+          * Requires: nonce, transactionHash, claimerAddress, txUrl
 *   **Frontend Hosting:** Deno Deploy (serving static build via unified server setup).
 *   **Database Hosting:** Supabase Cloud.
 *   **Deployment:**

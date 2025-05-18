@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-
+import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { createClient } from '@supabase/supabase-js';
 import type { Context } from 'hono';
@@ -13,6 +13,14 @@ type PermitClaim = {
 
 const app = new Hono();
 
+// Enable CORS for all routes
+app.use('*', (c, next) => {
+  c.res.headers.set('Access-Control-Allow-Origin', '*');
+  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  return next();
+});
+
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -22,21 +30,19 @@ const supabase = createClient(
 // API endpoint for recording claims
 app.post('/api/permits/record-claim', async (c: Context) => {
   try {
-    const { nonce, transactionHash, claimerAddress, txUrl } = await c.req.json<PermitClaim>();
+    const { nonce, transactionHash } = await c.req.json();
 
-    if (!nonce || !transactionHash || !claimerAddress || !txUrl) {
+    if (!nonce || !transactionHash) {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
     const { error } = await supabase
-      .from('discovered_permits')
+      .from('permits')
       .update({
-        transaction_hash: transactionHash,
-        claimed_at: new Date().toISOString(),
-        claimer_address: claimerAddress,
-        tx_url: txUrl
+        transaction: transactionHash,
+        claimed_at: new Date().toISOString()
       })
-      .eq('permit_nonce', nonce);
+      .eq('nonce', nonce);
 
     if (error) throw error;
 
@@ -50,5 +56,14 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 
 // Serve static files in production
 app.use('/*', serveStatic({ root: 'dist' }));
+
+// Start server on port 8000
+const port = 8000;
+serve({
+  fetch: app.fetch,
+  port
+}, info => {
+  console.log(`Server running on port ${info.port}`);
+});
 
 export default app;

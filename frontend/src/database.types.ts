@@ -165,80 +165,6 @@ export type Database = {
           },
         ]
       }
-      discovered_permits: {
-        Row: {
-          amount: string | null
-          assigned_github_id: string | null
-          beneficiary: string | null
-          claimed_at: string | null
-          deadline: string | null
-          discovered_at: string
-          erc721_request: Json | null
-          github_comment_url: string
-          github_issue_number: number | null
-          github_repo_name: string | null
-          github_repo_owner: string | null
-          id: number
-          network_id: number
-          owner: string | null
-          permit_nonce: string
-          permit_type: string | null
-          signature: string | null
-          token_address: string | null
-          transaction_hash: string | null
-        }
-        Insert: {
-          amount?: string | null
-          assigned_github_id?: string | null
-          beneficiary?: string | null
-          claimed_at?: string | null
-          deadline?: string | null
-          discovered_at?: string
-          erc721_request?: Json | null
-          github_comment_url: string
-          github_issue_number?: number | null
-          github_repo_name?: string | null
-          github_repo_owner?: string | null
-          id?: number
-          network_id: number
-          owner?: string | null
-          permit_nonce: string
-          permit_type?: string | null
-          signature?: string | null
-          token_address?: string | null
-          transaction_hash?: string | null
-        }
-        Update: {
-          amount?: string | null
-          assigned_github_id?: string | null
-          beneficiary?: string | null
-          claimed_at?: string | null
-          deadline?: string | null
-          discovered_at?: string
-          erc721_request?: Json | null
-          github_comment_url?: string
-          github_issue_number?: number | null
-          github_repo_name?: string | null
-          github_repo_owner?: string | null
-          id?: number
-          network_id?: number
-          owner?: string | null
-          permit_nonce?: string
-          permit_type?: string | null
-          signature?: string | null
-          token_address?: string | null
-          transaction_hash?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "discovered_permits_assigned_github_id_fkey"
-            columns: ["assigned_github_id"]
-            isOneToOne: false
-            referencedRelation: "permit_app_users"
-            referencedColumns: ["github_id"]
-          },
-        ]
-      }
       issue_comments: {
         Row: {
           author_id: string
@@ -493,39 +419,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      permit_app_users: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          encrypted_github_token: string | null
-          github_id: string
-          github_login: string | null
-          updated_at: string
-          username: string | null
-          wallet_address: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          encrypted_github_token?: string | null
-          github_id: string
-          github_login?: string | null
-          updated_at?: string
-          username?: string | null
-          wallet_address?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          encrypted_github_token?: string | null
-          github_id?: string
-          github_login?: string | null
-          updated_at?: string
-          username?: string | null
-          wallet_address?: string | null
-        }
-        Relationships: []
       }
       permits: {
         Row: {
