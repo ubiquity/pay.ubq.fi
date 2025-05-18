@@ -21,21 +21,50 @@ This document outlines the technology stack and development environment for the 
 ## 2. Development Environment & Tooling
 
 *   **Package Manager:** Bun (as per user instructions)
-*   **Repository Structure:** Standard repository structure (e.g., separate directories for frontend, backend, shared code).
-*   **Build Tools:** Esbuild (from existing setup), Deno CLI tools
+*   **Repository Structure:**
+    *   `frontend/` - Contains all frontend code (React, Vite)
+    *   `backend/` - Contains backend server code (Hono)
+    *   `docs/` - Project documentation
+    *   `scripts/` - Deployment and utility scripts
+*   **Unified Package Setup:**
+    *   Root-level package.json configuration:
+      - npm-run-all in devDependencies for parallel execution
+      - Scripts:
+        * `start`: Runs both frontend and backend in parallel
+        * `frontend:dev`: "cd frontend && bun run dev"
+        * `backend:dev`: "cd backend && bun run server.ts"
+        * `build`: Runs both frontend and backend builds in parallel
+        * `frontend:build`: "cd frontend && bun run build"
+        * `backend:build`: "cd backend && bun run build"
+        * `install`: Runs both frontend and backend installs in parallel
+        * `frontend:install`: "cd frontend && bun install"
+        * `backend:install`: "cd backend && bun install"
+    *   Development workflow:
+      - `bun run install` to install all dependencies
+      - `bun run start` to start both frontend and backend in parallel
+      - Frontend (Vite) runs on port 5173
+      - Backend (Hono) runs on port 3000
+      - API routes prefixed with /api
+*   **Build Tools:**
+    *   Vite for frontend development and production builds
+    *   Hono for backend API routes
+    *   Unified server setup on port 5173 with:
+      - Vite dev server for frontend
+      - Hono middleware for API routes (/api prefix)
+      - Proxy configuration for development
 *   **Testing:**
     *   Unit/Integration: bun test
     *   Component: React Testing Library (if using React)
 *   **Linting/Formatting:** ESLint, Prettier (using existing configurations), Deno fmt/lint
 *   **Version Control:** Git, GitHub
 
-## 3. Key Libraries & Dependencies (Anticipated)
+## 3. Key Libraries & Dependencies
 
 *   `viem`: Blockchain interaction (frontend & backend).
 *   `@octokit/rest`: GitHub API interaction (planned for backend scanner).
-*   `@supabase/supabase-js`: Database interaction.
+*   `@supabase/supabase-js` (^2.39.8): Database interaction.
 *   `react`, `react-dom`: Frontend framework.
-*   `hono`: Backend routing.
+*   `hono` (^4.2.5): Backend routing.
 *   `wagmi`: React hooks for wallet connection and interaction.
 *   `@cowprotocol/cow-sdk`: For interacting with CowSwap API (quotes, orders).
 *   `@pavlovcik/permit2-rpc-manager`: RPC management library (to be integrated).
@@ -44,7 +73,7 @@ This document outlines the technology stack and development environment for the 
 ## 4. Infrastructure & Deployment
 
 *   **Backend Hosting:** Deno Deploy.
-*   **Frontend Hosting:** Deno Deploy (serving static build via `frontend/server.ts`).
+*   **Frontend Hosting:** Deno Deploy (serving static build via unified server setup).
 *   **Database Hosting:** Supabase Cloud.
 *   **Deployment:**
     *   Frontend: Automated via `scripts/deploy-frontend.sh` (runnable via `bun run deploy` in `frontend/` or directly). Script handles build, project name sanitization (`pay.ubq.fi` -> `pay-ubq-fi`), and `deployctl` execution. Requires `deployctl` v1.12.0+.
@@ -59,5 +88,6 @@ This document outlines the technology stack and development environment for the 
 *   CowSwap API rate limits and reliability.
 *   Security of GitHub tokens and other secrets within Deno Deploy environment variables.
 *   Browser compatibility for frontend features (Wallet connection, CowSwap signing, etc.).
+*   Unified server configuration must work in both development and production environments.
 
 *(This document will be updated as technology choices are finalized and new dependencies are added.)*

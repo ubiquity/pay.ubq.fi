@@ -6,7 +6,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
     "deploy": "bash ../scripts/deploy-frontend.sh"
   },
   "dependencies": {
@@ -15,6 +14,7 @@
     "@tanstack/react-query": "^5.70.0",
     "@ubiquity-dao/permit2-rpc-client": "0.1.2",
     "@wagmi/connectors": "^5.7.11",
+    "hono": "^4.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",

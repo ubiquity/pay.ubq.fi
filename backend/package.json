@@ -1,0 +1,19 @@
+{
+  "name": "pay.ubq.fi-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run server.ts",
+    "start": "bun run server.ts",
+    "build": "tsc",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.8",
+    "hono": "^4.2.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/bun": "latest"
+  }
+}
