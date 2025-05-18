@@ -31,7 +31,7 @@ export function DashboardPage() {
     // initialLoadComplete, // Removed unused state
     error: dataError,
     setError, // Get the setter from usePermitData
-    fetchPermitsAndCheck,
+    fetchPermits,
     isWorkerInitialized, // Get the worker initialization state
     updatePermitStatusCache, // Get cache update function
     isQuoting, // Get quoting status
@@ -168,10 +168,10 @@ export function DashboardPage() {
   useEffect(() => {
     if (isConnected && isWorkerInitialized) {
       // Check both connection and worker init status
-      fetchPermitsAndCheck();
+      fetchPermits();
     }
     // No need for else block, usePermitData handles clearing permits on disconnect
-  }, [isConnected, isWorkerInitialized, fetchPermitsAndCheck]); // Add isWorkerInitialized to dependencies
+  }, [isConnected, isWorkerInitialized, fetchPermits]); // Add isWorkerInitialized to dependencies
 
   // Removed effect for initial animations
 

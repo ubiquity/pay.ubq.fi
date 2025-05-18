@@ -8,13 +8,21 @@ import type { Database, Tables } from "../database.types.ts"; // Import generate
 
 // --- Worker Setup ---
 
+// Define the worker scope type
+interface WorkerGlobalScope {
+  onmessage: (event: MessageEvent) => void;
+  postMessage: (message: any) => void;
+}
+
+// Use the worker global scope
+const worker: WorkerGlobalScope = self as any;
+
 // Define table names
 const PERMITS_TABLE = "permits";
 const WALLETS_TABLE = "wallets";
 const TOKENS_TABLE = "tokens";
 const PARTNERS_TABLE = "partners";
 const LOCATIONS_TABLE = "locations";
-// Removed unused: const USERS_TABLE = "users";
 
 // ABIs needed for checks
 const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");
@@ -124,37 +132,203 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     return permitData;
 }
 
-// Function to fetch permits from Supabase - uses github_id string for beneficiary_id
+// Function to fetch permits from Supabase using the proper relationships
 async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
     if (!supabase) throw new Error("Supabase client not initialized.");
 
-    // Query permits for wallet address created after lastCheckTimestamp
-    let query = supabase.from(PERMITS_TABLE)
-        .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
-        .is("transaction", null);
+    // Normalize wallet address for consistent comparison
+    const normalizedWalletAddress = walletAddress.toLowerCase();
 
-    if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-        query = query.gt('created', lastCheckTimestamp);
-    } else if (lastCheckTimestamp) {
-        console.warn(`Worker: Received invalid lastCheckTimestamp: ${lastCheckTimestamp}. Fetching all permits.`);
+    console.log(`Worker: Attempting to fetch permits for wallet address: ${normalizedWalletAddress}`);
+    console.log(`Worker: Will try multiple query approaches to ensure we find all relevant permits`);
+
+    // APPROACH 1: Original approach - Find users associated with wallet, then find permits for those users
+    console.log(`Worker: APPROACH 1 - Find users via wallets table, then query permits`);
+
+    // Log the exact SQL query that would be executed (for debugging)
+    const walletQuery = supabase
+        .from('wallets')
+        .select('id, users!users_wallet_id_fkey(id)')
+        .or(`address.eq.${normalizedWalletAddress},address.ilike.${normalizedWalletAddress}`);
+
+    console.log(`Worker: SQL Query 1 (approximate): SELECT id, users FROM wallets WHERE address = '${normalizedWalletAddress}' OR address ILIKE '${normalizedWalletAddress}'`);
+
+    const { data: usersWithWallet, error: walletError } = await walletQuery;
+
+    if (walletError) {
+        console.error(`Worker: Supabase wallet fetch error: ${walletError.message}`, walletError);
     }
 
-    const { data: potentialPermitsData, error: permitError } = await query;
+    let userIds: any[] = [];
+    if (usersWithWallet && usersWithWallet.length > 0) {
+        console.log(`Worker: Found ${usersWithWallet.length} wallet entries:`, JSON.stringify(usersWithWallet));
 
-    if (permitError) throw new Error(`Supabase permit fetch error: ${permitError.message}`);
+        userIds = usersWithWallet
+            .flatMap(wallet => wallet.users)
+            .filter(Boolean)
+            .map(user => user.id);
 
-    if (!potentialPermitsData || potentialPermitsData.length === 0) {
-        // console.log(`Worker: No potential permits found for github_id ${userGitHubId}` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
+        console.log(`Worker: Extracted user IDs: ${JSON.stringify(userIds)}`);
+    } else {
+        console.log(`Worker: No users found with wallet address: ${normalizedWalletAddress} using approach 1`);
+    }
+
+    let permitsData: any[] = [];
+    let permitError: any = null;
+
+    // If we found user IDs, query permits for those users
+    if (userIds.length > 0) {
+        console.log(`Worker: Querying permits for user IDs: ${JSON.stringify(userIds)}`);
+
+        let query = supabase.from(PERMITS_TABLE)
+            .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
+            .is("transaction", null)
+            .in("beneficiary_id", userIds);
+
+        if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+            query = query.gt('created', lastCheckTimestamp);
+        }
+
+        console.log(`Worker: SQL Query (permits by user IDs): SELECT * FROM ${PERMITS_TABLE} WHERE transaction IS NULL AND beneficiary_id IN (${userIds.join(',')})${lastCheckTimestamp ? ` AND created > '${lastCheckTimestamp}'` : ''}`);
+
+        const result = await query;
+        permitError = result.error;
+        permitsData = result.data || [];
+
+        if (permitError) {
+            console.error(`Worker: Supabase permit fetch error: ${permitError.message}`, permitError);
+        } else {
+            console.log(`Worker: Found ${permitsData.length} permits using approach 1`);
+        }
+    }
+
+    // APPROACH 2: Direct join approach - Try a more direct join if the first approach didn't work
+    if (permitsData.length === 0 && !permitError) {
+        console.log(`Worker: APPROACH 2 - Using direct join to find permits`);
+
+        // This query directly joins permits with users and wallets
+        const directJoinQuery = `
+            permits(*),
+            token:${TOKENS_TABLE}(address, network),
+            partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
+            location:${LOCATIONS_TABLE}(node_url),
+            users!inner(
+                wallets!inner(address)
+            )
+        `;
+
+        console.log(`Worker: SQL Query 2 (direct join): SELECT permits.*, tokens.address, tokens.network, partners.wallet.address, locations.node_url FROM permits INNER JOIN users ON permits.beneficiary_id = users.id INNER JOIN wallets ON users.wallet_id = wallets.id WHERE wallets.address ILIKE '${normalizedWalletAddress}' AND permits.transaction IS NULL`);
+
+        let query = supabase.from(PERMITS_TABLE)
+            .select(directJoinQuery)
+            .is("transaction", null);
+
+        // Add filter for wallets.address through the join path
+        // Note: This is a simplification - the actual query construction in Supabase is more complex
+        query = query.filter('users.wallets.address', 'ilike', normalizedWalletAddress);
+
+        if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+            query = query.gt('created', lastCheckTimestamp);
+        }
+
+        const result = await query;
+
+        if (result.error) {
+            console.error(`Worker: Direct join query error: ${result.error.message}`, result.error);
+        } else if (result.data && result.data.length > 0) {
+            console.log(`Worker: Found ${result.data.length} permits using direct join approach`);
+            permitsData = result.data;
+        } else {
+            console.log(`Worker: No permits found using direct join approach`);
+        }
+    }
+
+    // APPROACH 3: Fallback - Query all permits and filter client-side
+    if (permitsData.length === 0 && !permitError) {
+        console.log(`Worker: APPROACH 3 - Fallback: Query all permits and filter client-side`);
+
+        // This is a last resort - query all permits and look for any that might be related to our wallet
+        let query = supabase.from(PERMITS_TABLE)
+            .select(`*, created, token: ${TOKENS_TABLE} (address, network), partner: ${PARTNERS_TABLE} (wallet: ${WALLETS_TABLE} (address)), location: ${LOCATIONS_TABLE} (node_url)`)
+            .is("transaction", null)
+            .limit(100); // Limit to avoid fetching too many records
+
+        if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+            query = query.gt('created', lastCheckTimestamp);
+        }
+
+        console.log(`Worker: SQL Query 3 (fallback): SELECT * FROM ${PERMITS_TABLE} WHERE transaction IS NULL LIMIT 100`);
+
+        const result = await query;
+
+        if (result.error) {
+            console.error(`Worker: Fallback query error: ${result.error.message}`, result.error);
+        } else if (result.data && result.data.length > 0) {
+            console.log(`Worker: Found ${result.data.length} permits in fallback query, will filter client-side`);
+
+            // Log all permits for debugging
+            console.log(`Worker: All permits from fallback query:`, JSON.stringify(result.data.slice(0, 5) + (result.data.length > 5 ? ` ... and ${result.data.length - 5} more` : '')));
+
+            // Filter permits that might be related to our wallet address
+            // This is a loose filter that looks for the wallet address in any field
+            const filteredPermits = result.data.filter(permit => {
+                // Check if the wallet address appears in any relevant field
+                const ownerAddress = permit.partner?.wallet?.address?.toLowerCase();
+                const beneficiaryMatches = permit.beneficiary_id && String(permit.beneficiary_id).includes(normalizedWalletAddress);
+                const ownerMatches = ownerAddress && ownerAddress === normalizedWalletAddress;
+
+                return beneficiaryMatches || ownerMatches;
+            });
+
+            if (filteredPermits.length > 0) {
+                console.log(`Worker: Found ${filteredPermits.length} permits related to wallet ${normalizedWalletAddress} in fallback query`);
+                permitsData = filteredPermits;
+            } else {
+                console.log(`Worker: No permits related to wallet ${normalizedWalletAddress} found in fallback query`);
+            }
+        } else {
+            console.log(`Worker: No permits found in fallback query`);
+        }
+    }
+
+    // APPROACH 4: Last resort - Query raw permits table
+    if (permitsData.length === 0 && !permitError) {
+        console.log(`Worker: APPROACH 4 - Last resort: Query raw permits table`);
+
+        // Direct SQL query to check if there are any permits at all
+        const { data: allPermits, error: allPermitsError } = await supabase
+            .from(PERMITS_TABLE)
+            .select('id, nonce, beneficiary_id')
+            .limit(5);
+
+        if (allPermitsError) {
+            console.error(`Worker: Error querying raw permits: ${allPermitsError.message}`);
+        } else {
+            console.log(`Worker: Sample of raw permits in database:`, JSON.stringify(allPermits));
+        }
+
+        // Query wallets table directly to check if the wallet exists
+        const { data: walletCheck, error: walletCheckError } = await supabase
+            .from('wallets')
+            .select('id, address')
+            .limit(10);
+
+        if (walletCheckError) {
+            console.error(`Worker: Error querying wallets: ${walletCheckError.message}`);
+        } else {
+            console.log(`Worker: Sample of wallets in database:`, JSON.stringify(walletCheck));
+        }
+    }
+
+    if (permitsData.length === 0) {
+        console.log(`Worker: No permits found for wallet address: ${normalizedWalletAddress} after trying all approaches`);
         return [];
     }
 
-    // console.log(`Worker: Found ${potentialPermitsData.length} potential permits from DB` + (lastCheckTimestamp ? ` since ${lastCheckTimestamp}` : ''));
+    console.log(`Worker: Successfully found ${permitsData.length} permits for wallet address: ${normalizedWalletAddress}`);
+
     // Cast needed because Supabase client doesn't know about the joined types automatically
-    // Filter in-memory for permits where the joined partner.wallet.address matches the walletAddress
-    const filteredPermits = (potentialPermitsData as unknown as PermitRow[]).filter(
-        (permit) => permit.partner?.wallet?.address?.toLowerCase() === walletAddress.toLowerCase()
-    );
-    return filteredPermits;
+    return permitsData as unknown as PermitRow[];
 }
 
 // --- On-Chain Validation ---
@@ -280,7 +454,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
 
 // --- Worker Message Handling ---
 
-self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS' | 'VALIDATE_PERMITS'; payload: WorkerPayload }>) => {
+worker.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS' | 'VALIDATE_PERMITS'; payload: WorkerPayload }>) => {
     const { type, payload } = event.data;
 
     if (type === 'INIT') {
@@ -294,13 +468,13 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
                 supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
                 rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
                 // console.log("Worker: Supabase and RPC clients initialized.");
-                self.postMessage({ type: 'INIT_SUCCESS' });
+                worker.postMessage({ type: 'INIT_SUCCESS' });
             } catch (error: unknown) {
                 console.error("Worker: Error initializing clients:", error);
-                self.postMessage({ type: 'INIT_ERROR', error: error instanceof Error ? error.message : String(error) });
+                worker.postMessage({ type: 'INIT_ERROR', error: error instanceof Error ? error.message : String(error) });
             }
         } else {
-            self.postMessage({ type: 'INIT_ERROR', error: 'Supabase/RPC credentials not received by worker.' });
+            worker.postMessage({ type: 'INIT_ERROR', error: 'Supabase/RPC credentials not received by worker.' });
         }
     } else if (type === 'FETCH_NEW_PERMITS') {
         const address = payload.address as Address;
@@ -310,26 +484,28 @@ self.onmessage = async (event: MessageEvent<{ type: 'INIT' | 'FETCH_NEW_PERMITS'
             if (!supabase) throw new Error("Supabase client not ready.");
             const lowerCaseWalletAddress = address.toLowerCase();
 
+            console.log(`Worker: Fetching permits for wallet address: ${lowerCaseWalletAddress}`);
+
             // Fetch *only new* permits from DB using the wallet address and timestamp
             const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
 
             // 3. Map and pre-filter *new* permits
             // Add explicit types to map parameters
             const mappedNewPermits = newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)).filter((p): p is PermitData => p !== null);
-            // console.log(`Worker: Mapped ${mappedNewPermits.length} new permits.`);
+            console.log(`Worker: Mapped ${mappedNewPermits.length} new permits for wallet address: ${lowerCaseWalletAddress}`);
 
             // 4. Validate *only* the mapped new permits
             if (mappedNewPermits.length > 0) {
                 const validatedNewPermits = await validatePermitsBatch(mappedNewPermits);
-                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: validatedNewPermits });
+                worker.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: validatedNewPermits });
             } else {
                 // If no new permits were found, still send back an empty array for consistency
-                self.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] });
+                worker.postMessage({ type: 'NEW_PERMITS_VALIDATED', permits: [] });
             }
 
         } catch (error: unknown) {
             console.error("Worker: Error fetching/validating new permits:", error);
-            self.postMessage({ type: 'PERMITS_ERROR', error: error instanceof Error ? error.message : String(error) });
+            worker.postMessage({ type: 'PERMITS_ERROR', error: error instanceof Error ? error.message : String(error) });
         }
     } else if (type === 'VALIDATE_PERMITS') { // This message type might become obsolete with the new flow, but keep for now? Or remove? Let's remove for now.
        // This case is handled internally now after fetching new permits.

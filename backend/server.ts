@@ -50,8 +50,8 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 // Serve static files in production
 app.use('/*', serveStatic({ root: '../frontend/dist' }));
 
-// Start server on port 8000
-const port = 8000;
+// Start server on port 8080
+const port = 8080;
 serve({
   fetch: app.fetch,
   port

@@ -9,4 +9,4 @@ bun run build
 cd ..
 
 echo "Starting backend (serves static frontend and API) on port 8000..."
-bun run backend/server.ts
+cd backend && bun run server.ts
