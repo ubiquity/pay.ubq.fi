@@ -11,6 +11,11 @@
 
 ## 2. Recent Changes
 
+*   **Unified Server Setup (2025-05-18):**
+    *   The backend now serves both the static frontend (from `frontend/dist`) and all API routes on a single port in production.
+    *   In development, the Vite dev server serves the frontend and proxies all `/api` requests to the backend.
+    *   All API endpoints are prefixed with `/api`.
+    *   This simplifies deployment and local development for new contributors.
 *   **Backend API**:
     *   Added transaction recording endpoint `/api/permits/record-claim` that updates the `transaction` column in the `permits` table with the transaction hash and URL
 *   **Frontend**:

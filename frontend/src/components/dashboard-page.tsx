@@ -1,20 +1,16 @@
-import React from "react";
-import { useEffect, useState, useMemo, useCallback } from "react"; // Re-added useCallback
-import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
-import { formatUnits, Address } from "viem"; // Add Address type
-// Removed unused PermitData import
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useAccount, useDisconnect } from "wagmi";
+import { Address } from "viem";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { PermitsTable } from "./permits-table.tsx";
-// Removed unused logoSvgContent import
-import { usePermitData } from "../hooks/use-permit-data.ts"; // Import the data hook
-import { usePermitClaiming } from "../hooks/use-permit-claiming.ts"; // Import the claiming hook
-import { ICONS } from "./iconography.tsx";
+import { usePermitData } from "../hooks/use-permit-data.ts";
+import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { LogoSpan } from "./login-page.tsx";
-import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx"; // Import the new button component
-import { getTokenInfo } from "../constants/supported-reward-tokens.ts"; // Import token info helper
-// Removed unused imports: useWriteContract, useWaitForTransactionReceipt, usePublicClient, rpcHandler, readContract, Address, Hex, BaseError, ContractFunctionRevertedError, Abi, permit2ABI, preparePermitPrerequisiteContracts, ICONS, RewardPreferenceSelector
-
-// Removed constants BACKEND_API_URL, PERMIT2_ADDRESS as they are now in hooks/utils
+import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { formatUnits } from "viem";
+import { usePublicClient, useWalletClient } from "wagmi";
+import { ICONS } from "./iconography.tsx";
 
 export function DashboardPage() {
   // UI State
@@ -293,7 +289,7 @@ export function DashboardPage() {
           isConnected={isConnected}
           chain={chain}
           // Removed isConfirming prop since we now track per-permit claimStatus
-          confirmingHash={claimTxHash} // Pass down from usePermitClaiming
+          claimTxHash={claimTxHash} // Pass down from usePermitClaiming
           isLoading={isLoading} // Pass down from usePermitData
           isQuoting={isQuoting} // Pass down quoting status
           preferredRewardTokenAddress={preferredRewardTokenAddress} // Pass down preference

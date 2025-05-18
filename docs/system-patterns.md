@@ -1,35 +1,37 @@
-0# System Patterns: Permit Claiming Application (Rewrite)
+# System Patterns: Permit Claiming Application (Rewrite)
 
 This document outlines the high-level architecture and key design patterns for the rewritten Permit Claiming application, based on the initial `rewrite-plan.md`.
 
 ## 1. Architecture Overview
 
-The system follows a decoupled architecture comprising a frontend SPA, backend Deno Deploy functions (API and Scanner), and a Supabase database.
+The system now uses a unified server architecture for both development and production:
+
+- **Production:** The backend serves both the static frontend (from `frontend/dist`) and all API routes on a single port.
+- **Development:** The Vite dev server serves the frontend and proxies all `/api` requests to the backend server.
 
 ```mermaid
-graph LR
-    subgraph Browser
+flowchart TD
+    subgraph Production
         direction LR
-        Frontend[Frontend UI (React/TS)] -->|Wallet Ops| Wallet[Web3 Wallet]
-        Frontend -->|Worker Msgs| Worker[Permit Checker Worker]
-        Worker -->|Batch RPC Calls| Blockchain[Blockchain RPC]
-        # Removed direct Frontend -> RPC link
-        # Removed Frontend -> Backend API link (as backend doesn't exist for validation)
+        UserP[User Browser] -->|HTTP| UnifiedServer[Backend Server<br/>(serves static + API)]
+        UnifiedServer -->|Serves| StaticFiles[frontend/dist]
+        UnifiedServer -->|Handles| APIRoutes[/api/*]
     end
 
-    # Removed Deno Deploy subgraph as backend API doesn't exist for validation
-    # The only backend interaction is Supabase via the Worker
-
-    Worker -->|Read/Write| DB[(Database - Supabase)]
-
-    Wallet -->|Sign/Send Tx| Blockchain
-    Blockchain -->|Read Events?| BackendAPI
-
-    style DB fill:#f9f,stroke:#333,stroke-width:2px
-    # Removed GitHub style
+    subgraph Development
+        direction LR
+        UserD[User Browser] -->|HTTP| ViteDev[Vite Dev Server]
+        ViteDev -->|Proxy /api| BackendDev[Backend Server]
+        ViteDev -->|Serves| StaticFilesDev[frontend/src]
+        BackendDev -->|Handles| APIRoutesDev[/api/*]
+    end
 ```
 
-*   **Frontend:** Handles user interaction, wallet connection/management (via `wagmi`), permit display, and initiates claims. Uses raw CSS for styling.
+- **Frontend:** Handles user interaction, wallet connection/management (via `wagmi`), permit display, and initiates claims. Uses raw CSS for styling.
+- **Backend:** Serves static frontend assets and handles all `/api` routes (using Hono).
+- **Static Files:** In production, all static files are served from `frontend/dist`.
+- **API Routing:** All API endpoints are prefixed with `/api`. In development, Vite proxies `/api` requests to the backend.
+
 *   **Permit Checker Worker:** Runs in the browser background. Handles a single `FETCH_AND_VALIDATE` task:
     *   Receives wallet address and optional `lastCheckTimestamp`.
     *   Fetches permits from Supabase (all if no valid timestamp, otherwise only newer ones using the `created` column). Filters by `beneficiary_id` using the user's `github_id` string.

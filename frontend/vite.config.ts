@@ -18,10 +18,16 @@ export default defineConfig({
     port: 5173,
     hmr: false,
     proxy: {
+      // Proxy /api and any top-level numeric path (e.g., /100, /200) to backend
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, ''),
+      },
+      // Regex for top-level numeric routes
+      '^/\\d+$': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
       }
     }
   },

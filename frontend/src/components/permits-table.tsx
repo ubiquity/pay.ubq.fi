@@ -1,14 +1,13 @@
-import React from "react";
 import type { PermitData } from "../types.ts";
 import { PermitRow } from "./permit-row.tsx";
 import type { Chain, Address } from "viem";
 
 interface PermitsTableProps {
   permits: PermitData[];
-  onClaimPermit: (permit: PermitData) => Promise<boolean>;
+  onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
-  confirmingHash: `0x${string}` | undefined;
+  claimTxHash?: `0x${string}`;
   isLoading: boolean;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
@@ -19,7 +18,7 @@ export function PermitsTable({
   onClaimPermit,
   isConnected,
   chain,
-  confirmingHash,
+  claimTxHash,
   isLoading,
   isQuoting,
   preferredRewardTokenAddress,
@@ -48,7 +47,7 @@ export function PermitsTable({
                 onClaimPermit={onClaimPermit}
                 isConnected={isConnected}
                 chain={chain}
-                confirmingHash={confirmingHash}
+                confirmingHash={claimTxHash}
                 isQuoting={isQuoting}
                 preferredRewardTokenAddress={preferredRewardTokenAddress}
               />

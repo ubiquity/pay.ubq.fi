@@ -54,13 +54,13 @@ export function usePermitClaiming({
   const [swapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
 
   const handleClaimPermit = useCallback(
-    async (permit: PermitDataFixed): Promise<boolean> => {
-      const permitKey = `${permit.nonce}-${permit.networkId}`;
+    async (permit: PermitDataFixed): Promise<{ success: boolean; txHash: string }> => {
+        const permitKey = `${permit.nonce}-${permit.networkId}`;
 
-      if (!address || !chain || !walletClient || !publicClient) {
-        setError("Wallet not connected or chain unavailable");
-        return false;
-      }
+        if (!address || !chain || !walletClient || !publicClient) {
+            setError("Wallet not connected or chain unavailable");
+            return { success: false, txHash: "" };
+        }
 
       setPermits(prev =>
         prev.map(p =>
@@ -159,7 +159,7 @@ export function usePermitClaiming({
               : p
           )
         );
-        return false;
+        return { success: false, txHash: "" };
       } finally {
         // No need for setIsClaimConfirming since we use per-permit claimStatus
       }

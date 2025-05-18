@@ -44,7 +44,8 @@ const supportedChains = [
 ];
 
 // Get base RPC URL from env or use default
-const rpcBaseUrl = import.meta.env.VITE_RPC_OVERRIDE_URL || 'https://rpc.ubq.fi';
+import { RPC_URL } from "./constants/config";
+const rpcBaseUrl = RPC_URL;
 
 // Dynamically create transports for all supported chains
 const transports = supportedChains.reduce((acc, chain) => {

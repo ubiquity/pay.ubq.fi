@@ -13,7 +13,7 @@ This document outlines the technology stack and development environment for the 
     *   Platform: Deno Deploy
     *   Routing: Hono
 *   **Database:** Supabase (PostgreSQL)
-      * Required Environment Variables:
+    * Required Environment Variables:
         * `SUPABASE_URL`: Your Supabase project URL
         * `SUPABASE_SERVICE_ROLE_KEY`: Service role key with write permissions
 *   **Blockchain Interaction:**
@@ -29,32 +29,48 @@ This document outlines the technology stack and development environment for the 
     *   `backend/` - Contains backend server code (Hono)
     *   `docs/` - Project documentation
     *   `scripts/` - Deployment and utility scripts
-*   **Unified Package Setup:**
-    *   Root-level package.json configuration:
-      - npm-run-all in devDependencies for parallel execution
-      - Scripts:
-        * `start`: Runs both frontend and backend in parallel
-        * `frontend:dev`: "cd frontend && bun run dev"
-        * `backend:dev`: "cd backend && bun run server.ts"
-        * `build`: Runs both frontend and backend builds in parallel
-        * `frontend:build`: "cd frontend && bun run build"
-        * `backend:build`: "cd backend && bun run build"
-        * `install`: Runs both frontend and backend installs in parallel
-        * `frontend:install`: "cd frontend && bun install"
-        * `backend:install`: "cd backend && bun install"
-    *   Development workflow:
-      - `bun run install` to install all dependencies
-      - `bun run start` to start both frontend and backend in parallel
-      - Frontend (Vite) runs on port 5173
-      - Backend (Hono) runs on port 3000
-      - API routes prefixed with /api
+
+### Unified Dev/Prod Workflow
+
+| Mode         | Frontend Served By | API Served By   | Port | Static Files Location | API Routing         |
+|--------------|-------------------|-----------------|------|----------------------|---------------------|
+| Development  | Vite Dev Server   | Backend Server  | 5173 | frontend/src         | `/api` proxied to backend |
+| Production   | Backend Server    | Backend Server  | 3000 or deploy port    | frontend/dist       | `/api` handled by backend |
+
+#### Running the Project (for New Contributors)
+
+1. `bun install` (at root, installs all dependencies)
+2. `bun run dev` (starts Vite and backend; Vite proxies `/api` to backend)
+3. Access the app at `http://localhost:5173` (dev) or deployment URL (prod)
+4. All API requests use the `/api` prefix
+
+---
+
+### RPC Endpoint Exception
+
+- **All backend API calls** (auth, permit data, etc.) must use `/api/...` and are served from the unified backend/frontend port.
+- **Blockchain JSON-RPC calls** are the only exception:
+  - The frontend uses a configurable RPC endpoint (`VITE_RPC_URL` in `.env`).
+  - Default is `https://rpc.ubq.fi` for production.
+  - For local development, set `VITE_RPC_URL=http://localhost:8000` in `.env`.
+  - The frontend and worker code always use this variable for blockchain calls.
+  - The Vite dev server does **not** proxy or rewrite RPC calls.
+
+**Summary:**
+- Use `/api/...` for backend API.
+- Use `VITE_RPC_URL` for blockchain RPC.
+- Never hardcode RPC URLs or backend ports for blockchain calls.
+
+#### Details
+
+- **Development:** The Vite dev server serves the frontend on port 5173 and proxies all `/api` requests to the backend server (running on port 3000). Static assets are served from `frontend/src`.
+- **Production:** The backend server serves both the static frontend (from `frontend/dist`) and all `/api` routes on a single port (typically 3000 or as configured by the deployment platform).
+- **Static Files:** In production, all static files are served from `frontend/dist`.
+- **API Routing:** All API endpoints are prefixed with `/api`. In development, Vite proxies `/api` requests to the backend.
+
 *   **Build Tools:**
     *   Vite for frontend development and production builds
     *   Hono for backend API routes
-    *   Unified server setup on port 5173 with:
-      - Vite dev server for frontend
-      - Hono middleware for API routes (/api prefix)
-      - Proxy configuration for development
 *   **Testing:**
     *   Unit/Integration: bun test
     *   Component: React Testing Library (if using React)
@@ -65,9 +81,9 @@ This document outlines the technology stack and development environment for the 
 
 *   `viem`: Blockchain interaction (frontend & backend).
 *   `@octokit/rest`: GitHub API interaction (planned for backend scanner).
-*   `@supabase/supabase-js` (^2.39.8): Database interaction.
+*   `@supabase/supabase-js`: Database interaction.
 *   `react`, `react-dom`: Frontend framework.
-*   `hono` (^4.2.5): Backend routing.
+*   `hono`: Backend routing.
 *   `wagmi`: React hooks for wallet connection and interaction.
 *   `@cowprotocol/cow-sdk`: For interacting with CowSwap API (quotes, orders).
 *   `@pavlovcik/permit2-rpc-manager`: RPC management library (to be integrated).
@@ -76,12 +92,12 @@ This document outlines the technology stack and development environment for the 
 ## 4. Infrastructure & Deployment
 
 *   **Backend Hosting:** Deno Deploy.
-      * Required Environment Variables:
+    * Required Environment Variables:
         * `SUPABASE_URL`: Must be set in Deno Deploy environment
         * `SUPABASE_SERVICE_ROLE_KEY`: Must be set in Deno Deploy environment
-      * API Endpoints:
+    * API Endpoints:
         * `POST /api/permits/record-claim`: Records successful permit claims
-          * Requires: nonce, transactionHash, claimerAddress, txUrl
+            * Requires: nonce, transactionHash, claimerAddress, txUrl
 *   **Frontend Hosting:** Deno Deploy (serving static build via unified server setup).
 *   **Database Hosting:** Supabase Cloud.
 *   **Deployment:**

@@ -17,7 +17,24 @@ Built with React, TypeScript, Vite, and `wagmi`.
 
 ## Development
 
-To run the development server:
+### Single-Port Dev Mode (No HMR)
+
+To serve both frontend and backend on a single port (matching production, but **without hot module reload**):
+
+```bash
+../scripts/dev-single-port.sh
+```
+
+This will:
+- Build the frontend (`bun run build`)
+- Start the backend (`bun run backend/server.ts`)
+- Serve both static frontend and API on port 8000
+
+**Note:** For live-reload/HMR, use the standard dev workflow below (two ports).
+
+---
+
+To start the frontend development server (with HMR):
 
 ```bash
 bun run dev

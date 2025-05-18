@@ -1,27 +1,26 @@
-import React from "react";
-import type { PermitData } from "../types";
-import { formatAmount, hasRequiredFields } from "../utils/permit-utils";
+import type { PermitData } from "../types.ts";
+import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { useState } from "react";
 import type { Chain, Address } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { switchNetwork } from "wagmi/actions";
-import { config } from "../main";
-import { ICONS } from "./iconography";
-import { getTokenInfo } from "../constants/supported-reward-tokens";
-import { NETWORK_NAMES } from "../constants/config";
+import { config } from "../main.tsx";
+import { ICONS } from "./iconography.tsx";
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { NETWORK_NAMES } from "../constants/config.ts";
 
 interface PermitRowProps {
   permit: PermitData;
-  onClaimPermit: (permit: PermitData) => void;
+  onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
-  confirmingHash: `0x${string}` | undefined;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
+  confirmingHash?: `0x${string}`;
 }
 
-export function PermitRow({ permit, onClaimPermit, isConnected, chain, confirmingHash, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
+export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
   const { connector } = useAccount();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
 
@@ -50,10 +49,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, confirmin
     ? "row-claiming"
     : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
     ? "row-invalid"
-    : permit.status === "TestSuccess" || permit.status === "Valid"
+    : permit.status === "Valid"
     ? "row-valid"
-    : permit.status === "TestFailed"
-    ? "row-invalid"
     : "";
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
@@ -74,7 +71,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, confirmin
     ? "Permit2 Allowance Low"
     : prerequisiteCheckFailed
     ? "Check Failed"
-    : permit.status === "TestSuccess" || permit.status === "Valid"
+    : permit.status === "Valid"
     ? "Valid"
     : permit.status || "";
 
@@ -115,15 +112,11 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, confirmin
     } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
     } else if (!isButtonDisabled) {
-      onClaimPermit(permit);
+      await onClaimPermit(permit);
     }
   };
 
-  const finalButtonText = networkMismatch
-    ? isSwitchingNetwork
-      ? "Switching..."
-      : `Switch to ${targetNetworkName}`
-    : buttonText;
+  const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
   const formatGithubLink = (url: string | undefined): string => {
     if (!url) return "N/A";

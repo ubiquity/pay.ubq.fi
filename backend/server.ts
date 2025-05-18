@@ -13,13 +13,6 @@ type PermitClaim = {
 
 const app = new Hono();
 
-// Enable CORS for all routes
-app.use('*', (c, next) => {
-  c.res.headers.set('Access-Control-Allow-Origin', '*');
-  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  return next();
-});
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -55,7 +48,7 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 });
 
 // Serve static files in production
-app.use('/*', serveStatic({ root: 'dist' }));
+app.use('/*', serveStatic({ root: '../frontend/dist' }));
 
 // Start server on port 8000
 const port = 8000;
