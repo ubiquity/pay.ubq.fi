@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { createClient } from '@supabase/supabase-js';
 import type { Context } from 'hono';
+import process from "node:process";
 
 type PermitClaim = {
   nonce: string;
@@ -51,15 +52,16 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 // Serve static files in production
 app.use('/*', serveStatic({ root: '../frontend/dist' }));
 
-// Start server on port 8081 (changed from 8080 to avoid conflicts)
-const port = 8081;
-
-// Use the serve function from @hono/node-server
-serve({
-  fetch: app.fetch,
-  port
-}, info => {
-  console.log(`Server running on port ${info.port}`);
-});
-
+// Production/Deno Deploy export
 export default app;
+
+// Development server (node.js only)
+if (process.env.NODE_ENV === 'development') {
+  const port = parseInt(process.env.PORT || '8080');
+  serve({
+    fetch: app.fetch,
+    port
+  }, info => {
+    console.log(`Dev server running on port ${info.port}`);
+  });
+}

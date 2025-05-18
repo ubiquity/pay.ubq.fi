@@ -8,7 +8,7 @@
   },
   "private": true,
   "scripts": {
-    "start": "run-p frontend:dev backend:dev",
+    "start": "PORT=8080 NODE_ENV=development cd frontend && bun run build && cd ../backend && bun run server.ts",
     "frontend:dev": "cd frontend && bun run dev",
     "backend:dev": "cd backend && bun run server.ts",
     "build": "run-p frontend:build backend:build",
