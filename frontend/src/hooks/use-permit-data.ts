@@ -32,8 +32,9 @@ export function usePermitData({
   const saveCache = useCallback((cache: PermitDataCache) => {
     try {
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-    } catch (e) {
-      // Ignore cache errors
+    } catch (e: unknown) {
+      // Intentionally ignore cache errors since they're non-critical
+      console.debug('Ignored cache save error', e);
     }
   }, []);
 
@@ -109,7 +110,9 @@ export function usePermitData({
           if (p.amount) {
             try {
               total += BigInt(p.amount);
-            } catch {}
+            } catch (e: unknown) {
+              console.warn('Failed to parse permit amount', { amount: p.amount, error: e });
+            }
           }
         });
         if (total === 0n) {
@@ -145,10 +148,10 @@ export function usePermitData({
             }
             updated.set(`${p.nonce}-${p.networkId}`, p);
           });
-        } catch (e: any) {
+        } catch (e: unknown) {
           group.forEach((p) => {
             delete p.estimatedAmountOut;
-            p.quoteError = e?.message || "Quote fetching failed";
+            p.quoteError = (e instanceof Error ? e.message : typeof e === 'string' ? e : "Quote fetching failed");
             updated.set(`${p.nonce}-${p.networkId}`, p);
           });
         }
@@ -253,6 +256,15 @@ export function usePermitData({
     }
     setIsLoading(true);
     setError(null);
+
+    // Clear existing cache to prevent stale data
+    try {
+      localStorage.removeItem(PERMIT_DATA_CACHE_KEY);
+      console.log("[use-permit-data] Cleared permit data cache");
+    } catch (e) {
+      console.warn("[use-permit-data] Failed to clear cache", e);
+    }
+
     // Log the intended Supabase query for debugging
     console.log("[use-permit-data] Requesting permit data from Supabase via worker", {
       table: "permits",
@@ -266,32 +278,34 @@ export function usePermitData({
   // Re-fetch on connection change
   useEffect(() => {
     if (isConnected && isWorkerInitialized) {
+      console.log("[use-permit-data] Connection changed - fetching permits");
       fetchPermits();
     } else if (!isConnected) {
+      console.log("[use-permit-data] Disconnected - clearing permits");
       allPermitsRef.current.clear();
       setPermits([]);
       setIsLoading(false);
     }
-  }, [isConnected, isWorkerInitialized, fetchPermits]);
+  }, [isConnected, isWorkerInitialized, fetchPermits] as const);
 
   // Re-fetch quotes when preference changes
   useEffect(() => {
     if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
       fetchQuotes(new Map(allPermitsRef.current))
-        .then((mapWithQuotes) => {
+        .then((mapWithQuotes: Map<string, PermitData>) => {
           allPermitsRef.current = mapWithQuotes;
           filterPermits(allPermitsRef.current);
         })
-        .catch((e) => {
-          setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : e}`);
-          allPermitsRef.current.forEach((permit) => {
+        .catch((e: unknown) => {
+          setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
+          allPermitsRef.current.forEach((permit: PermitData) => {
             delete permit.estimatedAmountOut;
-            permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : e}`;
+            permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
           });
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits] as const);
 
   // Update cache after claim
   const updatePermitStatusCache = useCallback(

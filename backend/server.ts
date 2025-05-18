@@ -32,8 +32,9 @@ app.post('/api/permits/record-claim', async (c: Context) => {
     const { error } = await supabase
       .from('permits')
       .update({
-        transaction: transactionHash,
-        claimed_at: new Date().toISOString()
+        transaction: transactionHash
+        // The claimed_at column doesn't exist in the permits table
+        // Using only the transaction column as requested
       })
       .eq('nonce', nonce);
 
@@ -50,8 +51,10 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 // Serve static files in production
 app.use('/*', serveStatic({ root: '../frontend/dist' }));
 
-// Start server on port 8080
-const port = 8080;
+// Start server on port 8081 (changed from 8080 to avoid conflicts)
+const port = 8081;
+
+// Use the serve function from @hono/node-server
 serve({
   fetch: app.fetch,
   port
