@@ -50,7 +50,20 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 });
 
 // Serve static files in production
-app.use('/*', serveStatic({ root: '../frontend/dist' }));
+if (process.env.NODE_ENV === 'development') {
+  // Node.js static file serving
+  app.use('/*', serveStatic({ root: '../frontend/dist' }));
+} else {
+  // Deno static file serving
+  app.use('/*', async (c) => {
+    try {
+      const file = await Deno.readFile(`./frontend/dist${c.req.path}`);
+      return new Response(file);
+    } catch {
+      return new Response('Not Found', { status: 404 });
+    }
+  });
+}
 
 // Production/Deno Deploy export
 export default app;
