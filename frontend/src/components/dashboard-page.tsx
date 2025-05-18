@@ -137,7 +137,7 @@ export function DashboardPage() {
     handleClaimAllBatchRpc,
     isClaimingSequentially,
     sequentialClaimError,
-    isClaimConfirming,
+    // Removed isClaimConfirming since we now use per-permit claimStatus
     claimTxHash,
     swapSubmissionStatus,
     walletConnectionError,
@@ -292,7 +292,7 @@ export function DashboardPage() {
           onClaimPermit={handleClaimPermit} // Pass down from usePermitClaiming
           isConnected={isConnected}
           chain={chain}
-          isConfirming={isClaimConfirming} // Pass down from usePermitClaiming
+          // Removed isConfirming prop since we now track per-permit claimStatus
           confirmingHash={claimTxHash} // Pass down from usePermitClaiming
           isLoading={isLoading} // Pass down from usePermitData
           isQuoting={isQuoting} // Pass down quoting status

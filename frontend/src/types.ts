@@ -28,7 +28,7 @@ export interface PermitData {
   partner?: PartnerInfoInternal; // Use internal type
 
   // Frontend-specific statuses for validation/testing
-  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing' | 'TestFailed' | 'TestSuccess' | 'Ready';
+  status?: 'Valid' | 'Claimed' | 'Expired' | 'Invalid' | 'Fetching' | 'Testing';
   testError?: string; // For storing error messages during claim testing
 
    // Frontend-specific statuses for actual claiming

@@ -48,11 +48,10 @@ export function usePermitClaiming({
   chain,
   claimablePermits,
 }: UsePermitClaimingProps) {
-  const [isClaimConfirming, setIsClaimConfirming] = useState(false);
   const [isClaimingSequentially, setIsClaimingSequentially] = useState(false);
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
   const [claimTxHash, setClaimTxHash] = useState<`0x${string}` | undefined>();
-  const [swapSubmissionStatus, ] = useState<Record<string, { status: string; message: string }>>({});
+  const [swapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
 
   const handleClaimPermit = useCallback(
     async (permit: PermitDataFixed): Promise<boolean> => {
@@ -73,7 +72,6 @@ export function usePermitClaiming({
 
       try {
         setClaimTxHash(undefined);
-        setIsClaimConfirming(true);
 
         // 1. First simulate the transaction
         if (!permit2Abi) {
@@ -117,10 +115,11 @@ export function usePermitClaiming({
         setPermits(prev =>
           prev.map(p =>
             p.nonce === permit.nonce && p.networkId === permit.networkId
-              ? {...p, claimStatus: "Success"}
+              ? {...p, claimStatus: "Success", status: "Claimed"}
               : p
           )
         );
+        updatePermitStatusCache(`${permit.nonce}-${permit.networkId}`, { status: "Claimed" });
 
         return true;
       } catch (error) {
@@ -145,7 +144,7 @@ export function usePermitClaiming({
         );
         return false;
       } finally {
-        setIsClaimConfirming(false);
+        // No need for setIsClaimConfirming since we use per-permit claimStatus
       }
     },
     [address, chain, walletClient, publicClient, setPermits, setError, updatePermitStatusCache]
@@ -249,7 +248,7 @@ export function usePermitClaiming({
     handleClaimAllBatchRpc,
     isClaimingSequentially,
     sequentialClaimError,
-    isClaimConfirming,
+    // Removed isClaimConfirming since we use per-permit claimStatus
     claimTxHash,
     swapSubmissionStatus,
     walletConnectionError: !address || !chain ? "Wallet not connected" : null
