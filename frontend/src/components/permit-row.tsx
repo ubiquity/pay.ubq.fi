@@ -8,7 +8,7 @@ import { switchNetwork } from "wagmi/actions";
 import { config } from "../main.tsx";
 import { ICONS } from "./iconography.tsx";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
-import { NETWORK_NAMES } from "../constants/config.ts";
+import { NETWORK_NAMES, PERMIT_AGGREGATOR_ADDRESS } from "../constants/config.ts";
 
 interface PermitRowProps {
   permit: PermitData;
@@ -18,9 +18,20 @@ interface PermitRowProps {
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
   confirmingHash?: `0x${string}`;
+  isSelected?: boolean;
+  onSelect?: (permit: PermitData) => void;
 }
 
-export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
+export function PermitRow({
+  permit,
+  onClaimPermit,
+  isConnected,
+  chain,
+  isQuoting,
+  preferredRewardTokenAddress,
+  isSelected,
+  onSelect
+}: PermitRowProps) {
   const { connector } = useAccount();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
 
@@ -210,8 +221,22 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
     }
   };
 
+  // Check if permit uses the aggregator contract
+  const usesAggregator = permit.spender.toLowerCase() === PERMIT_AGGREGATOR_ADDRESS.toLowerCase();
+
   return (
     <div className={`permit-row ${rowClassName}`}>
+      {usesAggregator && onSelect && (
+        <div className="permit-cell checkbox-cell">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onSelect(permit)}
+            disabled={isClaimed || isClaimingThis || !canAttemptClaim}
+            title={isClaimed ? "Already claimed" : isClaimingThis ? "Claim in progress" : !canAttemptClaim ? "Cannot claim" : "Select for batch claim"}
+          />
+        </div>
+      )}
       <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button

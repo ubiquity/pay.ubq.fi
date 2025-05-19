@@ -10,7 +10,14 @@ Implementation is progressing through multiple phases simultaneously, focusing o
 *   **Phase 2: Frontend Foundation & Auth**: COMPLETE (Auth context, login flow, basic layout, wallet connection via `wagmi`). Components refactored.
 *   **Phase 3: GitHub Scanning & Permit Display**: IN PROGRESS. Backend `/api/permits` fetches from DB. Frontend displays permits. GitHub scanning TBD.
 *   **Phase 4: Validation Logic**: IN PROGRESS. Backend validation needs RPC error handling. Frontend `hasRequiredFields` implemented. **Frontend pre-claim checks (owner balance, Permit2 allowance) implemented.**
-*   **Phase 5: Batch Claiming**: IN PROGRESS. Single permit claiming (`handleClaimPermit`) implemented. **Multicall utility function (`claimMultiplePermitsViaMulticall`) created in `multicall-utils.ts`. UI integration TBD.**
+*   **Phase 5: Batch Claiming**: IN PROGRESS.
+    - ✅ `frontend`: `queuePermitClaims` utility implemented.
+    - ✅ `frontend`: Claim All UI & progress component added.
+    - ✅ `smart-contracts`: `contracts/Claimer.sol` scaffolded.
+    - ✅ `devops`: Deployment script & address export to frontend completed.
+    - ⏳ `bot`: Permit generator spender update pending in external repository.
+    - Single permit claiming (`handleClaimPermit`) implemented.
+    - Multicall utility function (`claimMultiplePermitsViaMulticall`) created in `multicall-utils.ts`.
 *   **Phase 6: Claim Status Update & Polish**: IN PROGRESS. Frontend uses `useWaitForTransactionReceipt` and displays prerequisite check results/errors. Backend status update TBD.
 *   **Phase 7: Documentation & Deployment**: IN PROGRESS (Docs update, Frontend deployment script created, Frontend deployed). Backend deployment TBD.
 

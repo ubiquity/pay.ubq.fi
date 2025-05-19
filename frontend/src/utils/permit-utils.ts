@@ -118,3 +118,25 @@ export const hasRequiredFields = (permit: PermitData): boolean => {
 
   return isValid;
 };
+
+/**
+ * Queues claim transactions for all claimable permits.
+ * @param permits Array of PermitData objects.
+ * @param writeContractAsync Function to send a contract write (must accept permit and options).
+ * @returns Promise.allSettled result for all claim attempts.
+ */
+export async function queuePermitClaims(
+  permits: PermitData[],
+  writeContractAsync: (permit: PermitData, options: { mode: "recklesslyUnprepared" }) => Promise<unknown>
+) {
+  const claimable = permits.filter(
+    (p) =>
+      p.status === "Valid" &&
+      p.claimStatus !== "Success" &&
+      p.claimStatus !== "Pending"
+  );
+  const promises = claimable.map((permit) =>
+    writeContractAsync(permit, { mode: "recklesslyUnprepared" })
+  );
+  return Promise.allSettled(promises);
+}
