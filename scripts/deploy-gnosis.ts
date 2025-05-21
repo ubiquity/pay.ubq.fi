@@ -15,16 +15,16 @@ import { join } from "node:path";
 import process from "node:process";
 import solc from "solc";
 import {
+  concat,
   createPublicClient,
   createWalletClient,
-  http,
-  concat,
-  keccak256,
-  isAddress,
   getAddress,
+  http,
+  isAddress,
+  keccak256,
 } from "viem";
-import { encodeDeployData } from "viem/utils";
 import { privateKeyToAccount } from "viem/accounts";
+import { encodeDeployData } from "viem/utils";
 
 /* -------------------------------------------------------------------------- */
 /*                              Helper utilities                              */
@@ -59,31 +59,6 @@ const CREATE2_FACTORY = toViemAddress("0x4e59b44847b379578588920cA78FbF26c0B4956
 
 // Known deployed contract address from previous deployment
 const KNOWN_DEPLOYED_ADDRESS = toViemAddress("0xfa3b31d5b9f91c78360d618b5d6e74cbe930e10e");
-
-/* -------------------------------------------------------------------------- */
-/*                                   ABIs                                     */
-/* -------------------------------------------------------------------------- */
-
-const FACTORY_ABI = [
-  {
-    inputs: [
-      { name: "salt", type: "bytes32" },
-      { name: "initializationCode", type: "bytes" },
-    ],
-    name: "deploy",
-    outputs: [{ name: "createdContract", type: "address" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
-
-const CONSTRUCTOR_ABI = [
-  {
-    inputs: [{ name: "permit2", type: "address" }],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-] as const;
 
 /* -------------------------------------------------------------------------- */
 /*                               Chain config                                 */
@@ -162,9 +137,9 @@ function compileContract(contractPath: string, contractName: string) {
 /*                        Deterministic CREATE2 address                       */
 /* -------------------------------------------------------------------------- */
 
-function getCreate2Address(bytecode: string, constructorArgs: [Address]): Address {
+function getCreate2Address(abi: any, bytecode: string, constructorArgs: [Address]): Address {
   const initCode = encodeDeployData({
-    abi: CONSTRUCTOR_ABI,
+    abi: [abi.find((x: any) => x.type === "constructor")],
     bytecode: bytecode as `0x${string}`,
     args: constructorArgs,
   });
@@ -194,7 +169,7 @@ async function deployToGnosis(abi: any, bytecode: string) {
   const chain = GNOSIS_CHAIN;
   console.log(`\nProcessing ${chain.name} (${chain.chainId})`);
 
-  const expectedAddress = getCreate2Address(bytecode, [PERMIT2_ADDRESS]);
+  const expectedAddress = getCreate2Address(abi, bytecode, [PERMIT2_ADDRESS]);
   console.log(`Expected contract address: ${expectedAddress}`);
   console.log(`Known deployed address: ${KNOWN_DEPLOYED_ADDRESS}`);
 
@@ -377,7 +352,7 @@ async function deployToGnosis(abi: any, bytecode: string) {
 
   // Prepare data & cost estimates
   const initCode = encodeDeployData({
-    abi: CONSTRUCTOR_ABI,
+    abi: [abi.find((x: any) => x.type === "constructor")],
     bytecode: bytecode as `0x${string}`,
     args: [PERMIT2_ADDRESS],
   });
@@ -459,14 +434,14 @@ async function deployToGnosis(abi: any, bytecode: string) {
   let txHash;
   try {
     console.log("Sending deployment transaction…");
-    txHash = await walletClient.writeContract({
-      address: CREATE2_FACTORY,
-      abi: FACTORY_ABI,
-      functionName: "deploy",
-      args: [PERMIT_AGGREGATOR_SALT, initCode],
+    txHash = await walletClient.sendTransaction({
+      to: CREATE2_FACTORY,
+      data: concat([PERMIT_AGGREGATOR_SALT, initCode]),
+      value: 0n,
       gasPrice,
       gas: gasLimit,
       nonce,
+      chain: undefined,
     });
 
     console.log(`Tx: ${txHash}`);
