@@ -1,9 +1,6 @@
 import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { createClient } from '@supabase/supabase-js';
 import type { Context } from 'hono';
-import process from "node:process";
 
 type PermitClaim = {
   nonce: string;
@@ -15,10 +12,22 @@ type PermitClaim = {
 const app = new Hono();
 
 
-// Initialize Supabase client
+// Initialize Supabase client with environment validation
+const requiredEnvVars = {
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+};
+
+// Validate each required environment variable
+for (const [varName, value] of Object.entries(requiredEnvVars)) {
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${varName}. Please check your .env file`);
+  }
+}
+
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  requiredEnvVars.SUPABASE_URL,
+  requiredEnvVars.SUPABASE_SERVICE_ROLE_KEY
 );
 
 // API endpoint for recording claims
@@ -50,31 +59,20 @@ app.post('/api/permits/record-claim', async (c: Context) => {
 });
 
 // Serve static files in production
-if (process.env.NODE_ENV === 'development') {
-  // Node.js static file serving
-  app.use('/*', serveStatic({ root: '../frontend/dist' }));
-} else {
-  // Deno static file serving
-  app.use('/*', async (c) => {
-    try {
-      const file = await Deno.readFile(`./frontend/dist${c.req.path}`);
-      return new Response(file);
-    } catch {
-      return new Response('Not Found', { status: 404 });
-    }
-  });
-}
+app.use('/*', async (c) => {
+  try {
+    const file = await Bun.file(`./frontend/dist${c.req.path}`).text();
+    return new Response(file);
+  } catch {
+    return new Response('Not Found', { status: 404 });
+  }
+});
 
-// Production/Deno Deploy export
-export default app;
+// Start server
+const port = parseInt(process.env.PORT || '3000');
+console.log(`Server running on port ${port}`);
 
-// Development server (node.js only)
-if (process.env.NODE_ENV === 'development') {
-  const port = parseInt(process.env.PORT || '8080');
-  serve({
-    fetch: app.fetch,
-    port
-  }, info => {
-    console.log(`Dev server running on port ${info.port}`);
-  });
-}
+Bun.serve({
+  port,
+  fetch: app.fetch
+});

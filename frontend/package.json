@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "bun run vite build",
     "lint": "eslint .",
     "deploy": "bash ../scripts/deploy-frontend.sh"
   },

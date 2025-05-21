@@ -22,9 +22,9 @@ export const PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78
 /**
  * PermitAggregator contract address - deterministic across all chains via CREATE2
  * v0 (unused vars): 0x8af3c0c99d2038b9cadc88ce66633cf311f3b95f (salt 0x00)
- * v1 (cleaned): <new_address_after_deploy> (salt 0x01)
+ * v1 (cleaned): 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 (salt 0x01)
  */
-export const PERMIT_AGGREGATOR_ADDRESS: Address = "0x8af3c0c99d2038b9cadc88ce66633cf311f3b95f";
+export const PERMIT_AGGREGATOR_ADDRESS: Address = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
 
 // Mapping of Chain IDs to human-readable names
 export const NETWORK_NAMES: { [chainId: number]: string } = {
@@ -32,7 +32,3 @@ export const NETWORK_NAMES: { [chainId: number]: string } = {
   100: "Gnosis",
   // Add other supported network names as needed
 };
-
-export const PERMIT_AGGREGATOR_CONTRACT_ADDRESS = "0x302da911667ecd7465645a9887d27d35a60a0839";
-
-export const PERMIT_AGGREGATOR_CONTRACT_ADDRESS = "0x780764bb2bf6b4b770a9404f6668cbcaf47995d9";

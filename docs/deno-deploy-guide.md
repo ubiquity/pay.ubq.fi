@@ -38,5 +38,22 @@
 
 ## File Structure Requirements
 Deno Deploy expects:
-- Frontend files in `frontend/dist`
+- Frontend files in `frontend/dist` with this structure:
+  - `index.html` - Main entry point
+  - `assets/` - Contains all static assets (JS, CSS, fonts, images)
 - Backend entry point at `backend/server.ts`
+
+## Troubleshooting
+1. **Build fails**:
+   - Ensure Bun is installed (`bun --version`)
+   - Check Node.js version compatibility (v18+ recommended)
+   - Verify all dependencies are installed (`bun install`)
+
+2. **Static files not loading**:
+   - Verify `frontend/dist` exists after build
+   - Check Deno server is configured to serve from correct path
+   - Ensure environment variables are set in production
+
+3. **Common errors**:
+   - `ENOENT` errors: Verify file paths in server.ts
+   - `MODULE_NOT_FOUND`: Reinstall dependencies (`bun install`)
