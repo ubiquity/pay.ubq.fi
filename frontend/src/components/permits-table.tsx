@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import type { Address, Chain } from "viem";
+import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import type { PermitData } from "../types.ts";
-import { PermitRow } from "./permit-row.tsx";
-import type { Chain, Address } from "viem";
-import { PERMIT2_ADDRESS, PERMIT_AGGREGATOR_ADDRESS } from "../constants/config.ts";
 import { ClaimAllProgress } from "./claim-all-progress.tsx";
+import { PermitRow } from "./permit-row.tsx";
 
 interface PermitsTableProps {
   permits: PermitData[];
@@ -34,22 +34,14 @@ export function PermitsTable({
 
   // Split permits into aggregatable and regular
   // Only show valid and unprocessed permits
-  const validPermits = permits.filter(p =>
-    p.status === "Valid" &&
-    p.claimStatus !== "Success" &&
-    p.claimStatus !== "Pending"
-  );
+  const validPermits = permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
 
   // Split into aggregatable (new) and regular (old) permits
-  const aggregatablePermits = validPermits.filter(p =>
-    p.spender.toLowerCase() === PERMIT_AGGREGATOR_ADDRESS.toLowerCase()
-  );
-  const regularPermits = validPermits.filter(p =>
-    p.spender.toLowerCase() === PERMIT2_ADDRESS.toLowerCase()
-  );
+  const aggregatablePermits = validPermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
+  const regularPermits = validPermits.filter((permit) => permit.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
 
   const togglePermitSelection = (permit: PermitData) => {
-    const key = `${permit.nonce}-${permit.networkId}`;
+    const key = permit.signature;
     const newSelected = new Set(selectedPermits);
     if (selectedPermits.has(key)) {
       newSelected.delete(key);
@@ -60,15 +52,13 @@ export function PermitsTable({
   };
 
   const isPermitSelected = (permit: PermitData) => {
-    return selectedPermits.has(`${permit.nonce}-${permit.networkId}`);
+    return selectedPermits.has(permit.signature);
   };
 
   const handleClaimSelected = async () => {
     if (!onAggregateClaim) return;
 
-    const selectedPermitsList = aggregatablePermits.filter(permit =>
-      selectedPermits.has(`${permit.nonce}-${permit.networkId}`)
-    );
+    const selectedPermitsList = aggregatablePermits.filter((permit) => selectedPermits.has(permit.signature));
 
     if (selectedPermitsList.length > 0) {
       const result = await onAggregateClaim(selectedPermitsList);
@@ -102,12 +92,7 @@ export function PermitsTable({
             )}
             {aggregatablePermits.length > 0 && (
               <>
-                <button
-                  type="button"
-                  onClick={handleClaimSelected}
-                  disabled={selectedPermits.size === 0}
-                  className="claim-selected-btn"
-                >
+                <button type="button" onClick={handleClaimSelected} disabled={selectedPermits.size === 0} className="claim-selected-btn">
                   Claim Selected ({selectedPermits.size})
                 </button>
                 <button
@@ -126,7 +111,7 @@ export function PermitsTable({
             <div className="permits-body">
               {validPermits.map((permit) => (
                 <PermitRow
-                  key={permit.nonce + permit.networkId}
+                  key={permit.signature}
                   permit={permit}
                   onClaimPermit={onClaimPermit}
                   isConnected={isConnected}

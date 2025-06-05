@@ -17,7 +17,8 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
 export const RPC_URL = import.meta.env.VITE_RPC_URL || "https://rpc.ubq.fi";
 
 // Universal contract addresses (same on all chains)
-export const PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+export const NEW_PERMIT2_ADDRESS: Address = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
 
 /**
  * PermitAggregator contract address - deterministic across all chains via CREATE2
@@ -30,5 +31,6 @@ export const PERMIT_AGGREGATOR_ADDRESS: Address = "0xDc64a140Aa3E981100a9becA4E6
 export const NETWORK_NAMES: { [chainId: number]: string } = {
   1: "Mainnet",
   100: "Gnosis",
+  31337: "Anvil",
   // Add other supported network names as needed
 };
