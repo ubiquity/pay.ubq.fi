@@ -1,43 +1,38 @@
-zeroTrue: &zeroTrue
+zeroTrue: &a3
   score: 0
   countWords: true
-
-zeroFalse: &zeroFalse
+zeroFalse: &a4
   score: 0
   countWords: false
-
-oneTrue: &oneTrue
+oneTrue: &a1
   score: 1
   countWords: true
-
-oneFalse: &oneFalse
+oneFalse: &a2
   score: 1
   countWords: false
-
-tcrHtmlConfig: &tcrHtmlConfig
-  a: *oneTrue
-  code: *oneFalse
-  img: *oneFalse
-  h1: *oneTrue
-  h2: *oneTrue
-  h3: *oneTrue
-  h4: *oneTrue
-  h5: *oneTrue
-  h6: *oneTrue
-  br: *zeroTrue
-  p: *zeroTrue
-  em: *zeroTrue
-  ul: *zeroTrue
-  td: *zeroTrue
-  hr: *zeroTrue
-  ol: *zeroTrue
-  pre: *zeroFalse
-  strong: *zeroFalse
-  blockquote: *zeroFalse
+tcrHtmlConfig: &a5
+  a: *a1
+  code: *a2
+  img: *a2
+  h1: *a1
+  h2: *a1
+  h3: *a1
+  h4: *a1
+  h5: *a1
+  h6: *a1
+  br: *a3
+  p: *a3
+  em: *a3
+  ul: *a3
+  td: *a3
+  hr: *a3
+  ol: *a3
+  pre: *a4
+  strong: *a4
+  blockquote: *a4
   li:
     score: 0.1
     countWords: true
-
 plugins:
   - uses:
       - plugin: https://ubiquity-os-command-start-stop-main.ubiquity.workers.dev
@@ -157,23 +152,23 @@ plugins:
                   multiplier: 1
                   rewards:
                     wordValue: 0.1
-                    html: *tcrHtmlConfig
+                    html: *a5
                 - role:
                     - ISSUE_CONTRIBUTOR
                     - ISSUE_ASSIGNEE
                   multiplier: 0.25
                   rewards:
                     wordValue: 0.1
-                    html: *tcrHtmlConfig
+                    html: *a5
                 - role:
                     - PULL_AUTHOR
                     - PULL_CONTRIBUTOR
                     - PULL_ASSIGNEE
-                    - PULL_SPECIFICATION                    
+                    - PULL_SPECIFICATION
                   multiplier: 0
                   rewards:
                     wordValue: 0
-                    html: *tcrHtmlConfig
+                    html: *a5
             permitGeneration: {}
             githubComment:
               post: true
@@ -235,3 +230,13 @@ plugins:
           alwaysRecommend: 0
   - uses:
       - plugin: ubiquity-os-marketplace/daemon-pull-review@main
+  - uses:
+      - plugin: https://command-config-development.deno.dev
+        with:
+          baseUrl: https://openrouter.ai/api/v1
+          parserPath: https://github.com/ubiquity-os/ubiquity-os-kernel.git
+          configPath: .github/.ubiquity-os.config.yml
+          devConfigPath: .github/.ubiquity-os.config.dev.yml
+          defaultTargets:
+            - name: https://github.com/ubiquity-os/.ubiquity-os.git
+              type: dev
