@@ -8,8 +8,8 @@ import { PermitRow } from "./permit-row.tsx";
 interface PermitsTableProps {
   permits: PermitData[];
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
-  onClaimAll: () => void;
-  onAggregateClaim?: (permits: PermitData[]) => Promise<{ success: boolean; txHash: string }>;
+  onClaimSequential: (permits: PermitData[]) => void;
+  onClaimBatch: (permits?: PermitData[]) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
   claimTxHash?: `0x${string}`;
@@ -21,8 +21,8 @@ interface PermitsTableProps {
 export function PermitsTable({
   permits,
   onClaimPermit,
-  onClaimAll,
-  onAggregateClaim,
+  onClaimSequential,
+  onClaimBatch,
   isConnected,
   chain,
   claimTxHash,
@@ -56,12 +56,10 @@ export function PermitsTable({
   };
 
   const handleClaimSelected = async () => {
-    if (!onAggregateClaim) return;
-
     const selectedPermitsList = aggregatablePermits.filter((permit) => selectedPermits.has(permit.signature));
 
     if (selectedPermitsList.length > 0) {
-      const result = await onAggregateClaim(selectedPermitsList);
+      const result = await onClaimBatch(selectedPermitsList);
       if (result.success) {
         setSelectedPermits(new Set()); // Clear selection after successful claim
       }
@@ -86,7 +84,7 @@ export function PermitsTable({
         <div>
           <div style={{ display: "flex", alignItems: "center", marginBottom: 12, gap: 12 }}>
             {regularPermits.length > 0 && (
-              <button type="button" onClick={onClaimAll} className="claim-all-btn">
+              <button type="button" onClick={() => onClaimSequential(regularPermits)} className="claim-all-btn">
                 Queue All Regular Claims
               </button>
             )}
@@ -95,12 +93,7 @@ export function PermitsTable({
                 <button type="button" onClick={handleClaimSelected} disabled={selectedPermits.size === 0} className="claim-selected-btn">
                   Claim Selected ({selectedPermits.size})
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onAggregateClaim?.(aggregatablePermits)}
-                  disabled={aggregatablePermits.length === 0}
-                  className="claim-all-btn"
-                >
+                <button type="button" onClick={() => onClaimBatch(aggregatablePermits)} disabled={aggregatablePermits.length === 0} className="claim-all-btn">
                   Batch Claim All
                 </button>
               </>
