@@ -1,4 +1,4 @@
-import { erc20Abi, type Abi, type Address, formatUnits } from "viem"; // Import formatUnits
+import { erc20Abi, formatUnits, type Abi, type Address } from "viem"; // Import formatUnits
 import type { PermitData } from "../types";
 
 // Removed unused MulticallContractInternal interface
@@ -10,8 +10,6 @@ type ContractCallConfig = {
   functionName: string;
   args?: unknown[];
 };
-
-const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3"; // Universal Permit2 address
 
 /**
  * Prepares the contract call objects for checking ERC20 permit prerequisites (balance and allowance).
@@ -36,7 +34,7 @@ export function preparePermitPrerequisiteContracts(permit: PermitData): Contract
     abi: erc20Abi,
     address: tokenAddress,
     functionName: "allowance",
-    args: [ownerAddress, PERMIT2_ADDRESS],
+    args: [ownerAddress, permit.permit2Address],
   };
 
   return [balanceCall, allowanceCall];

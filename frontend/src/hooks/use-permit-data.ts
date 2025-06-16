@@ -56,7 +56,7 @@ export function usePermitData({
         }
         // Detailed log for each permit during filtering
         console.log("[use-permit-data] Filter check for permit", {
-          key: `${permit.nonce}-${permit.networkId}`,
+          key: permit.signature,
           status: permit.status,
           isNonceUsed: permit.isNonceUsed,
           checkError: permit.checkError,
@@ -207,8 +207,7 @@ export function usePermitData({
           console.log("[use-permit-data] Raw permit data fetched from Supabase:", validated);
           const cache: PermitDataCache = {};
           validated.forEach((permit) => {
-            const key = `${permit.nonce}-${permit.networkId}`;
-            cache[key] = permit;
+            cache[permit.signature] = permit;
           });
           saveCache(cache);
           allPermitsRef.current = new Map(Object.entries(cache));

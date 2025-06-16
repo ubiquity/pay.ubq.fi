@@ -1,14 +1,14 @@
-import type { PermitData } from "../types.ts";
-import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { useState } from "react";
-import type { Chain, Address } from "viem";
+import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { switchNetwork } from "wagmi/actions";
-import { config } from "../main.tsx";
-import { ICONS } from "./iconography.tsx";
+import { NETWORK_NAMES, NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
-import { NETWORK_NAMES, PERMIT_AGGREGATOR_ADDRESS } from "../constants/config.ts";
+import { config } from "../main.tsx";
+import type { PermitData } from "../types.ts";
+import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
+import { ICONS } from "./iconography.tsx";
 
 interface PermitRowProps {
   permit: PermitData;
@@ -222,11 +222,11 @@ export function PermitRow({
   };
 
   // Check if permit uses the aggregator contract
-  const usesAggregator = permit.spender.toLowerCase() === PERMIT_AGGREGATOR_ADDRESS.toLowerCase();
+  const supportsBatchClaim = permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase();
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {usesAggregator && onSelect && (
+      {supportsBatchClaim && onSelect && (
         <div className="permit-cell checkbox-cell">
           <input
             type="checkbox"

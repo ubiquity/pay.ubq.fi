@@ -1,6 +1,7 @@
-import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
 import type { Context } from 'hono';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 
 type PermitClaim = {
   nonce: string;
@@ -10,7 +11,7 @@ type PermitClaim = {
 };
 
 const app = new Hono();
-
+app.use("*", cors());
 
 // Initialize Supabase client with environment validation
 const requiredEnvVars = {
@@ -33,9 +34,9 @@ const supabase = createClient(
 // API endpoint for recording claims
 app.post('/api/permits/record-claim', async (c: Context) => {
   try {
-    const { nonce, transactionHash } = await c.req.json();
+    const { signature, transactionHash } = await c.req.json();
 
-    if (!nonce || !transactionHash) {
+    if (!signature || !transactionHash) {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
@@ -43,10 +44,9 @@ app.post('/api/permits/record-claim', async (c: Context) => {
       .from('permits')
       .update({
         transaction: transactionHash
-        // The claimed_at column doesn't exist in the permits table
-        // Using only the transaction column as requested
       })
-      .eq('nonce', nonce);
+      .eq('signature', signature)
+      .is('transaction', null);
 
     if (error) throw error;
 

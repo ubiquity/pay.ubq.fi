@@ -1,16 +1,15 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useAccount, useDisconnect } from "wagmi";
-import { Address } from "viem";
-import { hasRequiredFields } from "../utils/permit-utils.ts";
-import { PermitsTable } from "./permits-table.tsx";
-import { usePermitData } from "../hooks/use-permit-data.ts";
-import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
-import { LogoSpan } from "./login-page.tsx";
-import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Address, formatUnits } from "viem";
+import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
+import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
-import { formatUnits } from "viem";
-import { usePublicClient, useWalletClient } from "wagmi";
+import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
+import { usePermitData } from "../hooks/use-permit-data.ts";
+import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
+import { LogoSpan } from "./login-page.tsx";
+import { PermitsTable } from "./permits-table.tsx";
+import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
 
 export function DashboardPage() {
   // UI State
@@ -48,6 +47,7 @@ export function DashboardPage() {
     const filteredPermits = permits.filter(
       (p) =>
         p.networkId === chain?.id &&
+        p.permit2Address === NEW_PERMIT2_ADDRESS &&
         p.type === "erc20-permit" &&
         p.status !== "Claimed" &&
         p.claimStatus !== "Success" &&
@@ -98,17 +98,25 @@ export function DashboardPage() {
     }
 
     let totalEstimatedValueInWei = 0n;
-    const permitsToConsider = permits.filter(p => claimablePermits.some(cp => cp.nonce === p.nonce && cp.networkId === p.networkId)); // Use permits that passed claimable filter
+    const permitsToConsider = permits.filter((p) => claimablePermits.some((cp) => cp.nonce === p.nonce && cp.networkId === p.networkId)); // Use permits that passed claimable filter
 
-    permitsToConsider.forEach(permit => {
+    permitsToConsider.forEach((permit) => {
       if (permit.tokenAddress?.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
         // Add original amount if it's already the preferred token
         if (permit.amount) {
-          try { totalEstimatedValueInWei += BigInt(permit.amount); } catch (e) { console.error(`Error parsing original amount for estimatedTotalValue calc: ${permit.amount}`, e); }
+          try {
+            totalEstimatedValueInWei += BigInt(permit.amount);
+          } catch (e) {
+            console.error(`Error parsing original amount for estimatedTotalValue calc: ${permit.amount}`, e);
+          }
         }
       } else if (permit.estimatedAmountOut) {
         // Add estimated amount if quote exists
-         try { totalEstimatedValueInWei += BigInt(permit.estimatedAmountOut); } catch (e) { console.error(`Error parsing estimated amount for estimatedTotalValue calc: ${permit.estimatedAmountOut}`, e); }
+        try {
+          totalEstimatedValueInWei += BigInt(permit.estimatedAmountOut);
+        } catch (e) {
+          console.error(`Error parsing estimated amount for estimatedTotalValue calc: ${permit.estimatedAmountOut}`, e);
+        }
       }
       // Ignore permits with quote errors or no quote needed/available
     });
@@ -130,7 +138,8 @@ export function DashboardPage() {
 
   const {
     handleClaimPermit,
-    handleClaimAllBatchRpc,
+    handleClaimBatch,
+    handleClaimSequential,
     isClaimingSequentially,
     sequentialClaimError,
     // Removed isClaimConfirming since we now use per-permit claimStatus
@@ -160,7 +169,6 @@ export function DashboardPage() {
     // TODO: Trigger quote fetching/recalculation based on the new preference
     console.log("DashboardPage received preference change:", selectedAddress);
   }, []);
-
 
   // --- Effects ---
 
@@ -200,7 +208,7 @@ export function DashboardPage() {
             {/* Claim All Button */}
             <button
               id="claim-all"
-              onClick={handleClaimAllBatchRpc}
+              onClick={() => handleClaimBatch()}
               disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid & available permits (batch RPC)"
@@ -210,7 +218,7 @@ export function DashboardPage() {
                 {isLoading ? (
                   "Loading Rewards..."
                 ) : isQuoting ? (
-                   "Calculating..."
+                  "Calculating..."
                 ) : (
                   <>
                     <span className="claim-amount">{estimatedTotalValueDisplay}</span>
@@ -233,8 +241,6 @@ export function DashboardPage() {
           <div>Wallet not connected.</div>
         )}
       </section>
-
-
 
       {/* Error Displays */}
       {dataError && (
@@ -269,10 +275,16 @@ export function DashboardPage() {
         <section id="swap-status-wrapper" style={{ marginTop: "10px" }}>
           <h3>Swap Status:</h3>
           {Object.entries(swapSubmissionStatus).map(([key, status]) => (
-            <div key={key} className={`swap-status ${status.status === 'error' ? 'error-message' : status.status === 'submitted' ? 'success-message' : 'info-message'}`} style={{marginBottom: '5px', padding: '5px', border: '1px solid #ccc', borderRadius: '4px'}}>
-              {status.status === 'error' && ICONS.WARNING}
-              {status.status === 'submitted' && ICONS.CLAIM} {/* Use CLAIM icon as placeholder for SUCCESS */}
-              {status.status === 'submitting' && <div className="spinner" style={{width: '12px', height: '12px', marginRight: '5px', display: 'inline-block'}}></div>}
+            <div
+              key={key}
+              className={`swap-status ${status.status === "error" ? "error-message" : status.status === "submitted" ? "success-message" : "info-message"}`}
+              style={{ marginBottom: "5px", padding: "5px", border: "1px solid #ccc", borderRadius: "4px" }}
+            >
+              {status.status === "error" && ICONS.WARNING}
+              {status.status === "submitted" && ICONS.CLAIM} {/* Use CLAIM icon as placeholder for SUCCESS */}
+              {status.status === "submitting" && (
+                <div className="spinner" style={{ width: "12px", height: "12px", marginRight: "5px", display: "inline-block" }}></div>
+              )}
               <span>{status.message}</span>
               {/* Optionally add link to CowSwap explorer using orderUid if available */}
               {/* {status.orderUid && <a href={`https://explorer.cow.fi/orders/${status.orderUid}`} target="_blank" rel="noopener noreferrer"> View Order</a>} */}
@@ -286,6 +298,8 @@ export function DashboardPage() {
         <PermitsTable
           permits={permits}
           onClaimPermit={handleClaimPermit} // Pass down from usePermitClaiming
+          onClaimBatch={handleClaimBatch}
+          onClaimSequential={handleClaimSequential}
           isConnected={isConnected}
           chain={chain}
           // Removed isConfirming prop since we now track per-permit claimStatus
@@ -303,7 +317,6 @@ export function DashboardPage() {
           onPreferenceChange={handlePreferenceChange} // Restore onPreferenceChange prop
         />
       )}
-
     </>
   );
 }

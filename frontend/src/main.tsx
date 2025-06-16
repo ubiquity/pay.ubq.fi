@@ -18,6 +18,7 @@ import {
   avalanche, // 43114
   blast, // 81457
   zora, // 7777777
+  anvil, // 31337 (local dev chain)
 } from "wagmi/chains";
 // Removed Permit2RpcManager import as it's now used only in the worker
 import App from "./App.tsx";
@@ -41,6 +42,7 @@ const supportedChains = [
   avalanche,
   blast,
   zora,
+  anvil,
 ];
 
 // Get base RPC URL from env or use default
