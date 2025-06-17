@@ -1,0 +1,65 @@
+# Cline's Project Intelligence Rules for pay.ubq.fi
+
+This file captures project-specific patterns, user preferences, and key insights to help Cline work more effectively.
+
+## General
+- Use `bun` for all package management (`bun install`) and running TypeScript files (`bun run`).
+- Bun automatically handles `.env` files; no need for `dotenv`. Assume `.env` is populated if present.
+- Use `kebab-case.ts` for new TypeScript filenames.
+- Keep TypeScript file lengths under 256 lines where feasible; refactor if necessary.
+- Delete unused files to reduce clutter before completing tasks.
+- Do not fix ESLint errors unless specifically asked.
+
+## Frontend
+- **Styling:** Use raw CSS (`.css` files), avoid inline styles.
+- **Blockchain Interaction:** Use `viem` and `wagmi`.
+- **State Management:** Primarily React hooks (`useState`, `useRef`, `useEffect`) and `localStorage` for caching/preferences.
+- **Permit Validation:** Handled by `permit-checker.worker.ts` using batch RPC calls.
+- **Claiming:** Initiated client-side via `usePermitClaiming.ts`.
+- **Caching:** `usePermitData.ts` uses `localStorage` to cache permit data (`PermitDataCache`) and last check timestamp (`lastCheckTimestamp`). `usePermitClaiming.ts` updates this cache on successful claims.
+- **Reward Swapping:** Uses CowSwap (`@cowprotocol/cow-sdk`) triggered after claims, based on user preference stored in `localStorage`.
+
+## Backend
+- Platform: Deno Deploy
+- Routing: Hono
+- Database: Supabase
+- Environment Variables: Use `Deno.env.get()` instead of `process.env`
+- Static Files: Serve directly using `Deno.readFile()`
+- Type Support: Add `/// <reference types="https://deno.land/x/deno_types/mod.d.ts" />` for Deno types
+
+## Known Issues & Focus Areas
+- **Permit Nonce Bug:** Critical bug where claiming a permit, refreshing, and trying to claim again causes an infinite RPC loop due to simulation failure (Permit2 nonce used) not being handled correctly in `usePermitClaiming.ts`. (Current Task)
+- **CowSwap Integration:** Needs real implementation details (SDK usage with viem WalletClient, UUSD address).
+- **Multicall Claiming:** Utility exists (`multicall-utils.ts` mentioned but not found in recent file lists?), but UI integration is pending.
+
+## Deno Deployment Workflow
+
+### Build Process
+1. Run frontend build:
+   ```bash
+   cd frontend && bun run build
+   ```
+2. Verify output in `frontend/dist`:
+   - `index.html`
+   - `assets/` directory
+
+### Server Requirements
+- Environment variables:
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `NODE_ENV` (set to "production" for deployment)
+
+### Deployment Steps
+1. Build frontend assets
+2. Configure Deno Deploy:
+   - Set entry point to `backend/server.ts`
+   - Configure required environment variables
+3. Deploy application
+
+### Troubleshooting
+- If static files aren't loading:
+  - Verify `frontend/dist` exists
+  - Check server.ts static file serving path
+- If API endpoints fail:
+  - Verify Supabase credentials
+  - Check network permissions in Deno
