@@ -82,7 +82,7 @@ export function PermitsTable({
     <>
       {!isLoading && !isQuoting && validPermits.length > 0 && (
         <div>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 12, gap: 12 }}>
+          <div>
             {regularPermits.length > 0 && (
               <button type="button" onClick={() => onClaimSequential(regularPermits)} className="claim-all-btn">
                 Queue All Regular Claims

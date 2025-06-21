@@ -328,7 +328,7 @@ export function usePermitClaiming({
           context: "batch-processing",
         });
         setPermits((prev) => prev.map((p) => (toClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Error" } : p)));
-        setError("Batch claim failed");
+        setError("Batch claim failed. Claim each permit individually.");
       } finally {
         setIsClaimingSequentially(false);
       }

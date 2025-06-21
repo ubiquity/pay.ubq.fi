@@ -17,7 +17,7 @@
   },
   "private": true,
   "scripts": {
-    "_frontend": "cd frontend && bun run dev",
+    "_frontend": "cd frontend && bun run dev --host",
     "_backend": "bun run backend/server.ts",
     "_frontend-build": "cd frontend && bun run build",
     "_browser": "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222",
