@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "PORT=8000 bun run server.ts",
-    "start": "PORT=8000 bun run server.ts",
-    "build": "tsc",
-    "test": "bun test"
+    "dev": "deno run --allow-net --allow-read --allow-env server.ts",
+    "start": "deno run --allow-net --allow-read --allow-env server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@hono/node-server": "^1.14.4",
     "@supabase/supabase-js": "^2.39.8",
     "hono": "^4.2.5"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "@types/bun": "latest"
+    "typescript": "^5.3.3"
   }
 }

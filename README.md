@@ -32,6 +32,44 @@ cp .env.example .env
 - `DEPLOYER_PRIVATE_KEY`: Your deployer wallet's private key
 - `ETHERSCAN_API_KEY`: Your single Etherscan V2 API key (works for all supported chains)
 
+---
+
+## Environment Variable Setup
+
+### Backend Environment
+
+- Place your backend `.env` file in the project root (`./.env`).
+- Use `.env.example` as a template:
+  ```bash
+  cp .env.example .env
+  ```
+- **Required backend variables** (see `.env.example`):
+  - `SUPABASE_URL`: Supabase project URL (for backend API/database access)
+  - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (for backend API/database access)
+  - `DEPLOYER_PRIVATE_KEY`: Private key for contract deployment scripts
+  - `ETHERSCAN_API_KEY`: Etherscan API key for contract verification
+
+### Frontend Environment
+
+- Place your frontend `.env` file in the `frontend/` directory (`frontend/.env`).
+- Use `frontend/.env.example` as a template:
+  ```bash
+  cp frontend/.env.example frontend/.env
+  ```
+- **Required frontend variables** (see `frontend/.env.example`):
+  - `VITE_SUPABASE_URL`: Supabase project URL (for frontend)
+  - `VITE_SUPABASE_ANON_KEY`: Supabase anon/public key (for frontend)
+  - `VITE_RPC_URL`: Blockchain RPC endpoint for on-chain calls
+
+**Note:**
+All frontend environment variables **must** be prefixed with `VITE_` to be accessible in the app (Vite requirement).
+
+### About `.env.example` Files
+
+- `.env.example` and `frontend/.env.example` serve as templates for required environment variables.
+- Never commit real secrets to version control—only the example files.
+- Always copy the example file and fill in your actual values before running the app.
+
 ## Usage
 
 Deploy and verify on all chains:

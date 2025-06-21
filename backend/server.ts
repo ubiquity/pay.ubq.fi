@@ -1,78 +1,60 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Context } from 'hono';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-
-type PermitClaim = {
-  nonce: string;
-  transactionHash: string;
-  claimerAddress: string;
-  txUrl: string;
-};
+import { createClient } from "@supabase/supabase-js";
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 
 const app = new Hono();
 app.use("*", cors());
 
-// Initialize Supabase client with environment validation
-const requiredEnvVars = {
-  SUPABASE_URL: process.env.SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
-};
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Validate each required environment variable
-for (const [varName, value] of Object.entries(requiredEnvVars)) {
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${varName}. Please check your .env file`);
-  }
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
 }
 
-const supabase = createClient(
-  requiredEnvVars.SUPABASE_URL,
-  requiredEnvVars.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // API endpoint for recording claims
-app.post('/api/permits/record-claim', async (c: Context) => {
+app.post("/api/permits/record-claim", async (c: Context) => {
   try {
     const { signature, transactionHash } = await c.req.json();
 
     if (!signature || !transactionHash) {
-      return c.json({ error: 'Missing required fields' }, 400);
+      return c.json({ error: "Missing required fields" }, 400);
     }
 
     const { error } = await supabase
-      .from('permits')
+      .from("permits")
       .update({
-        transaction: transactionHash
+        transaction: transactionHash,
       })
-      .eq('signature', signature)
-      .is('transaction', null);
+      .eq("signature", signature)
+      .is("transaction", null);
 
     if (error) throw error;
 
     return c.json({ success: true });
   } catch (error) {
-    console.error('Error recording claim:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: 'Failed to record claim', details: message }, 500);
+    console.error("Error recording claim:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ error: "Failed to record claim", details: message }, 500);
   }
 });
 
-// Serve static files in production
-app.use('/*', async (c) => {
-  try {
-    const file = await Bun.file(`./frontend/dist${c.req.path}`).text();
-    return new Response(file);
-  } catch {
-    return new Response('Not Found', { status: 404 });
-  }
-});
+// Serve static files for the frontend
+app.use("/*", serveStatic({ root: "./frontend/dist" }));
+app.use("/*", serveStatic({ path: "./frontend/dist/index.html" }));
+
 
 // Start server
-const port = parseInt(process.env.PORT || '3000');
+const port = parseInt(process.env.PORT || "3000");
 console.log(`Server running on port ${port}`);
 
-Bun.serve({
+serve({
+  fetch: app.fetch,
   port,
-  fetch: app.fetch
 });

@@ -2,6 +2,29 @@
 
 This document outlines the technology stack and development environment for the rewritten Permit Claiming application, based on the initial `rewrite-plan.md`.
 
+---
+
+## Environment Variable Setup
+
+### Backend (`.env` in project root)
+- Place your backend `.env` file in the project root.
+- **Required variables:**
+  - `SUPABASE_URL`: Supabase project URL (for backend API/database access)
+  - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (for backend API/database access)
+  - `DEPLOYER_PRIVATE_KEY`: Private key for contract deployment (deployment only)
+  - `ETHERSCAN_API_KEY`: Etherscan API key for contract verification (deployment only)
+
+### Frontend (`frontend/.env`)
+- Place your frontend `.env` file in the `frontend/` directory.
+- **All frontend variables must be prefixed with `VITE_` to be accessible in the app.**
+- **Required variables:**
+  - `VITE_SUPABASE_URL`: Supabase project URL (for frontend Supabase client)
+  - `VITE_SUPABASE_ANON_KEY`: Supabase anon/public key (for frontend Supabase client)
+  - `VITE_RPC_URL`: Blockchain RPC endpoint (for all on-chain calls; default is `https://rpc.ubq.fi`)
+
+See `.env.example` and `frontend/.env.example` for templates and comments.
+
+---
 ## 1. Core Technologies
 
 *   **Language:** TypeScript (across frontend, backend, shared code)

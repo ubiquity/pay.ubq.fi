@@ -2,6 +2,13 @@
 
 **Date:** 2025-04-01 (Updated)
 
+---
+
+**2025-06-21:**
+- Updated `.env.example` (root) and `frontend/.env.example` to clearly list all required variables for backend and frontend, with comments.
+- Added documentation in `tech-context.md` on where to place `.env` files and which variables are required for backend and frontend.
+- Clarified that all frontend variables must be `VITE_`-prefixed and placed in `frontend/.env`, while backend uses the root `.env`.
+
 ## 1. Current Focus
 
 *   Implementing and testing the CowSwap integration for automatic reward swapping based on user preference.
