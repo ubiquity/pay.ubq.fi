@@ -1,9 +1,9 @@
 name: Deploy
 on:
   push:
-    branches: [development]
+    branches: [development, fix/ci]
   pull_request:
-    branches: [development]
+    branches: [development, fix/ci]
 
 jobs:
   deploy:
@@ -32,11 +32,15 @@ jobs:
         uses: oven-sh/setup-bun@v1
 
       - name: Install step
-        run: "bun install"
-
+        run: bun install
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
       - name: Build step
-        run: "cd frontend && bun run build"
-
+        run: |
+          cd frontend
+          bun run build
       - name: Upload to Deno Deploy
         uses: denoland/deployctl@v1
         with:
