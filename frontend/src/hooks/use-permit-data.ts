@@ -23,41 +23,24 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
 
-  // Save cache after fetching from Supabase
   const saveCache = useCallback((cache: PermitDataCache) => {
     try {
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
     } catch (e: unknown) {
-      // Intentionally ignore cache errors since they're non-critical
-      // console.debug("Ignored cache save error", e);
+      // Intentionally ignore cache errors
     }
   }, []);
 
-  // Filter permits for UI
   const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
     const filtered: PermitData[] = [];
     permitsMap.forEach((permit) => {
       const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
       const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      let reason: string;
-      if (permit.isNonceUsed === true) {
-        reason = "Excluded: nonce used";
-      } else if (nonceCheckFailed) {
-        reason = `Excluded: nonce check error (${permit.checkError})`;
-      } else if (permit.status === "Claimed") {
-        reason = "Excluded: already claimed";
-      } else {
-        reason = "Included: claimable";
-      }
-
       if (!shouldFilter) filtered.push(permit);
     });
-    // Log final filtered list
-    // console.log("[use-permit-data] Final filtered permits:", filtered);
     setPermits(filtered);
   }, []);
 
-  // Fetch quotes for claimable permits
   const fetchQuotes = useCallback(
     async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
       if (!preferredRewardTokenAddress || !address || !chainId) {
@@ -149,7 +132,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     [preferredRewardTokenAddress, address, chainId]
   );
 
-  // Worker setup and permit fetching
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
     const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -160,28 +142,22 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       setIsLoading(false);
       return;
     }
-    console.log("[use-permit-data] Initializing permit-checker.worker.ts with Supabase config", {
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? "***" : undefined,
-    });
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" });
     workerRef.current.postMessage({
       type: "INIT",
       payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY },
     });
+
     workerRef.current.onmessage = (event: MessageEvent) => {
       type WorkerMessageData = {
         type: "INIT_SUCCESS" | "INIT_ERROR" | "NEW_PERMITS_VALIDATED" | "PERMITS_ERROR";
         permits?: PermitData[];
         error?: string;
       };
-      // Log every worker response for debugging
-      console.log("[use-permit-data] Worker message received:", event.data);
       const { type, permits: workerPermits, error: workerError } = event.data as WorkerMessageData;
       switch (type) {
         case "INIT_SUCCESS":
           setIsWorkerInitialized(true);
-          fetchPermits();
           break;
         case "INIT_ERROR":
           setError(`Worker initialization failed: ${workerError}`);
@@ -190,16 +166,13 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           break;
         case "NEW_PERMITS_VALIDATED": {
           const validated: PermitData[] = workerPermits || [];
-          // Log raw permit data fetched from Supabase before any filtering
-          console.log("[use-permit-data] Raw permit data fetched from Supabase:", validated);
           const cache: PermitDataCache = {};
           validated.forEach((permit) => {
             cache[permit.signature] = permit;
           });
           saveCache(cache);
-          allPermitsRef.current = new Map(Object.entries(cache));
-          filterPermits(allPermitsRef.current);
-          fetchQuotes(allPermitsRef.current)
+          const newPermits = new Map(Object.entries(cache));
+          fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
               filterPermits(allPermitsRef.current);
@@ -223,83 +196,44 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       setIsLoading(false);
       setIsWorkerInitialized(false);
     };
+
     return () => {
       workerRef.current?.terminate();
       workerRef.current = null;
       setIsWorkerInitialized(false);
     };
-    // eslint-disable-next-line
   }, [filterPermits, saveCache, fetchQuotes]);
 
-  // Always fetch from Supabase on load
-  const fetchPermits = useCallback(() => {
-    if (!workerRef.current || !isWorkerInitialized) return;
-    if (!isConnected || !address) {
+  useEffect(() => {
+    if (isConnected && isWorkerInitialized && workerRef.current) {
+      setIsLoading(true);
+      setError(null);
+      workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
+    } else if (!isConnected) {
       allPermitsRef.current.clear();
       setPermits([]);
       setIsLoading(false);
-      return;
     }
-    setIsLoading(true);
-    setError(null);
+  }, [isConnected, isWorkerInitialized, address]);
 
-    // Clear existing cache to prevent stale data
-    try {
-      localStorage.removeItem(PERMIT_DATA_CACHE_KEY);
-      console.log("[use-permit-data] Cleared permit data cache");
-    } catch (e) {
-      console.warn("[use-permit-data] Failed to clear cache", e);
-    }
-
-    // Log the intended Supabase query for debugging
-    console.log("[use-permit-data] Requesting permit data from Supabase via worker", {
-      table: "permits",
-      filters: { address },
-      note: "Query will join permits -> users -> wallets tables to find permits where wallets.address matches",
-      query: "First find user IDs from wallets table, then query permits where beneficiary_id is in the list of user IDs",
-    });
-    workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address, lastCheckTimestamp: null } });
-  }, [address, isConnected, isWorkerInitialized]);
-
-  // Re-fetch on connection change
-  useEffect(
-    () => {
-      if (isConnected && isWorkerInitialized) {
-        console.log("[use-permit-data] Connection changed - fetching permits");
-        fetchPermits();
-      } else if (!isConnected) {
-        console.log("[use-permit-data] Disconnected - clearing permits");
-        allPermitsRef.current.clear();
-        setPermits([]);
-        setIsLoading(false);
-      }
-    },
-    [isConnected, isWorkerInitialized, fetchPermits] as const
-  );
-
-  // Re-fetch quotes when preference changes
-  useEffect(
-    () => {
-      if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
-        fetchQuotes(new Map(allPermitsRef.current))
-          .then((mapWithQuotes: Map<string, PermitData>) => {
-            allPermitsRef.current = mapWithQuotes;
-            filterPermits(allPermitsRef.current);
-          })
-          .catch((e: unknown) => {
-            setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
-            allPermitsRef.current.forEach((permit: PermitData) => {
-              delete permit.estimatedAmountOut;
-              permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
-            });
-            filterPermits(allPermitsRef.current);
+  useEffect(() => {
+    if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
+      fetchQuotes(new Map(allPermitsRef.current))
+        .then((mapWithQuotes: Map<string, PermitData>) => {
+          allPermitsRef.current = mapWithQuotes;
+          filterPermits(allPermitsRef.current);
+        })
+        .catch((e: unknown) => {
+          setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
+          allPermitsRef.current.forEach((permit: PermitData) => {
+            delete permit.estimatedAmountOut;
+            permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
           });
-      }
-    },
-    [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits] as const
-  );
+          filterPermits(allPermitsRef.current);
+        });
+    }
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
 
-  // Update cache after claim
   const updatePermitStatusCache = useCallback(
     (permitKey: string, statusUpdate: Partial<PermitData>) => {
       const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
@@ -323,7 +257,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isLoading,
     error,
     setError,
-    fetchPermits,
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,

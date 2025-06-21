@@ -82,16 +82,11 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     }
   }
 
-  if (amountBigInt !== null && amountBigInt > 0n) {
+  if (permit.amount === "0" || (amountBigInt !== null && amountBigInt > 0n)) {
     type = "erc20-permit";
-  } else {
-    // Allow permits with 0 amount through mapping, filter later if needed
-    type = "erc20-permit"; // Still classify as ERC20 if amount is 0 or null, maybe filter later based on validation?
   }
 
-  // Log type determination for the first few permits
-  if (index < 10) {
-  }
+
 
   const permitData: PermitData = {
     nonce: String(permit.nonce),
@@ -140,14 +135,14 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   // This query directly joins permits with users and wallets
   const directJoinQuery = `
-            *,
-            token:${TOKENS_TABLE}(address, network),
-            partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
-            location:${LOCATIONS_TABLE}(node_url),
-            users!inner(
-                wallets!inner(address)
-            )
-  `;
+              *,
+              token:${TOKENS_TABLE}(address, network),
+              partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
+              location:${LOCATIONS_TABLE}(node_url),
+              users!inner(
+                  wallets!inner(address)
+              )
+    `;
 
   let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
