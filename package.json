@@ -17,16 +17,10 @@
   },
   "private": true,
   "scripts": {
-    "start": "PORT=8080 NODE_ENV=development cd frontend && bun run build && cd ../backend && bun run server.ts",
-    "dev": "run-p dev:frontend dev:backend",
-    "dev:frontend": "cd frontend && bun run dev",
-    "dev:backend": "bun run backend/server.ts",
-    "build": "run-p build:frontend",
-    "build:frontend": "cd frontend && bun run build",
-    "install": "run-p install:frontend install:backend",
-    "install:frontend": "cd frontend && bun install",
-    "install:backend": "cd backend && bun install",
-    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules",
-    "deploy-all": "bun run scripts/deploy-verify-all.ts"
+    "_frontend": "cd frontend && bun run dev",
+    "_backend": "bun run backend/server.ts",
+    "_frontend-build": "cd frontend && bun run build",
+    "dev": "run-p _frontend _backend",
+    "start": "run-s _frontend-build _backend"
   }
 }
