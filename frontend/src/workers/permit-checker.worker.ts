@@ -86,14 +86,11 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     type = "erc20-permit";
   } else {
     // Allow permits with 0 amount through mapping, filter later if needed
-    // if (index < 10) { console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no positive amount (${permit.amount}). Filtering out.`); }
-    // return null;
     type = "erc20-permit"; // Still classify as ERC20 if amount is 0 or null, maybe filter later based on validation?
   }
 
   // Log type determination for the first few permits
   if (index < 10) {
-    // console.log(`Worker: Permit [${index}] mapped. Raw: {amount: ${permit.amount}}. Determined type: ${type}`);
   }
 
   const permitData: PermitData = {
@@ -118,23 +115,15 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
   // Basic validation (ensure essential fields are present)
   if (!permitData.nonce || !permitData.deadline || !permitData.signature || !permitData.beneficiary || !permitData.owner || !permitData.token?.address) {
     // Amount check removed as 0 is ok for type
-    if (index < 10) {
-      console.warn(`Worker: Permit [${index}] missing essential data. Filtering out. Data:`, JSON.stringify(permitData));
-    }
+
     return null;
   }
   // Validate deadline format before parsing
   if (typeof permitData.deadline !== "string" || isNaN(parseInt(permitData.deadline, 10))) {
-    if (index < 10) {
-      console.warn(`Worker: Permit [${index}] has invalid deadline format: ${permitData.deadline}. Filtering out.`);
-    }
     return null;
   }
   const deadlineInt = parseInt(permitData.deadline, 10);
   if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
-    if (index < 10) {
-      console.warn(`Worker: Permit [${index}] is expired. Filtering out.`);
-    }
     permitData.status = "Expired";
   }
   return permitData;
@@ -147,7 +136,6 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   // Normalize wallet address for consistent comparison
   const normalizedWalletAddress = walletAddress.toLowerCase();
 
-  console.log(`Worker: Attempting to fetch permits for wallet address: ${normalizedWalletAddress}`);
   let permitsData: unknown[] = [];
 
   // This query directly joins permits with users and wallets
@@ -161,10 +149,6 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
             )
   `;
 
-  console.log(
-    `Worker: SQL Query 2 (direct join): SELECT permits.*, tokens.address, tokens.network, partners.wallet.address, locations.node_url FROM permits INNER JOIN users ON permits.beneficiary_id = users.id INNER JOIN wallets ON users.wallet_id = wallets.id WHERE wallets.address ILIKE '${normalizedWalletAddress}' AND permits.transaction IS NULL`
-  );
-
   let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
@@ -176,18 +160,13 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   if (result.error) {
     console.error(`Worker: query error: ${result.error.message}`, result.error);
   } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits using direct join approach`);
+    console.log(`Worker: Found ${result.data.length} permits`);
     permitsData = result.data;
-  } else {
-    console.log(`Worker: No permits found`);
   }
 
   if (permitsData.length === 0) {
-    console.log(`Worker: No permits found for wallet address: ${normalizedWalletAddress}`);
     return [];
   }
-
-  console.log(`Worker: Successfully found ${permitsData.length} permits for wallet address: ${normalizedWalletAddress}`);
 
   // Cast needed because Supabase client doesn't know about the joined types automatically
   return permitsData as unknown as PermitRow[];
@@ -211,7 +190,6 @@ async function getPermit2Address(permitData: PermitData) {
     return NEW_PERMIT2_ADDRESS;
   }
   // If the signer doesn't match, fallback to old permit address
-  console.warn(`Worker: Permit ${permitData.signature} signer mismatch. Using old permit address.`);
   return OLD_PERMIT2_ADDRESS;
 }
 
@@ -219,7 +197,6 @@ async function getPermit2Address(permitData: PermitData) {
 async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<PermitData[]> {
   if (!rpcClient) throw new Error("RPC client not initialized.");
   if (permitsToValidate.length === 0) {
-    // console.log("Worker: No permits provided for validation.");
     return [];
   }
 
@@ -237,7 +214,6 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
   permitsToValidate.forEach((permit) => {
     // Only handle ERC20 permits as per simplified logic
     if (permit.type !== "erc20-permit") {
-      console.warn(`Worker: Skipping validation for non-ERC20 permit: ${permit.nonce}`);
       return;
     }
 
@@ -302,19 +278,15 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]): Promise<Pe
           chainId,
         });
       }
-    } else {
-      console.warn(`Worker: Skipping balance/allowance check for permit ${key} due to missing data.`);
     }
   });
 
-  // console.log(`Worker: Sending validation batch request with ${batchRequests.length} checks.`);
   if (batchRequests.length === 0) return permitsToValidate; // Return original if nothing to check (e.g., only non-ERC20 passed)
 
   try {
     const batchPayload = batchRequests.map((br) => br.request);
     // Assuming same chainId for all permits currently
     const batchResponses = (await rpcClient.request(batchRequests[0].chainId, batchPayload)) as JsonRpcResponse[];
-    // console.log(`Worker: Received ${batchResponses.length} validation responses in batch.`);
 
     const responseMap = new Map<number, JsonRpcResponse>(batchResponses.map((res) => [res.id as number, res]));
 
@@ -422,7 +394,6 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
       try {
         supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
         rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
-        // console.log("Worker: Supabase and RPC clients initialized.");
         worker.postMessage({ type: "INIT_SUCCESS" });
       } catch (error: unknown) {
         console.error("Worker: Error initializing clients:", error);
@@ -434,12 +405,9 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
   } else if (type === "FETCH_NEW_PERMITS") {
     const address = payload.address as Address;
     const lastCheckTimestamp = payload.lastCheckTimestamp;
-    // console.log(`Worker: Received FETCH_NEW_PERMITS for ${address}`);
     try {
       if (!supabase) throw new Error("Supabase client not ready.");
       const lowerCaseWalletAddress = address.toLowerCase();
-
-      console.log(`Worker: Fetching permits for wallet address: ${lowerCaseWalletAddress}`);
 
       // Fetch *only new* permits from DB using the wallet address and timestamp
       const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
@@ -449,7 +417,8 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
       const mappedNewPermits = newPermitsFromDb
         .map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress))
         .filter((p): p is PermitData => p !== null);
-      console.log(`Worker: Mapped ${mappedNewPermits.length} new permits for wallet address: ${lowerCaseWalletAddress}`);
+      // One-line summary for mapped permits
+      console.log(`Worker: Mapped ${mappedNewPermits.length} new permits`);
 
       // 4. Validate *only* the mapped new permits
       if (mappedNewPermits.length > 0) {
@@ -470,5 +439,3 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
     // Optionally handle if needed, otherwise ignore.
   }
 };
-
-// console.log("Permit checker worker started.");

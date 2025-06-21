@@ -14,12 +14,7 @@ interface UsePermitDataProps {
 
 type PermitDataCache = Record<string, PermitData>;
 
-export function usePermitData({
-  address,
-  isConnected,
-  preferredRewardTokenAddress,
-  chainId,
-}: UsePermitDataProps) {
+export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -34,41 +29,33 @@ export function usePermitData({
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
     } catch (e: unknown) {
       // Intentionally ignore cache errors since they're non-critical
-      console.debug('Ignored cache save error', e);
+      // console.debug("Ignored cache save error", e);
     }
   }, []);
 
   // Filter permits for UI
   const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
-      const filtered: PermitData[] = [];
-      permitsMap.forEach((permit) => {
-        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-        let reason: string;
-        if (permit.isNonceUsed === true) {
-          reason = "Excluded: nonce used";
-        } else if (nonceCheckFailed) {
-          reason = `Excluded: nonce check error (${permit.checkError})`;
-        } else if (permit.status === "Claimed") {
-          reason = "Excluded: already claimed";
-        } else {
-          reason = "Included: claimable";
-        }
-        // Detailed log for each permit during filtering
-        console.log("[use-permit-data] Filter check for permit", {
-          key: permit.signature,
-          status: permit.status,
-          isNonceUsed: permit.isNonceUsed,
-          checkError: permit.checkError,
-          reason,
-          permit,
-        });
-        if (!shouldFilter) filtered.push(permit);
-      });
-      // Log final filtered list
-      console.log("[use-permit-data] Final filtered permits:", filtered);
-      setPermits(filtered);
-    }, []);
+    const filtered: PermitData[] = [];
+    permitsMap.forEach((permit) => {
+      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+      let reason: string;
+      if (permit.isNonceUsed === true) {
+        reason = "Excluded: nonce used";
+      } else if (nonceCheckFailed) {
+        reason = `Excluded: nonce check error (${permit.checkError})`;
+      } else if (permit.status === "Claimed") {
+        reason = "Excluded: already claimed";
+      } else {
+        reason = "Included: claimable";
+      }
+
+      if (!shouldFilter) filtered.push(permit);
+    });
+    // Log final filtered list
+    // console.log("[use-permit-data] Final filtered permits:", filtered);
+    setPermits(filtered);
+  }, []);
 
   // Fetch quotes for claimable permits
   const fetchQuotes = useCallback(
@@ -111,7 +98,7 @@ export function usePermitData({
             try {
               total += BigInt(p.amount);
             } catch (e: unknown) {
-              console.warn('Failed to parse permit amount', { amount: p.amount, error: e });
+              console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
             }
           }
         });
@@ -151,7 +138,7 @@ export function usePermitData({
         } catch (e: unknown) {
           group.forEach((p) => {
             delete p.estimatedAmountOut;
-            p.quoteError = (e instanceof Error ? e.message : typeof e === 'string' ? e : "Quote fetching failed");
+            p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
             updated.set(`${p.nonce}-${p.networkId}`, p);
           });
         }
@@ -275,36 +262,42 @@ export function usePermitData({
   }, [address, isConnected, isWorkerInitialized]);
 
   // Re-fetch on connection change
-  useEffect(() => {
-    if (isConnected && isWorkerInitialized) {
-      console.log("[use-permit-data] Connection changed - fetching permits");
-      fetchPermits();
-    } else if (!isConnected) {
-      console.log("[use-permit-data] Disconnected - clearing permits");
-      allPermitsRef.current.clear();
-      setPermits([]);
-      setIsLoading(false);
-    }
-  }, [isConnected, isWorkerInitialized, fetchPermits] as const);
+  useEffect(
+    () => {
+      if (isConnected && isWorkerInitialized) {
+        console.log("[use-permit-data] Connection changed - fetching permits");
+        fetchPermits();
+      } else if (!isConnected) {
+        console.log("[use-permit-data] Disconnected - clearing permits");
+        allPermitsRef.current.clear();
+        setPermits([]);
+        setIsLoading(false);
+      }
+    },
+    [isConnected, isWorkerInitialized, fetchPermits] as const
+  );
 
   // Re-fetch quotes when preference changes
-  useEffect(() => {
-    if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
-      fetchQuotes(new Map(allPermitsRef.current))
-        .then((mapWithQuotes: Map<string, PermitData>) => {
-          allPermitsRef.current = mapWithQuotes;
-          filterPermits(allPermitsRef.current);
-        })
-        .catch((e: unknown) => {
-          setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
-          allPermitsRef.current.forEach((permit: PermitData) => {
-            delete permit.estimatedAmountOut;
-            permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
+  useEffect(
+    () => {
+      if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
+        fetchQuotes(new Map(allPermitsRef.current))
+          .then((mapWithQuotes: Map<string, PermitData>) => {
+            allPermitsRef.current = mapWithQuotes;
+            filterPermits(allPermitsRef.current);
+          })
+          .catch((e: unknown) => {
+            setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
+            allPermitsRef.current.forEach((permit: PermitData) => {
+              delete permit.estimatedAmountOut;
+              permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
+            });
+            filterPermits(allPermitsRef.current);
           });
-          filterPermits(allPermitsRef.current);
-        });
-    }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits] as const);
+      }
+    },
+    [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits] as const
+  );
 
   // Update cache after claim
   const updatePermitStatusCache = useCallback(
