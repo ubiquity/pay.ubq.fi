@@ -86,8 +86,6 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     type = "erc20-permit";
   }
 
-
-
   const permitData: PermitData = {
     nonce: String(permit.nonce),
     networkId: networkIdNum,
@@ -170,21 +168,25 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 // --- On-Chain Validation ---
 
 async function getPermit2Address(permitData: PermitData) {
-  const permit: PermitTransferFrom = {
-    permitted: {
-      token: permitData.tokenAddress as Address,
-      amount: BigInt(permitData.amount ?? 0),
-    },
-    nonce: BigInt(permitData.nonce),
-    deadline: BigInt(permitData.deadline),
-    spender: permitData.beneficiary as Address,
-  };
-  const hash = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
-  const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
-  if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
-    return NEW_PERMIT2_ADDRESS;
+  try {
+    const permit: PermitTransferFrom = {
+      permitted: {
+        token: permitData.tokenAddress as Address,
+        amount: BigInt(permitData.amount ?? 0),
+      },
+      nonce: BigInt(permitData.nonce),
+      deadline: BigInt(permitData.deadline),
+      spender: permitData.beneficiary as Address,
+    };
+    const hash = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
+    const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
+    if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
+      return NEW_PERMIT2_ADDRESS;
+    }
+  } catch (e) {
+    console.error(`Could not process the permit at ${permitData.githubCommentUrl}.`, e);
   }
-  // If the signer doesn't match, fallback to old permit address
+  // If the signer doesn't match or if we encountered and error, fallback to the old permit address
   return OLD_PERMIT2_ADDRESS;
 }
 
