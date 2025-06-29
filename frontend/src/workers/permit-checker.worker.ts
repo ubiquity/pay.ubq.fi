@@ -391,7 +391,7 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
   if (type === "INIT") {
     const supabaseUrl = payload.supabaseUrl;
     const supabaseAnonKey = payload.supabaseAnonKey;
-    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : "/rpc";
+    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
 
     if (supabaseUrl && supabaseAnonKey) {
       try {
