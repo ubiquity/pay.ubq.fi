@@ -9,14 +9,20 @@ import { preparePermitPrerequisiteContracts } from "../utils/permit-utils.ts";
 
 // --- Worker Setup ---
 
+type WorkerResponse =
+  | { type: "INIT_SUCCESS" }
+  | { type: "INIT_ERROR"; error: string }
+  | { type: "NEW_PERMITS_VALIDATED"; permits: PermitData[] }
+  | { type: "PERMITS_ERROR"; error: string };
+
 // Define the worker scope type
 interface WorkerGlobalScope {
   onmessage: (event: MessageEvent) => void;
-  postMessage: (message: any) => void;
+  postMessage: (message: WorkerResponse) => void;
 }
 
 // Use the worker global scope
-const worker: WorkerGlobalScope = self as any;
+const worker: WorkerGlobalScope = self as unknown as WorkerGlobalScope;
 
 // Define table names
 const PERMITS_TABLE = "permits";
@@ -48,7 +54,7 @@ interface WorkerPayload {
   address?: Address;
   lastCheckTimestamp?: string | null;
   permits?: PermitData[]; // For VALIDATE_PERMITS
-  proxyBaseUrl?: string; // Pass proxy URL during init
+  isDevelopment: boolean;
   [key: string]: unknown;
 }
 
@@ -86,7 +92,9 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     type = "erc20-permit";
   }
 
-
+  if (!type) {
+    return null;
+  }
 
   const permitData: PermitData = {
     nonce: String(permit.nonce),
@@ -104,6 +112,7 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
     partner: ownerAddressStr ? { wallet: { address: ownerAddressStr } } : undefined,
     claimStatus: "Idle",
     status: "Fetching",
+    permit2Address: "0x", // Default value, will be updated in validation
     ...(permit.created && { created_at: permit.created }), // Map 'created' from DB
   };
 
@@ -382,8 +391,7 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
   if (type === "INIT") {
     const supabaseUrl = payload.supabaseUrl;
     const supabaseAnonKey = payload.supabaseAnonKey;
-    // Use VITE_RPC_URL from .env (see .env.example), or default to https://rpc.ubq.fi
-    PROXY_BASE_URL = payload.proxyBaseUrl || import.meta.env.VITE_RPC_URL || "https://rpc.ubq.fi";
+    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : "/rpc";
 
     if (supabaseUrl && supabaseAnonKey) {
       try {

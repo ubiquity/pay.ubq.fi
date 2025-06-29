@@ -26,7 +26,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const saveCache = useCallback((cache: PermitDataCache) => {
     try {
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-    } catch (e: unknown) {
+    } catch {
       // Intentionally ignore cache errors
     }
   }, []);
@@ -145,7 +145,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" });
     workerRef.current.postMessage({
       type: "INIT",
-      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY },
+      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment: import.meta.env.DEV },
     });
 
     workerRef.current.onmessage = (event: MessageEvent) => {
