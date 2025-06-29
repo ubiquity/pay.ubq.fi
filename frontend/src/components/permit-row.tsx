@@ -17,7 +17,6 @@ interface PermitRowProps {
   chain: Chain | undefined;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
-  confirmingHash?: `0x${string}`;
   isSelected?: boolean;
   onSelect?: (permit: PermitData) => void;
 }
@@ -227,7 +226,7 @@ export function PermitRow({
   return (
     <div className={`permit-row ${rowClassName}`}>
       {supportsBatchClaim && onSelect && (
-        <div className="permit-cell checkbox-cell">
+        <div className="permit-cell checkbox-cell" style={{ margin: "5px" }}>
           <input
             type="checkbox"
             checked={isSelected}

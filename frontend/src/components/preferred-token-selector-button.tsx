@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Address } from "viem";
-import { RewardPreferenceSelector } from "./reward-preference-selector";
 import { getSupportedRewardTokensForChain, getTokenInfo } from "../constants/supported-reward-tokens";
 import { ICONS } from "./iconography";
+import { RewardPreferenceSelector } from "./reward-preference-selector";
 
 const LOCAL_STORAGE_KEY = "preferredRewardToken";
 
@@ -59,19 +59,17 @@ export function PreferredTokenSelectorButton({ chainId, onPreferenceChange }: Pr
   };
 
   // Internal handler for changes from the actual dropdown
-  const handleInternalPreferenceChange = useCallback(
-    (selectedAddress: Address | null) => {
-      if (selectedAddress !== currentPreference) { // Check if value actually changed
-        setCurrentPreference(selectedAddress);
-        setIsDropdownVisible(false);
-        onPreferenceChange(selectedAddress);
-      } else {
-         // If same value selected, just close without notifying parent
-         setIsDropdownVisible(false);
-      }
-    },
-    [onPreferenceChange, currentPreference] // Add currentPreference dependency
-  );
+  const handleInternalPreferenceChange = (selectedAddress: Address | null) => {
+    if (selectedAddress !== currentPreference) {
+      // Check if value actually changed
+      setCurrentPreference(selectedAddress);
+      setIsDropdownVisible(false);
+      onPreferenceChange(selectedAddress);
+    } else {
+      // If same value selected, just close without notifying parent
+      setIsDropdownVisible(false);
+    }
+  };
 
   // Determine which icon to display
   const displayIcon = useMemo(() => {

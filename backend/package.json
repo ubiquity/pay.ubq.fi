@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "deno run --allow-net --allow-read --allow-env server.ts",
-    "start": "deno run --allow-net --allow-read --allow-env server.ts",
+    "dev": "deno run --allow-net --allow-read --allow-env --env-file server.ts",
+    "start": "deno run --allow-net --allow-read --allow-env --env-file server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

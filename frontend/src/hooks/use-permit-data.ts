@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
-import type { PermitData } from "../types.ts";
+import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
 
 const PERMIT_DATA_CACHE_KEY = "permitDataCache";
@@ -16,6 +16,7 @@ type PermitDataCache = Record<string, PermitData>;
 
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
+  const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,15 +24,15 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
 
-  const saveCache = useCallback((cache: PermitDataCache) => {
+  const saveCache = (cache: PermitDataCache) => {
     try {
       localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-    } catch (e: unknown) {
+    } catch {
       // Intentionally ignore cache errors
     }
-  }, []);
+  };
 
-  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
+  const filterPermits = (permitsMap: Map<string, PermitData>) => {
     const filtered: PermitData[] = [];
     permitsMap.forEach((permit) => {
       const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
@@ -39,98 +40,95 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       if (!shouldFilter) filtered.push(permit);
     });
     setPermits(filtered);
-  }, []);
+  };
 
-  const fetchQuotes = useCallback(
-    async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
-      if (!preferredRewardTokenAddress || !address || !chainId) {
-        permitsMap.forEach((permit) => {
-          delete permit.estimatedAmountOut;
-          delete permit.quoteError;
-        });
-        return permitsMap;
+  const fetchQuotes = async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
+    if (!preferredRewardTokenAddress || !address || !chainId) {
+      permitsMap.forEach((permit) => {
+        delete permit.estimatedAmountOut;
+        delete permit.quoteError;
+      });
+      return permitsMap;
+    }
+    setIsQuoting(true);
+    const updated = new Map(permitsMap);
+    const byToken = new Map<Address, PermitData[]>();
+    updated.forEach((permit) => {
+      if (
+        permit.tokenAddress &&
+        permit.type === "erc20-permit" &&
+        permit.status !== "Claimed" &&
+        permit.claimStatus !== "Success" &&
+        permit.claimStatus !== "Pending"
+      ) {
+        const group = byToken.get(permit.tokenAddress as Address) || [];
+        group.push(permit);
+        byToken.set(permit.tokenAddress as Address, group);
       }
-      setIsQuoting(true);
-      const updated = new Map(permitsMap);
-      const byToken = new Map<Address, PermitData[]>();
-      updated.forEach((permit) => {
-        if (
-          permit.tokenAddress &&
-          permit.type === "erc20-permit" &&
-          permit.status !== "Claimed" &&
-          permit.claimStatus !== "Success" &&
-          permit.claimStatus !== "Pending"
-        ) {
-          const group = byToken.get(permit.tokenAddress as Address) || [];
-          group.push(permit);
-          byToken.set(permit.tokenAddress as Address, group);
+    });
+    for (const [tokenIn, group] of byToken.entries()) {
+      if (tokenIn.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
+        group.forEach((p) => {
+          delete p.estimatedAmountOut;
+          delete p.quoteError;
+          updated.set(`${p.nonce}-${p.networkId}`, p);
+        });
+        continue;
+      }
+      let total = 0n;
+      group.forEach((p) => {
+        if (p.amount) {
+          try {
+            total += p.amount;
+          } catch (e: unknown) {
+            console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
+          }
         }
       });
-      for (const [tokenIn, group] of byToken.entries()) {
-        if (tokenIn.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
-          group.forEach((p) => {
-            delete p.estimatedAmountOut;
-            delete p.quoteError;
-            updated.set(`${p.nonce}-${p.networkId}`, p);
-          });
-          continue;
-        }
-        let total = 0n;
+      if (total === 0n) {
         group.forEach((p) => {
-          if (p.amount) {
-            try {
-              total += BigInt(p.amount);
-            } catch (e: unknown) {
-              console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
-            }
-          }
+          delete p.estimatedAmountOut;
+          delete p.quoteError;
+          updated.set(`${p.nonce}-${p.networkId}`, p);
         });
-        if (total === 0n) {
-          group.forEach((p) => {
-            delete p.estimatedAmountOut;
-            delete p.quoteError;
-            updated.set(`${p.nonce}-${p.networkId}`, p);
-          });
-          continue;
-        }
-        try {
-          const quote = await getCowSwapQuote({
-            tokenIn,
-            tokenOut: preferredRewardTokenAddress,
-            amountIn: total,
-            userAddress: address,
-            chainId,
-          });
-          const groupOut = quote.estimatedAmountOut;
-          group.forEach((p) => {
-            if (p.amount && total > 0n) {
-              try {
-                const amt = BigInt(p.amount);
-                p.estimatedAmountOut = ((amt * groupOut) / total).toString();
-                p.quoteError = null;
-              } catch {
-                p.estimatedAmountOut = undefined;
-                p.quoteError = "Calculation error";
-              }
-            } else {
-              p.estimatedAmountOut = undefined;
-              p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
-            }
-            updated.set(`${p.nonce}-${p.networkId}`, p);
-          });
-        } catch (e: unknown) {
-          group.forEach((p) => {
-            delete p.estimatedAmountOut;
-            p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
-            updated.set(`${p.nonce}-${p.networkId}`, p);
-          });
-        }
+        continue;
       }
-      setIsQuoting(false);
-      return updated;
-    },
-    [preferredRewardTokenAddress, address, chainId]
-  );
+      try {
+        const quote = await getCowSwapQuote({
+          tokenIn,
+          tokenOut: preferredRewardTokenAddress,
+          amountIn: total,
+          userAddress: address,
+          chainId,
+        });
+        const groupOut = quote.estimatedAmountOut;
+        group.forEach((p) => {
+          if (p.amount && total > 0n) {
+            try {
+              const amt = p.amount;
+              p.estimatedAmountOut = ((amt * groupOut) / total).toString();
+              p.quoteError = null;
+            } catch {
+              p.estimatedAmountOut = undefined;
+              p.quoteError = "Calculation error";
+            }
+          } else {
+            p.estimatedAmountOut = undefined;
+            p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
+          }
+          updated.set(`${p.nonce}-${p.networkId}`, p);
+        });
+      } catch (e: unknown) {
+        group.forEach((p) => {
+          delete p.estimatedAmountOut;
+          p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
+          updated.set(`${p.nonce}-${p.networkId}`, p);
+        });
+      }
+    }
+    setIsQuoting(false);
+    return updated;
+  };
 
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -152,9 +150,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       type WorkerMessageData = {
         type: "INIT_SUCCESS" | "INIT_ERROR" | "NEW_PERMITS_VALIDATED" | "PERMITS_ERROR";
         permits?: PermitData[];
+        balancesAndAllowances: Map<string, AllowanceAndBalance>;
         error?: string;
       };
-      const { type, permits: workerPermits, error: workerError } = event.data as WorkerMessageData;
+      const { type, permits: workerPermits, balancesAndAllowances, error: workerError } = event.data as WorkerMessageData;
       switch (type) {
         case "INIT_SUCCESS":
           setIsWorkerInitialized(true);
@@ -171,6 +170,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             cache[permit.signature] = permit;
           });
           saveCache(cache);
+          setBalancesAndAllowances(balancesAndAllowances);
           const newPermits = new Map(Object.entries(cache));
           fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
@@ -202,7 +202,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       workerRef.current = null;
       setIsWorkerInitialized(false);
     };
-  }, [filterPermits, saveCache, fetchQuotes]);
+  }, []);
 
   useEffect(() => {
     if (isConnected && isWorkerInitialized && workerRef.current) {
@@ -232,28 +232,27 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading]);
 
-  const updatePermitStatusCache = useCallback(
-    (permitKey: string, statusUpdate: Partial<PermitData>) => {
-      const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
-      const cache: PermitDataCache = cacheString ? JSON.parse(cacheString) : {};
-      if (cache[permitKey]) {
-        cache[permitKey] = { ...cache[permitKey], ...statusUpdate };
-        localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-        const existing = allPermitsRef.current.get(permitKey);
-        if (existing) {
-          allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
-          filterPermits(allPermitsRef.current);
-        }
+  const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
+    const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
+    const cache: PermitDataCache = cacheString ? JSON.parse(cacheString) : {};
+    if (cache[permitKey]) {
+      cache[permitKey] = { ...cache[permitKey], ...statusUpdate };
+      localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
+      const existing = allPermitsRef.current.get(permitKey);
+      if (existing) {
+        allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
+        filterPermits(allPermitsRef.current);
       }
-    },
-    [filterPermits]
-  );
+    }
+  };
 
   return {
     permits,
     setPermits,
+    balancesAndAllowances,
+    setBalancesAndAllowances,
     isLoading,
     error,
     setError,

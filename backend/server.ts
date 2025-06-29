@@ -1,9 +1,9 @@
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
 
 const app = new Hono();
 app.use("*", cors());
@@ -48,7 +48,6 @@ app.post("/api/permits/record-claim", async (c: Context) => {
 // Serve static files for the frontend
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
 app.use("/*", serveStatic({ path: "./frontend/dist/index.html" }));
-
 
 // Start server
 const port = parseInt(process.env.PORT || "3000");

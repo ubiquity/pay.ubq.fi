@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Address, formatUnits } from "viem";
-import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
-import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { useAccount, useDisconnect, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
+import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
+import { PermitData } from "../types.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
@@ -16,14 +17,25 @@ export function DashboardPage() {
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
 
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState({
+    isSwitching: false,
+    expectedNetworkId: null as number | null,
+    permitsToClaim: [] as PermitData[],
+  });
+
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
+  const publicClient = usePublicClient({ chainId: chain?.id });
+  const { data: walletClient } = useWalletClient();
 
   // Custom Hook for Data Fetching & Management
   const {
     permits,
     setPermits,
+    balancesAndAllowances,
+    setBalancesAndAllowances,
     isLoading,
     error: dataError,
     setError,
@@ -38,20 +50,36 @@ export function DashboardPage() {
 
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
-    const filteredPermits = permits.filter(
-      (p) =>
-        p.networkId === chain?.id &&
-        p.type === "erc20-permit" &&
-        p.status !== "Claimed" &&
-        p.claimStatus !== "Success" &&
-        p.claimStatus !== "Pending" &&
-        p.ownerBalanceSufficient !== false &&
-        p.permit2AllowanceSufficient !== false &&
-        !p.checkError &&
-        hasRequiredFields(p)
-    );
+    const availableClaimAmount = new Map(Array.from(balancesAndAllowances.entries()).map(([key, value]) => [key, value.maxClaimable]));
+    const filteredPermits = permits
+      .filter(
+        (p) =>
+          p.type === "erc20-permit" &&
+          p.status !== "Claimed" &&
+          p.claimStatus !== "Success" &&
+          p.claimStatus !== "Pending" &&
+          p.ownerBalanceSufficient !== false &&
+          p.permit2AllowanceSufficient !== false &&
+          !p.checkError &&
+          hasRequiredFields(p)
+      )
+      .sort((a, b) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0))
+      .filter((permit) => {
+        // Filter out permits that exceed the available claim amount
+        const key = `${permit.networkId}-${permit.permit2Address}-${permit.token?.address}-${permit.owner}`;
+        const availableAmount = availableClaimAmount.get(key) ?? 0n;
+        if (availableAmount === 0n) {
+          return false;
+        }
+        if (permit.amount > availableAmount) {
+          return false;
+        }
+        availableClaimAmount.set(key, availableAmount - permit.amount);
+        return true;
+      });
+
     return filteredPermits;
-  }, [permits, chain?.id]);
+  }, [permits, balancesAndAllowances]);
 
   const claimablePermitCount = claimablePermits.length;
 
@@ -61,7 +89,7 @@ export function DashboardPage() {
     for (const permit of claimablePermits) {
       if (permit.amount) {
         try {
-          totalSumInWei += BigInt(permit.amount);
+          totalSumInWei += permit.amount;
         } catch (e) {
           console.error(`Error parsing amount for claimableTotalValue calc: ${permit.amount}`, e);
         }
@@ -115,40 +143,83 @@ export function DashboardPage() {
     }
   }, [claimableTotalValue, preferredRewardTokenAddress, chain?.id, permits, claimablePermits]);
 
-  // Custom Hook for Claiming Logic
-  const publicClient = usePublicClient({ chainId: chain?.id });
-  const { data: walletClient } = useWalletClient();
-
-  const {
-    handleClaimPermit,
-    handleClaimBatch,
-    handleClaimSequential,
-    isClaimingSequentially,
-    sequentialClaimError,
-    claimTxHash,
-    swapSubmissionStatus,
-    walletConnectionError,
-  } = usePermitClaiming({
-    permits,
-    setPermits,
-    setError,
-    updatePermitStatusCache,
-    publicClient: publicClient ?? null,
-    walletClient: walletClient ?? null,
-    address,
-    chain: chain ?? null,
-    claimablePermits,
-  });
+  const { handleClaimPermit, handleClaimBatch, handleClaimSequential, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } =
+    usePermitClaiming({
+      permits,
+      setPermits,
+      setError,
+      updatePermitStatusCache,
+      publicClient: publicClient ?? null,
+      walletClient: walletClient ?? null,
+      address,
+      chain: chain ?? null,
+      setBalancesAndAllowances,
+    });
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
     setIsTableVisible((prev) => !prev);
   };
 
-  const handlePreferenceChange = useCallback((selectedAddress: Address | null) => {
+  const handlePreferenceChange = (selectedAddress: Address | null) => {
     setPreferredRewardTokenAddress(selectedAddress);
     console.log("DashboardPage received preference change:", selectedAddress);
-  }, []);
+  };
+
+  const claimPermits = async (permitsToClaim: PermitData[]) => {
+    if (!isConnected || !address || !chain) {
+      console.error("Cannot claim permits: Wallet not connected or address/chain missing");
+      return;
+    }
+    const currentNetworkId = chain.id;
+
+    const permitsByNetwork = permitsToClaim.reduce((acc, permit) => {
+      const key = permit.networkId;
+      const permits = acc.get(key) || [];
+      permits.push(permit);
+      acc.set(key, permits);
+      return acc;
+    }, new Map<number, PermitData[]>());
+
+    const networksToClaim = [currentNetworkId, ...Array.from(permitsByNetwork.keys()).filter((id) => id !== currentNetworkId)];
+
+    for (const networkId of networksToClaim) {
+      const permitsForNetwork = permitsByNetwork.get(networkId) || [];
+      if (permitsForNetwork.length === 0) continue;
+
+      try {
+        if (currentNetworkId !== networkId) {
+          console.log("Switching to network:", networkId);
+          setIsSwitchingNetwork({ isSwitching: true, expectedNetworkId: networkId, permitsToClaim });
+          await switchChainAsync({ chainId: networkId });
+          return;
+        }
+
+        setPermits((prev) => prev.map((p) => (permitsForNetwork.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
+        const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
+        const sequentialPermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
+        if (batchablePermits.length > 0) {
+          console.log(`Claiming ${batchablePermits.length} batchable permits on network ${networkId}`);
+          await handleClaimBatch(batchablePermits);
+        }
+
+        if (sequentialPermits.length > 0) {
+          console.log(`Claiming ${sequentialPermits.length} sequential permits on network ${networkId}`);
+          await handleClaimSequential(sequentialPermits);
+        }
+      } catch (error) {
+        console.error(`Error claiming permits on network ${networkId}:`, error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
+      console.log(`Switched to expected network: ${chain.id}`);
+      setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
+      claimPermits(claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature)));
+    }
+  }, [isConnected, walletClient, chain, isSwitchingNetwork]);
 
   // --- Rendering ---
   return (
@@ -172,12 +243,12 @@ export function DashboardPage() {
             </button>
             <button
               id="claim-all"
-              onClick={() => handleClaimBatch()}
-              disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
+              onClick={() => claimPermits(claimablePermits)}
+              disabled={isClaiming || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid and available permits (batch RPC)"
             >
-              {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+              {isClaiming ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
                 {isLoading ? (
                   "Loading Rewards..."
@@ -256,11 +327,9 @@ export function DashboardPage() {
         <PermitsTable
           permits={permits}
           onClaimPermit={handleClaimPermit}
-          onClaimBatch={handleClaimBatch}
-          onClaimSequential={handleClaimSequential}
+          onClaimPermits={claimPermits}
           isConnected={isConnected}
           chain={chain}
-          claimTxHash={claimTxHash}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
@@ -268,12 +337,7 @@ export function DashboardPage() {
       )}
 
       {/* Reward Preference Selector Button */}
-      {isConnected && (
-        <PreferredTokenSelectorButton
-          chainId={chain?.id}
-          onPreferenceChange={handlePreferenceChange}
-        />
-      )}
+      {isConnected && <PreferredTokenSelectorButton chainId={chain?.id} onPreferenceChange={handlePreferenceChange} />}
     </>
   );
 }
