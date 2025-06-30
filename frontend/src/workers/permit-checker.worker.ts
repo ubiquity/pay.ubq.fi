@@ -8,15 +8,19 @@ import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
 // --- Worker Setup ---
 
-type WorkerResponse =
+export type WorkerRequest =
+  | { type: "INIT"; payload: { supabaseUrl: string; supabaseAnonKey: string; isDevelopment: boolean } }
+  | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; lastCheckTimestamp?: string | null } };
+
+export type WorkerResponse =
   | { type: "INIT_SUCCESS" }
   | { type: "INIT_ERROR"; error: string }
   | { type: "NEW_PERMITS_VALIDATED"; permits: PermitData[]; balancesAndAllowances: Map<string, AllowanceAndBalance> }
   | { type: "PERMITS_ERROR"; error: string };
 
 // Define the worker scope type
-interface WorkerGlobalScope {
-  onmessage: (event: MessageEvent) => void;
+interface WorkerGlobalScope extends Worker {
+  onmessage: (event: MessageEvent<WorkerRequest>) => void;
   postMessage: (message: WorkerResponse) => void;
 }
 
@@ -44,17 +48,6 @@ interface JsonRpcRequest {
   method: string;
   params: unknown[];
   id: number | string;
-}
-
-// Define expected message structure more specifically if possible
-interface WorkerPayload {
-  supabaseUrl?: string;
-  supabaseAnonKey?: string;
-  address?: Address;
-  lastCheckTimestamp?: string | null;
-  permits?: PermitData[]; // For VALIDATE_PERMITS
-  isDevelopment: boolean;
-  [key: string]: unknown;
 }
 
 // --- Database Fetching and Mapping ---
@@ -469,7 +462,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
 
 // --- Worker Message Handling ---
 
-worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMITS" | "VALIDATE_PERMITS"; payload: WorkerPayload }>) => {
+worker.onmessage = async (event) => {
   const { type, payload } = event.data;
 
   if (type === "INIT") {
@@ -523,10 +516,5 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
       console.error("Worker: Error fetching/validating new permits:", error);
       worker.postMessage({ type: "PERMITS_ERROR", error: error instanceof Error ? error.message : String(error) });
     }
-  } else if (type === "VALIDATE_PERMITS") {
-    // This message type might become obsolete with the new flow, but keep for now? Or remove? Let's remove for now.
-    // This case is handled internally now after fetching new permits.
-    console.warn("Worker: Received unexpected VALIDATE_PERMITS message.");
-    // Optionally handle if needed, otherwise ignore.
   }
 };

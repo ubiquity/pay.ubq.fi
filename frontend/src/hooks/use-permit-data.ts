@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
+import { WorkerRequest, WorkerResponse } from "../workers/permit-checker.worker.ts";
 
 const PERMIT_DATA_CACHE_KEY = "permitDataCache";
 
@@ -14,13 +15,18 @@ interface UsePermitDataProps {
 
 type PermitDataCache = Record<string, PermitData>;
 
+interface WorkerGlobalScope extends Worker {
+  onmessage: (event: MessageEvent<WorkerResponse>) => void;
+  postMessage: (message: WorkerRequest) => void;
+}
+
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const workerRef = useRef<Worker | null>(null);
+  const workerRef = useRef<WorkerGlobalScope | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
 
@@ -140,37 +146,31 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       setIsLoading(false);
       return;
     }
-    workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" });
+    workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
     workerRef.current.postMessage({
       type: "INIT",
       payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment: import.meta.env.DEV },
     });
 
-    workerRef.current.onmessage = (event: MessageEvent) => {
-      type WorkerMessageData = {
-        type: "INIT_SUCCESS" | "INIT_ERROR" | "NEW_PERMITS_VALIDATED" | "PERMITS_ERROR";
-        permits?: PermitData[];
-        balancesAndAllowances: Map<string, AllowanceAndBalance>;
-        error?: string;
-      };
-      const { type, permits: workerPermits, balancesAndAllowances, error: workerError } = event.data as WorkerMessageData;
-      switch (type) {
+    workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const data = event.data;
+      switch (data.type) {
         case "INIT_SUCCESS":
           setIsWorkerInitialized(true);
           break;
         case "INIT_ERROR":
-          setError(`Worker initialization failed: ${workerError}`);
+          setError(`Worker initialization failed: ${data.error}`);
           setIsWorkerInitialized(false);
           setIsLoading(false);
           break;
         case "NEW_PERMITS_VALIDATED": {
-          const validated: PermitData[] = workerPermits || [];
+          const validated: PermitData[] = data.permits || [];
           const cache: PermitDataCache = {};
           validated.forEach((permit) => {
             cache[permit.signature] = permit;
           });
           saveCache(cache);
-          setBalancesAndAllowances(balancesAndAllowances);
+          setBalancesAndAllowances(data.balancesAndAllowances);
           const newPermits = new Map(Object.entries(cache));
           fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
@@ -185,7 +185,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           break;
         }
         case "PERMITS_ERROR":
-          setError(`Error processing permits: ${workerError}`);
+          setError(`Error processing permits: ${data.error}`);
           setIsLoading(false);
           break;
       }
@@ -205,7 +205,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   }, []);
 
   useEffect(() => {
-    if (isConnected && isWorkerInitialized && workerRef.current) {
+    if (isConnected && address && isWorkerInitialized && workerRef.current) {
       setIsLoading(true);
       setError(null);
       workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
