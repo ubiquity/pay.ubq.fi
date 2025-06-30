@@ -226,7 +226,7 @@ export function PermitRow({
   return (
     <div className={`permit-row ${rowClassName}`}>
       {supportsBatchClaim && onSelect && (
-        <div className="permit-cell checkbox-cell" style={{ margin: "5px" }}>
+        <div className="permit-cell checkbox-cell">
           <input
             type="checkbox"
             checked={isSelected}

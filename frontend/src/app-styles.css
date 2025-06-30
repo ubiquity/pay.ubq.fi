@@ -592,3 +592,7 @@ main#root {
 .preference-dropdown-container:hover {
     background-color: #111318;
 }
+
+.checkbox-cell {
+  margin: 5px;
+}
