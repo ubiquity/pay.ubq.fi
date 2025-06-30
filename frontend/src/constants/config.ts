@@ -10,11 +10,10 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
 
 /**
  * RPC endpoint for blockchain calls.
- * - Uses VITE_RPC_URL from .env (see .env.example).
- * - Defaults to https://rpc.ubq.fi if not set.
- * - For local dev, set VITE_RPC_URL=http://localhost:8000 in .env.
+ * - In development, it uses https://rpc.ubq.fi
+ * - In production, it uses /rpc for performance.
  */
-export const RPC_URL = import.meta.env.VITE_RPC_URL || "https://rpc.ubq.fi";
+export const RPC_URL = import.meta.env.DEV ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
 
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
