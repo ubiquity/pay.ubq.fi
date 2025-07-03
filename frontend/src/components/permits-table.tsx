@@ -7,6 +7,7 @@ import { PermitRow } from "./permit-row.tsx";
 
 interface PermitsTableProps {
   permits: PermitData[];
+  claimablePermits: PermitData[];
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   onClaimPermits: (permit: PermitData[]) => Promise<void>;
   isConnected: boolean;
@@ -18,6 +19,7 @@ interface PermitsTableProps {
 
 export function PermitsTable({
   permits,
+  claimablePermits,
   onClaimPermit,
   onClaimPermits,
   isConnected,
@@ -28,25 +30,10 @@ export function PermitsTable({
 }: PermitsTableProps) {
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
 
-  // Split permits into aggregatable and regular
-  // Only show valid and unprocessed permits
-  const validPermits = permits.sort((a, b) => (b.amount < a.amount ? -1 : b.amount > a.amount ? 1 : 0));
+  const allPermits = permits.sort((a, b) => (b.amount < a.amount ? -1 : b.amount > a.amount ? 1 : 0));
 
-  // Split into aggregatable (new) and regular (old) permits
-  const aggregatablePermits = validPermits.filter(
-    (permit) =>
-      permit.status === "Valid" &&
-      permit.claimStatus !== "Success" &&
-      permit.claimStatus !== "Pending" &&
-      permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase()
-  );
-  const regularPermits = validPermits.filter(
-    (permit) =>
-      permit.status === "Valid" &&
-      permit.claimStatus !== "Success" &&
-      permit.claimStatus !== "Pending" &&
-      permit.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase()
-  );
+  const aggregatableClaimablePermits = claimablePermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
+  const regularClaimablePermits = claimablePermits.filter((permit) => permit.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
 
   const togglePermitSelection = (permit: PermitData) => {
     const key = permit.signature;
@@ -64,7 +51,7 @@ export function PermitsTable({
   };
 
   const handleClaimSelected = async () => {
-    const selectedPermitsList = aggregatablePermits.filter((permit) => selectedPermits.has(permit.signature));
+    const selectedPermitsList = aggregatableClaimablePermits.filter((permit) => selectedPermits.has(permit.signature));
 
     if (selectedPermitsList.length > 0) {
       await onClaimPermits(selectedPermitsList);
@@ -73,7 +60,7 @@ export function PermitsTable({
   };
 
   // Show message only if NOT loading/quoting and there are no valid permits
-  if (validPermits.length === 0 && !isLoading && !isQuoting) {
+  if (allPermits.length === 0 && !isLoading && !isQuoting) {
     return (
       <section>
         <div className="error-message">
@@ -86,20 +73,25 @@ export function PermitsTable({
   // Render list only if NOT loading/quoting and permits exist
   return (
     <>
-      {!isLoading && !isQuoting && validPermits.length > 0 && (
+      {!isLoading && !isQuoting && allPermits.length > 0 && (
         <div>
           <div>
-            {regularPermits.length > 0 && (
-              <button type="button" onClick={() => onClaimPermits(regularPermits)} className="claim-all-btn">
+            {regularClaimablePermits.length > 0 && (
+              <button type="button" onClick={() => onClaimPermits(regularClaimablePermits)} className="claim-all-btn">
                 Queue All Regular Claims
               </button>
             )}
-            {aggregatablePermits.length > 0 && (
+            {aggregatableClaimablePermits.length > 0 && (
               <>
                 <button type="button" onClick={handleClaimSelected} disabled={selectedPermits.size === 0} className="claim-selected-btn">
                   Claim Selected ({selectedPermits.size})
                 </button>
-                <button type="button" onClick={() => onClaimPermits(aggregatablePermits)} disabled={aggregatablePermits.length === 0} className="claim-all-btn">
+                <button
+                  type="button"
+                  onClick={() => onClaimPermits(aggregatableClaimablePermits)}
+                  disabled={aggregatableClaimablePermits.length === 0}
+                  className="claim-all-btn"
+                >
                   Batch Claim All
                 </button>
               </>
@@ -108,7 +100,7 @@ export function PermitsTable({
           </div>
           <div className="permits-list">
             <div className="permits-body">
-              {validPermits.map((permit) => (
+              {allPermits.map((permit) => (
                 <PermitRow
                   key={permit.signature}
                   permit={permit}

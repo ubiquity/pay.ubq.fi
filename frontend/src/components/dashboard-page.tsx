@@ -326,6 +326,7 @@ export function DashboardPage() {
       {isTableVisible && (
         <PermitsTable
           permits={permits}
+          claimablePermits={claimablePermits}
           onClaimPermit={handleClaimPermit}
           onClaimPermits={claimPermits}
           isConnected={isConnected}
