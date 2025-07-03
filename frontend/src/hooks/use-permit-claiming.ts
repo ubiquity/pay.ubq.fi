@@ -1,6 +1,6 @@
 // use-permit-claiming.ts: Handles single and batch permit claiming
 
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Address, Chain, PublicClient, WalletClient } from "viem";
 import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
@@ -12,14 +12,64 @@ if (!permit2Abi) {
 
 interface UsePermitClaimingProps {
   permits: PermitData[];
-  setPermits: React.Dispatch<React.SetStateAction<PermitData[]>>;
-  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setPermits: Dispatch<SetStateAction<PermitData[]>>;
+  setError: Dispatch<SetStateAction<string | null>>;
   updatePermitStatusCache: (permitKey: string, status: Partial<PermitData>) => void;
   publicClient: PublicClient | null;
   walletClient: WalletClient | null;
   address: Address | undefined;
   chain: Chain | null;
-  setBalancesAndAllowances: React.Dispatch<React.SetStateAction<Map<string, AllowanceAndBalance>>>;
+  setBalancesAndAllowances: Dispatch<SetStateAction<Map<string, AllowanceAndBalance>>>;
+}
+
+async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
+  return await publicClient.simulateContract({
+    address: permit.permit2Address,
+    abi: permit2Abi,
+    functionName: "permitTransferFrom",
+    args: [
+      {
+        permitted: {
+          token: permit.tokenAddress,
+          amount: permit.amount,
+        },
+        nonce: BigInt(permit.nonce),
+        deadline: BigInt(permit.deadline),
+      },
+      {
+        to: address,
+        requestedAmount: permit.amount,
+      },
+      permit.owner,
+      permit.signature,
+    ],
+    account: address,
+  });
+}
+
+async function simulateBatchPermitTransferFrom(publicClient: PublicClient, address: Address, permitsToClaim: PermitData[]) {
+  return await publicClient.simulateContract({
+    address: NEW_PERMIT2_ADDRESS,
+    abi: permit2Abi,
+    functionName: "batchPermitTransferFrom",
+    args: [
+      permitsToClaim.map((permit) => ({
+        permitted: {
+          token: permit.tokenAddress,
+          amount: permit.amount,
+        },
+        nonce: BigInt(permit.nonce),
+        deadline: BigInt(permit.deadline),
+      })),
+      permitsToClaim.map((permit) => ({
+        to: address,
+        requestedAmount: permit.amount,
+      })),
+      permitsToClaim.map((permit) => permit.owner),
+      permitsToClaim.map((permit) => permit.signature),
+    ],
+    account: address,
+  });
 }
 
 export function usePermitClaiming({
@@ -37,7 +87,7 @@ export function usePermitClaiming({
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
   const [swapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
 
-  const reduceAllowance = async (permits: PermitData[]) => {
+  const reduceAllowance = (permits: PermitData[]) => {
     setBalancesAndAllowances((prev) => {
       const newMap = new Map(prev);
       for (const permit of permits) {
@@ -72,28 +122,7 @@ export function usePermitClaiming({
         throw new Error("Permit2 ABI not found - cannot simulate transaction");
       }
 
-      const { request } = await publicClient.simulateContract({
-        address: permit.permit2Address,
-        abi: permit2Abi,
-        functionName: "permitTransferFrom",
-        args: [
-          {
-            permitted: {
-              token: permit.tokenAddress,
-              amount: permit.amount,
-            },
-            nonce: BigInt(permit.nonce),
-            deadline: BigInt(permit.deadline),
-          },
-          {
-            to: address,
-            requestedAmount: permit.amount,
-          },
-          permit.owner,
-          permit.signature,
-        ],
-        account: address,
-      });
+      const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
 
       console.log("Transaction simulation successful", { request });
 
@@ -144,8 +173,6 @@ export function usePermitClaiming({
 
       setPermits((prev) => prev.map((p) => (p.nonce === permit.nonce && p.networkId === permit.networkId ? { ...p, claimStatus: "Error" } : p)));
       return { success: false, txHash: "" };
-    } finally {
-      // No need for setIsClaimConfirming since we use per-permit claimStatus
     }
   };
 
@@ -186,28 +213,7 @@ export function usePermitClaiming({
     await Promise.allSettled(
       toClaim.map(async (permit) => {
         try {
-          const { request } = await publicClient.simulateContract({
-            address: permit.permit2Address,
-            abi: permit2Abi,
-            functionName: "permitTransferFrom",
-            args: [
-              {
-                permitted: {
-                  token: permit.tokenAddress,
-                  amount: permit.amount,
-                },
-                nonce: BigInt(permit.nonce),
-                deadline: BigInt(permit.deadline),
-              },
-              {
-                to: address,
-                requestedAmount: permit.amount,
-              },
-              permit.owner,
-              permit.signature,
-            ],
-            account: address,
-          });
+          const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
 
           console.log("Transaction simulation successful", { request });
 
@@ -286,28 +292,7 @@ export function usePermitClaiming({
       // Update all permits to pending status
       setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
 
-      const { request } = await publicClient.simulateContract({
-        address: NEW_PERMIT2_ADDRESS,
-        abi: permit2Abi,
-        functionName: "batchPermitTransferFrom",
-        args: [
-          permitsToClaim.map((permit) => ({
-            permitted: {
-              token: permit.tokenAddress,
-              amount: permit.amount,
-            },
-            nonce: BigInt(permit.nonce),
-            deadline: BigInt(permit.deadline),
-          })),
-          permitsToClaim.map((permit) => ({
-            to: address,
-            requestedAmount: permit.amount,
-          })),
-          permitsToClaim.map((permit) => permit.owner),
-          permitsToClaim.map((permit) => permit.signature),
-        ],
-        account: address,
-      });
+      const { request } = await simulateBatchPermitTransferFrom(publicClient, address, permitsToClaim);
 
       console.log("Transaction simulation successful", { request });
 
