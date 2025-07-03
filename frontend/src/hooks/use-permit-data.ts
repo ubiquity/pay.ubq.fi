@@ -77,7 +77,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         group.forEach((p) => {
           delete p.estimatedAmountOut;
           delete p.quoteError;
-          updated.set(`${p.nonce}-${p.networkId}`, p);
+          updated.set(p.signature, p);
         });
         continue;
       }
@@ -95,7 +95,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         group.forEach((p) => {
           delete p.estimatedAmountOut;
           delete p.quoteError;
-          updated.set(`${p.nonce}-${p.networkId}`, p);
+          updated.set(p.signature, p);
         });
         continue;
       }
@@ -122,13 +122,13 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             p.estimatedAmountOut = undefined;
             p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
           }
-          updated.set(`${p.nonce}-${p.networkId}`, p);
+          updated.set(p.signature, p);
         });
       } catch (e: unknown) {
         group.forEach((p) => {
           delete p.estimatedAmountOut;
           p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
-          updated.set(`${p.nonce}-${p.networkId}`, p);
+          updated.set(p.signature, p);
         });
       }
     }
