@@ -1,6 +1,4 @@
-import { useState } from "react";
 import type { Address, Chain } from "viem";
-import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import type { PermitData } from "../types.ts";
 import { ClaimAllProgress } from "./claim-all-progress.tsx";
 import { PermitRow } from "./permit-row.tsx";
@@ -19,48 +17,17 @@ interface PermitsTableProps {
 
 export function PermitsTable({
   permits,
-  claimablePermits,
   onClaimPermit,
-  onClaimPermits,
   isConnected,
   chain,
   isLoading,
   isQuoting,
   preferredRewardTokenAddress,
 }: PermitsTableProps) {
-  const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
-
-  const allPermits = permits.sort((a, b) => (b.amount < a.amount ? -1 : b.amount > a.amount ? 1 : 0));
-
-  const aggregatableClaimablePermits = claimablePermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
-  const regularClaimablePermits = claimablePermits.filter((permit) => permit.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
-
-  const togglePermitSelection = (permit: PermitData) => {
-    const key = permit.signature;
-    const newSelected = new Set(selectedPermits);
-    if (selectedPermits.has(key)) {
-      newSelected.delete(key);
-    } else {
-      newSelected.add(key);
-    }
-    setSelectedPermits(newSelected);
-  };
-
-  const isPermitSelected = (permit: PermitData) => {
-    return selectedPermits.has(permit.signature);
-  };
-
-  const handleClaimSelected = async () => {
-    const selectedPermitsList = aggregatableClaimablePermits.filter((permit) => selectedPermits.has(permit.signature));
-
-    if (selectedPermitsList.length > 0) {
-      await onClaimPermits(selectedPermitsList);
-      setSelectedPermits(new Set());
-    }
-  };
+  const sortedPermits = permits.sort((a, b) => (b.amount < a.amount ? -1 : b.amount > a.amount ? 1 : 0));
 
   // Show message only if NOT loading/quoting and there are no valid permits
-  if (allPermits.length === 0 && !isLoading && !isQuoting) {
+  if (sortedPermits.length === 0 && !isLoading && !isQuoting) {
     return (
       <section>
         <div className="error-message">
@@ -73,34 +40,14 @@ export function PermitsTable({
   // Render list only if NOT loading/quoting and permits exist
   return (
     <>
-      {!isLoading && !isQuoting && allPermits.length > 0 && (
+      {!isLoading && !isQuoting && sortedPermits.length > 0 && (
         <div>
           <div>
-            {regularClaimablePermits.length > 0 && (
-              <button type="button" onClick={() => onClaimPermits(regularClaimablePermits)} className="claim-all-btn">
-                Queue All Regular Claims
-              </button>
-            )}
-            {aggregatableClaimablePermits.length > 0 && (
-              <>
-                <button type="button" onClick={handleClaimSelected} disabled={selectedPermits.size === 0} className="claim-selected-btn">
-                  Claim Selected ({selectedPermits.size})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onClaimPermits(aggregatableClaimablePermits)}
-                  disabled={aggregatableClaimablePermits.length === 0}
-                  className="claim-all-btn"
-                >
-                  Batch Claim All
-                </button>
-              </>
-            )}
             <ClaimAllProgress permits={permits} />
           </div>
           <div className="permits-list">
             <div className="permits-body">
-              {allPermits.map((permit) => (
+              {sortedPermits.map((permit) => (
                 <PermitRow
                   key={permit.signature}
                   permit={permit}
@@ -109,8 +56,6 @@ export function PermitsTable({
                   chain={chain}
                   isQuoting={isQuoting}
                   preferredRewardTokenAddress={preferredRewardTokenAddress}
-                  isSelected={isPermitSelected(permit)}
-                  onSelect={togglePermitSelection}
                 />
               ))}
             </div>
