@@ -202,6 +202,7 @@ footer {
 
 .permit-row {
   display: flex;
+  align-items: center;
   border-bottom: 1px solid #ffffff10;
   transition: background-color 0.2s ease-in-out;
 }
@@ -590,4 +591,8 @@ main#root {
 
 .preference-dropdown-container:hover {
     background-color: #111318;
+}
+
+.checkbox-cell {
+  margin: 5px;
 }

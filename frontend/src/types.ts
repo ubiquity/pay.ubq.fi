@@ -11,10 +11,21 @@ interface PartnerInfoInternal {
   };
 }
 
+export interface AllowanceAndBalance {
+  networkId: number;
+  permit2Address: string;
+  tokenAddress: string;
+  owner: string;
+  balance?: bigint;
+  allowance?: bigint;
+  maxClaimable?: bigint; // Maximum claimable amount based on allowance and balance
+  error?: string;
+}
+
 // Keep PermitData as it seems to be used
 export interface PermitData {
   nonce: string;
-  amount?: string;
+  amount: bigint;
   token_id?: number | null;
   networkId: number;
   beneficiary: string;

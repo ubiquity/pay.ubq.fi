@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
-import { useAccount } from "wagmi";
-import { switchNetwork } from "wagmi/actions";
-import { NETWORK_NAMES, NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { useAccount, useSwitchChain } from "wagmi";
+import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
@@ -17,9 +16,6 @@ interface PermitRowProps {
   chain: Chain | undefined;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
-  confirmingHash?: `0x${string}`;
-  isSelected?: boolean;
-  onSelect?: (permit: PermitData) => void;
 }
 
 export function PermitRow({
@@ -28,11 +24,10 @@ export function PermitRow({
   isConnected,
   chain,
   isQuoting,
-  preferredRewardTokenAddress,
-  isSelected,
-  onSelect
+  preferredRewardTokenAddress
 }: PermitRowProps) {
   const { connector } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
 
   const switchableChains = config.chains ?? [];
@@ -114,7 +109,7 @@ export function PermitRow({
       if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
         setIsSwitchingNetwork(true);
         try {
-          await switchNetwork(config, { chainId: permit.networkId });
+          await switchChainAsync({ chainId: permit.networkId });
         } catch (error) {
           console.error("Failed to switch network:", error);
           setIsSwitchingNetwork(false);
@@ -221,22 +216,8 @@ export function PermitRow({
     }
   };
 
-  // Check if permit uses the aggregator contract
-  const supportsBatchClaim = permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase();
-
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {supportsBatchClaim && onSelect && (
-        <div className="permit-cell checkbox-cell">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onSelect(permit)}
-            disabled={isClaimed || isClaimingThis || !canAttemptClaim}
-            title={isClaimed ? "Already claimed" : isClaimingThis ? "Claim in progress" : !canAttemptClaim ? "Cannot claim" : "Select for batch claim"}
-          />
-        </div>
-      )}
       <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button
