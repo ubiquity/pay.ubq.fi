@@ -314,9 +314,9 @@ export function usePermitClaiming({
       reduceAllowance(permitsToClaim);
       try {
         await Promise.all(
-          permits.map((permit) => {
+          permitsToClaim.map((permit) => {
             updatePermitStatusCache(permit.signature, { status: "Claimed" });
-            return fetch("http://localhost:8001/api/permits/record-claim", {
+            return fetch("/api/permits/record-claim", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -332,6 +332,9 @@ export function usePermitClaiming({
 
       console.log("Batch RPC completed");
       success = true;
+      // Clear any previous errors on successful claim
+      setError(null);
+      setSequentialClaimError(null);
     } catch (error) {
       console.error("Batch RPC: Unhandled processing error", {
         error,
