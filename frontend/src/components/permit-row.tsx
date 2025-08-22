@@ -171,16 +171,25 @@ export function PermitRow({
 
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
-  const formatGithubLink = (url: string | undefined): string => {
+  const formatGithubLink = (url: string | undefined): JSX.Element | string => {
     if (!url) return "N/A";
     try {
       const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
       if (match && match[2] && match[3]) {
-        // Include GitHub username if available
-        if (githubUsername) {
-          return `${match[2]} #${match[3]} (@${githubUsername})`;
-        }
-        return `${match[2]} #${match[3]}`;
+        // Return JSX with proper class names for styling
+        return (
+          <>
+            <span className="github-repo-name">{match[2]}</span>
+            <span className="github-issue-number">{match[3]}</span>
+            {isFundingWallet && (
+              <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: "help" }} className="github-beneficiary">
+                {githubUsername
+                  ? `${githubUsername}`
+                  : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
+              </span>
+            )}
+          </>
+        );
       }
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
