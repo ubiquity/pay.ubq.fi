@@ -29,6 +29,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const workerRef = useRef<WorkerGlobalScope | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
+  const [isFundingWallet, setIsFundingWallet] = useState(false);
 
   const saveCache = (cache: PermitDataCache) => {
     try {
@@ -39,11 +40,33 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   };
 
   const filterPermits = (permitsMap: Map<string, PermitData>) => {
+    // Check if current wallet is a funding wallet (owns any permits)
+    let isFundingAccount = false;
+    if (address) {
+      permitsMap.forEach((permit) => {
+        if (permit.owner.toLowerCase() === address.toLowerCase()) {
+          isFundingAccount = true;
+        }
+      });
+    }
+    setIsFundingWallet(isFundingAccount);
+
     const filtered: PermitData[] = [];
     permitsMap.forEach((permit) => {
-      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
+      // In funding wallet mode, show all permits owned by this wallet that aren't claimed/invalidated
+      if (isFundingAccount) {
+        if (permit.owner.toLowerCase() === address?.toLowerCase()) {
+          const isClaimedOrInvalidated = permit.status === "Claimed" || permit.status === "Invalidated" || permit.isNonceUsed === true;
+          if (!isClaimedOrInvalidated) {
+            filtered.push(permit);
+          }
+        }
+      } else {
+        // Normal mode: filter out claimed/used permits
+        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed" || permit.status === "Invalidated";
+        if (!shouldFilter) filtered.push(permit);
+      }
     });
     setPermits(filtered);
   };
@@ -259,5 +282,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,
+    isFundingWallet,
   };
 }

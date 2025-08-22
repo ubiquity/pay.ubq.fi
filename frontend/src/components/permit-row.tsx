@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
-import { useAccount, useSwitchChain } from "wagmi";
-import { NETWORK_NAMES } from "../constants/config.ts";
+import { useAccount } from "wagmi";
+import { switchNetwork } from "wagmi/actions";
+import { NETWORK_NAMES, NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
@@ -12,28 +13,43 @@ import { ICONS } from "./iconography.tsx";
 interface PermitRowProps {
   permit: PermitData;
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
+  confirmingHash?: `0x${string}`;
+  isSelected?: boolean;
+  onSelect?: (permit: PermitData) => void;
+  isFundingWallet?: boolean;
+  isInvalidating?: boolean;
+  address?: Address;
+  githubUsername?: string; // GitHub username for the beneficiary
 }
 
 export function PermitRow({
   permit,
   onClaimPermit,
+  onInvalidatePermit,
   isConnected,
   chain,
   isQuoting,
-  preferredRewardTokenAddress
+  preferredRewardTokenAddress,
+  isSelected,
+  onSelect,
+  isFundingWallet = false,
+  isInvalidating = false,
+  address,
+  githubUsername,
 }: PermitRowProps) {
   const { connector } = useAccount();
-  const { switchChainAsync } = useSwitchChain();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
 
   const switchableChains = config.chains ?? [];
 
   const isReadyToClaim = hasRequiredFields(permit);
-  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
   const isClaimingThis = permit.claimStatus === "Pending";
   const claimFailed = permit.claimStatus === "Error";
   const insufficientBalance = permit.ownerBalanceSufficient === false;
@@ -43,12 +59,20 @@ export function PermitRow({
     isReadyToClaim &&
     !isClaimingThis &&
     !isClaimed &&
+    !isInvalidated &&
     (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
+
+  const isOwner = address && permit.owner.toLowerCase() === address.toLowerCase();
+  const canInvalidate = isOwner && !isClaimed && !isInvalidated && !isInvalidating;
 
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
+    : isInvalidating
+    ? "row-invalidating"
     : isClaimed
     ? "row-claimed"
+    : isInvalidated
+    ? "row-invalidated"
     : claimFailed
     ? "row-claim-failed"
     : isClaimingThis
@@ -64,9 +88,13 @@ export function PermitRow({
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to claim`
+    ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet ? "invalidate" : "claim"}`
     : isClaimed
     ? "Claimed"
+    : isInvalidated
+    ? "Invalidated"
+    : isInvalidating
+    ? "Invalidating..."
     : isClaimingThis
     ? "Claiming..."
     : claimFailed
@@ -82,7 +110,13 @@ export function PermitRow({
     : permit.status || "";
 
   const buttonText =
-    isClaimed && permit.transactionHash
+    isInvalidating
+      ? "Invalidating..."
+      : isFundingWallet && canInvalidate
+      ? "Invalidate"
+      : isInvalidated
+      ? "Invalidated"
+      : isClaimed && permit.transactionHash
       ? "View"
       : isClaimingThis
       ? "Claiming..."
@@ -94,22 +128,33 @@ export function PermitRow({
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
+    : isInvalidating
+    ? true
+    : isFundingWallet && canInvalidate
+    ? !isConnected
+    : isInvalidated
+    ? true
     : !isConnected ||
       isClaimingThis ||
       (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
       (isClaimed && !permit.transactionHash) ||
       (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
-  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis;
-  const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis;
-  const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet && !isInvalidated;
+  const showButtonIcon =
+    !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
+  const buttonIcon = isInvalidated || isInvalidating ? ICONS.WARNING : isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
+    if (isInvalidated) {
+      // Do nothing for invalidated permits
+      return;
+    }
     if (networkMismatch) {
       if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
         setIsSwitchingNetwork(true);
         try {
-          await switchChainAsync({ chainId: permit.networkId });
+          await switchNetwork(config, { chainId: permit.networkId });
         } catch (error) {
           console.error("Failed to switch network:", error);
           setIsSwitchingNetwork(false);
@@ -117,7 +162,9 @@ export function PermitRow({
       }
     } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
-    } else if (!isButtonDisabled) {
+    } else if (isFundingWallet && canInvalidate && onInvalidatePermit) {
+      await onInvalidatePermit(permit);
+    } else if (!isButtonDisabled && !isFundingWallet) {
       await onClaimPermit(permit);
     }
   };
@@ -127,9 +174,13 @@ export function PermitRow({
   const formatGithubLink = (url: string | undefined): string => {
     if (!url) return "N/A";
     try {
-      const match = url.match(/github\.com\/[^/]+\/([^/]+)\/issues\/(\d+)/);
-      if (match && match[1]) {
-        return match[1];
+      const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
+      if (match && match[2] && match[3]) {
+        // Include GitHub username if available
+        if (githubUsername) {
+          return `${match[2]} #${match[3]} (@${githubUsername})`;
+        }
+        return `${match[2]} #${match[3]}`;
       }
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);

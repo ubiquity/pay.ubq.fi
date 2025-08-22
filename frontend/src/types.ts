@@ -29,6 +29,7 @@ export interface PermitData {
   token_id?: number | null;
   networkId: number;
   beneficiary: string;
+  beneficiaryUserId?: number; // GitHub user ID for fetching username
   deadline: string;
   signature: string;
   type: "erc20-permit" | "erc721-permit";
@@ -40,7 +41,7 @@ export interface PermitData {
   permit2Address: `0x${string}`;
 
   // Frontend-specific statuses for validation/testing
-  status?: "Valid" | "Claimed" | "Expired" | "Invalid" | "Fetching" | "Testing";
+  status?: "Valid" | "Claimed" | "Expired" | "Invalid" | "Invalidated" | "Fetching" | "Testing";
   testError?: string; // For storing error messages during claim testing
 
   // Frontend-specific statuses for actual claiming
@@ -60,4 +61,7 @@ export interface PermitData {
   // --- Fields for CowSwap Quote Estimation ---
   estimatedAmountOut?: string; // Store as string (wei) to handle large numbers
   quoteError?: string | null; // Error message if quote fetching fails for this permit's group
+
+  // Created timestamp from database
+  created_at?: string;
 }
