@@ -17,7 +17,7 @@ interface PermitsTableProps {
   isLoading: boolean;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
-  showOwnerPermits: boolean;
+  isFundingWallet: boolean;
   isInvalidating: Record<string, boolean>;
   address: Address | undefined;
 }
@@ -34,16 +34,16 @@ export function PermitsTable({
   isLoading,
   isQuoting,
   preferredRewardTokenAddress,
-  showOwnerPermits,
+  isFundingWallet,
   isInvalidating,
   address,
 }: PermitsTableProps) {
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
 
   // Split permits into aggregatable and regular
-  // When showing owner permits, show all permits owned by the user (for invalidation)
+  // When in funding wallet mode, show all permits owned by the user (for invalidation)
   // Otherwise show only valid and unprocessed permits (for claiming)
-  const validPermits = showOwnerPermits 
+  const validPermits = isFundingWallet 
     ? permits 
     : permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
 
@@ -126,7 +126,7 @@ export function PermitsTable({
                   preferredRewardTokenAddress={preferredRewardTokenAddress}
                   isSelected={isPermitSelected(permit)}
                   onSelect={togglePermitSelection}
-                  showOwnerPermits={showOwnerPermits}
+                  isFundingWallet={isFundingWallet}
                   isInvalidating={isInvalidating[permit.signature] || false}
                   address={address}
                 />

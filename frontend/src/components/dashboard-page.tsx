@@ -30,8 +30,7 @@ export function DashboardPage() {
     setError,
     updatePermitStatusCache,
     isQuoting,
-    showOwnerPermits,
-    setShowOwnerPermits,
+    isFundingWallet,
   } = usePermitData({
     address,
     isConnected,
@@ -212,15 +211,6 @@ export function DashboardPage() {
                 )}
               </span>
             </button>
-            <button
-              id="show-owner-permits"
-              onClick={() => setShowOwnerPermits(!showOwnerPermits)}
-              className="button-with-icon"
-              title={showOwnerPermits ? "Show claimable permits" : "Show permits you can invalidate"}
-            >
-              {showOwnerPermits ? ICONS.CLAIM : ICONS.WARNING}
-              <span>{showOwnerPermits ? "Show Claimable" : "Show My Permits"}</span>
-            </button>
             <div className="spinner-or-expand-container">
               <button className="expand-button" disabled={isLoading} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
                 {isLoading ? <div className="spinner header-spinner"></div> : isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
@@ -301,7 +291,7 @@ export function DashboardPage() {
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
-          showOwnerPermits={showOwnerPermits}
+          isFundingWallet={isFundingWallet}
           isInvalidating={isInvalidating}
           address={address}
         />

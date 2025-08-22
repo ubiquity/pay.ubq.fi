@@ -21,7 +21,7 @@ interface PermitRowProps {
   confirmingHash?: `0x${string}`;
   isSelected?: boolean;
   onSelect?: (permit: PermitData) => void;
-  showOwnerPermits?: boolean;
+  isFundingWallet?: boolean;
   isInvalidating?: boolean;
   address?: Address;
 }
@@ -36,7 +36,7 @@ export function PermitRow({
   preferredRewardTokenAddress,
   isSelected,
   onSelect,
-  showOwnerPermits = false,
+  isFundingWallet = false,
   isInvalidating = false,
   address,
 }: PermitRowProps) {
@@ -86,7 +86,7 @@ export function PermitRow({
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to ${showOwnerPermits ? "invalidate" : "claim"}`
+    ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet ? "invalidate" : "claim"}`
     : isClaimed
     ? "Claimed"
     : isInvalidated
@@ -107,7 +107,7 @@ export function PermitRow({
     ? "Valid"
     : permit.status || "";
 
-  const buttonText = showOwnerPermits && canInvalidate
+  const buttonText = isFundingWallet && canInvalidate
     ? isInvalidating
       ? "Invalidating..."
       : "Invalidate"
@@ -123,7 +123,7 @@ export function PermitRow({
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
-    : showOwnerPermits && canInvalidate
+    : isFundingWallet && canInvalidate
     ? !isConnected || isInvalidating
     : !isConnected ||
       isClaimingThis ||
@@ -131,9 +131,9 @@ export function PermitRow({
       (isClaimed && !permit.transactionHash) ||
       (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
-  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !showOwnerPermits;
+  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet;
   const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
-  const buttonIcon = showOwnerPermits && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const buttonIcon = isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
     if (networkMismatch) {
@@ -146,7 +146,7 @@ export function PermitRow({
           setIsSwitchingNetwork(false);
         }
       }
-    } else if (showOwnerPermits && canInvalidate && onInvalidatePermit) {
+    } else if (isFundingWallet && canInvalidate && onInvalidatePermit) {
       await onInvalidatePermit(permit);
     } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
@@ -254,7 +254,7 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {supportsBatchClaim && onSelect && !showOwnerPermits && (
+      {supportsBatchClaim && onSelect && !isFundingWallet && (
         <div className="permit-cell checkbox-cell">
           <input
             type="checkbox"

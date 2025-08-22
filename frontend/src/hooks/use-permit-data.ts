@@ -22,7 +22,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const workerRef = useRef<Worker | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
-  const [showOwnerPermits, setShowOwnerPermits] = useState(false);
+  const [isFundingWallet, setIsFundingWallet] = useState(false);
 
   const saveCache = useCallback((cache: PermitDataCache) => {
     try {
@@ -32,15 +32,29 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   }, []);
 
-  const filterPermits = useCallback((permitsMap: Map<string, PermitData>, showOwnerPermits = false) => {
+  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
     const filtered: PermitData[] = [];
+    
+    // Check if the current wallet is a funding wallet (owner of any permits)
+    let isOwner = false;
+    if (address) {
+      permitsMap.forEach((permit) => {
+        if (permit.owner.toLowerCase() === address.toLowerCase()) {
+          isOwner = true;
+        }
+      });
+    }
+    setIsFundingWallet(isOwner);
+    
     permitsMap.forEach((permit) => {
       const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
       const isClaimed = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
       
-      if (showOwnerPermits && address && permit.owner.toLowerCase() === address.toLowerCase()) {
+      // If logged in as funding wallet, show all permits owned by this wallet (for invalidation)
+      if (isOwner && address && permit.owner.toLowerCase() === address.toLowerCase()) {
         filtered.push(permit);
-      } else if (!isClaimed) {
+      } else if (!isOwner && !isClaimed) {
+        // Otherwise show only valid, unclaimed permits (for beneficiaries to claim)
         filtered.push(permit);
       }
     });
@@ -181,7 +195,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
-              filterPermits(allPermitsRef.current, showOwnerPermits);
+              filterPermits(allPermitsRef.current);
               setIsLoading(false);
             })
             .catch((e) => {
@@ -208,7 +222,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       workerRef.current = null;
       setIsWorkerInitialized(false);
     };
-  }, [filterPermits, saveCache, fetchQuotes, showOwnerPermits]);
+  }, [filterPermits, saveCache, fetchQuotes]);
 
   useEffect(() => {
     if (isConnected && isWorkerInitialized && workerRef.current) {
@@ -227,7 +241,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       fetchQuotes(new Map(allPermitsRef.current))
         .then((mapWithQuotes: Map<string, PermitData>) => {
           allPermitsRef.current = mapWithQuotes;
-          filterPermits(allPermitsRef.current, showOwnerPermits);
+          filterPermits(allPermitsRef.current);
         })
         .catch((e: unknown) => {
           setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
@@ -235,10 +249,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             delete permit.estimatedAmountOut;
             permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
           });
-          filterPermits(allPermitsRef.current, showOwnerPermits);
+          filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits, showOwnerPermits]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
 
   const updatePermitStatusCache = useCallback(
     (permitKey: string, statusUpdate: Partial<PermitData>) => {
@@ -250,11 +264,11 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         const existing = allPermitsRef.current.get(permitKey);
         if (existing) {
           allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
-          filterPermits(allPermitsRef.current, showOwnerPermits);
+          filterPermits(allPermitsRef.current);
         }
       }
     },
-    [filterPermits, showOwnerPermits]
+    [filterPermits]
   );
 
   return {
@@ -266,7 +280,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,
-    showOwnerPermits,
-    setShowOwnerPermits,
+    isFundingWallet,
   };
 }
