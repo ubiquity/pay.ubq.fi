@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Address, Chain } from "viem";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { useGithubUsernames } from "../hooks/use-github-usernames.ts";
 import type { PermitData } from "../types.ts";
 import { ClaimAllProgress } from "./claim-all-progress.tsx";
 import { PermitRow } from "./permit-row.tsx";
@@ -39,6 +40,9 @@ export function PermitsTable({
   address,
 }: PermitsTableProps) {
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
+  
+  // Fetch GitHub usernames for all permits
+  const { usernames: githubUsernames } = useGithubUsernames(permits);
 
   // Split permits into aggregatable and regular
   // When in funding wallet mode, show only claimable permits (not claimed and not invalidated) for invalidation
@@ -129,6 +133,7 @@ export function PermitsTable({
                   isFundingWallet={isFundingWallet}
                   isInvalidating={isInvalidating[permit.signature] || false}
                   address={address}
+                  githubUsername={permit.beneficiaryUserId ? githubUsernames.get(permit.beneficiaryUserId) : undefined}
                 />
               ))}
             </div>

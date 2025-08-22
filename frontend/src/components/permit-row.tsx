@@ -24,6 +24,7 @@ interface PermitRowProps {
   isFundingWallet?: boolean;
   isInvalidating?: boolean;
   address?: Address;
+  githubUsername?: string; // GitHub username for the beneficiary
 }
 
 export function PermitRow({
@@ -39,6 +40,7 @@ export function PermitRow({
   isFundingWallet = false,
   isInvalidating = false,
   address,
+  githubUsername,
 }: PermitRowProps) {
   const { connector } = useAccount();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
@@ -157,17 +159,17 @@ export function PermitRow({
 
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
-  const formatGithubLink = (url: string | undefined): string => {
-    if (!url) return "N/A";
+  const formatGithubLink = (url: string | undefined): { repo: string; issue: string } | null => {
+    if (!url) return null;
     try {
       const match = url.match(/github\.com\/[^/]+\/([^/]+)\/issues\/(\d+)/);
-      if (match && match[1]) {
-        return match[1];
+      if (match && match[1] && match[2]) {
+        return { repo: match[1], issue: match[2] };
       }
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
     }
-    return "Source Link";
+    return null;
   };
 
   const renderAmount = () => {
@@ -266,17 +268,29 @@ export function PermitRow({
         </div>
       )}
       <div className="permit-cell github-comment-url">
-        {permit.githubCommentUrl ? (
-          <button
-            className="button-as-link"
-            onClick={() => window.open(permit.githubCommentUrl, "_blank")}
-            title={`View source on GitHub: ${permit.githubCommentUrl}`}
-          >
-            {formatGithubLink(permit.githubCommentUrl)}
-          </button>
-        ) : (
-          "N/A"
-        )}
+        {(() => {
+          const githubInfo = formatGithubLink(permit.githubCommentUrl);
+          if (!githubInfo) return "N/A";
+          
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <button
+                className="button-as-link"
+                onClick={() => window.open(permit.githubCommentUrl, "_blank")}
+                title={`View source on GitHub: ${permit.githubCommentUrl}`}
+              >
+                {githubInfo.repo} #{githubInfo.issue}
+              </button>
+              {isFundingWallet && (
+                <div className="extra-small-font" style={{ opacity: 0.7, color: '#888' }}>
+                  <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: 'help' }}>
+                    To: {githubUsername ? `@${githubUsername}` : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="permit-cell align-right monospace">{renderAmount()}</div>

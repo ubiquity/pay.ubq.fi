@@ -18,6 +18,7 @@ export interface PermitData {
   token_id?: number | null;
   networkId: number;
   beneficiary: string;
+  beneficiaryUserId?: number; // GitHub user ID for fetching username
   deadline: string;
   signature: string;
   type: "erc20-permit" | "erc721-permit";

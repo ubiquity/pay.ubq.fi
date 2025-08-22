@@ -4,7 +4,6 @@ import permit2Abi from "../fixtures/permit2-abi.ts";
 import { PermitData } from "../types.ts";
 
 interface UsePermitInvalidationProps {
-  permits: PermitData[];
   setPermits: React.Dispatch<React.SetStateAction<PermitData[]>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   updatePermitStatusCache: (permitKey: string, status: Partial<PermitData>) => void;
@@ -15,7 +14,6 @@ interface UsePermitInvalidationProps {
 }
 
 export function usePermitInvalidation({
-  permits,
   setPermits,
   setError,
   updatePermitStatusCache,

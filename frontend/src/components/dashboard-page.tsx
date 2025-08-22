@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
-import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
@@ -127,7 +126,6 @@ export function DashboardPage() {
     isInvalidating,
     invalidationError,
   } = usePermitInvalidation({
-    permits,
     setPermits,
     setError,
     updatePermitStatusCache,

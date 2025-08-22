@@ -65,13 +65,17 @@ type PermitRow = Tables<"permits"> & {
   token: Tables<"tokens"> | null;
   partner: (Tables<"partners"> & { wallet: Tables<"wallets"> | null }) | null;
   location: Tables<"locations"> | null;
+  users: Tables<"users"> & { wallets: Tables<"wallets"> | null } | null;
 };
 
 // Function to map DB result to PermitData (ERC20 only focus)
 function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): PermitData | null {
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
+  const beneficiaryWalletData = permit.users?.wallets;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
+  const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
+  const beneficiaryUserId = permit.beneficiary_id; // GitHub user ID
   const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
   const networkIdNum = Number(tokenData?.network ?? 0);
   const githubUrlStr = permit.location?.node_url ? String(permit.location.node_url) : "";
@@ -99,7 +103,8 @@ function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWall
   const permitData: PermitData = {
     nonce: String(permit.nonce),
     networkId: networkIdNum,
-    beneficiary: lowerCaseWalletAddress, // Keep wallet address as beneficiary for UI/logic consistency
+    beneficiary: beneficiaryAddressStr || lowerCaseWalletAddress, // Use actual beneficiary address
+    beneficiaryUserId: beneficiaryUserId, // Store GitHub user ID for username lookup
     deadline: String(permit.deadline),
     signature: String(permit.signature),
     type: type,
@@ -201,9 +206,10 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   // Remove duplicates based on permit ID
   const uniquePermits = new Map<number, unknown>();
-  permitsData.forEach((permit: any) => {
-    if (permit.id && !uniquePermits.has(permit.id)) {
-      uniquePermits.set(permit.id, permit);
+  permitsData.forEach((permit) => {
+    const permitWithId = permit as { id?: number };
+    if (permitWithId.id && !uniquePermits.has(permitWithId.id)) {
+      uniquePermits.set(permitWithId.id, permit);
     }
   });
 
