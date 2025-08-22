@@ -1,5 +1,5 @@
 {
-  "name": "pay.ubq.fi-root",
+  "name": "pay.ubq.fi",
   "version": "1.0.0",
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",
