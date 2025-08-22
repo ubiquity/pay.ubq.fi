@@ -41,6 +41,7 @@ export function DashboardPage() {
   });
 
   // --- Calculations (Depend on permits state from usePermitData) ---
+  // Permits that are actually claimable (for claim all button)
   const claimablePermits = useMemo(() => {
     const filteredPermits = permits.filter(
       (p) =>
@@ -52,6 +53,22 @@ export function DashboardPage() {
         p.ownerBalanceSufficient !== false &&
         p.permit2AllowanceSufficient !== false &&
         !p.checkError &&
+        hasRequiredFields(p)
+    );
+    return filteredPermits;
+  }, [permits, chain?.id]);
+  
+  // All valid permits that should be displayed (including unclaimable ones)
+  const displayablePermits = useMemo(() => {
+    const filteredPermits = permits.filter(
+      (p) =>
+        p.networkId === chain?.id &&
+        p.type === "erc20-permit" &&
+        // Only exclude already claimed/invalidated permits
+        p.status !== "Claimed" && 
+        p.status !== "Invalidated" &&
+        p.isNonceUsed !== true &&
+        // Basic validation
         hasRequiredFields(p)
     );
     return filteredPermits;
@@ -282,7 +299,7 @@ export function DashboardPage() {
       {/* Permits Table */}
       {isTableVisible && (
         <PermitsTable
-          permits={permits}
+          permits={displayablePermits}
           onClaimPermit={handleClaimPermit}
           onClaimSequential={handleClaimSequential}
           onClaimBatch={handleClaimBatch}

@@ -172,7 +172,7 @@ export function PermitRow({
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
   const formatGithubLink = (url: string | undefined): JSX.Element | string => {
-    if (!url) return "N/A";
+    if (!url) return "–";
     try {
       const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
       if (match && match[2] && match[3]) {
@@ -216,7 +216,7 @@ export function PermitRow({
 
           const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
           const originalSymbol = originalTokenInfo?.symbol || "tokens";
-          const originalAmountFormatted = permit.amount && originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A";
+          const originalAmountFormatted = permit.amount && originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–";
 
           const explorerUrl = chain?.blockExplorers?.default?.url;
           const tokenAddress = permit.tokenAddress;
@@ -259,25 +259,27 @@ export function PermitRow({
             onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
             title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress}) on ${targetNetworkName}`}
           >
-            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
+            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
           </button>
         );
       } else {
         return (
           <span title={`Token: ${originalSymbol} (${permit.tokenAddress}) on ${targetNetworkName}`}>
-            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "N/A"} {originalSymbol}
+            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
           </span>
         );
       }
     } else if (permit.type === "erc721-permit") {
       return "NFT";
     } else {
-      return "N/A";
+      return "–";
     }
   };
 
   return (
     <div className={`permit-row ${rowClassName}`}>
+      <div className="permit-cell align-right monospace">{renderAmount()}</div>
+
       <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button
@@ -288,11 +290,9 @@ export function PermitRow({
             {formatGithubLink(permit.githubCommentUrl)}
           </button>
         ) : (
-          "N/A"
+          "–"
         )}
       </div>
-
-      <div className="permit-cell align-right monospace">{renderAmount()}</div>
 
       <div className="permit-cell actions-cell">
         <button

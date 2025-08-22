@@ -62,9 +62,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           }
         }
       } else {
-        // Normal mode: filter out claimed/used permits
+        // Normal mode: filter out only truly claimed/used permits
         const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed" || permit.status === "Invalidated";
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
         if (!shouldFilter) filtered.push(permit);
       }
     });

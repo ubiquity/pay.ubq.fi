@@ -3,7 +3,6 @@ import type { Address, Chain } from "viem";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { useGithubUsernames } from "../hooks/use-github-usernames.ts";
 import type { PermitData } from "../types.ts";
-import { ClaimAllProgress } from "./claim-all-progress.tsx";
 import { PermitRow } from "./permit-row.tsx";
 
 interface PermitsTableProps {
@@ -40,31 +39,28 @@ export function PermitsTable({
   address,
 }: PermitsTableProps) {
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
-  
+
   // Fetch GitHub usernames for all permits
   const { usernames: githubUsernames } = useGithubUsernames(permits);
 
-  // Split permits into aggregatable and regular
-  // When in funding wallet mode, show only claimable permits (not claimed and not invalidated) for invalidation
-  // Otherwise show only valid and unprocessed permits (for claiming)
-  let validPermits = isFundingWallet 
+  // The permits are already filtered by dashboard-page, just use them directly
+  // In funding wallet mode, we might need additional filtering for invalidation
+  let validPermits = isFundingWallet
     ? permits.filter((p) => p.status !== "Claimed" && p.status !== "Invalidated" && p.isNonceUsed !== true)
-    : permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
+    : permits; // Already filtered by dashboard-page
 
-  // Sort permits in reverse chronological order (newest first) when in funding wallet mode
-  if (isFundingWallet) {
-    validPermits = validPermits.sort((a, b) => {
-      // If both have created_at timestamps, sort by them
-      if (a.created_at && b.created_at) {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      // If only one has a timestamp, put it first
-      if (a.created_at && !b.created_at) return -1;
-      if (!a.created_at && b.created_at) return 1;
-      // If neither has a timestamp, maintain original order
-      return 0;
-    });
-  }
+  // Always sort permits in reverse chronological order (newest first)
+  validPermits = validPermits.sort((a, b) => {
+    // If both have created_at timestamps, sort by them
+    if (a.created_at && b.created_at) {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    // If only one has a timestamp, put it first
+    if (a.created_at && !b.created_at) return -1;
+    if (!a.created_at && b.created_at) return 1;
+    // If neither has a timestamp, maintain original order
+    return 0;
+  });
 
   // Split into aggregatable (new) and regular (old) permits
   const aggregatablePermits = validPermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
@@ -112,24 +108,6 @@ export function PermitsTable({
     <>
       {!isLoading && !isQuoting && validPermits.length > 0 && (
         <div>
-          <div>
-            {regularPermits.length > 0 && (
-              <button type="button" onClick={() => onClaimSequential(regularPermits)} className="claim-all-btn">
-                Queue All Regular Claims
-              </button>
-            )}
-            {aggregatablePermits.length > 0 && (
-              <>
-                <button type="button" onClick={handleClaimSelected} disabled={selectedPermits.size === 0} className="claim-selected-btn">
-                  Claim Selected ({selectedPermits.size})
-                </button>
-                <button type="button" onClick={() => onClaimBatch(aggregatablePermits)} disabled={aggregatablePermits.length === 0} className="claim-all-btn">
-                  Batch Claim All
-                </button>
-              </>
-            )}
-            <ClaimAllProgress permits={permits} />
-          </div>
           <div className="permits-list">
             <div className="permits-body">
               {validPermits.map((permit) => (
