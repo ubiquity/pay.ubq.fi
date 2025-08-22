@@ -426,7 +426,11 @@ worker.onmessage = async (event: MessageEvent<{ type: "INIT" | "FETCH_NEW_PERMIT
   if (type === "INIT") {
     const supabaseUrl = payload.supabaseUrl;
     const supabaseAnonKey = payload.supabaseAnonKey;
-    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
+    // In development, use default RPC endpoint; in production, use current domain with /rpc
+    // Never use localhost - fallback to default RPC if origin is localhost
+    const origin = self.location.origin;
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+    PROXY_BASE_URL = (payload.isDevelopment || isLocalhost) ? "https://rpc.ubq.fi" : `${origin}/rpc`;
 
     if (supabaseUrl && supabaseAnonKey) {
       try {
