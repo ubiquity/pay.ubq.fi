@@ -67,6 +67,8 @@ export function PermitRow({
 
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
+    : isInvalidating
+    ? "row-invalidating"
     : isClaimed
     ? "row-claimed"
     : isInvalidated
@@ -75,8 +77,6 @@ export function PermitRow({
     ? "row-claim-failed"
     : isClaimingThis
     ? "row-claiming"
-    : isInvalidating
-    ? "row-invalidating"
     : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
     ? "row-invalid"
     : permit.status === "Valid"
@@ -110,10 +110,12 @@ export function PermitRow({
     : permit.status || "";
 
   const buttonText =
-    isFundingWallet && canInvalidate
-      ? isInvalidating
-        ? "Invalidating..."
-        : "Invalidate"
+    isInvalidating
+      ? "Invalidating..."
+      : isFundingWallet && canInvalidate
+      ? "Invalidate"
+      : isInvalidated
+      ? "Invalidated"
       : isClaimed && permit.transactionHash
       ? "View"
       : isClaimingThis
@@ -126,20 +128,28 @@ export function PermitRow({
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
+    : isInvalidating
+    ? true
     : isFundingWallet && canInvalidate
-    ? !isConnected || isInvalidating
+    ? !isConnected
+    : isInvalidated
+    ? true
     : !isConnected ||
       isClaimingThis ||
       (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
       (isClaimed && !permit.transactionHash) ||
       (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
-  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet;
+  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet && !isInvalidated;
   const showButtonIcon =
     !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
-  const buttonIcon = isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const buttonIcon = isInvalidated || isInvalidating ? ICONS.WARNING : isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
+    if (isInvalidated) {
+      // Do nothing for invalidated permits
+      return;
+    }
     if (networkMismatch) {
       if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
         setIsSwitchingNetwork(true);

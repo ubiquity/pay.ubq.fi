@@ -35,18 +35,21 @@ export function usePermitInvalidation({
     async (permit: PermitData): Promise<{ success: boolean; txHash: string }> => {
       const permitKey = permit.signature;
 
+      // Set invalidating state immediately
+      setIsInvalidating((prev) => ({ ...prev, [permitKey]: true }));
+      setInvalidationError(null);
+
       if (!address || !chain || !walletClient || !publicClient) {
         setError("Wallet not connected or chain unavailable");
+        setIsInvalidating((prev) => ({ ...prev, [permitKey]: false }));
         return { success: false, txHash: "" };
       }
 
       if (permit.owner.toLowerCase() !== address.toLowerCase()) {
         setError("You can only invalidate permits you own");
+        setIsInvalidating((prev) => ({ ...prev, [permitKey]: false }));
         return { success: false, txHash: "" };
       }
-
-      setIsInvalidating((prev) => ({ ...prev, [permitKey]: true }));
-      setInvalidationError(null);
 
       try {
         const nonceBigInt = BigInt(permit.nonce);
