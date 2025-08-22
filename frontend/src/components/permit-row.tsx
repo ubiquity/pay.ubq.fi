@@ -61,7 +61,7 @@ export function PermitRow({
     !isClaimed &&
     !isInvalidated &&
     (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
-  
+
   const isOwner = address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidated && !isInvalidating;
 
@@ -109,11 +109,12 @@ export function PermitRow({
     ? "Valid"
     : permit.status || "";
 
-  const buttonText = isFundingWallet && canInvalidate
-    ? isInvalidating
-      ? "Invalidating..."
-      : "Invalidate"
-    : isClaimed && permit.transactionHash
+  const buttonText =
+    isFundingWallet && canInvalidate
+      ? isInvalidating
+        ? "Invalidating..."
+        : "Invalidate"
+      : isClaimed && permit.transactionHash
       ? "View"
       : isClaimingThis
       ? "Claiming..."
@@ -134,7 +135,8 @@ export function PermitRow({
       (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet;
-  const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
+  const showButtonIcon =
+    !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
   const buttonIcon = isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
@@ -271,23 +273,23 @@ export function PermitRow({
         {(() => {
           const githubInfo = formatGithubLink(permit.githubCommentUrl);
           if (!githubInfo) return "N/A";
-          
+
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <button
                 className="button-as-link"
                 onClick={() => window.open(permit.githubCommentUrl, "_blank")}
                 title={`View source on GitHub: ${permit.githubCommentUrl}`}
               >
-                {githubInfo.repo} #{githubInfo.issue}
-              </button>
-              {isFundingWallet && (
-                <div className="extra-small-font" style={{ opacity: 0.7, color: '#888' }}>
-                  <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: 'help' }}>
-                    To: {githubUsername ? `@${githubUsername}` : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
+                {githubInfo.repo} #{githubInfo.issue} :{" "}
+                {isFundingWallet && (
+                  <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: "help" }}>
+                    {githubUsername
+                      ? `${githubUsername}`
+                      : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
                   </span>
-                </div>
-              )}
+                )}
+              </button>
             </div>
           );
         })()}
