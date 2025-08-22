@@ -147,7 +147,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   let permitsData: unknown[] = [];
 
-  // Query for permits where user can claim (beneficiary)
+  // Query for permits where user can claim (beneficiary) - only unclaimed (transaction is null)
   const directJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
@@ -164,16 +164,39 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     beneficiaryQuery = beneficiaryQuery.gt("created", lastCheckTimestamp);
   }
 
-  const beneficiaryResult = await beneficiaryQuery;
-
-  if (beneficiaryResult.error) {
-    console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
-  } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
-    console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
-    permitsData = beneficiaryResult.data;
+  // Paginate through all beneficiary results
+  const allBeneficiaryData: unknown[] = [];
+  let beneficiaryOffset = 0;
+  const BATCH_SIZE = 1000;
+  
+  while (true) {
+    const paginatedQuery = beneficiaryQuery.range(beneficiaryOffset, beneficiaryOffset + BATCH_SIZE - 1);
+    const beneficiaryResult = await paginatedQuery;
+    
+    if (beneficiaryResult.error) {
+      console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
+      break;
+    }
+    
+    if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
+      allBeneficiaryData.push(...beneficiaryResult.data);
+      console.log(`Worker: Fetched ${beneficiaryResult.data.length} permits as beneficiary (offset ${beneficiaryOffset})`);
+      
+      if (beneficiaryResult.data.length < BATCH_SIZE) {
+        break; // Last page
+      }
+      beneficiaryOffset += BATCH_SIZE;
+    } else {
+      break; // No more data
+    }
+  }
+  
+  if (allBeneficiaryData.length > 0) {
+    console.log(`Worker: Found total ${allBeneficiaryData.length} permits as beneficiary`);
+    permitsData = allBeneficiaryData;
   }
 
-  // Query for permits where user is the owner (funding wallet)
+  // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
   const ownerJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
@@ -190,14 +213,36 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
   }
 
-  const ownerResult = await ownerQuery;
-
-  if (ownerResult.error) {
-    console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
-  } else if (ownerResult.data && ownerResult.data.length > 0) {
-    console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
+  // Paginate through all owner results
+  const allOwnerData: unknown[] = [];
+  let ownerOffset = 0;
+  
+  while (true) {
+    const paginatedQuery = ownerQuery.range(ownerOffset, ownerOffset + BATCH_SIZE - 1);
+    const ownerResult = await paginatedQuery;
+    
+    if (ownerResult.error) {
+      console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
+      break;
+    }
+    
+    if (ownerResult.data && ownerResult.data.length > 0) {
+      allOwnerData.push(...ownerResult.data);
+      console.log(`Worker: Fetched ${ownerResult.data.length} permits as owner (offset ${ownerOffset})`);
+      
+      if (ownerResult.data.length < BATCH_SIZE) {
+        break; // Last page
+      }
+      ownerOffset += BATCH_SIZE;
+    } else {
+      break; // No more data
+    }
+  }
+  
+  if (allOwnerData.length > 0) {
+    console.log(`Worker: Found total ${allOwnerData.length} permits as owner`);
     // Combine both results
-    permitsData = [...permitsData, ...ownerResult.data];
+    permitsData = [...permitsData, ...allOwnerData];
   }
 
   if (permitsData.length === 0) {

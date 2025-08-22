@@ -281,10 +281,9 @@ export function PermitRow({
                 onClick={() => window.open(permit.githubCommentUrl, "_blank")}
                 title={`View source on GitHub: ${permit.githubCommentUrl}`}
               >
-                {githubInfo.repo} #{githubInfo.issue} :{" "}
-                {isFundingWallet && (
+                {githubInfo.repo}/{githubInfo.issue}{isFundingWallet && (
                   <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: "help" }}>
-                    {githubUsername
+                    /{githubUsername
                       ? `${githubUsername}`
                       : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
                   </span>

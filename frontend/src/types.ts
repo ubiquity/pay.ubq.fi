@@ -50,4 +50,7 @@ export interface PermitData {
   // --- Fields for CowSwap Quote Estimation ---
   estimatedAmountOut?: string; // Store as string (wei) to handle large numbers
   quoteError?: string | null; // Error message if quote fetching fails for this permit's group
+
+  // Created timestamp from database
+  created_at?: string;
 }

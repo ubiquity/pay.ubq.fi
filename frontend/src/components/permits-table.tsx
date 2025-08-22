@@ -47,9 +47,24 @@ export function PermitsTable({
   // Split permits into aggregatable and regular
   // When in funding wallet mode, show only claimable permits (not claimed and not invalidated) for invalidation
   // Otherwise show only valid and unprocessed permits (for claiming)
-  const validPermits = isFundingWallet 
+  let validPermits = isFundingWallet 
     ? permits.filter((p) => p.status !== "Claimed" && p.status !== "Invalidated" && p.isNonceUsed !== true)
     : permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
+
+  // Sort permits in reverse chronological order (newest first) when in funding wallet mode
+  if (isFundingWallet) {
+    validPermits = validPermits.sort((a, b) => {
+      // If both have created_at timestamps, sort by them
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      // If only one has a timestamp, put it first
+      if (a.created_at && !b.created_at) return -1;
+      if (!a.created_at && b.created_at) return 1;
+      // If neither has a timestamp, maintain original order
+      return 0;
+    });
+  }
 
   // Split into aggregatable (new) and regular (old) permits
   const aggregatablePermits = validPermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
