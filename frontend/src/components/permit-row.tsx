@@ -2,8 +2,8 @@ import { useState } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { switchNetwork } from "wagmi/actions";
-import { NETWORK_NAMES, NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { switchChain } from "wagmi/actions";
+import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
@@ -109,22 +109,21 @@ export function PermitRow({
     ? "Valid"
     : permit.status || "";
 
-  const buttonText =
-    isInvalidating
-      ? "Invalidating..."
-      : isFundingWallet && canInvalidate
-      ? "Invalidate"
-      : isInvalidated
-      ? "Invalidated"
-      : isClaimed && permit.transactionHash
-      ? "View"
-      : isClaimingThis
-      ? "Claiming..."
-      : claimFailed && permit.transactionHash
-      ? "View"
-      : claimFailed
-      ? "Retry"
-      : "Claim";
+  const buttonText = isInvalidating
+    ? "Invalidating..."
+    : isFundingWallet && canInvalidate
+    ? "Invalidate"
+    : isInvalidated
+    ? "Invalidated"
+    : isClaimed && permit.transactionHash
+    ? "View"
+    : isClaimingThis
+    ? "Claiming..."
+    : claimFailed && permit.transactionHash
+    ? "View"
+    : claimFailed
+    ? "Retry"
+    : "Claim";
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
@@ -143,7 +142,8 @@ export function PermitRow({
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet && !isInvalidated;
   const showButtonIcon =
     !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
-  const buttonIcon = isInvalidated || isInvalidating ? ICONS.WARNING : isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const buttonIcon =
+    isInvalidated || isInvalidating ? ICONS.WARNING : isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
     if (isInvalidated) {
@@ -154,7 +154,7 @@ export function PermitRow({
       if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
         setIsSwitchingNetwork(true);
         try {
-          await switchNetwork(config, { chainId: permit.networkId });
+          await switchChain(config, { chainId: permit.networkId });
         } catch (error) {
           console.error("Failed to switch network:", error);
           setIsSwitchingNetwork(false);
