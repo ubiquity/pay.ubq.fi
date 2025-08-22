@@ -55,48 +55,35 @@ export function useGithubUsernames(permits: PermitData[]) {
       setIsLoading(true);
 
       try {
-        // Fetch in batches to respect rate limits (60 requests/hour = 1 per minute average)
-        // We'll fetch 20 at once initially, then smaller batches with delays
-        const INITIAL_BATCH_SIZE = 20; // Fetch 20 initially (1/3 of hourly limit)
-        const SUBSEQUENT_BATCH_SIZE = 10; // Then 10 at a time
-        const BATCH_DELAY = 3000; // 3 seconds between batches to be safe with rate limits
+        // Just fetch everything we can in one shot (up to 60 for rate limit)
+        // Cache handles most requests, so we just need to handle cache misses
+        const MAX_BATCH_SIZE = 60; // GitHub's hourly rate limit for unauthenticated requests
+        const batch = userIdsToFetch.slice(0, MAX_BATCH_SIZE);
         
-        for (let i = 0; i < userIdsToFetch.length; ) {
-          // Use larger batch for first request, smaller for subsequent
-          const batchSize = i === 0 ? INITIAL_BATCH_SIZE : SUBSEQUENT_BATCH_SIZE;
-          const batch = userIdsToFetch.slice(i, i + batchSize);
-          i += batchSize;
-          
-          // Mark these IDs as being fetched
-          batch.forEach(id => fetchedIdsRef.current.add(id));
-          
-          // Fetch this batch
-          const fetchPromises = batch.map(userId => 
-            githubUsernameCache.fetchUsername(userId).then(username => ({ userId, username }))
-          );
-          
-          const results = await Promise.all(fetchPromises);
-          
-          results.forEach(({ userId, username }) => {
-            if (username) {
-              cachedUsernames.set(userId, username);
-            }
-          });
-          
-          // Update state with the new batch of usernames
-          setUsernames(prev => {
-            const merged = new Map(prev);
-            cachedUsernames.forEach((username, id) => {
-              merged.set(id, username);
-            });
-            return merged;
-          });
-          
-          // If there are more batches to fetch, wait before continuing
-          if (i < userIdsToFetch.length) {
-            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+        // Mark these IDs as being fetched
+        batch.forEach(id => fetchedIdsRef.current.add(id));
+        
+        // Fetch all at once
+        const fetchPromises = batch.map(userId => 
+          githubUsernameCache.fetchUsername(userId).then(username => ({ userId, username }))
+        );
+        
+        const results = await Promise.all(fetchPromises);
+        
+        results.forEach(({ userId, username }) => {
+          if (username) {
+            cachedUsernames.set(userId, username);
           }
-        }
+        });
+        
+        // Update state with all the usernames
+        setUsernames(prev => {
+          const merged = new Map(prev);
+          cachedUsernames.forEach((username, id) => {
+            merged.set(id, username);
+          });
+          return merged;
+        });
       } catch (error) {
         console.error("Error fetching GitHub usernames:", error);
       } finally {
