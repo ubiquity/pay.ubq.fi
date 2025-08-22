@@ -209,7 +209,7 @@ export function DashboardPage() {
             </button>
             <button
               id="claim-all"
-              onClick={() => claimPermits(claimablePermits)}
+              onClick={() => handleClaimBatch(claimablePermits)}
               disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid and available permits (batch RPC)"
