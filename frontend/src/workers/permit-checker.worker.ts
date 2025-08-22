@@ -114,6 +114,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     nonce: String(permit.nonce),
     networkId: networkIdNum,
     beneficiary: lowerCaseWalletAddress, // Keep wallet address as beneficiary for UI/logic consistency
+    beneficiaryUserId: permit.beneficiary_id ? Number(permit.beneficiary_id) : undefined, // Map beneficiary_id from DB
     deadline: String(permit.deadline),
     signature: String(permit.signature),
     type: "erc20-permit",
@@ -156,30 +157,64 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   let permitsData: unknown[] = [];
 
   // This query directly joins permits with users and wallets
+  // We need to fetch permits where the user is EITHER the beneficiary OR the owner (funding wallet)
   const directJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
               partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
               location:${LOCATIONS_TABLE}(node_url),
-              users!inner(
-                  wallets!inner(address)
+              users!left(
+                  wallets!left(address)
               )
     `;
 
-  let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  // Fetch permits where wallet is beneficiary OR owner
+  // First, get permits where wallet is the beneficiary
+  let beneficiaryQuery = supabase.from(PERMITS_TABLE)
+    .select(directJoinQuery)
+    .is("transaction", null)
+    .filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  
+  // Also get permits where wallet is the owner (funding wallet)
+  let ownerQuery = supabase.from(PERMITS_TABLE)
+    .select(directJoinQuery)
+    .is("transaction", null)
+    .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-    query = query.gt("created", lastCheckTimestamp);
+    beneficiaryQuery = beneficiaryQuery.gt("created", lastCheckTimestamp);
+    ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
   }
 
-  const result = await query;
+  // Execute both queries
+  const [beneficiaryResult, ownerResult] = await Promise.all([
+    beneficiaryQuery,
+    ownerQuery
+  ]);
 
-  if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
-  } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
-    permitsData = result.data;
+  // Combine results and remove duplicates
+  const permitMap = new Map<number, unknown>();
+  
+  if (beneficiaryResult.error) {
+    console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
+  } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
+    console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
+    beneficiaryResult.data.forEach((permit: any) => {
+      permitMap.set(permit.id, permit);
+    });
   }
+  
+  if (ownerResult.error) {
+    console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
+  } else if (ownerResult.data && ownerResult.data.length > 0) {
+    console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
+    ownerResult.data.forEach((permit: any) => {
+      permitMap.set(permit.id, permit);
+    });
+  }
+  
+  permitsData = Array.from(permitMap.values());
+  console.log(`Worker: Total unique permits: ${permitsData.length}`);
 
   if (permitsData.length === 0) {
     return [];
