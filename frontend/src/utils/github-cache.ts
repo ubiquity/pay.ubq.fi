@@ -1,6 +1,6 @@
 // GitHub username caching utility
 const GITHUB_USERNAME_CACHE_KEY = "githubUsernameCache";
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
 interface GithubUserCache {
   [userId: string]: {
@@ -65,7 +65,7 @@ export class GithubUsernameCache {
 
   public async fetchUsername(userId: string | number): Promise<string | null> {
     const userIdStr = String(userId);
-    
+
     // Check cache first
     const cached = this.get(userIdStr);
     if (cached) {
@@ -121,7 +121,7 @@ export class GithubUsernameCache {
 
       const data = await response.json();
       const username = data.login;
-      
+
       if (username) {
         this.set(userIdStr, username);
         return username;
@@ -165,7 +165,7 @@ export class GithubUsernameCache {
       const batch = uncachedIds.slice(i, i + CONCURRENT_LIMIT);
       const promises = batch.map(id => this.fetchUsername(id));
       const batchResults = await Promise.all(promises);
-      
+
       batch.forEach((id, index) => {
         const username = batchResults[index];
         if (username) {
