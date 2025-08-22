@@ -508,7 +508,7 @@ button#claim-all:hover:not([disabled]) {
   content: " ";
 }
 
-.github-comment-url > button.button-as-link {
+button.button-as-link {
   text-align: left;
 }
 
