@@ -270,6 +270,13 @@ footer {
 .permit-row.row-claimed {
   background-color: #e6ffed10;
 }
+.permit-row.row-invalidated {
+  background-color: #ffeded10;
+  opacity: 0.5;
+}
+.permit-row.row-invalidating {
+  background-color: #fff3e010;
+}
 .permit-row.row-claim-failed {
   background-color: #ffebe910;
 }

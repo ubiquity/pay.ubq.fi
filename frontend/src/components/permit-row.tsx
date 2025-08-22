@@ -13,6 +13,7 @@ import { ICONS } from "./iconography.tsx";
 interface PermitRowProps {
   permit: PermitData;
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
   isQuoting: boolean;
@@ -20,17 +21,24 @@ interface PermitRowProps {
   confirmingHash?: `0x${string}`;
   isSelected?: boolean;
   onSelect?: (permit: PermitData) => void;
+  showOwnerPermits?: boolean;
+  isInvalidating?: boolean;
+  address?: Address;
 }
 
 export function PermitRow({
   permit,
   onClaimPermit,
+  onInvalidatePermit,
   isConnected,
   chain,
   isQuoting,
   preferredRewardTokenAddress,
   isSelected,
-  onSelect
+  onSelect,
+  showOwnerPermits = false,
+  isInvalidating = false,
+  address,
 }: PermitRowProps) {
   const { connector } = useAccount();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
@@ -38,7 +46,8 @@ export function PermitRow({
   const switchableChains = config.chains ?? [];
 
   const isReadyToClaim = hasRequiredFields(permit);
-  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
   const isClaimingThis = permit.claimStatus === "Pending";
   const claimFailed = permit.claimStatus === "Error";
   const insufficientBalance = permit.ownerBalanceSufficient === false;
@@ -48,16 +57,24 @@ export function PermitRow({
     isReadyToClaim &&
     !isClaimingThis &&
     !isClaimed &&
+    !isInvalidated &&
     (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
+  
+  const isOwner = address && permit.owner.toLowerCase() === address.toLowerCase();
+  const canInvalidate = isOwner && !isClaimed && !isInvalidated && !isInvalidating;
 
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
     : isClaimed
     ? "row-claimed"
+    : isInvalidated
+    ? "row-invalidated"
     : claimFailed
     ? "row-claim-failed"
     : isClaimingThis
     ? "row-claiming"
+    : isInvalidating
+    ? "row-invalidating"
     : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
     ? "row-invalid"
     : permit.status === "Valid"
@@ -69,9 +86,13 @@ export function PermitRow({
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to claim`
+    ? `Switch wallet to ${targetNetworkName} to ${showOwnerPermits ? "invalidate" : "claim"}`
     : isClaimed
     ? "Claimed"
+    : isInvalidated
+    ? "Invalidated"
+    : isInvalidating
+    ? "Invalidating..."
     : isClaimingThis
     ? "Claiming..."
     : claimFailed
@@ -86,8 +107,11 @@ export function PermitRow({
     ? "Valid"
     : permit.status || "";
 
-  const buttonText =
-    isClaimed && permit.transactionHash
+  const buttonText = showOwnerPermits && canInvalidate
+    ? isInvalidating
+      ? "Invalidating..."
+      : "Invalidate"
+    : isClaimed && permit.transactionHash
       ? "View"
       : isClaimingThis
       ? "Claiming..."
@@ -99,15 +123,17 @@ export function PermitRow({
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
+    : showOwnerPermits && canInvalidate
+    ? !isConnected || isInvalidating
     : !isConnected ||
       isClaimingThis ||
       (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
       (isClaimed && !permit.transactionHash) ||
       (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
-  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis;
-  const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis;
-  const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !showOwnerPermits;
+  const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
+  const buttonIcon = showOwnerPermits && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
   const handleButtonClick = async () => {
     if (networkMismatch) {
@@ -120,6 +146,8 @@ export function PermitRow({
           setIsSwitchingNetwork(false);
         }
       }
+    } else if (showOwnerPermits && canInvalidate && onInvalidatePermit) {
+      await onInvalidatePermit(permit);
     } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
     } else if (!isButtonDisabled) {
@@ -226,7 +254,7 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {supportsBatchClaim && onSelect && (
+      {supportsBatchClaim && onSelect && !showOwnerPermits && (
         <div className="permit-cell checkbox-cell">
           <input
             type="checkbox"

@@ -5,6 +5,7 @@ import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
+import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
@@ -29,6 +30,8 @@ export function DashboardPage() {
     setError,
     updatePermitStatusCache,
     isQuoting,
+    showOwnerPermits,
+    setShowOwnerPermits,
   } = usePermitData({
     address,
     isConnected,
@@ -118,6 +121,22 @@ export function DashboardPage() {
   // Custom Hook for Claiming Logic
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { data: walletClient } = useWalletClient();
+  
+  // Custom Hook for Invalidation Logic
+  const {
+    handleInvalidatePermit,
+    isInvalidating,
+    invalidationError,
+  } = usePermitInvalidation({
+    permits,
+    setPermits,
+    setError,
+    updatePermitStatusCache,
+    publicClient: publicClient ?? null,
+    walletClient: walletClient ?? null,
+    address,
+    chain: chain ?? null,
+  });
 
   const {
     handleClaimPermit,
@@ -193,6 +212,15 @@ export function DashboardPage() {
                 )}
               </span>
             </button>
+            <button
+              id="show-owner-permits"
+              onClick={() => setShowOwnerPermits(!showOwnerPermits)}
+              className="button-with-icon"
+              title={showOwnerPermits ? "Show claimable permits" : "Show permits you can invalidate"}
+            >
+              {showOwnerPermits ? ICONS.CLAIM : ICONS.WARNING}
+              <span>{showOwnerPermits ? "Show Claimable" : "Show My Permits"}</span>
+            </button>
             <div className="spinner-or-expand-container">
               <button className="expand-button" disabled={isLoading} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
                 {isLoading ? <div className="spinner header-spinner"></div> : isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
@@ -229,6 +257,14 @@ export function DashboardPage() {
           </div>
         </section>
       )}
+      {invalidationError && (
+        <section id="error-message-wrapper" style={{ marginTop: "5px" }}>
+          <div className="error-message">
+            {ICONS.WARNING}
+            <span>{invalidationError}</span>
+          </div>
+        </section>
+      )}
 
       {/* Swap Status Display */}
       {Object.keys(swapSubmissionStatus).length > 0 && (
@@ -258,12 +294,16 @@ export function DashboardPage() {
           onClaimPermit={handleClaimPermit}
           onClaimBatch={handleClaimBatch}
           onClaimSequential={handleClaimSequential}
+          onInvalidatePermit={handleInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
           claimTxHash={claimTxHash}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
+          showOwnerPermits={showOwnerPermits}
+          isInvalidating={isInvalidating}
+          address={address}
         />
       )}
 

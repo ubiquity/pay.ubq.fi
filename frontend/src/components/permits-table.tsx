@@ -10,12 +10,16 @@ interface PermitsTableProps {
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   onClaimSequential: (permits: PermitData[]) => void;
   onClaimBatch: (permits?: PermitData[]) => Promise<{ success: boolean; txHash: string }>;
+  onInvalidatePermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
   claimTxHash?: `0x${string}`;
   isLoading: boolean;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
+  showOwnerPermits: boolean;
+  isInvalidating: Record<string, boolean>;
+  address: Address | undefined;
 }
 
 export function PermitsTable({
@@ -23,18 +27,25 @@ export function PermitsTable({
   onClaimPermit,
   onClaimSequential,
   onClaimBatch,
+  onInvalidatePermit,
   isConnected,
   chain,
   claimTxHash,
   isLoading,
   isQuoting,
   preferredRewardTokenAddress,
+  showOwnerPermits,
+  isInvalidating,
+  address,
 }: PermitsTableProps) {
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
 
   // Split permits into aggregatable and regular
-  // Only show valid and unprocessed permits
-  const validPermits = permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
+  // When showing owner permits, show all permits owned by the user (for invalidation)
+  // Otherwise show only valid and unprocessed permits (for claiming)
+  const validPermits = showOwnerPermits 
+    ? permits 
+    : permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
 
   // Split into aggregatable (new) and regular (old) permits
   const aggregatablePermits = validPermits.filter((permit) => permit.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
@@ -107,6 +118,7 @@ export function PermitsTable({
                   key={permit.signature}
                   permit={permit}
                   onClaimPermit={onClaimPermit}
+                  onInvalidatePermit={onInvalidatePermit}
                   isConnected={isConnected}
                   chain={chain}
                   confirmingHash={claimTxHash}
@@ -114,6 +126,9 @@ export function PermitsTable({
                   preferredRewardTokenAddress={preferredRewardTokenAddress}
                   isSelected={isPermitSelected(permit)}
                   onSelect={togglePermitSelection}
+                  showOwnerPermits={showOwnerPermits}
+                  isInvalidating={isInvalidating[permit.signature] || false}
+                  address={address}
                 />
               ))}
             </div>

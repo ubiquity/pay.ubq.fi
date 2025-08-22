@@ -142,7 +142,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   let permitsData: unknown[] = [];
 
-  // This query directly joins permits with users and wallets
+  // Query for permits where user can claim (beneficiary)
   const directJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
@@ -153,27 +153,62 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  let beneficiaryQuery = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-    query = query.gt("created", lastCheckTimestamp);
+    beneficiaryQuery = beneficiaryQuery.gt("created", lastCheckTimestamp);
   }
 
-  const result = await query;
+  const beneficiaryResult = await beneficiaryQuery;
 
-  if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
-  } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
-    permitsData = result.data;
+  if (beneficiaryResult.error) {
+    console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
+  } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
+    console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
+    permitsData = beneficiaryResult.data;
+  }
+
+  // Query for permits where user is the owner (funding wallet)
+  const ownerJoinQuery = `
+              *,
+              token:${TOKENS_TABLE}(address, network),
+              partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
+              location:${LOCATIONS_TABLE}(node_url),
+              users(
+                  wallets(address)
+              )
+    `;
+
+  let ownerQuery = supabase.from(PERMITS_TABLE).select(ownerJoinQuery).is("transaction", null).filter("partner.wallet.address", "ilike", normalizedWalletAddress);
+
+  if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+    ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
+  }
+
+  const ownerResult = await ownerQuery;
+
+  if (ownerResult.error) {
+    console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
+  } else if (ownerResult.data && ownerResult.data.length > 0) {
+    console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
+    // Combine both results
+    permitsData = [...permitsData, ...ownerResult.data];
   }
 
   if (permitsData.length === 0) {
     return [];
   }
 
+  // Remove duplicates based on permit ID
+  const uniquePermits = new Map<number, unknown>();
+  permitsData.forEach((permit: any) => {
+    if (permit.id && !uniquePermits.has(permit.id)) {
+      uniquePermits.set(permit.id, permit);
+    }
+  });
+
   // Cast needed because Supabase client doesn't know about the joined types automatically
-  return permitsData as unknown as PermitRow[];
+  return Array.from(uniquePermits.values()) as unknown as PermitRow[];
 }
 
 // --- On-Chain Validation ---

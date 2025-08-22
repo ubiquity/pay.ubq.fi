@@ -22,6 +22,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const workerRef = useRef<Worker | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
+  const [showOwnerPermits, setShowOwnerPermits] = useState(false);
 
   const saveCache = useCallback((cache: PermitDataCache) => {
     try {
@@ -31,15 +32,20 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   }, []);
 
-  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
+  const filterPermits = useCallback((permitsMap: Map<string, PermitData>, showOwnerPermits = false) => {
     const filtered: PermitData[] = [];
     permitsMap.forEach((permit) => {
       const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
+      const isClaimed = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+      
+      if (showOwnerPermits && address && permit.owner.toLowerCase() === address.toLowerCase()) {
+        filtered.push(permit);
+      } else if (!isClaimed) {
+        filtered.push(permit);
+      }
     });
     setPermits(filtered);
-  }, []);
+  }, [address]);
 
   const fetchQuotes = useCallback(
     async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
@@ -175,7 +181,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
-              filterPermits(allPermitsRef.current);
+              filterPermits(allPermitsRef.current, showOwnerPermits);
               setIsLoading(false);
             })
             .catch((e) => {
@@ -202,7 +208,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       workerRef.current = null;
       setIsWorkerInitialized(false);
     };
-  }, [filterPermits, saveCache, fetchQuotes]);
+  }, [filterPermits, saveCache, fetchQuotes, showOwnerPermits]);
 
   useEffect(() => {
     if (isConnected && isWorkerInitialized && workerRef.current) {
@@ -221,7 +227,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       fetchQuotes(new Map(allPermitsRef.current))
         .then((mapWithQuotes: Map<string, PermitData>) => {
           allPermitsRef.current = mapWithQuotes;
-          filterPermits(allPermitsRef.current);
+          filterPermits(allPermitsRef.current, showOwnerPermits);
         })
         .catch((e: unknown) => {
           setError(`Failed to update swap quotes: ${e instanceof Error ? e.message : String(e)}`);
@@ -229,10 +235,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             delete permit.estimatedAmountOut;
             permit.quoteError = `Failed to update quote: ${e instanceof Error ? e.message : String(e)}`;
           });
-          filterPermits(allPermitsRef.current);
+          filterPermits(allPermitsRef.current, showOwnerPermits);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits, showOwnerPermits]);
 
   const updatePermitStatusCache = useCallback(
     (permitKey: string, statusUpdate: Partial<PermitData>) => {
@@ -244,11 +250,11 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         const existing = allPermitsRef.current.get(permitKey);
         if (existing) {
           allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
-          filterPermits(allPermitsRef.current);
+          filterPermits(allPermitsRef.current, showOwnerPermits);
         }
       }
     },
-    [filterPermits]
+    [filterPermits, showOwnerPermits]
   );
 
   return {
@@ -260,5 +266,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,
+    showOwnerPermits,
+    setShowOwnerPermits,
   };
 }
