@@ -41,10 +41,10 @@ export function PermitsTable({
   const [selectedPermits, setSelectedPermits] = useState<Set<string>>(new Set());
 
   // Split permits into aggregatable and regular
-  // When in funding wallet mode, show all permits owned by the user (for invalidation)
+  // When in funding wallet mode, show only claimable permits (not claimed and not invalidated) for invalidation
   // Otherwise show only valid and unprocessed permits (for claiming)
   const validPermits = isFundingWallet 
-    ? permits 
+    ? permits.filter((p) => p.status !== "Claimed" && p.status !== "Invalidated" && p.isNonceUsed !== true)
     : permits.filter((p) => p.status === "Valid" && p.claimStatus !== "Success" && p.claimStatus !== "Pending");
 
   // Split into aggregatable (new) and regular (old) permits
@@ -82,7 +82,7 @@ export function PermitsTable({
     return (
       <section>
         <div className="error-message">
-          <span>No permits pending</span>
+          <span>{isFundingWallet ? "No permits available to invalidate" : "No permits pending"}</span>
         </div>
       </section>
     );
