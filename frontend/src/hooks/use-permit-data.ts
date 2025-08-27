@@ -229,6 +229,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
   useEffect(() => {
     if (isConnected && address && isWorkerInitialized && workerRef.current) {
+      // Clear existing permits when wallet changes
+      allPermitsRef.current.clear();
+      setPermits([]);
       setIsLoading(true);
       setError(null);
       workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
