@@ -2,7 +2,7 @@
 
 import { Dispatch, SetStateAction, useState } from "react";
 import { Address, Chain, PublicClient, WalletClient } from "viem";
-import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { NEW_PERMIT2_ADDRESS, PERMIT_CLAIM_API_ENDPOINT } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
 
@@ -145,7 +145,7 @@ export function usePermitClaiming({
 
       // Record transaction in database
       try {
-        await fetch("/api/permits/record-claim", {
+        await fetch(PERMIT_CLAIM_API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -316,7 +316,7 @@ export function usePermitClaiming({
         await Promise.all(
           permitsToClaim.map((permit) => {
             updatePermitStatusCache(permit.signature, { status: "Claimed" });
-            return fetch("/api/permits/record-claim", {
+            return fetch(PERMIT_CLAIM_API_ENDPOINT, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

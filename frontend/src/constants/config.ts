@@ -34,3 +34,6 @@ export const NETWORK_NAMES: { [chainId: number]: string } = {
   31337: "Anvil",
   // Add other supported network names as needed
 };
+
+// API endpoint for recording permit claims
+export const PERMIT_CLAIM_API_ENDPOINT = "/api/permits/record-claim";
