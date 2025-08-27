@@ -63,7 +63,7 @@ type PermitRow = Tables<"permits"> & {
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
-  const beneficiaryWalletData = (permit as any).users?.wallets;
+  const beneficiaryWalletData = (permit as PermitRow & { users?: { wallets?: { address?: string } } }).users?.wallets;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
   const beneficiaryUserId = permit.beneficiary_id; // GitHub user ID
@@ -213,7 +213,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
   } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
     console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
-    beneficiaryResult.data.forEach((permit: any) => {
+    beneficiaryResult.data.forEach((permit) => {
       permitMap.set(permit.id, permit);
     });
   }
@@ -222,7 +222,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
   } else if (ownerResult.data && ownerResult.data.length > 0) {
     console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
-    ownerResult.data.forEach((permit: any) => {
+    ownerResult.data.forEach((permit) => {
       permitMap.set(permit.id, permit);
     });
   }
