@@ -183,7 +183,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   const ownerJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
-              partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
+              partner:${PARTNERS_TABLE}!left(wallet:${WALLETS_TABLE}!left(address)),
               location:${LOCATIONS_TABLE}(node_url),
               users(
                   wallets(address)
