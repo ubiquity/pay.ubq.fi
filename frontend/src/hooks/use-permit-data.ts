@@ -170,9 +170,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       return;
     }
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
+    const isDevelopment = import.meta.env.DEV || window.location.hostname.includes(".deno.dev");
     workerRef.current.postMessage({
       type: "INIT",
-      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment: import.meta.env.DEV },
+      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment },
     });
 
     workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
