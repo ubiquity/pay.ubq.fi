@@ -109,6 +109,7 @@ export function PermitsTable({
       {!isLoading && !isQuoting && validPermits.length > 0 && (
         <div>
           <div className="permits-list">
+            {/* Headerless table design - cells are self-explanatory (Amount | Source | Actions) */}
             <div className="permits-body">
               {validPermits.map((permit) => (
                 <PermitRow

@@ -278,6 +278,12 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
+      {/* 
+        Cell Order: Amount | Source | Actions
+        This is a headerless design - the data is self-explanatory.
+        The cells use flex layout with consistent ordering across all rows.
+        CSS classes handle proper alignment: align-right (flex:1), github-comment-url (flex:2), actions-cell (flex:1)
+      */}
       <div className="permit-cell align-right monospace">{renderAmount()}</div>
 
       <div className="permit-cell github-comment-url">
