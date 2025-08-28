@@ -21,3 +21,4 @@ cypress/videos
 coverage
 junit.xml
 envs.txt
+.playwright-mcp/
