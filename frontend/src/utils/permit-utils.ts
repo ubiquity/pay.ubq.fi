@@ -78,12 +78,14 @@ export const formatAmount = (
   }
 };
 
+// Debug configuration - can be set from environment
+const DEBUG_VALIDATION = false;
+
 /**
  * Checks if a permit object contains all the essential fields required for claiming or testing.
- * Logs warnings if fields are missing.
+ * Only logs warnings in debug mode.
  */
 export const hasRequiredFields = (permit: PermitData): boolean => {
-  const logPrefix = `Permit ${permit.nonce}:`;
   let isValid = true;
   const errors: string[] = [];
 
@@ -97,24 +99,60 @@ export const hasRequiredFields = (permit: PermitData): boolean => {
 
   // Type-specific fields
   if (permit.type === "erc20-permit") {
-    if (!permit.amount) errors.push("amount (for ERC20)");
-    if (!permit.token?.address) errors.push("token.address (for ERC20)");
+    if (!permit.amount) errors.push("amount");
+    if (!permit.token?.address) errors.push("token.address");
   } else if (permit.type === "erc721-permit") {
     // ERC721 might use tokenAddress or token.address
-    if (!permit.tokenAddress && !permit.token?.address) errors.push("token address (for ERC721)");
-    if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id (for ERC721)");
+    if (!permit.tokenAddress && !permit.token?.address) errors.push("token address");
+    if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id");
   } else {
     // Handle unknown or potentially missing types
-    errors.push(`unknown or missing type (${permit.type})`);
+    errors.push(`unknown type (${permit.type})`);
   }
 
   if (errors.length > 0) {
-    console.warn(logPrefix, `Missing required fields: ${errors.join(", ")}`);
-    console.warn(logPrefix, "Full Permit data:", permit); // Log full data for debugging
     isValid = false;
+    
+    // Only log in debug mode
+    if (DEBUG_VALIDATION) {
+      console.debug(`[Validation] Permit ${permit.nonce}: Missing ${errors.join(", ")}`);
+    }
   }
 
   return isValid;
+};
+
+/**
+ * Batch validation function for efficiency
+ */
+export const validatePermitBatch = (permits: PermitData[]): { 
+  valid: PermitData[], 
+  invalid: PermitData[],
+  summary: { total: number, valid: number, invalid: number }
+} => {
+  const valid: PermitData[] = [];
+  const invalid: PermitData[] = [];
+  
+  permits.forEach(permit => {
+    if (hasRequiredFields(permit)) {
+      valid.push(permit);
+    } else {
+      invalid.push(permit);
+    }
+  });
+  
+  const summary = {
+    total: permits.length,
+    valid: valid.length,
+    invalid: invalid.length
+  };
+  
+  // Single consolidated log instead of per-permit warnings
+  if (invalid.length > 0 && !DEBUG_VALIDATION) {
+    console.info(`Permit validation: ${valid.length} valid, ${invalid.length} invalid out of ${permits.length} total`);
+  }
+  
+  return { valid, invalid, summary };
 };
 
 /**

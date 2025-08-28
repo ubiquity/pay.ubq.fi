@@ -6,7 +6,7 @@ import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { PermitData } from "../types.ts";
-import { hasRequiredFields } from "../utils/permit-utils.ts";
+import { hasRequiredFields, validatePermitBatch } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
