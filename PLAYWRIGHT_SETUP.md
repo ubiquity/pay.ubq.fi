@@ -118,12 +118,32 @@ Make sure you're using CDP mode (not a fresh browser instance). The button shoul
 
 ## Benefits of CDP Mode
 
-✅ **Use Real Browser Profile** - All your settings, extensions, and saved data  
-✅ **MetaMask Ready** - No need to import wallets or re-authenticate  
-✅ **Session Persistence** - Stay logged into services  
-✅ **Visual Debugging** - See what Playwright is doing in real-time  
-✅ **Extension Support** - All browser extensions work normally  
+✅ **Use Real Browser Profile** - All your settings, extensions, and saved data
+✅ **MetaMask Ready** - No need to import wallets or re-authenticate
+✅ **Session Persistence** - Stay logged into services
+✅ **Visual Debugging** - See what Playwright is doing in real-time
+✅ **Extension Support** - All browser extensions work normally
 
 ## Security Note
 
 When running browser with CDP enabled, any application can control it through the debugging port. Only use this in development environments and close the browser when not in use.
+
+## Minimal Prompt
+
+> So if I want to instruct another LLM instance to start using Playwright to start working now, what's the minimum amount of information I should tell them?
+
+⏺ Here's the minimum information to tell another LLM instance:
+
+```
+Playwright MCP is already set up and connected. To use it:
+
+1. Start the browser with CDP (if not already running):
+bun run browser:cdp
+2. Use Playwright MCP tools - they're already available. Example:
+Use the mcp__playwright__browser_navigate tool to go to http://localhost:5173/
+
+The browser will open with MetaMask and all extensions already logged in. The MCP tools are prefixed with mcp__playwright__browser_ (like browser_navigate, browser_click,
+browser_snapshot, etc.).
+```
+
+That's it! The setup is done, they just need to run the browser and start using the tools.

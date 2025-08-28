@@ -42,6 +42,7 @@ export default defineConfig({
     format: 'es'
   },
   optimizeDeps: {
+    exclude: ['secp256k1'],
     esbuildOptions: {
       define: {
         global: 'globalThis'
