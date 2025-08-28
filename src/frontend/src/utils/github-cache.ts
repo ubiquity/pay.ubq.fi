@@ -99,7 +99,7 @@ export class GithubUsernameCache {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
           // Add user agent to avoid potential blocking
-          'User-Agent': 'Ubiquity-Pay-App'
+          'User-Agent': 'pay.ubq.fi/1.0.0 (+https://github.com/ubiquity/pay.ubq.fi)'
         }
       });
 
@@ -110,7 +110,7 @@ export class GithubUsernameCache {
 
       if (response.status === 403) {
         // Rate limit exceeded
-        console.warn("GitHub API rate limit exceeded");
+        console.warn("GitHub API rate limit exceeded. Username lookups will be temporarily unavailable. Please wait up to one hour before retrying.");
         return null;
       }
 

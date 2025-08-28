@@ -59,11 +59,22 @@ type PermitRow = Tables<"permits"> & {
   location: Tables<"locations"> | null;
 };
 
+// Properly typed permit structure with users and wallets for beneficiary data
+interface PermitWithBeneficiary extends PermitRow {
+  users?: {
+    wallets?: {
+      address?: string;
+    };
+  };
+}
+
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
-  const beneficiaryWalletData = (permit as PermitRow & { users?: { wallets?: { address?: string } } }).users?.wallets;
+  // Cast to properly typed interface for beneficiary data access
+  const permitWithBeneficiary = permit as PermitWithBeneficiary;
+  const beneficiaryWalletData = permitWithBeneficiary.users?.wallets;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
   const beneficiaryUserId = permit.beneficiary_id; // GitHub user ID
@@ -102,7 +113,9 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     }
   }
 
-  // Use actual beneficiary address or fallback to connected wallet for backward compatibility
+  // Fallback to connected wallet address when beneficiary address is not set
+  // This maintains backward compatibility with older permits that don't have
+  // the beneficiary wallet relationship properly established in the database
   const actualBeneficiary = beneficiaryAddressStr || lowerCaseWalletAddress;
   
   const permit2Address = await getPermit2Address({
