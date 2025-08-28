@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type { Database } from "../frontend/src/database.types";
 
 const app = new Hono();
 app.use("*", cors());
@@ -16,7 +17,7 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // API endpoint for recording claims
 app.post("/api/permits/record-claim", async (c: Context) => {
