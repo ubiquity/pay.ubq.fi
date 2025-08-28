@@ -59,8 +59,8 @@ type PermitRow = Tables<"permits"> & {
   location: Tables<"locations"> | null;
 };
 
-// Debug mode flag - can be set via environment variable in production
-const DEBUG_MODE = false;
+// Debug mode flag - set via environment variable
+const DEBUG_MODE = typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_WORKER === "true";
 
 // Helper function for conditional logging
 function logValidationError(message: string, permit: PermitRow, index: number) {

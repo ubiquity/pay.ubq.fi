@@ -78,8 +78,8 @@ export const formatAmount = (
   }
 };
 
-// Debug configuration - can be set from environment
-const DEBUG_VALIDATION = false;
+// Debug configuration - set from environment variable
+const DEBUG_VALIDATION = typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_VALIDATION === "true";
 
 /**
  * Checks if a permit object contains all the essential fields required for claiming or testing.

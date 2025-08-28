@@ -1,8 +1,8 @@
 // Debug configuration for controlling console logging
 export const DEBUG_CONFIG = {
-  // Set from environment variables
-  VALIDATION_LOGGING: process.env.REACT_APP_DEBUG_VALIDATION === 'true',
-  WORKER_LOGGING: process.env.REACT_APP_DEBUG_WORKER === 'true',
+  // Set from Vite environment variables
+  VALIDATION_LOGGING: typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_VALIDATION === 'true',
+  WORKER_LOGGING: typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_WORKER === 'true',
   
   // Feature flags
   FILTER_INVALID_PERMITS: true, // Remove invalid permits from UI
