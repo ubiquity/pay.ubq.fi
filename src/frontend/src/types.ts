@@ -1,3 +1,5 @@
+import type { Tables } from "./database.types";
+
 // Define TokenInfo locally within PermitData if needed, or adjust PermitData
 interface TokenInfoInternal {
   address: string;
@@ -7,7 +9,7 @@ interface TokenInfoInternal {
 
 interface PartnerInfoInternal {
   wallet?: {
-    address: string;
+    address: string | null;
   };
 }
 

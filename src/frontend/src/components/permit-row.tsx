@@ -8,6 +8,7 @@ import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
+import { parseGitHubUrl, truncateAddress } from "../utils/format-utils.ts";
 import { ICONS } from "./iconography.tsx";
 
 interface PermitRowProps {
@@ -174,18 +175,16 @@ export function PermitRow({
   const formatGithubLink = (url: string | undefined): JSX.Element | string => {
     if (!url) return "–";
     try {
-      const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
-      if (match && match[2] && match[3]) {
+      const parsed = parseGitHubUrl(url);
+      if (parsed) {
         // Return JSX with proper class names for styling
         return (
           <>
-            <span className="github-repo-name">{match[2]}</span>
-            <span className="github-issue-number">{match[3]}</span>
+            <span className="github-repo-name">{parsed.repo}</span>
+            <span className="github-issue-number">{parsed.number}</span>
             {isFundingWallet && (
               <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: "help" }} className="github-beneficiary">
-                {githubUsername
-                  ? `${githubUsername}`
-                  : `${permit.beneficiary.substring(0, 6)}...${permit.beneficiary.substring(permit.beneficiary.length - 4)}`}
+                {githubUsername ? githubUsername : truncateAddress(permit.beneficiary)}
               </span>
             )}
           </>

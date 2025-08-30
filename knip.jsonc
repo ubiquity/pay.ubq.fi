@@ -1,0 +1,33 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/frontend/src/main.tsx!",
+    "src/frontend/src/workers/**/*.worker.ts!"
+  ],
+  "project": [
+    "src/frontend/**/*.ts!",
+    "src/frontend/**/*.tsx!",
+    "lib/**/*.ts!"
+  ],
+  "ignore": [
+    "src/backend/**/*",
+    "src/frontend/vite.config.ts",
+    "src/frontend/eslint.config.js",
+    "eslint.config.js",
+    "**/*.deno.ts",
+    "**/*.deno.tsx",
+    "**/deno.json",
+    "**/deno.jsonc"
+  ],
+  "ignoreDependencies": [
+    "@playwright/mcp",
+    "playwright",
+    "puppeteer"
+  ],
+  "ignoreBinaries": [
+    "scripts/*"
+  ],
+  "vite": {
+    "config": ["src/frontend/vite.config.ts"]
+  }
+}
