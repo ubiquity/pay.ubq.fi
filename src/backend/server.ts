@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Database } from "../frontend/src/database.types";
+import process from "node:process";
+import type { Database } from "../frontend/src/database.types.ts";
 
 const app = new Hono();
 app.use("*", cors());
