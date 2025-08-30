@@ -47,8 +47,8 @@ app.post("/api/permits/record-claim", async (c: Context) => {
 });
 
 // Serve static files for the frontend
-app.use("/*", serveStatic({ root: "./frontend/dist" }));
-app.use("/*", serveStatic({ path: "./frontend/dist/index.html" }));
+app.use("/*", serveStatic({ root: "./src/frontend/dist" }));
+app.use("/*", serveStatic({ path: "./src/frontend/dist/index.html" }));
 
 // Start server
 const port = parseInt(process.env.PORT || "3000");
