@@ -67,6 +67,15 @@ interface PermitWithBeneficiary extends PermitRow {
     };
   };
 }
+// Debug mode flag - set via environment variable
+const DEBUG_MODE = typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_WORKER === "true";
+
+// Helper function for conditional logging
+function logValidationError(message: string, permit: PermitRow, index: number) {
+  if (DEBUG_MODE) {
+    console.debug(`[Validation] Permit ${index} (nonce: ${permit.nonce}): ${message}`);
+  }
+}
 
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
@@ -78,27 +87,27 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
   const beneficiaryUserId = permit.beneficiary_id; // GitHub user ID
-  
+
   if (!ownerAddressStr) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no owner address`);
+    logValidationError("Missing owner address", permit, index);
     return null;
   }
   const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
   if (!tokenAddressStr) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no token address`);
+    logValidationError("Missing token address", permit, index);
     return null;
   }
   const networkIdNum = Number(tokenData?.network ?? 0);
   if (networkIdNum === 0) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid network ID: ${tokenData?.network}`);
+    logValidationError(`Invalid network ID: ${tokenData?.network}`, permit, index);
     return null;
   }
   if (!permit.deadline) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no deadline`);
+    logValidationError("Missing deadline", permit, index);
     return null;
   }
   if (!permit.signature || !permit.signature.startsWith("0x")) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid signature format: ${permit.signature}`);
+    logValidationError(`Invalid signature format: ${permit.signature}`, permit, index);
     return null;
   }
 
@@ -108,7 +117,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     try {
       BigInt(permit.amount);
     } catch {
-      console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid amount format: ${permit.amount}`);
+      logValidationError(`Invalid amount format: ${permit.amount}`, permit, index);
       return null;
     }
   }
@@ -117,7 +126,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   // This maintains backward compatibility with older permits that don't have
   // the beneficiary wallet relationship properly established in the database
   const actualBeneficiary = beneficiaryAddressStr || lowerCaseWalletAddress;
-  
+
   const permit2Address = await getPermit2Address({
     nonce: permit.nonce,
     tokenAddress: tokenAddressStr ?? "",
@@ -191,7 +200,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     .select(beneficiaryJoinQuery)
     .is("transaction", null)
     .filter("users.wallets.address", "ilike", normalizedWalletAddress);
-  
+
   // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
   const ownerJoinQuery = `
               *,
@@ -221,7 +230,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   // Combine results and remove duplicates
   const permitMap = new Map<number, unknown>();
-  
+
   if (beneficiaryResult.error) {
     console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
   } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
@@ -230,7 +239,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
       permitMap.set(permit.id, permit);
     });
   }
-  
+
   if (ownerResult.error) {
     console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
   } else if (ownerResult.data && ownerResult.data.length > 0) {
@@ -239,7 +248,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
       permitMap.set(permit.id, permit);
     });
   }
-  
+
   permitsData = Array.from(permitMap.values());
   console.log(`Worker: Total unique permits: ${permitsData.length}`);
 
@@ -559,8 +568,22 @@ worker.onmessage = async (event) => {
       const mappedNewPermits = (
         await Promise.all(newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)))
       ).filter((p): p is PermitData => p !== null);
-      // One-line summary for mapped permits
-      console.log(`Worker: Mapped ${mappedNewPermits.length} new permits`);
+      // Summary logging instead of individual warnings
+      if (mappedNewPermits.length < newPermitsFromDb.length) {
+        const invalidCount = newPermitsFromDb.length - mappedNewPermits.length;
+        console.info(`Worker: Filtered out ${invalidCount} invalid permits from ${newPermitsFromDb.length} total`);
+
+        if (DEBUG_MODE) {
+          // Only in debug mode, show breakdown
+          console.debug('Invalid permit breakdown:', {
+            total: newPermitsFromDb.length,
+            valid: mappedNewPermits.length,
+            invalid: invalidCount
+          });
+        }
+      } else if (mappedNewPermits.length > 0) {
+        console.info(`Worker: Mapped ${mappedNewPermits.length} new permits`);
+      }
 
       // 4. Validate *only* the mapped new permits
       if (mappedNewPermits.length > 0) {

@@ -25,8 +25,6 @@ export function DashboardPage() {
   const {
     permits,
     setPermits,
-    balancesAndAllowances,
-    setBalancesAndAllowances,
     isLoading,
     error: dataError,
     setError,
@@ -57,7 +55,7 @@ export function DashboardPage() {
     );
     return filteredPermits;
   }, [permits, chain?.id]);
-  
+
   // All valid permits that should be displayed (including unclaimable ones)
   const displayablePermits = useMemo(() => {
     const filteredPermits = permits.filter(
@@ -65,7 +63,7 @@ export function DashboardPage() {
         p.networkId === chain?.id &&
         p.type === "erc20-permit" &&
         // Only exclude already claimed/invalidated permits
-        p.status !== "Claimed" && 
+        p.status !== "Claimed" &&
         p.status !== "Invalidated" &&
         p.isNonceUsed !== true &&
         // Basic validation
@@ -139,7 +137,7 @@ export function DashboardPage() {
   // Custom Hook for Claiming Logic
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { data: walletClient } = useWalletClient();
-  
+
   // Custom Hook for Invalidation Logic
   const {
     handleInvalidatePermit,
