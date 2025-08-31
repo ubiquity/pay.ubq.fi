@@ -20,13 +20,10 @@ import {
   zora, // 7777777
   anvil, // 31337 (local dev chain)
 } from "wagmi/chains";
-// Removed Permit2RpcManager import as it's now used only in the worker
 import App from "./App.tsx";
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
 import { grid } from "./the-grid";
-
-// Removed Permit2RpcManager instantiation and export
 
 // Configure wagmi
 const supportedChains = [mainnet, optimism, bsc, gnosis, polygon, zkSync, base, arbitrum, celo, avalanche, blast, zora, anvil];
@@ -69,11 +66,8 @@ if (!gridElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    {" "}
-    {/* Re-enabled StrictMode */}
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        {/* Removed AuthProvider wrapper */}
         <BrowserRouter>
           <App />
         </BrowserRouter>
@@ -87,5 +81,3 @@ if (gridElement && window.location.href.includes("pay.ubq.fi")) {
   // Call grid with the element and the callback
   grid(gridElement, () => document.body.classList.add("grid-loaded"));
 }
-
-// Removed commented out duplicate import and call
