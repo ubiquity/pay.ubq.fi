@@ -1,7 +1,7 @@
 {
   "deno.enable": true,
   "deno.lint": true,
-  "deno.unstable": true, // Often needed for newer Deno features or std lib modules
+  "deno.unstable": true,
   "deno.config": "backend/api/deno.jsonc",
   "cSpell.words": [
     "SUPABASE"
