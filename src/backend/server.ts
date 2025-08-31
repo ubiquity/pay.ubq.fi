@@ -20,6 +20,24 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+// API endpoint for fetching claimed permits
+app.get("/api/permits/claimed", async (c: Context) => {
+  try {
+    const { data, error } = await supabase
+      .from("permits")
+      .select("nonce, network_id, owner, signature, transaction, beneficiary")
+      .not("transaction", "is", null);
+
+    if (error) throw error;
+
+    return c.json({ permits: data || [] });
+  } catch (error) {
+    console.error("Error fetching claimed permits:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ error: "Failed to fetch claimed permits", details: message }, 500);
+  }
+});
+
 // API endpoint for recording claims
 app.post("/api/permits/record-claim", async (c: Context) => {
   try {

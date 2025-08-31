@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { useClaimedPermits } from "../hooks/use-claimed-permits.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
@@ -39,6 +40,39 @@ export function DashboardPage() {
     chainId: chain?.id,
   });
 
+  // Hook for tracking claimed permits across networks
+  const {
+    claimedPermits,
+    isPermitClaimed,
+    refreshClaimedPermits,
+  } = useClaimedPermits();
+
+  // Mark permits as claimed based on database data
+  useEffect(() => {
+    if (claimedPermits.length > 0 && permits.length > 0) {
+      const updatedPermits = permits.map(permit => {
+        // Check if this permit exists in the claimed permits from database
+        const isClaimed = isPermitClaimed(permit.nonce, permit.networkId, permit.owner);
+        
+        if (isClaimed && permit.status !== "Claimed" && permit.status !== "Invalidated") {
+          // Mark as claimed if found in database
+          return {
+            ...permit,
+            status: "Claimed" as const,
+            isNonceUsed: true,
+          };
+        }
+        return permit;
+      });
+      
+      // Only update if there are changes
+      const hasChanges = updatedPermits.some((p, i) => p.status !== permits[i].status || p.isNonceUsed !== permits[i].isNonceUsed);
+      if (hasChanges) {
+        setPermits(updatedPermits);
+      }
+    }
+  }, [claimedPermits, permits, isPermitClaimed, setPermits]);
+
   // --- Calculations (Depend on permits state from usePermitData) ---
   // Permits that are actually claimable (for claim all button)
   const claimablePermits = useMemo(() => {
@@ -67,11 +101,13 @@ export function DashboardPage() {
         p.status !== "Claimed" &&
         p.status !== "Invalidated" &&
         p.isNonceUsed !== true &&
+        // Check against database claimed permits (cross-network protection)
+        !isPermitClaimed(p.nonce, p.networkId, p.owner) &&
         // Basic validation
         hasRequiredFields(p)
     );
     return filteredPermits;
-  }, [permits, chain?.id]);
+  }, [permits, chain?.id, isPermitClaimed]);
 
   const claimablePermitCount = claimablePermits.length;
 
@@ -166,17 +202,21 @@ export function DashboardPage() {
     const result = await originalHandleClaimPermit(permit);
     if (result.success && result.txHash) {
       setClaimTxHash(result.txHash as `0x${string}`);
+      // Refresh claimed permits after successful claim
+      setTimeout(() => refreshClaimedPermits(), 2000);
     }
     return result;
-  }, [originalHandleClaimPermit]);
+  }, [originalHandleClaimPermit, refreshClaimedPermits]);
 
   const handleClaimBatch = useCallback(async (permits: PermitData[]) => {
     const result = await originalHandleClaimBatch(permits);
     if (result.success && result.txHash) {
       setClaimTxHash(result.txHash as `0x${string}`);
+      // Refresh claimed permits after successful batch claim
+      setTimeout(() => refreshClaimedPermits(), 2000);
     }
     return result;
-  }, [originalHandleClaimBatch]);
+  }, [originalHandleClaimBatch, refreshClaimedPermits]);
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
