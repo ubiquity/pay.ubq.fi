@@ -35,10 +35,10 @@ jobs:
         run: bun install
       - name: Install frontend dependencies
         run: |
-          cd frontend
+          cd src/frontend
           bun install
       - name: Build step
-        run: "cd frontend && bun run build"
+        run: "cd src/frontend && bun run build"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -47,4 +47,4 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: "pay-ubq-fi"
-          entrypoint: "backend/server.ts"
+          entrypoint: "src/backend/server.ts"

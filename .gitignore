@@ -12,6 +12,7 @@ commit.txt
 .pnp.loader.mjs
 .env
 .dev.vars
+dist/
 static/dist
 static/bundles
 
@@ -21,3 +22,4 @@ cypress/videos
 coverage
 junit.xml
 envs.txt
+.playwright-mcp/
