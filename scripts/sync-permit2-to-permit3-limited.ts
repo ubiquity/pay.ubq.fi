@@ -96,7 +96,7 @@ async function checkNonceStatusOnPermit3(
 async function fetchPermitsFromDatabase(
   supabase: ReturnType<typeof createClient<Database>>
 ): Promise<Map<string, Set<bigint>>> {
-  console.log("Fetching all permits from database...");
+  console.log("Fetching LIMITED permits from database (10 permits max for demo)...");
 
   const { data, error } = await supabase
     .from("permits")
@@ -114,6 +114,7 @@ async function fetchPermitsFromDatabase(
       )
     `
     )
+    .limit(10); // LIMIT TO 10 FOR DEMO
 
   if (error) {
     throw new Error(`Failed to fetch permits: ${error.message}`);
@@ -140,7 +141,7 @@ async function fetchPermitsFromDatabase(
     }
   }
 
-  console.log(`Found ${totalPermits} total permits in database`);
+  console.log(`Found ${totalPermits} total permits in database (LIMITED FOR DEMO)`);
   console.log(`Processing ${permitsByOwner.size} unique owners`);
 
   // Log summary by owner
@@ -149,69 +150,6 @@ async function fetchPermitsFromDatabase(
   }
 
   return permitsByOwner;
-}
-
-async function scanPermit2Events(
-  chainId: number,
-  fromBlock: bigint,
-  toBlock: bigint
-): Promise<Map<string, Set<bigint>>> {
-  const config = CHAIN_CONFIGS[chainId];
-  if (!config) {
-    throw new Error(`Unsupported chain: ${chainId}`);
-  }
-
-  console.log(`Scanning Permit2 events on ${config.chain.name} from block ${fromBlock} to ${toBlock}...`);
-
-  const publicClient = createPublicClient({
-    chain: config.chain,
-    transport: http(config.rpcUrl),
-  });
-
-  const usedNoncesByOwner = new Map<string, Set<bigint>>();
-
-  try {
-    // Fetch UnorderedNonceInvalidation events
-    const logs = await publicClient.getLogs({
-      address: PERMIT2_ADDRESS,
-      event: {
-        type: "event",
-        name: "UnorderedNonceInvalidation",
-        inputs: [
-          { indexed: true, name: "owner", type: "address" },
-          { indexed: false, name: "word", type: "uint256" },
-          { indexed: false, name: "mask", type: "uint256" },
-        ],
-      },
-      fromBlock,
-      toBlock,
-    });
-
-    // Process logs to extract used nonces
-    for (const log of logs) {
-      const owner = (log.args.owner as string).toLowerCase();
-      const wordPos = log.args.word as bigint;
-      const mask = log.args.mask as bigint;
-
-      if (!usedNoncesByOwner.has(owner)) {
-        usedNoncesByOwner.set(owner, new Set());
-      }
-
-      // Convert bitmap mask to individual nonces
-      for (let bitPos = 0n; bitPos < 256n; bitPos++) {
-        if ((mask & (1n << bitPos)) !== 0n) {
-          const nonce = (wordPos << 8n) | bitPos;
-          usedNoncesByOwner.get(owner)!.add(nonce);
-        }
-      }
-    }
-
-    console.log(`Found ${usedNoncesByOwner.size} owners with used nonces on ${config.chain.name}`);
-  } catch (error) {
-    console.error(`Error scanning events on ${config.chain.name}:`, error);
-  }
-
-  return usedNoncesByOwner;
 }
 
 async function analyzePermits(
@@ -293,48 +231,8 @@ function prepareSyncBatches(permits: PermitData[]): SyncBatch[] {
   return Array.from(batchesByOwner.values());
 }
 
-async function syncToPermit3(
-  batch: SyncBatch,
-  walletClient: ReturnType<typeof createWalletClient>,
-  publicClient: ReturnType<typeof createPublicClient>
-): Promise<{ success: boolean; txHashes: string[] }> {
-  const txHashes: string[] = [];
-
-  console.log(`\nSyncing ${batch.nonces.length} nonces for owner ${batch.owner} to Permit3...`);
-
-  for (const [wordPos, bitmap] of batch.wordPosMap.entries()) {
-    try {
-      console.log(`  Invalidating word position ${wordPos} with bitmap ${bitmap.toString(2)}`);
-
-      // Simulate the transaction first
-      const { request } = await publicClient.simulateContract({
-        address: PERMIT3_ADDRESS,
-        abi: permit3Abi,
-        functionName: "invalidateUnorderedNonces",
-        args: [wordPos, bitmap],
-        account: walletClient.account!.address,
-      });
-
-      // Execute the transaction
-      const txHash = await walletClient.writeContract(request);
-      console.log(`  Transaction sent: ${txHash}`);
-
-      // Wait for confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      console.log(`  Transaction confirmed in block ${receipt.blockNumber}`);
-
-      txHashes.push(txHash);
-    } catch (error) {
-      console.error(`  Failed to invalidate word position ${wordPos}:`, error);
-      return { success: false, txHashes };
-    }
-  }
-
-  return { success: true, txHashes };
-}
-
 async function main() {
-  console.log("=== Permit2 to Permit3 Migration Tool ===\n");
+  console.log("=== Permit2 to Permit3 Migration Tool (LIMITED DEMO) ===\n");
 
   // Check for dry-run mode
   const isDryRun = process.argv.includes("--dry-run");
@@ -363,7 +261,7 @@ async function main() {
 
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-  // Step 1: Fetch all permits from database
+  // Step 1: Fetch LIMITED permits from database
   const permitsByOwner = await fetchPermitsFromDatabase(supabase);
 
   // Step 2: Analyze permit statuses across all chains
@@ -375,6 +273,34 @@ async function main() {
 
   if (permitsToSync.length === 0) {
     console.log("No permits need syncing. All permits are already synchronized!");
+    
+    // Still generate a report even if nothing needs syncing
+    const detailedReport = {
+      timestamp: new Date().toISOString(),
+      migrationAccount: account?.address || "dry-run",
+      summary: {
+        totalPermitsAnalyzed: allPermits.length,
+        permitsNeedingSync: 0,
+        totalBatches: 0,
+        successfulBatches: 0,
+        failedBatches: 0,
+      },
+      permitAnalysis: allPermits.map(p => ({
+        owner: p.owner,
+        nonce: p.nonce.toString(),
+        wordPos: p.wordPos.toString(),
+        bitPos: p.bitPos.toString(),
+        permit2Mainnet: p.isUsedOnPermit2Mainnet,
+        permit2Gnosis: p.isUsedOnPermit2Gnosis,
+        permit3Gnosis: p.isUsedOnPermit3Gnosis,
+        needsSync: p.needsSync,
+      })),
+      syncResults: [],
+    };
+
+    const reportPath = `./permit2-to-permit3-sync-demo-${isDryRun ? "dry-run-" : ""}${Date.now()}.json`;
+    await Bun.write(reportPath, JSON.stringify(detailedReport, null, 2));
+    console.log(`\nDetailed report saved to ${reportPath}`);
     return;
   }
 
@@ -407,33 +333,6 @@ async function main() {
         success: true,
         txHashes: ["0x0000...dry-run"],
       });
-    }
-  } else {
-    const gnosisWalletClient = createWalletClient({
-      account: account!,
-      chain: gnosis,
-      transport: http(CHAIN_CONFIGS[100].rpcUrl),
-    });
-
-    const gnosisPublicClient = createPublicClient({
-      chain: gnosis,
-      transport: http(CHAIN_CONFIGS[100].rpcUrl),
-    });
-
-    for (const batch of syncBatches) {
-      const result = await syncToPermit3(batch, gnosisWalletClient, gnosisPublicClient);
-
-      results.push({
-        owner: batch.owner,
-        noncesCount: batch.nonces.length,
-        success: result.success,
-        txHashes: result.txHashes,
-      });
-
-      // Add delay between batches to avoid rate limiting
-      if (syncBatches.indexOf(batch) < syncBatches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
     }
   }
 
@@ -496,7 +395,7 @@ async function main() {
     })),
   };
 
-  const reportPath = `./permit2-to-permit3-sync-${isDryRun ? "dry-run-" : ""}${Date.now()}.json`;
+  const reportPath = `./permit2-to-permit3-sync-demo-${isDryRun ? "dry-run-" : ""}${Date.now()}.json`;
   await Bun.write(reportPath, JSON.stringify(detailedReport, null, 2));
   console.log(`\nDetailed report saved to ${reportPath}`);
 

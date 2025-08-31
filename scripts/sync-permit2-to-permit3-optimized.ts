@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { createClient } from "@supabase/supabase-js";
-import { createPublicClient, createWalletClient, http, type Address, type Chain, parseAbi, type Log } from "viem";
+import { createPublicClient, createWalletClient, http, type Address, type Chain, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet, gnosis } from "viem/chains";
 import permit3Abi from "../src/frontend/src/fixtures/permit3-abi.json";
@@ -33,13 +33,26 @@ interface PermitData {
   isUsedOnPermit2Mainnet: boolean;
   isUsedOnPermit2Gnosis: boolean;
   isUsedOnPermit3Gnosis: boolean;
+  isUsedOnPermit3GnosisAfterMigration?: boolean;
   needsSync: boolean;
+  permitId?: string; // Add permit ID for tracking
+  transaction?: string | null; // Add transaction for identifying claimed permits
 }
 
 interface SyncBatch {
   owner: Address;
   wordPosMap: Map<bigint, bigint>; // wordPos -> bitmap
   nonces: bigint[];
+}
+
+interface DoubleClaimAlert {
+  permitId: string;
+  owner: Address;
+  nonce: bigint;
+  originalClaim: string | null;
+  detectedAt: string;
+  wordPos: bigint;
+  bitPos: bigint;
 }
 
 // Helper functions
@@ -49,59 +62,114 @@ function nonceBitmap(nonce: bigint): { wordPos: bigint; bitPos: bigint } {
   return { wordPos, bitPos };
 }
 
-async function checkNonceStatusOnPermit2(
-  publicClient: ReturnType<typeof createPublicClient>,
-  owner: Address,
-  nonce: bigint
-): Promise<boolean> {
-  const { wordPos, bitPos } = nonceBitmap(nonce);
+// Batch RPC request helper
+async function batchRpcCall(rpcUrl: string, requests: any[]): Promise<any[]> {
+  const response = await fetch(rpcUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requests),
+  });
 
-  try {
-    const result = (await publicClient.readContract({
-      address: PERMIT2_ADDRESS,
-      abi: permit2Abi,
-      functionName: "nonceBitmap",
-      args: [owner, wordPos],
-    })) as bigint;
-
-    return (result & (1n << bitPos)) !== 0n;
-  } catch (error) {
-    console.error(`Failed to check Permit2 nonce status for ${nonce}:`, error);
-    return false;
+  if (!response.ok) {
+    throw new Error(`RPC request failed: ${response.statusText}`);
   }
+
+  const results = await response.json();
+  
+  // Check for errors in individual responses
+  return results.map((result: any, index: number) => {
+    if (result.error) {
+      console.error(`RPC error in request ${index}:`, result.error);
+      return null;
+    }
+    return result.result;
+  });
 }
 
-async function checkNonceStatusOnPermit3(
-  publicClient: ReturnType<typeof createPublicClient>,
-  owner: Address,
-  nonce: bigint
-): Promise<boolean> {
-  const { wordPos, bitPos } = nonceBitmap(nonce);
-
-  try {
-    const result = (await publicClient.readContract({
-      address: PERMIT3_ADDRESS,
-      abi: permit3Abi,
-      functionName: "nonceBitmap",
-      args: [owner, wordPos],
-    })) as bigint;
-
-    return (result & (1n << bitPos)) !== 0n;
-  } catch (error) {
-    console.error(`Failed to check Permit3 nonce status for ${nonce}:`, error);
-    return false;
+// Batch check nonce statuses using JSON RPC batch requests
+async function batchCheckNonceStatuses(
+  rpcUrl: string,
+  contractAddress: Address,
+  ownerNoncePairs: Array<{ owner: Address; nonce: bigint }>
+): Promise<Map<string, boolean>> {
+  console.log(`Batch checking ${ownerNoncePairs.length} nonces on ${contractAddress}...`);
+  
+  const results = new Map<string, boolean>();
+  const batchSize = 50; // Process in batches of 50 to avoid rate limiting
+  
+  // Process in chunks
+  for (let i = 0; i < ownerNoncePairs.length; i += batchSize) {
+    const chunk = ownerNoncePairs.slice(i, Math.min(i + batchSize, ownerNoncePairs.length));
+    
+    // Prepare batch RPC requests
+    const requests = chunk.map((pair, index) => {
+      const { wordPos } = nonceBitmap(pair.nonce);
+      
+      // Encode the function call
+      const functionData = `0x4fe02b44${pair.owner.slice(2).padStart(64, "0")}${wordPos.toString(16).padStart(64, "0")}`;
+      
+      return {
+        jsonrpc: "2.0",
+        id: i + index + 1,
+        method: "eth_call",
+        params: [
+          {
+            to: contractAddress,
+            data: functionData,
+          },
+          "latest",
+        ],
+      };
+    });
+    
+    try {
+      const batchResults = await batchRpcCall(rpcUrl, requests);
+      
+      // Process results
+      chunk.forEach((pair, index) => {
+        const result = batchResults[index];
+        if (result) {
+          const { bitPos } = nonceBitmap(pair.nonce);
+          const bitmap = BigInt(result);
+          const isUsed = (bitmap & (1n << bitPos)) !== 0n;
+          const key = `${pair.owner.toLowerCase()}_${pair.nonce}`;
+          results.set(key, isUsed);
+        } else {
+          // Default to false if there was an error
+          const key = `${pair.owner.toLowerCase()}_${pair.nonce}`;
+          results.set(key, false);
+        }
+      });
+    } catch (error) {
+      console.error(`Batch RPC call failed for chunk ${i / batchSize + 1}:`, error);
+      // Set all in this chunk to false on error
+      chunk.forEach(pair => {
+        const key = `${pair.owner.toLowerCase()}_${pair.nonce}`;
+        results.set(key, false);
+      });
+    }
+    
+    // Small delay between batches to avoid rate limiting
+    if (i + batchSize < ownerNoncePairs.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
   }
+  
+  return results;
 }
 
 async function fetchPermitsFromDatabase(
   supabase: ReturnType<typeof createClient<Database>>
-): Promise<Map<string, Set<bigint>>> {
+): Promise<{ permits: Map<string, Set<bigint>>; permitDetails: Map<string, PermitData> }> {
   console.log("Fetching all permits from database...");
 
   const { data, error } = await supabase
     .from("permits")
     .select(
       `
+      id,
       nonce,
       transaction,
       tokens!inner(
@@ -113,7 +181,7 @@ async function fetchPermitsFromDatabase(
         )
       )
     `
-    )
+    );
 
   if (error) {
     throw new Error(`Failed to fetch permits: ${error.message}`);
@@ -121,6 +189,7 @@ async function fetchPermitsFromDatabase(
 
   // Group permits by owner address (normalize to lowercase)
   const permitsByOwner = new Map<string, Set<bigint>>();
+  const permitDetails = new Map<string, PermitData>();
   let totalPermits = 0;
 
   if (data) {
@@ -135,7 +204,24 @@ async function fetchPermitsFromDatabase(
         if (!permitsByOwner.has(owner)) {
           permitsByOwner.set(owner, new Set());
         }
-        permitsByOwner.get(owner)!.add(BigInt(permit.nonce));
+        const nonce = BigInt(permit.nonce);
+        permitsByOwner.get(owner)!.add(nonce);
+        
+        // Store permit details for double-claim detection
+        const { wordPos, bitPos } = nonceBitmap(nonce);
+        const key = `${owner}_${nonce}`;
+        permitDetails.set(key, {
+          owner: owner as Address,
+          nonce,
+          wordPos,
+          bitPos,
+          isUsedOnPermit2Mainnet: false,
+          isUsedOnPermit2Gnosis: false,
+          isUsedOnPermit3Gnosis: false,
+          needsSync: false,
+          permitId: permit.id,
+          transaction: permit.transaction,
+        });
       }
     }
   }
@@ -148,122 +234,120 @@ async function fetchPermitsFromDatabase(
     console.log(`  Owner ${owner}: ${nonces.size} permits`);
   }
 
-  return permitsByOwner;
+  return { permits: permitsByOwner, permitDetails };
 }
 
-async function scanPermit2Events(
-  chainId: number,
-  fromBlock: bigint,
-  toBlock: bigint
-): Promise<Map<string, Set<bigint>>> {
-  const config = CHAIN_CONFIGS[chainId];
-  if (!config) {
-    throw new Error(`Unsupported chain: ${chainId}`);
-  }
-
-  console.log(`Scanning Permit2 events on ${config.chain.name} from block ${fromBlock} to ${toBlock}...`);
-
-  const publicClient = createPublicClient({
-    chain: config.chain,
-    transport: http(config.rpcUrl),
-  });
-
-  const usedNoncesByOwner = new Map<string, Set<bigint>>();
-
-  try {
-    // Fetch UnorderedNonceInvalidation events
-    const logs = await publicClient.getLogs({
-      address: PERMIT2_ADDRESS,
-      event: {
-        type: "event",
-        name: "UnorderedNonceInvalidation",
-        inputs: [
-          { indexed: true, name: "owner", type: "address" },
-          { indexed: false, name: "word", type: "uint256" },
-          { indexed: false, name: "mask", type: "uint256" },
-        ],
-      },
-      fromBlock,
-      toBlock,
-    });
-
-    // Process logs to extract used nonces
-    for (const log of logs) {
-      const owner = (log.args.owner as string).toLowerCase();
-      const wordPos = log.args.word as bigint;
-      const mask = log.args.mask as bigint;
-
-      if (!usedNoncesByOwner.has(owner)) {
-        usedNoncesByOwner.set(owner, new Set());
-      }
-
-      // Convert bitmap mask to individual nonces
-      for (let bitPos = 0n; bitPos < 256n; bitPos++) {
-        if ((mask & (1n << bitPos)) !== 0n) {
-          const nonce = (wordPos << 8n) | bitPos;
-          usedNoncesByOwner.get(owner)!.add(nonce);
-        }
-      }
-    }
-
-    console.log(`Found ${usedNoncesByOwner.size} owners with used nonces on ${config.chain.name}`);
-  } catch (error) {
-    console.error(`Error scanning events on ${config.chain.name}:`, error);
-  }
-
-  return usedNoncesByOwner;
-}
-
-async function analyzePermits(
-  permitsByOwner: Map<string, Set<bigint>>
+async function analyzePermitsWithBatch(
+  permitsByOwner: Map<string, Set<bigint>>,
+  permitDetails: Map<string, PermitData>
 ): Promise<PermitData[]> {
-  console.log("\nAnalyzing permit statuses across chains...");
+  console.log("\nAnalyzing permit statuses across chains using batch RPC...");
 
-  const mainnetClient = createPublicClient({
-    chain: mainnet,
-    transport: http(CHAIN_CONFIGS[1].rpcUrl),
-  });
-
-  const gnosisClient = createPublicClient({
-    chain: gnosis,
-    transport: http(CHAIN_CONFIGS[100].rpcUrl),
-  });
-
-  const allPermits: PermitData[] = [];
-
+  // Prepare all owner-nonce pairs
+  const allPairs: Array<{ owner: Address; nonce: bigint }> = [];
   for (const [owner, nonces] of permitsByOwner.entries()) {
-    console.log(`\nChecking ${nonces.size} permits for owner ${owner}`);
+    for (const nonce of nonces) {
+      allPairs.push({ owner: owner as Address, nonce });
+    }
+  }
+
+  // Batch check on all three contracts
+  const [mainnetPermit2Results, gnosisPermit2Results, gnosisPermit3Results] = await Promise.all([
+    batchCheckNonceStatuses(CHAIN_CONFIGS[1].rpcUrl, PERMIT2_ADDRESS, allPairs),
+    batchCheckNonceStatuses(CHAIN_CONFIGS[100].rpcUrl, PERMIT2_ADDRESS, allPairs),
+    batchCheckNonceStatuses(CHAIN_CONFIGS[100].rpcUrl, PERMIT3_ADDRESS, allPairs),
+  ]);
+
+  // Update permit details with results
+  const allPermits: PermitData[] = [];
+  
+  for (const [owner, nonces] of permitsByOwner.entries()) {
+    console.log(`\nProcessing ${nonces.size} permits for owner ${owner}`);
 
     for (const nonce of nonces) {
-      const { wordPos, bitPos } = nonceBitmap(nonce);
-
-      // Check status on all three contracts
-      const [isUsedOnPermit2Mainnet, isUsedOnPermit2Gnosis, isUsedOnPermit3Gnosis] = await Promise.all([
-        checkNonceStatusOnPermit2(mainnetClient, owner as Address, nonce),
-        checkNonceStatusOnPermit2(gnosisClient, owner as Address, nonce),
-        checkNonceStatusOnPermit3(gnosisClient, owner as Address, nonce),
-      ]);
-
-      const permitData: PermitData = {
-        owner: owner as Address,
-        nonce,
-        wordPos,
-        bitPos,
-        isUsedOnPermit2Mainnet,
-        isUsedOnPermit2Gnosis,
-        isUsedOnPermit3Gnosis,
-        needsSync: (isUsedOnPermit2Mainnet || isUsedOnPermit2Gnosis) && !isUsedOnPermit3Gnosis,
-      };
+      const key = `${owner.toLowerCase()}_${nonce}`;
+      const permitData = permitDetails.get(key)!;
+      
+      // Get results from batch checks
+      permitData.isUsedOnPermit2Mainnet = mainnetPermit2Results.get(key) || false;
+      permitData.isUsedOnPermit2Gnosis = gnosisPermit2Results.get(key) || false;
+      permitData.isUsedOnPermit3Gnosis = gnosisPermit3Results.get(key) || false;
+      permitData.needsSync = (permitData.isUsedOnPermit2Mainnet || permitData.isUsedOnPermit2Gnosis) && !permitData.isUsedOnPermit3Gnosis;
 
       allPermits.push(permitData);
 
       if (permitData.needsSync) {
-        console.log(`  Nonce ${nonce} needs sync (Used on Permit2: Mainnet=${isUsedOnPermit2Mainnet}, Gnosis=${isUsedOnPermit2Gnosis}, Not on Permit3)`);
+        console.log(`  Nonce ${nonce} needs sync (Used on Permit2: Mainnet=${permitData.isUsedOnPermit2Mainnet}, Gnosis=${permitData.isUsedOnPermit2Gnosis}, Not on Permit3)`);
       }
     }
   }
 
   return allPermits;
+}
+
+async function checkForDoubleClaims(
+  permits: PermitData[],
+  isDryRun: boolean
+): Promise<DoubleClaimAlert[]> {
+  console.log("\n=== Checking for Double Claims After Migration ===");
+  
+  const doubleClaimAlerts: DoubleClaimAlert[] = [];
+  const claimedPermits = permits.filter(p => p.transaction !== null && p.transaction !== undefined);
+  
+  if (claimedPermits.length === 0) {
+    console.log("No claimed permits found in the dataset.");
+    return doubleClaimAlerts;
+  }
+  
+  console.log(`Checking ${claimedPermits.length} previously claimed permits for double-claim attempts...`);
+  
+  // Prepare pairs for batch checking
+  const claimedPairs = claimedPermits.map(p => ({ owner: p.owner, nonce: p.nonce }));
+  
+  // Batch check current status on Permit3
+  const permit3StatusAfterMigration = await batchCheckNonceStatuses(
+    CHAIN_CONFIGS[100].rpcUrl,
+    PERMIT3_ADDRESS,
+    claimedPairs
+  );
+  
+  // Check each claimed permit
+  for (const permit of claimedPermits) {
+    const key = `${permit.owner.toLowerCase()}_${permit.nonce}`;
+    const isUsedOnPermit3Now = permit3StatusAfterMigration.get(key) || false;
+    
+    // If this permit was claimed (has transaction) and the nonce is now used on Permit3,
+    // it indicates a potential double-claim situation
+    if (isUsedOnPermit3Now && permit.transaction) {
+      const alert: DoubleClaimAlert = {
+        permitId: permit.permitId || "unknown",
+        owner: permit.owner,
+        nonce: permit.nonce,
+        originalClaim: permit.transaction,
+        detectedAt: new Date().toISOString(),
+        wordPos: permit.wordPos,
+        bitPos: permit.bitPos,
+      };
+      
+      doubleClaimAlerts.push(alert);
+      
+      console.log(`\n⚠️  DOUBLE CLAIM ALERT ⚠️`);
+      console.log(`  Permit ID: ${alert.permitId}`);
+      console.log(`  Owner: ${alert.owner}`);
+      console.log(`  Nonce: ${alert.nonce}`);
+      console.log(`  Original claim TX: ${alert.originalClaim}`);
+      console.log(`  Status: Nonce is now invalidated on Permit3`);
+      console.log(`  Action Required: Investigate and potentially recover funds from double claimant`);
+    }
+  }
+  
+  if (doubleClaimAlerts.length === 0) {
+    console.log("✅ No double claims detected!");
+  } else {
+    console.log(`\n❌ Found ${doubleClaimAlerts.length} potential double claim(s) that require investigation!`);
+  }
+  
+  return doubleClaimAlerts;
 }
 
 function prepareSyncBatches(permits: PermitData[]): SyncBatch[] {
@@ -334,7 +418,7 @@ async function syncToPermit3(
 }
 
 async function main() {
-  console.log("=== Permit2 to Permit3 Migration Tool ===\n");
+  console.log("=== Permit2 to Permit3 Migration Tool (Optimized with Batch RPC) ===\n");
 
   // Check for dry-run mode
   const isDryRun = process.argv.includes("--dry-run");
@@ -364,10 +448,10 @@ async function main() {
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
   // Step 1: Fetch all permits from database
-  const permitsByOwner = await fetchPermitsFromDatabase(supabase);
+  const { permits: permitsByOwner, permitDetails } = await fetchPermitsFromDatabase(supabase);
 
-  // Step 2: Analyze permit statuses across all chains
-  const allPermits = await analyzePermits(permitsByOwner);
+  // Step 2: Analyze permit statuses across all chains using batch RPC
+  const allPermits = await analyzePermitsWithBatch(permitsByOwner, permitDetails);
 
   // Step 3: Filter permits that need syncing
   const permitsToSync = allPermits.filter(p => p.needsSync);
@@ -375,6 +459,22 @@ async function main() {
 
   if (permitsToSync.length === 0) {
     console.log("No permits need syncing. All permits are already synchronized!");
+    
+    // Still check for double claims even if no syncing needed
+    const doubleClaimAlerts = await checkForDoubleClaims(allPermits, isDryRun);
+    
+    if (doubleClaimAlerts.length > 0) {
+      const alertReportPath = `./double-claim-alerts-${Date.now()}.json`;
+      const alertsForSave = doubleClaimAlerts.map(alert => ({
+        ...alert,
+        nonce: alert.nonce.toString(),
+        wordPos: alert.wordPos.toString(),
+        bitPos: alert.bitPos.toString(),
+      }));
+      await Bun.write(alertReportPath, JSON.stringify(alertsForSave, null, 2));
+      console.log(`\n⚠️  Double claim alerts saved to ${alertReportPath}`);
+    }
+    
     return;
   }
 
@@ -437,7 +537,10 @@ async function main() {
     }
   }
 
-  // Step 6: Generate report
+  // Step 6: Check for double claims after migration
+  const doubleClaimAlerts = await checkForDoubleClaims(allPermits, isDryRun);
+
+  // Step 7: Generate comprehensive report
   console.log("\n=== Migration Summary ===");
 
   const successful = results.filter(r => r.success);
@@ -446,6 +549,7 @@ async function main() {
   console.log(`Total batches processed: ${results.length}`);
   console.log(`Successful: ${successful.length}`);
   console.log(`Failed: ${failed.length}`);
+  console.log(`Double claim alerts: ${doubleClaimAlerts.length}`);
 
   if (successful.length > 0) {
     console.log("\nSuccessful syncs:");
@@ -477,12 +581,15 @@ async function main() {
       totalBatches: results.length,
       successfulBatches: successful.length,
       failedBatches: failed.length,
+      doubleClaimAlerts: doubleClaimAlerts.length,
     },
     permitAnalysis: allPermits.map(p => ({
       owner: p.owner,
       nonce: p.nonce.toString(),
       wordPos: p.wordPos.toString(),
       bitPos: p.bitPos.toString(),
+      permitId: p.permitId,
+      transaction: p.transaction,
       permit2Mainnet: p.isUsedOnPermit2Mainnet,
       permit2Gnosis: p.isUsedOnPermit2Gnosis,
       permit3Gnosis: p.isUsedOnPermit3Gnosis,
@@ -494,11 +601,32 @@ async function main() {
       success: r.success,
       txHashes: r.txHashes,
     })),
+    doubleClaimAlerts: doubleClaimAlerts.map(alert => ({
+      ...alert,
+      nonce: alert.nonce.toString(),
+      wordPos: alert.wordPos.toString(),
+      bitPos: alert.bitPos.toString(),
+    })),
   };
 
   const reportPath = `./permit2-to-permit3-sync-${isDryRun ? "dry-run-" : ""}${Date.now()}.json`;
   await Bun.write(reportPath, JSON.stringify(detailedReport, null, 2));
   console.log(`\nDetailed report saved to ${reportPath}`);
+
+  // Save separate double claim alerts file if any were found
+  if (doubleClaimAlerts.length > 0) {
+    const alertReportPath = `./double-claim-alerts-${isDryRun ? "dry-run-" : ""}${Date.now()}.json`;
+    const alertsForSave = doubleClaimAlerts.map(alert => ({
+      ...alert,
+      nonce: alert.nonce.toString(),
+      wordPos: alert.wordPos.toString(),
+      bitPos: alert.bitPos.toString(),
+    }));
+    await Bun.write(alertReportPath, JSON.stringify(alertsForSave, null, 2));
+    console.log(`⚠️  Double claim alerts saved to ${alertReportPath}`);
+    console.log("\n🚨 IMPORTANT: Review double claim alerts immediately!");
+    console.log("   These permits may have been claimed twice and require fund recovery.");
+  }
 
   if (isDryRun) {
     console.log("\n🔍 DRY-RUN COMPLETE - No actual transactions were executed");

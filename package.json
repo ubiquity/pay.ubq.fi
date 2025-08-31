@@ -43,6 +43,8 @@
     "browser:cdp": "./scripts/start-browser-cdp.sh",
     "browser:cdp:chrome": "./scripts/start-browser-cdp.sh --browser=chrome",
     "browser:cdp:brave": "./scripts/start-browser-cdp.sh --browser=brave",
-    "playwright:setup": "claude mcp add playwright bunx '@playwright/mcp@latest' -- --cdp-endpoint=\"http://localhost:9222\""
+    "playwright:setup": "claude mcp add playwright bunx '@playwright/mcp@latest' -- --cdp-endpoint=\"http://localhost:9222\"",
+    "permit:migrate": "bun run scripts/sync-permit2-to-permit3-enhanced.ts",
+    "permit:migrate:dry": "bun run scripts/sync-permit2-to-permit3-enhanced.ts --dry-run"
   }
 }
