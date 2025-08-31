@@ -68,13 +68,7 @@ export function usePermitInvalidation({
         const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
         console.log("Invalidation completed", { receipt });
 
-        setPermits((prev) =>
-          prev.map((p) =>
-            p.signature === permit.signature
-              ? { ...p, status: "Invalidated", isNonceUsed: true }
-              : p
-          )
-        );
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, status: "Invalidated", isNonceUsed: true } : p)));
         updatePermitStatusCache(permit.signature, { status: "Invalidated", isNonceUsed: true });
 
         setIsInvalidating((prev) => ({ ...prev, [permitKey]: false }));

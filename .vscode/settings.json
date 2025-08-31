@@ -5,5 +5,5 @@
   "deno.config": "backend/api/deno.jsonc",
   "cSpell.words": [
     "SUPABASE"
-  ] // Point to the config file for imports (removed ./)
+  ]
 }

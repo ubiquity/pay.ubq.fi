@@ -62,8 +62,8 @@ export function LoginPage(/* Props if needed */) {
               {status === "pending"
                 ? "Connecting..."
                 : !isReady
-                ? "Requires Wallet Extension" // New message for !isReady state
-                : "Connect Wallet"}
+                  ? "Requires Wallet Extension" // New message for !isReady state
+                  : "Connect Wallet"}
             </span>
           </button>
         );

@@ -60,21 +60,14 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
     setLoadingState((prev) => ({ ...prev, isFundingWallet: isFundingAccount }));
 
+    // API already filters permits by ownership, so we just need basic status filtering
     const filtered: PermitData[] = [];
     permitsMap.forEach((permit) => {
-      // In funding wallet mode, show all permits owned by this wallet that aren't claimed/invalidated
-      if (isFundingAccount) {
-        if (permit.owner.toLowerCase() === address?.toLowerCase()) {
-          const isClaimedOrInvalidated = permit.status === "Claimed" || permit.status === "Invalidated" || permit.isNonceUsed === true;
-          if (!isClaimedOrInvalidated) {
-            filtered.push(permit);
-          }
-        }
-      } else {
-        // Normal mode: filter out only truly claimed/used permits
-        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-        if (!shouldFilter) filtered.push(permit);
+      // Filter out truly claimed/used permits regardless of mode
+      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+      if (!shouldFilter) {
+        filtered.push(permit);
       }
     });
     setPermits(filtered);

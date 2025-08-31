@@ -16,7 +16,6 @@ export function DashboardPage() {
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
 
-
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
@@ -139,11 +138,7 @@ export function DashboardPage() {
   const { data: walletClient } = useWalletClient();
 
   // Custom Hook for Invalidation Logic
-  const {
-    handleInvalidatePermit,
-    isInvalidating,
-    invalidationError,
-  } = usePermitInvalidation({
+  const { handleInvalidatePermit, isInvalidating, invalidationError } = usePermitInvalidation({
     setPermits,
     setError,
     updatePermitStatusCache,
@@ -156,14 +151,11 @@ export function DashboardPage() {
   const {
     handleClaimPermit,
     handleClaimBatch,
-    handleClaimSequential,
-    isClaimingSequentially,
+    isClaiming,
     sequentialClaimError,
-    claimTxHash,
     swapSubmissionStatus,
     walletConnectionError,
   } = usePermitClaiming({
-    permits,
     setPermits,
     setError,
     updatePermitStatusCache,
@@ -171,7 +163,7 @@ export function DashboardPage() {
     walletClient: walletClient ?? null,
     address,
     chain: chain ?? null,
-    claimablePermits,
+    setBalancesAndAllowances: () => {},
   });
 
   // --- UI Logic ---
@@ -183,7 +175,6 @@ export function DashboardPage() {
     setPreferredRewardTokenAddress(selectedAddress);
     console.log("DashboardPage received preference change:", selectedAddress);
   }, []);
-
 
   // --- Rendering ---
   return (
@@ -208,11 +199,11 @@ export function DashboardPage() {
             <button
               id="claim-all"
               onClick={() => handleClaimBatch(claimablePermits)}
-              disabled={isClaimingSequentially || !isConnected || claimablePermitCount === 0}
+              disabled={isClaiming || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid and available permits (batch RPC)"
             >
-              {isClaimingSequentially ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+              {isClaiming ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
                 {isLoading ? (
                   "Loading Rewards..."
@@ -299,12 +290,10 @@ export function DashboardPage() {
         <PermitsTable
           permits={displayablePermits}
           onClaimPermit={handleClaimPermit}
-          onClaimSequential={handleClaimSequential}
-          onClaimBatch={handleClaimBatch}
           onInvalidatePermit={handleInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
-          claimTxHash={claimTxHash}
+          claimTxHash={undefined}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}

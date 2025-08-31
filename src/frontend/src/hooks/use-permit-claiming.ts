@@ -11,7 +11,6 @@ if (!permit2Abi) {
 }
 
 interface UsePermitClaimingProps {
-  permits: PermitData[];
   setPermits: Dispatch<SetStateAction<PermitData[]>>;
   setError: Dispatch<SetStateAction<string | null>>;
   updatePermitStatusCache: (permitKey: string, status: Partial<PermitData>) => void;
@@ -73,7 +72,6 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
 }
 
 export function usePermitClaiming({
-  permits,
   setPermits,
   setError,
   updatePermitStatusCache,

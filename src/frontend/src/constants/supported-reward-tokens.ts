@@ -3,11 +3,6 @@ import { mainnet, gnosis, base, arbitrum } from "viem/chains"; // Import chain d
 
 // Removed manually defined Chain IDs
 
-export interface RewardTokenInfo {
-  address: Address;
-  symbol: string;
-  decimals: number; // Decimals are needed for formatting and calculations
-}
 
 // --- Gnosis Chain (100) ---
 const GNOSIS_TOKENS: RewardTokenInfo[] = [
@@ -46,14 +41,6 @@ const ARBITRUM_ONE_TOKENS: RewardTokenInfo[] = [
   // Add others if needed
 ];
 
-// --- Aggregated List ---
-// Use chain IDs from viem/chains
-export const SUPPORTED_REWARD_TOKENS_BY_CHAIN: Record<number, RewardTokenInfo[]> = {
-  [gnosis.id]: GNOSIS_TOKENS,
-  [mainnet.id]: MAINNET_TOKENS,
-  [base.id]: BASE_TOKENS,
-  [arbitrum.id]: ARBITRUM_ONE_TOKENS,
-};
 
 // Helper function to get tokens for a specific chain
 export function getSupportedRewardTokensForChain(chainId: number | undefined): RewardTokenInfo[] {

@@ -1,5 +1,3 @@
-import type { Tables } from "./database.types";
-
 // Define TokenInfo locally within PermitData if needed, or adjust PermitData
 interface TokenInfoInternal {
   address: string;

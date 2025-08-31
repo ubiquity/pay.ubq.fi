@@ -196,7 +196,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let beneficiaryQuery = supabase.from(PERMITS_TABLE)
+  let beneficiaryQuery = supabase
+    .from(PERMITS_TABLE)
     .select(beneficiaryJoinQuery)
     .is("transaction", null)
     .filter("users.wallets.address", "ilike", normalizedWalletAddress);
@@ -212,7 +213,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let ownerQuery = supabase.from(PERMITS_TABLE)
+  let ownerQuery = supabase
+    .from(PERMITS_TABLE)
     .select(ownerJoinQuery)
     .is("transaction", null)
     .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
@@ -223,10 +225,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   }
 
   // Execute both queries
-  const [beneficiaryResult, ownerResult] = await Promise.all([
-    beneficiaryQuery,
-    ownerQuery
-  ]);
+  const [beneficiaryResult, ownerResult] = await Promise.all([beneficiaryQuery, ownerQuery]);
 
   // Combine results and remove duplicates
   const permitMap = new Map<number, unknown>();
@@ -575,10 +574,10 @@ worker.onmessage = async (event) => {
 
         if (DEBUG_MODE) {
           // Only in debug mode, show breakdown
-          console.debug('Invalid permit breakdown:', {
+          console.debug("Invalid permit breakdown:", {
             total: newPermitsFromDb.length,
             valid: mappedNewPermits.length,
-            invalid: invalidCount
+            invalid: invalidCount,
           });
         }
       } else if (mappedNewPermits.length > 0) {

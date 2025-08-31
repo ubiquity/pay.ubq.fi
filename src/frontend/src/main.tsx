@@ -1,7 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import QueryClient things
-import { StrictMode } from 'react'; // Re-add StrictMode import
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Import QueryClient things
+import { StrictMode } from "react"; // Re-add StrictMode import
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { type Chain } from "viem/chains"; // Import Chain type
 import { injected } from "@wagmi/connectors";
@@ -24,39 +24,28 @@ import {
 import App from "./App.tsx";
 // import './ubiquity-styles.css'; // Import ubiquity styles - REMOVED, will link in index.html
 // import './grid-styles.css'; // Import grid styles (once) - REMOVED, will link in index.html
-import { grid } from './the-grid';
+import { grid } from "./the-grid";
 
 // Removed Permit2RpcManager instantiation and export
 
 // Configure wagmi
-const supportedChains = [
-  mainnet,
-  optimism,
-  bsc,
-  gnosis,
-  polygon,
-  zkSync,
-  base,
-  arbitrum,
-  celo,
-  avalanche,
-  blast,
-  zora,
-  anvil,
-];
+const supportedChains = [mainnet, optimism, bsc, gnosis, polygon, zkSync, base, arbitrum, celo, avalanche, blast, zora, anvil];
 
 // Get base RPC URL from env or use default
 import { RPC_URL } from "./constants/config";
 const rpcBaseUrl = RPC_URL;
 
 // Dynamically create transports for all supported chains
-const transports = supportedChains.reduce((acc, chain) => {
-  acc[chain.id] = http(`${rpcBaseUrl}/${chain.id}`);
-  return acc;
-}, {} as Record<number, ReturnType<typeof http>>);
+const transports = supportedChains.reduce(
+  (acc, chain) => {
+    acc[chain.id] = http(`${rpcBaseUrl}/${chain.id}`);
+    return acc;
+  },
+  {} as Record<number, ReturnType<typeof http>>
+);
 
-
-export const config = createConfig({ // Export config
+export const config = createConfig({
+  // Export config
   chains: supportedChains as unknown as [Chain, ...Chain[]], // Assert via unknown
   connectors: [
     injected(), // Use injected connector (removed shimDisconnect)
@@ -68,8 +57,8 @@ export const config = createConfig({ // Export config
 // Create QueryClient instance
 const queryClient = new QueryClient();
 
-const rootElement = document.getElementById('root');
-const gridElement = document.getElementById('grid'); // Get the grid container
+const rootElement = document.getElementById("root");
+const gridElement = document.getElementById("grid"); // Get the grid container
 
 if (!rootElement) {
   throw new Error("Could not find root element to mount React app");
@@ -79,7 +68,9 @@ if (!gridElement) {
 }
 
 createRoot(rootElement).render(
-  <StrictMode> {/* Re-enabled StrictMode */}
+  <StrictMode>
+    {" "}
+    {/* Re-enabled StrictMode */}
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         {/* Removed AuthProvider wrapper */}

@@ -9,7 +9,9 @@
 @font-face {
   font-family: "Ubiquity Nova";
   src: url("assets/fonts/ubiquity-nova-standard.eot");
-  src: url("assets/fonts/ubiquity-nova-standard.woff") format("woff"), url("assets/fonts/ubiquity-nova-standard.ttf") format("truetype");
+  src:
+    url("assets/fonts/ubiquity-nova-standard.woff") format("woff"),
+    url("assets/fonts/ubiquity-nova-standard.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
