@@ -3,8 +3,8 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -20,7 +20,8 @@ export default tseslint.config(
       '**/deno.jsonc',
       'src/backend/**/*',
       'lib/**/*',
-      'src/frontend/dist/**/*'
+      'src/frontend/dist/**/*',
+      'src/frontend/src/vite-env.d.ts'
     ]
   },
   {

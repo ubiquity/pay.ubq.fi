@@ -2,6 +2,9 @@
  * Utility functions for formatting and parsing data
  */
 
+// Regex to parse GitHub URLs (issues and PRs)
+const GITHUB_URL_REGEX = /https:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/(\d+)/;
+
 
 /**
  * Parse GitHub URL to extract organization, repository, and issue/PR number

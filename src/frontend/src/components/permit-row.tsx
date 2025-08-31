@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { JSX } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";

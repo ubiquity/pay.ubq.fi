@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
@@ -48,7 +48,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
-  const filterPermits = (permitsMap: Map<string, PermitData>) => {
+  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
     // Check if current wallet is a funding wallet (owns any permits)
     let isFundingAccount = false;
     if (address) {
@@ -71,9 +71,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       }
     });
     setPermits(filtered);
-  };
+  }, [address]);
 
-  const fetchQuotes = async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
+  const fetchQuotes = useCallback(async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
     if (!preferredRewardTokenAddress || !address || !chainId) {
       permitsMap.forEach((permit) => {
         delete permit.estimatedAmountOut;
@@ -159,7 +159,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
     setLoadingState((prev) => ({ ...prev, isQuoting: false }));
     return updated;
-  };
+  }, [preferredRewardTokenAddress, address, chainId]);
 
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -171,7 +171,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       return;
     }
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
-    const isDevelopment = import.meta.env.DEV || window.location.hostname.includes(".deno.dev");
+    const isDevelopment = Boolean(import.meta.env.DEV) || window.location.hostname.includes(".deno.dev");
     workerRef.current.postMessage({
       type: "INIT",
       payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment },
@@ -225,7 +225,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       workerRef.current = null;
       setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false }));
     };
-  }, []);
+  }, [fetchQuotes, filterPermits]);
 
   useEffect(() => {
     if (isConnected && address && loadingState.isWorkerInitialized && workerRef.current) {
@@ -258,7 +258,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, loadingState.isWorkerInitialized, loadingState.isLoading]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, loadingState.isWorkerInitialized, loadingState.isLoading, fetchQuotes, filterPermits]);
 
   const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);

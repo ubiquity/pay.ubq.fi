@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { PermitData } from "../types.ts";
+import { githubUsernameCache } from "../utils/github-cache.ts";
 
 /**
  * Hook to fetch GitHub usernames for permits
@@ -61,11 +62,11 @@ export function useGithubUsernames(permits: PermitData[]) {
         batch.forEach((id) => fetchedIdsRef.current.add(id));
 
         // Fetch all at once
-        const fetchPromises = batch.map((userId) => githubUsernameCache.fetchUsername(userId).then((username) => ({ userId, username })));
+        const fetchPromises = batch.map((userId) => githubUsernameCache.fetchUsername(userId).then((username: string | null) => ({ userId, username })));
 
         const results = await Promise.all(fetchPromises);
 
-        results.forEach(({ userId, username }) => {
+        results.forEach(({ userId, username }: { userId: number; username: string | null }) => {
           if (username) {
             cachedUsernames.set(userId, username);
           }
