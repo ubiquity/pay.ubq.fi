@@ -2,20 +2,16 @@
   "name": "pay.ubq.fi",
   "version": "1.0.0",
   "dependencies": {
+    "@hono/node-server": "^1.13.7",
     "@supabase/supabase-js": "^2.56.0",
-    "@ubiquity-dao/permit2-rpc-client": "^0.1.2",
-    "@uniswap/permit2-sdk": "^1.4.0",
     "axios": "^1.9.0",
-    "ethers": "^6.14.1",
-    "node-fetch": "^2.6.7",
+    "hono": "^4.6.14",
     "puppeteer": "^24.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
     "@playwright/mcp": "^0.0.35",
     "@types/bun": "^1.2.13",
-    "@types/node-fetch": "^2.6.11",
-    "@wagmi/core": "^2.17.2",
     "eslint": "^9.34.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",

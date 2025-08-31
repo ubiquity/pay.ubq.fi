@@ -1,4 +1,5 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+// This type is used internally by other exports
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -764,74 +765,3 @@ export type CompositeTypes<
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;
 
-export const Constants = {
-  public: {
-    Enums: {
-      github_node_type: [
-        "App",
-        "Bot",
-        "CheckRun",
-        "CheckSuite",
-        "ClosedEvent",
-        "CodeOfConduct",
-        "Commit",
-        "CommitComment",
-        "CommitContributionsByRepository",
-        "ContributingGuidelines",
-        "ConvertToDraftEvent",
-        "CreatedCommitContribution",
-        "CreatedIssueContribution",
-        "CreatedPullRequestContribution",
-        "CreatedPullRequestReviewContribution",
-        "CreatedRepositoryContribution",
-        "CrossReferencedEvent",
-        "Discussion",
-        "DiscussionComment",
-        "Enterprise",
-        "EnterpriseUserAccount",
-        "FundingLink",
-        "Gist",
-        "Issue",
-        "IssueComment",
-        "JoinedGitHubContribution",
-        "Label",
-        "License",
-        "Mannequin",
-        "MarketplaceCategory",
-        "MarketplaceListing",
-        "MergeQueue",
-        "MergedEvent",
-        "MigrationSource",
-        "Milestone",
-        "Organization",
-        "PackageFile",
-        "Project",
-        "ProjectCard",
-        "ProjectColumn",
-        "ProjectV2",
-        "PullRequest",
-        "PullRequestCommit",
-        "PullRequestReview",
-        "PullRequestReviewComment",
-        "ReadyForReviewEvent",
-        "Release",
-        "ReleaseAsset",
-        "Repository",
-        "RepositoryContactLink",
-        "RepositoryTopic",
-        "RestrictedContribution",
-        "ReviewDismissedEvent",
-        "SecurityAdvisoryReference",
-        "SocialAccount",
-        "SponsorsListing",
-        "Team",
-        "TeamDiscussion",
-        "TeamDiscussionComment",
-        "User",
-        "Workflow",
-        "WorkflowRun",
-        "WorkflowRunFile",
-      ],
-    },
-  },
-} as const;

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Address, Chain, PublicClient, WalletClient } from "viem";
-import permit2Abi from "../fixtures/permit2-abi.ts";
+import permit3Abi from "../fixtures/permit3-abi.json";
 import { PermitData } from "../types.ts";
 
 interface UsePermitInvalidationProps {
@@ -57,7 +57,7 @@ export function usePermitInvalidation({
 
         const { request } = await publicClient.simulateContract({
           address: permit.permit2Address,
-          abi: permit2Abi,
+          abi: permit3Abi,
           functionName: "invalidateUnorderedNonces",
           args: [wordPos, 1n << bitPos],
           account: address,

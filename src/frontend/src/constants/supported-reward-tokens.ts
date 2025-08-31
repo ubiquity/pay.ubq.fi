@@ -10,7 +10,6 @@ export interface RewardTokenInfo {
 
 // Removed manually defined Chain IDs
 
-
 // --- Gnosis Chain (100) ---
 const GNOSIS_TOKENS: RewardTokenInfo[] = [
   { address: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068" as Address, symbol: "UUSD", decimals: 18 },
@@ -42,7 +41,6 @@ const ARBITRUM_ONE_TOKENS: RewardTokenInfo[] = [
   { address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8" as Address, symbol: "USDC.e", decimals: 6 },
   { address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9" as Address, symbol: "USDT", decimals: 6 },
 ];
-
 
 // Mapping of chain IDs to their supported tokens
 const SUPPORTED_REWARD_TOKENS_BY_CHAIN: Record<number, RewardTokenInfo[]> = {

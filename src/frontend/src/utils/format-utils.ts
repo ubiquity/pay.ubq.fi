@@ -5,7 +5,6 @@
 // Regex to parse GitHub URLs (issues and PRs)
 const GITHUB_URL_REGEX = /https:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/(\d+)/;
 
-
 /**
  * Parse GitHub URL to extract organization, repository, and issue/PR number
  */
@@ -33,4 +32,3 @@ export function truncateAddress(address: string, startChars = 6, endChars = 4): 
 
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 }
-

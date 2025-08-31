@@ -148,14 +148,7 @@ export function DashboardPage() {
     chain: chain ?? null,
   });
 
-  const {
-    handleClaimPermit,
-    handleClaimBatch,
-    isClaiming,
-    sequentialClaimError,
-    swapSubmissionStatus,
-    walletConnectionError,
-  } = usePermitClaiming({
+  const { handleClaimPermit, handleClaimBatch, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } = usePermitClaiming({
     setPermits,
     setError,
     updatePermitStatusCache,

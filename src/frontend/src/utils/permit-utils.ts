@@ -1,7 +1,6 @@
 import { formatUnits } from "viem";
 import type { PermitData } from "../types";
 
-
 /**
  * Formats a raw token amount (string or bigint) into a human-readable string.
  * Uses viem's formatUnits for accuracy.
@@ -79,5 +78,3 @@ export const hasRequiredFields = (permit: PermitData): boolean => {
 
   return isValid;
 };
-
-

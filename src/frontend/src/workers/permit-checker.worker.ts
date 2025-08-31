@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from "@ubiquity-dao/permit2-rpc-client";
 import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddress } from "viem";
-import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { PERMIT3, PERMIT2 } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
@@ -280,13 +280,13 @@ async function getPermit2Address(permitData: {
     deadline: BigInt(permitData.deadline),
     spender: permitData.beneficiary as Address,
   };
-  const hash = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
+  const hash = SignatureTransfer.hash(permit, PERMIT3, permitData.networkId) as `0x${string}`;
   const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
   if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
-    return NEW_PERMIT2_ADDRESS;
+    return PERMIT3;
   }
   // If the signer doesn't match, fallback to old permit address
-  return OLD_PERMIT2_ADDRESS;
+  return PERMIT2;
 }
 
 // Function to perform batch validation using rpcClient

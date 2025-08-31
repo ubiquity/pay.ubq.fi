@@ -4,7 +4,6 @@ import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { switchChain } from "wagmi/actions";
-import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
@@ -82,7 +81,7 @@ export function PermitRow({
                   : "";
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
-  const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
+  const targetNetworkName = switchableChains.find((c: Chain) => c.id === permit.networkId)?.name || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
@@ -274,7 +273,7 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {/* 
+      {/*
         Cell Order: Amount | Source | Actions
         This is a headerless design - the data is self-explanatory.
         The cells use flex layout with consistent ordering across all rows.
