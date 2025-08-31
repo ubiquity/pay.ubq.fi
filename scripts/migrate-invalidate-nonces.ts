@@ -11,15 +11,8 @@ const RPC_URL = process.env.RPC_URL || "https://rpc.ubq.fi";
 
 // Chain configurations using the RPC_URL
 const CHAIN_CONFIGS: Record<number, { chain: Chain; rpcUrl: string }> = {
-  1: { chain: mainnet, rpcUrl: RPC_URL },
-  10: { chain: optimism, rpcUrl: RPC_URL },
-  100: { chain: gnosis, rpcUrl: RPC_URL },
-  137: { chain: polygon, rpcUrl: RPC_URL },
-  8453: { chain: base, rpcUrl: RPC_URL },
-  42161: { chain: arbitrum, rpcUrl: RPC_URL },
-  1101: { chain: polygonZkEvm, rpcUrl: RPC_URL },
-  534352: { chain: scroll, rpcUrl: RPC_URL },
-  42220: { chain: celo, rpcUrl: RPC_URL },
+  1: { chain: mainnet, rpcUrl: `${RPC_URL + 1}` },
+  100: { chain: gnosis, rpcUrl: `${RPC_URL + 100}` },
 };
 
 const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
