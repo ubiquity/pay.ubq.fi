@@ -6,6 +6,7 @@ import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
+import type { PermitData } from "../types.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
@@ -15,6 +16,7 @@ export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
+  const [claimTxHash, setClaimTxHash] = useState<`0x${string}` | undefined>(undefined);
 
   // Wallet Connection Logic
   const { address, isConnected, chain } = useAccount();
@@ -148,7 +150,7 @@ export function DashboardPage() {
     chain: chain ?? null,
   });
 
-  const { handleClaimPermit, handleClaimBatch, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } = usePermitClaiming({
+  const { handleClaimPermit: originalHandleClaimPermit, handleClaimBatch: originalHandleClaimBatch, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } = usePermitClaiming({
     setPermits,
     setError,
     updatePermitStatusCache,
@@ -158,6 +160,23 @@ export function DashboardPage() {
     chain: chain ?? null,
     setBalancesAndAllowances: () => {},
   });
+
+  // Wrapper functions to capture transaction hashes
+  const handleClaimPermit = useCallback(async (permit: PermitData) => {
+    const result = await originalHandleClaimPermit(permit);
+    if (result.success && result.txHash) {
+      setClaimTxHash(result.txHash as `0x${string}`);
+    }
+    return result;
+  }, [originalHandleClaimPermit]);
+
+  const handleClaimBatch = useCallback(async (permits: PermitData[]) => {
+    const result = await originalHandleClaimBatch(permits);
+    if (result.success && result.txHash) {
+      setClaimTxHash(result.txHash as `0x${string}`);
+    }
+    return result;
+  }, [originalHandleClaimBatch]);
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
@@ -286,7 +305,7 @@ export function DashboardPage() {
           onInvalidatePermit={handleInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
-          claimTxHash={undefined}
+          claimTxHash={claimTxHash}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
