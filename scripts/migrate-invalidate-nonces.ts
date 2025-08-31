@@ -2,17 +2,27 @@
 import { createClient } from "@supabase/supabase-js";
 import { createPublicClient, createWalletClient, http, type Address, type Chain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { mainnet, optimism, gnosis } from "viem/chains";
+import { mainnet, optimism, gnosis, base, arbitrum, polygon, polygonZkEvm, scroll, celo } from "viem/chains";
 import permit3Abi from "../src/frontend/src/fixtures/permit3-abi.json";
 import type { Database } from "../src/frontend/src/database.types";
 
-const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
+// Use the RPC URL from environment or default to ubq.fi RPC
+const RPC_URL = process.env.RPC_URL || "https://rpc.ubq.fi";
 
-const CHAIN_CONFIG: Record<number, { chain: Chain; rpcUrl: string }> = {
-  1: { chain: mainnet, rpcUrl: "https://eth.llamarpc.com" },
-  10: { chain: optimism, rpcUrl: "https://optimism.llamarpc.com" },
-  100: { chain: gnosis, rpcUrl: "https://rpc.gnosischain.com" },
+// Chain configurations using the RPC_URL
+const CHAIN_CONFIGS: Record<number, { chain: Chain; rpcUrl: string }> = {
+  1: { chain: mainnet, rpcUrl: RPC_URL },
+  10: { chain: optimism, rpcUrl: RPC_URL },
+  100: { chain: gnosis, rpcUrl: RPC_URL },
+  137: { chain: polygon, rpcUrl: RPC_URL },
+  8453: { chain: base, rpcUrl: RPC_URL },
+  42161: { chain: arbitrum, rpcUrl: RPC_URL },
+  1101: { chain: polygonZkEvm, rpcUrl: RPC_URL },
+  534352: { chain: scroll, rpcUrl: RPC_URL },
+  42220: { chain: celo, rpcUrl: RPC_URL },
 };
+
+const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
 
 interface ClaimedPermit {
   nonce: string;
@@ -52,7 +62,8 @@ async function fetchClaimedPermits(supabase: ReturnType<typeof createClient<Data
 
   const { data, error } = await supabase
     .from("permits")
-    .select(`
+    .select(
+      `
       nonce,
       signature,
       transaction,
@@ -65,7 +76,8 @@ async function fetchClaimedPermits(supabase: ReturnType<typeof createClient<Data
           address
         )
       )
-    `)
+    `
+    )
     .not("transaction", "is", null);
 
   if (error) {
@@ -86,20 +98,16 @@ async function fetchClaimedPermits(supabase: ReturnType<typeof createClient<Data
   }));
 }
 
-async function checkNonceStatus(
-  publicClient: ReturnType<typeof createPublicClient>,
-  owner: Address,
-  nonce: bigint
-): Promise<boolean> {
+async function checkNonceStatus(publicClient: ReturnType<typeof createPublicClient>, owner: Address, nonce: bigint): Promise<boolean> {
   const { wordPos, bitPos } = nonceBitmap(nonce);
 
   try {
-    const result = await publicClient.readContract({
+    const result = (await publicClient.readContract({
       address: PERMIT3_ADDRESS,
       abi: permit3Abi,
       functionName: "nonceBitmap",
       args: [owner, wordPos],
-    }) as bigint;
+    })) as bigint;
 
     return (result & (1n << bitPos)) !== 0n;
   } catch (error) {
@@ -199,7 +207,7 @@ async function main() {
   }> = [];
 
   for (const batch of permitsByNetworkAndOwner.values()) {
-    const chainConfig = CHAIN_CONFIG[batch.networkId];
+    const chainConfig = CHAIN_CONFIGS[batch.networkId];
 
     if (!chainConfig) {
       console.warn(`Skipping unsupported network ${batch.networkId}`);
@@ -258,8 +266,8 @@ async function main() {
   console.log("\n=== Migration Summary ===");
   console.log(`Total batches processed: ${results.length}`);
 
-  const successful = results.filter(r => r.success);
-  const failed = results.filter(r => !r.success);
+  const successful = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
 
   console.log(`Successful: ${successful.length}`);
   console.log(`Failed: ${failed.length}`);
@@ -285,16 +293,16 @@ async function main() {
     timestamp: new Date().toISOString(),
     totalClaimedPermits: claimedPermits.length,
     totalBatches: results.length,
-    successful: successful.map(r => ({
+    successful: successful.map((r) => ({
       networkId: r.networkId,
       owner: r.owner,
-      noncesInvalidated: r.noncesToInvalidate.map(n => n.toString()),
+      noncesInvalidated: r.noncesToInvalidate.map((n) => n.toString()),
       txHashes: r.txHashes,
     })),
-    failed: failed.map(r => ({
+    failed: failed.map((r) => ({
       networkId: r.networkId,
       owner: r.owner,
-      noncesToInvalidate: r.noncesToInvalidate.map(n => n.toString()),
+      noncesToInvalidate: r.noncesToInvalidate.map((n) => n.toString()),
     })),
   };
 
