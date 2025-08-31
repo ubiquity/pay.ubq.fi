@@ -207,7 +207,10 @@ export function PermitRow({
         try {
           const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut), preferredTokenInfo.decimals);
           const numericValue = Number(estimatedValueString);
-          const displayValue = isNaN(numericValue) ? "Error" : numericValue.toLocaleString(undefined, { maximumSignificantDigits: 2 });
+          const displayValue = isNaN(numericValue) ? "Error" : numericValue.toLocaleString(undefined, { 
+            maximumFractionDigits: 2, 
+            minimumFractionDigits: 0 
+          });
 
           const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
           const originalSymbol = originalTokenInfo?.symbol || "tokens";
