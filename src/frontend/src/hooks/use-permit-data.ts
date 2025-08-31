@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
@@ -48,125 +48,124 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
-  const filterPermits = (permitsMap: Map<string, PermitData>) => {
-    // Check if current wallet is a funding wallet (owns any permits)
-    let isFundingAccount = false;
-    if (address) {
-      permitsMap.forEach((permit) => {
-        if (permit.owner.toLowerCase() === address.toLowerCase()) {
-          isFundingAccount = true;
-        }
-      });
-    }
-    setLoadingState((prev) => ({ ...prev, isFundingWallet: isFundingAccount }));
-
-    const filtered: PermitData[] = [];
-    permitsMap.forEach((permit) => {
-      // In funding wallet mode, show all permits owned by this wallet that aren't claimed/invalidated
-      if (isFundingAccount) {
-        if (permit.owner.toLowerCase() === address?.toLowerCase()) {
-          const isClaimedOrInvalidated = permit.status === "Claimed" || permit.status === "Invalidated" || permit.isNonceUsed === true;
-          if (!isClaimedOrInvalidated) {
-            filtered.push(permit);
+  const filterPermits = useCallback(
+    (permitsMap: Map<string, PermitData>) => {
+      // Check if current wallet is a funding wallet (owns any permits)
+      let isFundingAccount = false;
+      if (address) {
+        permitsMap.forEach((permit) => {
+          if (permit.owner.toLowerCase() === address.toLowerCase()) {
+            isFundingAccount = true;
           }
-        }
-      } else {
-        // Normal mode: filter out only truly claimed/used permits
+        });
+      }
+      setLoadingState((prev) => ({ ...prev, isFundingWallet: isFundingAccount }));
+
+      // API already filters permits by ownership, so we just need basic status filtering
+      const filtered: PermitData[] = [];
+      permitsMap.forEach((permit) => {
+        // Filter out truly claimed/used permits regardless of mode
         const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
         const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-        if (!shouldFilter) filtered.push(permit);
-      }
-    });
-    setPermits(filtered);
-  };
-
-  const fetchQuotes = async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
-    if (!preferredRewardTokenAddress || !address || !chainId) {
-      permitsMap.forEach((permit) => {
-        delete permit.estimatedAmountOut;
-        delete permit.quoteError;
-      });
-      return permitsMap;
-    }
-    setLoadingState((prev) => ({ ...prev, isQuoting: true }));
-    const updated = new Map(permitsMap);
-    const byToken = new Map<Address, PermitData[]>();
-    updated.forEach((permit) => {
-      if (
-        permit.tokenAddress &&
-        permit.type === "erc20-permit" &&
-        permit.status !== "Claimed" &&
-        permit.claimStatus !== "Success" &&
-        permit.claimStatus !== "Pending"
-      ) {
-        const group = byToken.get(permit.tokenAddress as Address) || [];
-        group.push(permit);
-        byToken.set(permit.tokenAddress as Address, group);
-      }
-    });
-    for (const [tokenIn, group] of byToken.entries()) {
-      if (tokenIn.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
-        group.forEach((p) => {
-          delete p.estimatedAmountOut;
-          delete p.quoteError;
-          updated.set(p.signature, p);
-        });
-        continue;
-      }
-      let total = 0n;
-      group.forEach((p) => {
-        if (p.amount) {
-          try {
-            total += p.amount;
-          } catch (e: unknown) {
-            console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
-          }
+        if (!shouldFilter) {
+          filtered.push(permit);
         }
       });
-      if (total === 0n) {
-        group.forEach((p) => {
-          delete p.estimatedAmountOut;
-          delete p.quoteError;
-          updated.set(p.signature, p);
+      setPermits(filtered);
+    },
+    [address]
+  );
+
+  const fetchQuotes = useCallback(
+    async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
+      if (!preferredRewardTokenAddress || !address || !chainId) {
+        permitsMap.forEach((permit) => {
+          delete permit.estimatedAmountOut;
+          delete permit.quoteError;
         });
-        continue;
+        return permitsMap;
       }
-      try {
-        const quote = await getCowSwapQuote({
-          tokenIn,
-          tokenOut: preferredRewardTokenAddress,
-          amountIn: total,
-          userAddress: address,
-          chainId,
-        });
-        const groupOut = quote.estimatedAmountOut;
+      setLoadingState((prev) => ({ ...prev, isQuoting: true }));
+      const updated = new Map(permitsMap);
+      const byToken = new Map<Address, PermitData[]>();
+      updated.forEach((permit) => {
+        if (
+          permit.tokenAddress &&
+          permit.type === "erc20-permit" &&
+          permit.status !== "Claimed" &&
+          permit.claimStatus !== "Success" &&
+          permit.claimStatus !== "Pending"
+        ) {
+          const group = byToken.get(permit.tokenAddress as Address) || [];
+          group.push(permit);
+          byToken.set(permit.tokenAddress as Address, group);
+        }
+      });
+      for (const [tokenIn, group] of byToken.entries()) {
+        if (tokenIn.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
+          group.forEach((p) => {
+            delete p.estimatedAmountOut;
+            delete p.quoteError;
+            updated.set(p.signature, p);
+          });
+          continue;
+        }
+        let total = 0n;
         group.forEach((p) => {
-          if (p.amount && total > 0n) {
+          if (p.amount) {
             try {
-              const amt = p.amount;
-              p.estimatedAmountOut = ((amt * groupOut) / total).toString();
-              p.quoteError = null;
-            } catch {
-              p.estimatedAmountOut = undefined;
-              p.quoteError = "Calculation error";
+              total += p.amount;
+            } catch (e: unknown) {
+              console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
             }
-          } else {
-            p.estimatedAmountOut = undefined;
-            p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
           }
-          updated.set(p.signature, p);
         });
-      } catch (e: unknown) {
-        group.forEach((p) => {
-          delete p.estimatedAmountOut;
-          p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
-          updated.set(p.signature, p);
-        });
+        if (total === 0n) {
+          group.forEach((p) => {
+            delete p.estimatedAmountOut;
+            delete p.quoteError;
+            updated.set(p.signature, p);
+          });
+          continue;
+        }
+        try {
+          const quote = await getCowSwapQuote({
+            tokenIn,
+            tokenOut: preferredRewardTokenAddress,
+            amountIn: total,
+            userAddress: address,
+            chainId,
+          });
+          const groupOut = quote.estimatedAmountOut;
+          group.forEach((p) => {
+            if (p.amount && total > 0n) {
+              try {
+                const amt = p.amount;
+                p.estimatedAmountOut = ((amt * groupOut) / total).toString();
+                p.quoteError = null;
+              } catch {
+                p.estimatedAmountOut = undefined;
+                p.quoteError = "Calculation error";
+              }
+            } else {
+              p.estimatedAmountOut = undefined;
+              p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
+            }
+            updated.set(p.signature, p);
+          });
+        } catch (e: unknown) {
+          group.forEach((p) => {
+            delete p.estimatedAmountOut;
+            p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
+            updated.set(p.signature, p);
+          });
+        }
       }
-    }
-    setLoadingState((prev) => ({ ...prev, isQuoting: false }));
-    return updated;
-  };
+      setLoadingState((prev) => ({ ...prev, isQuoting: false }));
+      return updated;
+    },
+    [preferredRewardTokenAddress, address, chainId]
+  );
 
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -178,7 +177,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       return;
     }
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
-    const isDevelopment = import.meta.env.DEV || window.location.hostname.includes(".deno.dev");
+    const isDevelopment = Boolean(import.meta.env.DEV) || window.location.hostname.includes(".deno.dev");
     workerRef.current.postMessage({
       type: "INIT",
       payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment },
@@ -232,7 +231,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       workerRef.current = null;
       setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false }));
     };
-  }, []);
+  }, [fetchQuotes, filterPermits]);
 
   useEffect(() => {
     if (isConnected && address && loadingState.isWorkerInitialized && workerRef.current) {
@@ -265,7 +264,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, loadingState.isWorkerInitialized, loadingState.isLoading]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, loadingState.isWorkerInitialized, loadingState.isLoading, fetchQuotes, filterPermits]);
 
   const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);

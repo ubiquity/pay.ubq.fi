@@ -1,9 +1,9 @@
 import { useState } from "react";
+import type { JSX } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { switchChain } from "wagmi/actions";
-import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
@@ -20,8 +20,6 @@ interface PermitRowProps {
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
   confirmingHash?: `0x${string}`;
-  isSelected?: boolean;
-  onSelect?: (permit: PermitData) => void;
   isFundingWallet?: boolean;
   isInvalidating?: boolean;
   address?: Address;
@@ -36,8 +34,6 @@ export function PermitRow({
   chain,
   isQuoting,
   preferredRewardTokenAddress,
-  isSelected,
-  onSelect,
   isFundingWallet = false,
   isInvalidating = false,
   address,
@@ -69,76 +65,76 @@ export function PermitRow({
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
     : isInvalidating
-    ? "row-invalidating"
-    : isClaimed
-    ? "row-claimed"
-    : isInvalidated
-    ? "row-invalidated"
-    : claimFailed
-    ? "row-claim-failed"
-    : isClaimingThis
-    ? "row-claiming"
-    : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-    ? "row-invalid"
-    : permit.status === "Valid"
-    ? "row-valid"
-    : "";
+      ? "row-invalidating"
+      : isClaimed
+        ? "row-claimed"
+        : isInvalidated
+          ? "row-invalidated"
+          : claimFailed
+            ? "row-claim-failed"
+            : isClaimingThis
+              ? "row-claiming"
+              : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
+                ? "row-invalid"
+                : permit.status === "Valid"
+                  ? "row-valid"
+                  : "";
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
-  const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
+  const targetNetworkName = switchableChains.find((c: Chain) => c.id === permit.networkId)?.name || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
     ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet ? "invalidate" : "claim"}`
     : isClaimed
-    ? "Claimed"
-    : isInvalidated
-    ? "Invalidated"
-    : isInvalidating
-    ? "Invalidating..."
-    : isClaimingThis
-    ? "Claiming..."
-    : claimFailed
-    ? "Failed"
-    : insufficientBalance
-    ? "Insolvent"
-    : insufficientAllowance
-    ? "Permit2 Allowance Low"
-    : prerequisiteCheckFailed
-    ? "Check Failed"
-    : permit.status === "Valid"
-    ? "Valid"
-    : permit.status || "";
+      ? "Claimed"
+      : isInvalidated
+        ? "Invalidated"
+        : isInvalidating
+          ? "Invalidating..."
+          : isClaimingThis
+            ? "Claiming..."
+            : claimFailed
+              ? "Failed"
+              : insufficientBalance
+                ? "Insolvent"
+                : insufficientAllowance
+                  ? "Permit2 Allowance Low"
+                  : prerequisiteCheckFailed
+                    ? "Check Failed"
+                    : permit.status === "Valid"
+                      ? "Valid"
+                      : permit.status || "";
 
   const buttonText = isInvalidating
     ? "Invalidating..."
     : isFundingWallet && canInvalidate
-    ? "Invalidate"
-    : isInvalidated
-    ? "Invalidated"
-    : isClaimed && permit.transactionHash
-    ? "View"
-    : isClaimingThis
-    ? "Claiming..."
-    : claimFailed && permit.transactionHash
-    ? "View"
-    : claimFailed
-    ? "Retry"
-    : "Claim";
+      ? "Invalidate"
+      : isInvalidated
+        ? "Invalidated"
+        : isClaimed && permit.transactionHash
+          ? "View"
+          : isClaimingThis
+            ? "Claiming..."
+            : claimFailed && permit.transactionHash
+              ? "View"
+              : claimFailed
+                ? "Retry"
+                : "Claim";
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
     : isInvalidating
-    ? true
-    : isFundingWallet && canInvalidate
-    ? !isConnected
-    : isInvalidated
-    ? true
-    : !isConnected ||
-      isClaimingThis ||
-      (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
-      (isClaimed && !permit.transactionHash) ||
-      (claimFailed && !permit.transactionHash && !canAttemptClaim);
+      ? true
+      : isFundingWallet && canInvalidate
+        ? !isConnected
+        : isInvalidated
+          ? true
+          : !isConnected ||
+            isClaimingThis ||
+            (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
+            (isClaimed && !permit.transactionHash) ||
+            (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet && !isInvalidated;
   const showButtonIcon =
@@ -277,7 +273,7 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      {/* 
+      {/*
         Cell Order: Amount | Source | Actions
         This is a headerless design - the data is self-explanatory.
         The cells use flex layout with consistent ordering across all rows.

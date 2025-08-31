@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from "@ubiquity-dao/permit2-rpc-client";
 import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddress } from "viem";
-import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { PERMIT3, PERMIT2 } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
@@ -196,7 +196,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let beneficiaryQuery = supabase.from(PERMITS_TABLE)
+  let beneficiaryQuery = supabase
+    .from(PERMITS_TABLE)
     .select(beneficiaryJoinQuery)
     .is("transaction", null)
     .filter("users.wallets.address", "ilike", normalizedWalletAddress);
@@ -205,14 +206,15 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   const ownerJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
-              partner:${PARTNERS_TABLE}!left(wallet:${WALLETS_TABLE}!left(address)),
+              partner:${PARTNERS_TABLE}!inner(wallet:${WALLETS_TABLE}!inner(address)),
               location:${LOCATIONS_TABLE}(node_url),
               users(
                   wallets(address)
               )
     `;
 
-  let ownerQuery = supabase.from(PERMITS_TABLE)
+  let ownerQuery = supabase
+    .from(PERMITS_TABLE)
     .select(ownerJoinQuery)
     .is("transaction", null)
     .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
@@ -223,10 +225,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   }
 
   // Execute both queries
-  const [beneficiaryResult, ownerResult] = await Promise.all([
-    beneficiaryQuery,
-    ownerQuery
-  ]);
+  const [beneficiaryResult, ownerResult] = await Promise.all([beneficiaryQuery, ownerQuery]);
 
   // Combine results and remove duplicates
   const permitMap = new Map<number, unknown>();
@@ -281,13 +280,13 @@ async function getPermit2Address(permitData: {
     deadline: BigInt(permitData.deadline),
     spender: permitData.beneficiary as Address,
   };
-  const hash = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
+  const hash = SignatureTransfer.hash(permit, PERMIT3, permitData.networkId) as `0x${string}`;
   const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
   if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
-    return NEW_PERMIT2_ADDRESS;
+    return PERMIT3;
   }
   // If the signer doesn't match, fallback to old permit address
-  return OLD_PERMIT2_ADDRESS;
+  return PERMIT2;
 }
 
 // Function to perform batch validation using rpcClient
@@ -575,10 +574,10 @@ worker.onmessage = async (event) => {
 
         if (DEBUG_MODE) {
           // Only in debug mode, show breakdown
-          console.debug('Invalid permit breakdown:', {
+          console.debug("Invalid permit breakdown:", {
             total: newPermitsFromDb.length,
             valid: mappedNewPermits.length,
-            invalid: invalidCount
+            invalid: invalidCount,
           });
         }
       } else if (mappedNewPermits.length > 0) {

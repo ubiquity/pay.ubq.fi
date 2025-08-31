@@ -1,50 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [
-    "frontend/src/main.tsx!", // Vite entry point
-    "frontend/src/workers/**/*.worker.ts!" // Worker entry points
-  ],
-  "project": [
-    "frontend/**/*.ts!",
-    "frontend/**/*.tsx!",
-    "shared/**/*.ts!"
-  ],
-  "ignore": [
-    // Ignore specific files if needed, e.g., config files Knip might misinterpret
-    "frontend/vite.config.ts", // Often handled by the build tool itself
-    "frontend/eslint.config.js"
-  ],
-  "ignoreDependencies": [
-    // Ignore dependencies that Knip might flag incorrectly
-  ],
-  "ignoreBinaries": [
-    // Ignore binaries called from scripts if Knip doesn't detect them
-    "scripts/front.sh" // Already flagged, let's ignore it
-  ],
-  "workspaces": {
-    ".": { // Root workspace config (optional, if needed)
-      "entry": [] // No specific entry for root if scripts handle it
-    },
-    "frontend": { // Frontend workspace
-      "entry": [
-        "src/main.tsx!", // Vite entry point
-        "src/workers/**/*.worker.ts!" // Worker entry points
-      ],
-      "project": [
-        "src/**/*.ts!",
-        "src/**/*.tsx!"
-      ],
-      "vite": {
-        "config": ["vite.config.ts"] // Config relative to frontend dir
-      },
-      "ignore": [
-        "vite.config.ts",
-        "eslint.config.js",
-        "src/vite-env.d.ts" // Ignore this common file
-      ]
-    }
+  "entry": ["src/main.tsx!", "src/workers/**/*.worker.ts!"],
+  "project": ["src/**/*.ts!", "src/**/*.tsx!"],
+  "ignore": ["vite.config.ts", "eslint.config.js", "src/vite-env.d.ts"],
+  "vite": {
+    "config": ["vite.config.ts"],
   },
-  "vite": { // Keep root-level Vite config if Knip needs it, or remove if workspace config is sufficient
-    "config": ["frontend/vite.config.ts"]
-  }
 }

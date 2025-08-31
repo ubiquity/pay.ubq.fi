@@ -2,15 +2,15 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "src/frontend/src/main.tsx!",
-    "src/frontend/src/workers/**/*.worker.ts!"
+    "src/frontend/src/workers/**/*.worker.ts!",
+    "src/backend/server.ts!",
+    "scripts/**/*.ts!"
   ],
   "project": [
-    "src/frontend/**/*.ts!",
-    "src/frontend/**/*.tsx!",
-    "lib/**/*.ts!"
+    "src/**/*.ts!",
+    "src/**/*.tsx!"
   ],
   "ignore": [
-    "src/backend/**/*",
     "src/frontend/vite.config.ts",
     "src/frontend/eslint.config.js",
     "eslint.config.js",
@@ -25,7 +25,7 @@
     "puppeteer"
   ],
   "ignoreBinaries": [
-    "scripts/*"
+    "scripts/front.sh"
   ],
   "vite": {
     "config": ["src/frontend/vite.config.ts"]
