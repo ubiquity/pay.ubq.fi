@@ -24,9 +24,11 @@ export const formatAmount = (rawAmount: string | bigint | undefined | null, deci
       console.warn(`formatAmount: formatted value "${formatted}" resulted in NaN.`);
       return Number(0).toFixed(displayDecimals);
     }
-    // Use toLocaleString with maximumSignificantDigits for better formatting.
+    // Use toLocaleString with maximumFractionDigits to avoid unwanted rounding
+    // maximumSignificantDigits: 2 would round 225 to 230, which is incorrect
     return numericValue.toLocaleString(undefined, {
-      maximumSignificantDigits: 2,
+      maximumFractionDigits: displayDecimals,
+      minimumFractionDigits: 0,
     });
   } catch (error) {
     console.warn(`Amount formatting failed for amount: ${rawAmount}, decimals: ${decimals}`, error);
