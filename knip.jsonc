@@ -1,14 +1,32 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [
-    "src/frontend/src/main.tsx!",
-    "src/frontend/src/workers/**/*.worker.ts!",
-    "scripts/**/*.ts!"
-  ],
-  "project": [
-    "src/**/*.ts!",
-    "src/**/*.tsx!"
-  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/backend/server.ts",
+        "scripts/nonce-migration/analyze-nonces.ts",
+        "scripts/nonce-migration/run-migration.ts",
+        "scripts/nonce-migration/speed-up.ts",
+        "scripts/nonce-migration/check-status.ts",
+        "scripts/nonce-migration/test-nonce-migration.ts",
+        "scripts/nonce-migration/index.ts"
+      ],
+      "project": [
+        "src/backend/**/*.ts",
+        "scripts/**/*.ts"
+      ]
+    },
+    "src/frontend": {
+      "entry": [
+        "src/main.tsx",
+        "src/workers/**/*.worker.ts"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+      ]
+    }
+  },
   "ignore": [
     "src/frontend/vite.config.ts",
     "src/frontend/eslint.config.js",
@@ -23,7 +41,9 @@
     "playwright",
     "puppeteer"
   ],
-  "ignoreBinaries": [],
+  "ignoreBinaries": [
+    "claude"
+  ],
   "vite": {
     "config": ["src/frontend/vite.config.ts"]
   }

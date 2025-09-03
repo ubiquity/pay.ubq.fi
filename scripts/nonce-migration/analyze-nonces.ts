@@ -41,31 +41,6 @@ function nonceBitmap(nonce: bigint): { wordPos: bigint; bitPos: bigint } {
   return { wordPos, bitPos };
 }
 
-/**
- * Check if a nonce is used on a specific contract
- */
-async function isNonceUsed(
-  publicClient: ReturnType<typeof createPublicClient>,
-  contractAddress: Address,
-  owner: Address,
-  nonce: bigint
-): Promise<boolean> {
-  const { wordPos, bitPos } = nonceBitmap(nonce);
-  
-  try {
-    const bitmap = await publicClient.readContract({
-      address: contractAddress,
-      abi: permit2Abi,
-      functionName: "nonceBitmap",
-      args: [owner, wordPos],
-    });
-    
-    return (bitmap & (1n << bitPos)) !== 0n;
-  } catch (error) {
-    console.warn(`Error checking nonce ${nonce} for ${owner}:`, error);
-    return false; // Assume not used if we can't check
-  }
-}
 
 /**
  * Batch check multiple nonces for an owner

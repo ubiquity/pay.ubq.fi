@@ -2,7 +2,7 @@ import { Address } from "viem";
 import { mainnet, gnosis, base, arbitrum } from "viem/chains";
 
 // Type definition for reward token info
-export interface RewardTokenInfo {
+interface RewardTokenInfo {
   address: Address;
   symbol: string;
   decimals: number;
