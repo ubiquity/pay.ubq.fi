@@ -4,6 +4,14 @@ import { ICONS } from "./iconography"; // <-- Correct casing
 // Update props if needed, or remove if connection is handled by context/hooks directly
 // interface LoginPageProps {
 // }
+
+// Helper function to get button text
+function getButtonText(isPending: boolean, isNotReady: boolean): string {
+  if (isPending) return "Connecting...";
+  if (isNotReady) return "Requires Wallet Extension";
+  return "Connect Wallet";
+}
+
 // Create a wrapper span for the SVG content
 export const LogoSpan = () => (
   <span
@@ -59,11 +67,7 @@ export function LoginPage(/* Props if needed */) {
             {!isReady ? ICONS.WARNING : ICONS.CONNECT}
             {/* Ensure span structure is consistent */}
             <span>
-              {status === "pending"
-                ? "Connecting..."
-                : !isReady
-                  ? "Requires Wallet Extension" // New message for !isReady state
-                  : "Connect Wallet"}
+              {getButtonText(status === "pending", !isReady)}
             </span>
           </button>
         );

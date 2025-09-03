@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import type { JSX } from "react";
 import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useWalletClient } from "wagmi";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
@@ -11,6 +12,41 @@ import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
 import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
+
+// Helper function to get claim button content
+function getClaimButtonContent(
+  isLoading: boolean,
+  isQuoting: boolean,
+  estimatedTotalValueDisplay: string,
+  claimablePermitCount: number
+): JSX.Element {
+  if (isLoading) return <span>Loading Rewards...</span>;
+  if (isQuoting) return <span>Calculating...</span>;
+  
+  return (
+    <>
+      <span className="claim-amount">{estimatedTotalValueDisplay}</span>
+      <span className="claim-count">
+        ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
+      </span>
+    </>
+  );
+}
+
+// Helper function to get expand button content
+function getExpandButtonContent(isLoading: boolean, isTableVisible: boolean): JSX.Element {
+  if (isLoading) {
+    return <div className="spinner header-spinner"></div>;
+  }
+  return isTableVisible ? ICONS.CLOSER : ICONS.OPENER;
+}
+
+// Helper function to get swap status CSS class
+function getSwapStatusClass(status: string): string {
+  if (status === "error") return "error-message";
+  if (status === "submitted") return "success-message";
+  return "info-message";
+}
 
 export function DashboardPage() {
   // UI State
@@ -230,23 +266,12 @@ export function DashboardPage() {
             >
               {isClaiming ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
               <span>
-                {isLoading ? (
-                  "Loading Rewards..."
-                ) : isQuoting ? (
-                  "Calculating..."
-                ) : (
-                  <>
-                    <span className="claim-amount">{estimatedTotalValueDisplay}</span>
-                    <span className="claim-count">
-                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
-                    </span>
-                  </>
-                )}
+                {getClaimButtonContent(isLoading, isQuoting, estimatedTotalValueDisplay, claimablePermitCount)}
               </span>
             </button>
             <div className="spinner-or-expand-container">
               <button className="expand-button" disabled={isLoading} onClick={toggleTableVisibility} title={isTableVisible ? "Collapse" : "Expand"}>
-                {isLoading ? <div className="spinner header-spinner"></div> : isTableVisible ? ICONS.CLOSER : ICONS.OPENER}
+                {getExpandButtonContent(isLoading, isTableVisible)}
               </button>
             </div>
           </>
@@ -296,7 +321,7 @@ export function DashboardPage() {
           {Object.entries(swapSubmissionStatus).map(([key, status]) => (
             <div
               key={key}
-              className={`swap-status ${status.status === "error" ? "error-message" : status.status === "submitted" ? "success-message" : "info-message"}`}
+              className={`swap-status ${getSwapStatusClass(status.status)}`}
               style={{ marginBottom: "5px", padding: "5px", border: "1px solid #ccc", borderRadius: "4px" }}
             >
               {status.status === "error" && ICONS.WARNING}

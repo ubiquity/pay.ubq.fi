@@ -2,6 +2,36 @@ import { useEffect, useRef, useState } from "react";
 import type { PermitData } from "../types.ts";
 import { githubUsernameCache } from "../utils/github-cache.ts";
 
+// Helper function to fetch username with ID wrapper
+async function fetchUsernameWithId(userId: number): Promise<{ userId: number; username: string | null }> {
+  const username = await githubUsernameCache.fetchUsername(userId);
+  return { userId, username };
+}
+
+// Helper function to merge usernames into map
+function mergeUsernames(
+  prev: Map<number, string>,
+  cachedUsernames: Map<number, string>
+): Map<number, string> {
+  const merged = new Map(prev);
+  cachedUsernames.forEach((username, id) => {
+    merged.set(id, username);
+  });
+  return merged;
+}
+
+// Helper function to process username results
+function processUsernameResults(
+  results: Array<{ userId: number; username: string | null }>,
+  cachedUsernames: Map<number, string>
+): void {
+  results.forEach(({ userId, username }) => {
+    if (username) {
+      cachedUsernames.set(userId, username);
+    }
+  });
+}
+
 /**
  * Hook to fetch GitHub usernames for permits
  * Manages fetching and caching of GitHub usernames to avoid rate limits
@@ -39,13 +69,7 @@ export function useGithubUsernames(permits: PermitData[]) {
 
       // If we have all usernames cached or already fetched, just update state
       if (userIdsToFetch.length === 0) {
-        setUsernames((prev) => {
-          const merged = new Map(prev);
-          cachedUsernames.forEach((username, id) => {
-            merged.set(id, username);
-          });
-          return merged;
-        });
+        setUsernames((prev) => mergeUsernames(prev, cachedUsernames));
         isFetchingRef.current = false;
         return;
       }
@@ -62,24 +86,14 @@ export function useGithubUsernames(permits: PermitData[]) {
         batch.forEach((id) => fetchedIdsRef.current.add(id));
 
         // Fetch all at once
-        const fetchPromises = batch.map((userId) => githubUsernameCache.fetchUsername(userId).then((username: string | null) => ({ userId, username })));
+        const fetchPromises = batch.map((userId) => fetchUsernameWithId(userId));
 
         const results = await Promise.all(fetchPromises);
 
-        results.forEach(({ userId, username }: { userId: number; username: string | null }) => {
-          if (username) {
-            cachedUsernames.set(userId, username);
-          }
-        });
+        processUsernameResults(results, cachedUsernames);
 
         // Update state with all the usernames
-        setUsernames((prev) => {
-          const merged = new Map(prev);
-          cachedUsernames.forEach((username, id) => {
-            merged.set(id, username);
-          });
-          return merged;
-        });
+        setUsernames((prev) => mergeUsernames(prev, cachedUsernames));
       } catch (error) {
         console.error("Error fetching GitHub usernames:", error);
       } finally {

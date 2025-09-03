@@ -77,8 +77,70 @@ function logValidationError(message: string, permit: PermitRow, index: number) {
   }
 }
 
+// Helper function to validate basic permit fields
+function validateBasicPermitFields(permit: PermitRow, index: number): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const tokenData = permit.token;
+  const ownerWalletData = permit.partner?.wallet;
+  
+  const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
+  if (!ownerAddressStr) {
+    logValidationError("Missing owner address", permit, index);
+    errors.push("owner address");
+  }
+  
+  const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
+  if (!tokenAddressStr) {
+    logValidationError("Missing token address", permit, index);
+    errors.push("token address");
+  }
+  
+  const networkIdNum = Number(tokenData?.network ?? 0);
+  if (networkIdNum === 0) {
+    logValidationError(`Invalid network ID: ${tokenData?.network}`, permit, index);
+    errors.push("network ID");
+  }
+  
+  if (!permit.deadline) {
+    logValidationError("Missing deadline", permit, index);
+    errors.push("deadline");
+  }
+  
+  if (!permit.signature || !permit.signature.startsWith("0x")) {
+    logValidationError(`Invalid signature format: ${permit.signature}`, permit, index);
+    errors.push("signature");
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
+// Helper function to validate permit amount
+function validatePermitAmount(permit: PermitRow, index: number): boolean {
+  if (permit.amount != undefined && permit.amount != null) {
+    try {
+      BigInt(permit.amount);
+      return true;
+    } catch {
+      logValidationError(`Invalid amount format: ${permit.amount}`, permit, index);
+      return false;
+    }
+  }
+  return true;
+}
+
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
+  // Validate basic fields first
+  const validation = validateBasicPermitFields(permit, index);
+  if (!validation.isValid) {
+    return null;
+  }
+  
+  // Validate amount format
+  if (!validatePermitAmount(permit, index)) {
+    return null;
+  }
+
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
   // Cast to properly typed interface for beneficiary data access
@@ -87,40 +149,10 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
   const beneficiaryUserId = permit.beneficiary_id; // GitHub user ID
-
-  if (!ownerAddressStr) {
-    logValidationError("Missing owner address", permit, index);
-    return null;
-  }
   const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
-  if (!tokenAddressStr) {
-    logValidationError("Missing token address", permit, index);
-    return null;
-  }
   const networkIdNum = Number(tokenData?.network ?? 0);
-  if (networkIdNum === 0) {
-    logValidationError(`Invalid network ID: ${tokenData?.network}`, permit, index);
-    return null;
-  }
-  if (!permit.deadline) {
-    logValidationError("Missing deadline", permit, index);
-    return null;
-  }
-  if (!permit.signature || !permit.signature.startsWith("0x")) {
-    logValidationError(`Invalid signature format: ${permit.signature}`, permit, index);
-    return null;
-  }
 
   const githubUrlStr = permit.location?.node_url ? String(permit.location.node_url) : "";
-
-  if (permit.amount !== undefined && permit.amount !== null) {
-    try {
-      BigInt(permit.amount);
-    } catch {
-      logValidationError(`Invalid amount format: ${permit.amount}`, permit, index);
-      return null;
-    }
-  }
 
   // Fallback to connected wallet address when beneficiary address is not set
   // This maintains backward compatibility with older permits that don't have
@@ -151,7 +183,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     tokenAddress: tokenAddressStr,
     token: tokenAddressStr ? { address: tokenAddressStr, network: networkIdNum } : undefined,
     amount: BigInt(permit.amount),
-    token_id: permit.token_id !== undefined && permit.token_id !== null ? Number(permit.token_id) : undefined,
+    token_id: permit.token_id != undefined && permit.token_id != null ? Number(permit.token_id) : undefined,
     githubCommentUrl: githubUrlStr,
     partner: ownerAddressStr ? { wallet: { address: ownerAddressStr } } : undefined,
     claimStatus: "Idle",
@@ -289,6 +321,257 @@ async function getPermit2Address(permitData: {
   return PERMIT2;
 }
 
+// Helper function to create nonce check request
+function createNonceCheckRequest(
+  permit: PermitData,
+  requestId: number
+): { request: JsonRpcRequest; key: string; type: string; chainId: number } {
+  const owner = permit.owner as Address;
+  const wordPos = BigInt(permit.nonce) >> 8n;
+  
+  return {
+    request: {
+      jsonrpc: "2.0",
+      method: "eth_call",
+      params: [
+        { to: permit.permit2Address, data: encodeFunctionData({ abi: [permit2Abi], functionName: "nonceBitmap", args: [owner, wordPos] }) },
+        "latest",
+      ],
+      id: requestId,
+    },
+    key: permit.signature,
+    type: "nonce",
+    chainId: permit.networkId,
+  };
+}
+
+// Helper function to create balance check request
+function createBalanceCheckRequest(
+  balanceKey: string,
+  tokenAddress: `0x${string}`,
+  ownerAddress: `0x${string}`,
+  chainId: number,
+  requestId: number
+): { request: JsonRpcRequest; key: string; type: string; chainId: number } {
+  return {
+    request: {
+      jsonrpc: "2.0",
+      method: "eth_call",
+      params: [
+        {
+          to: tokenAddress,
+          data: encodeFunctionData({ abi: erc20Abi, functionName: "balanceOf", args: [ownerAddress] }),
+        },
+        "latest",
+      ],
+      id: requestId,
+    },
+    key: balanceKey,
+    type: "balance",
+    chainId,
+  };
+}
+
+// Helper function to create allowance check request
+function createAllowanceCheckRequest(
+  balanceKey: string,
+  tokenAddress: `0x${string}`,
+  ownerAddress: `0x${string}`,
+  permit2Address: string,
+  chainId: number,
+  requestId: number
+): { request: JsonRpcRequest; key: string; type: string; chainId: number } {
+  return {
+    request: {
+      jsonrpc: "2.0",
+      method: "eth_call",
+      params: [
+        {
+          to: tokenAddress,
+          data: encodeFunctionData({ abi: erc20Abi, functionName: "allowance", args: [ownerAddress, permit2Address] }),
+        },
+        "latest",
+      ],
+      id: requestId,
+    },
+    key: balanceKey,
+    type: "allowance",
+    chainId,
+  };
+}
+
+// Helper function to handle nonce check response
+function handleNonceCheckResponse(
+  batchReq: { request: JsonRpcRequest; key: string; type: string; chainId: number },
+  res: JsonRpcResponse | undefined,
+  permitsByKey: Map<string, PermitData>,
+  checkedPermitsMap: Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>
+): void {
+  const permit = permitsByKey.get(batchReq.key);
+  if (!permit) return;
+
+  const updateData: Partial<PermitData & { isNonceUsed?: boolean }> = checkedPermitsMap.get(batchReq.key) || {};
+
+  if (!res) {
+    updateData.checkError = `Batch response missing (${batchReq.type})`;
+  } else if (res.error) {
+    updateData.checkError = `Check failed (${batchReq.type}). ${res.error.message}`;
+  } else if (res.result !== undefined && res.result !== null) {
+    try {
+      const bitmap = BigInt(res.result as string);
+      updateData.isNonceUsed = Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n)));
+      updateData.status = updateData.isNonceUsed ? "Claimed" : "Valid";
+    } catch (parseError: unknown) {
+      updateData.checkError = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+    }
+  } else {
+    updateData.checkError = `Empty result (${batchReq.type})`;
+  }
+  
+  checkedPermitsMap.set(batchReq.key, updateData);
+}
+
+// Helper function to process balance/allowance result value
+function processBalanceAllowanceResult(
+  resultValue: bigint,
+  type: string,
+  balanceAllowanceData: AllowanceAndBalance
+): void {
+  if (type === "balance") {
+    balanceAllowanceData.balance = resultValue;
+  } else {
+    balanceAllowanceData.allowance = resultValue;
+  }
+}
+
+// Helper function to update max claimable amount
+function updateMaxClaimable(balanceAllowanceData: AllowanceAndBalance): void {
+  if (balanceAllowanceData.balance !== undefined && balanceAllowanceData.allowance !== undefined && !balanceAllowanceData.error) {
+    balanceAllowanceData.maxClaimable =
+      balanceAllowanceData.balance < balanceAllowanceData.allowance ? balanceAllowanceData.balance : balanceAllowanceData.allowance;
+  }
+}
+
+// Helper function to handle balance/allowance check response
+function handleBalanceAllowanceResponse(
+  batchReq: { request: JsonRpcRequest; key: string; type: string; chainId: number },
+  res: JsonRpcResponse | undefined,
+  balancesAndAllowances: Map<string, AllowanceAndBalance>
+): void {
+  const balanceKey = batchReq.key;
+  const balanceAllowanceData = balancesAndAllowances.get(balanceKey);
+  if (!balanceAllowanceData) return;
+
+  if (!res) {
+    balanceAllowanceData.error = `Batch response missing (${batchReq.type})`;
+  } else if (res.error) {
+    balanceAllowanceData.error = `Check failed (${batchReq.type}). ${res.error.message}`;
+  } else if (res.result !== undefined && res.result !== null) {
+    try {
+      const resultValue = BigInt(res.result as string);
+      processBalanceAllowanceResult(resultValue, batchReq.type, balanceAllowanceData);
+    } catch (parseError: unknown) {
+      balanceAllowanceData.error = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+    }
+  } else {
+    balanceAllowanceData.error = `Empty result (${batchReq.type})`;
+  }
+  
+  updateMaxClaimable(balanceAllowanceData);
+  balancesAndAllowances.set(balanceKey, balanceAllowanceData);
+}
+
+// Helper function to process permits and create batch requests
+function createBatchRequestsForNetwork(
+  permits: PermitData[],
+  networkId: number,
+  balancesAndAllowances: Map<string, AllowanceAndBalance>
+): { request: JsonRpcRequest; key: string; type: string; requiredAmount?: bigint; chainId: number }[] {
+  let requestIdCounter = 1;
+  const batchRequests: { request: JsonRpcRequest; key: string; type: string; requiredAmount?: bigint; chainId: number }[] = [];
+
+  permits.forEach((permit) => {
+    // Only handle ERC20 permits as per simplified logic
+    if (permit.type !== "erc20-permit") {
+      return;
+    }
+
+    const owner = permit.owner as Address;
+
+    // Nonce Check (ERC20 only)
+    batchRequests.push(createNonceCheckRequest(permit, requestIdCounter++));
+
+    // Group Balance & Allowance Checks by unique tuple
+    if (permit.token?.address && permit.amount && permit.owner) {
+      const balanceKey = `${networkId}-${permit.permit2Address}-${permit.token.address}-${permit.owner}`;
+      const ownerAddress = permit.owner as `0x${string}`;
+      const tokenAddress = permit.token.address as `0x${string}`;
+      if (!balancesAndAllowances.has(balanceKey)) {
+        batchRequests.push(createBalanceCheckRequest(balanceKey, tokenAddress, ownerAddress, permit.networkId, requestIdCounter++));
+        batchRequests.push(createAllowanceCheckRequest(balanceKey, tokenAddress, ownerAddress, permit.permit2Address, permit.networkId, requestIdCounter++));
+
+        balancesAndAllowances.set(balanceKey, { networkId, permit2Address: permit.permit2Address, tokenAddress: permit.token.address, owner });
+      }
+    }
+  });
+
+  return batchRequests;
+}
+
+// Helper function to apply balance and allowance results to permits
+function applyBalanceAllowanceResults(
+  permits: PermitData[],
+  networkId: number,
+  balancesAndAllowances: Map<string, AllowanceAndBalance>,
+  checkedPermitsMap: Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>
+): void {
+  permits.forEach((permit) => {
+    if (permit.type !== "erc20-permit" || !permit.token?.address || !permit.owner) {
+      return;
+    }
+
+    const balanceKey = `${networkId}-${permit.permit2Address}-${permit.token.address}-${permit.owner}`;
+    const balanceAllowanceData = balancesAndAllowances.get(balanceKey);
+
+    if (balanceAllowanceData) {
+      const updateData: Partial<PermitData & { isNonceUsed?: boolean }> = checkedPermitsMap.get(permit.signature) || {};
+
+      if (balanceAllowanceData.error) {
+        updateData.checkError = balanceAllowanceData.error;
+      } else {
+        if (balanceAllowanceData.balance !== undefined) {
+          updateData.ownerBalanceSufficient = balanceAllowanceData.balance >= permit.amount;
+        }
+        if (balanceAllowanceData.allowance !== undefined) {
+          updateData.permit2AllowanceSufficient = balanceAllowanceData.allowance >= permit.amount;
+        }
+      }
+      checkedPermitsMap.set(permit.signature, updateData);
+    }
+  });
+}
+
+// Helper function to process batch responses
+function processBatchResponses(
+  batchRequests: { request: JsonRpcRequest; key: string; type: string; chainId: number }[],
+  batchResponses: JsonRpcResponse[],
+  permitsByKey: Map<string, PermitData>,
+  checkedPermitsMap: Map<string, Partial<PermitData & { isNonceUsed?: boolean }>>,
+  balancesAndAllowances: Map<string, AllowanceAndBalance>
+): void {
+  const responseMap = new Map<number, JsonRpcResponse>(batchResponses.map((res) => [res.id as number, res]));
+
+  batchRequests.forEach((batchReq) => {
+    const res = responseMap.get(batchReq.request.id as number);
+
+    if (batchReq.type === "nonce") {
+      handleNonceCheckResponse(batchReq, res, permitsByKey, checkedPermitsMap);
+    } else if (batchReq.type === "balance" || batchReq.type === "allowance") {
+      handleBalanceAllowanceResponse(batchReq, res, balancesAndAllowances);
+    }
+  });
+}
+
 // Function to perform batch validation using rpcClient
 async function validatePermitsBatch(permitsToValidate: PermitData[]) {
   if (!rpcClient) throw new Error("RPC client not initialized.");
@@ -308,173 +591,17 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
   }, new Map<number, PermitData[]>());
 
   for (const [networkId, permits] of permitsByNetwork.entries()) {
-    let requestIdCounter = 1;
-    const batchRequests: { request: JsonRpcRequest; key: string; type: string; requiredAmount?: bigint; chainId: number }[] = [];
-
-    permits.forEach((permit) => {
-      // Only handle ERC20 permits as per simplified logic
-      if (permit.type !== "erc20-permit") {
-        return;
-      }
-
-      const key = permit.signature;
-      const chainId = permit.networkId;
-      const owner = permit.owner as Address;
-
-      // Nonce Check (ERC20 only)
-      const wordPos = BigInt(permit.nonce) >> 8n;
-      batchRequests.push({
-        request: {
-          jsonrpc: "2.0",
-          method: "eth_call",
-          params: [
-            { to: permit.permit2Address, data: encodeFunctionData({ abi: [permit2Abi], functionName: "nonceBitmap", args: [owner, wordPos] }) },
-            "latest",
-          ],
-          id: requestIdCounter++,
-        },
-        key,
-        type: "nonce",
-        chainId,
-      });
-
-      // Group Balance & Allowance Checks by unique tuple
-      if (permit.token?.address && permit.amount && permit.owner) {
-        const balanceKey = `${networkId}-${permit.permit2Address}-${permit.token.address}-${permit.owner}`;
-        const ownerAddress = permit.owner as `0x${string}`;
-        const tokenAddress = permit.token.address as `0x${string}`;
-        if (!balancesAndAllowances.has(balanceKey)) {
-          batchRequests.push({
-            request: {
-              jsonrpc: "2.0",
-              method: "eth_call",
-              params: [
-                {
-                  to: tokenAddress,
-                  data: encodeFunctionData({ abi: erc20Abi, functionName: "balanceOf", args: [ownerAddress] }),
-                },
-                "latest",
-              ],
-              id: requestIdCounter++,
-            },
-            key: balanceKey,
-            type: "balance",
-            chainId: permit.networkId,
-          });
-
-          batchRequests.push({
-            request: {
-              jsonrpc: "2.0",
-              method: "eth_call",
-              params: [
-                {
-                  to: tokenAddress,
-                  data: encodeFunctionData({ abi: erc20Abi, functionName: "allowance", args: [ownerAddress, permit.permit2Address] }),
-                },
-                "latest",
-              ],
-              id: requestIdCounter++,
-            },
-            key: balanceKey,
-            type: "allowance",
-            chainId: permit.networkId,
-          });
-
-          balancesAndAllowances.set(balanceKey, { networkId, permit2Address: permit.permit2Address, tokenAddress: permit.token.address, owner });
-        }
-      }
-    });
+    const batchRequests = createBatchRequestsForNetwork(permits, networkId, balancesAndAllowances);
 
     if (batchRequests.length === 0) continue; // Return original if nothing to check (e.g., only non-ERC20 passed)
 
     try {
       const batchPayload = batchRequests.map((br) => br.request);
       const batchResponses = (await rpcClient.request(networkId, batchPayload)) as JsonRpcResponse[];
-      const responseMap = new Map<number, JsonRpcResponse>(batchResponses.map((res) => [res.id as number, res]));
-
-      batchRequests.forEach((batchReq) => {
-        const res = responseMap.get(batchReq.request.id as number);
-
-        if (batchReq.type === "nonce") {
-          // Handle nonce checks per permit (existing logic)
-          const permit = permitsByKey.get(batchReq.key);
-          if (!permit) return;
-
-          const updateData: Partial<PermitData & { isNonceUsed?: boolean }> = checkedPermitsMap.get(batchReq.key) || {};
-
-          if (!res) {
-            updateData.checkError = `Batch response missing (${batchReq.type})`;
-          } else if (res.error) {
-            updateData.checkError = `Check failed (${batchReq.type}). ${res.error.message}`;
-          } else if (res.result !== undefined && res.result !== null) {
-            try {
-              const bitmap = BigInt(res.result as string);
-              updateData.isNonceUsed = Boolean(bitmap & (1n << (BigInt(permit.nonce) & 255n)));
-              updateData.status = updateData.isNonceUsed ? "Claimed" : "Valid";
-            } catch (parseError: unknown) {
-              updateData.checkError = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
-            }
-          } else {
-            updateData.checkError = `Empty result (${batchReq.type})`;
-          }
-          checkedPermitsMap.set(batchReq.key, updateData);
-        } else if (batchReq.type === "balance" || batchReq.type === "allowance") {
-          // Handle shared balance/allowance checks by balanceKey
-          const balanceKey = batchReq.key;
-          const balanceAllowanceData = balancesAndAllowances.get(balanceKey);
-          if (!balanceAllowanceData) return;
-
-          if (!res) {
-            balanceAllowanceData.error = `Batch response missing (${batchReq.type})`;
-          } else if (res.error) {
-            balanceAllowanceData.error = `Check failed (${batchReq.type}). ${res.error.message}`;
-          } else if (res.result !== undefined && res.result !== null) {
-            try {
-              const resultValue = BigInt(res.result as string);
-              if (batchReq.type === "balance") {
-                balanceAllowanceData.balance = resultValue;
-              } else {
-                balanceAllowanceData.allowance = resultValue;
-              }
-            } catch (parseError: unknown) {
-              balanceAllowanceData.error = `Result parse error (${batchReq.type}). ${parseError instanceof Error ? parseError.message : String(parseError)}`;
-            }
-          } else {
-            balanceAllowanceData.error = `Empty result (${batchReq.type})`;
-          }
-          if (balanceAllowanceData.balance !== undefined && balanceAllowanceData.allowance !== undefined && !balanceAllowanceData.error) {
-            balanceAllowanceData.maxClaimable =
-              balanceAllowanceData.balance < balanceAllowanceData.allowance ? balanceAllowanceData.balance : balanceAllowanceData.allowance;
-          }
-          balancesAndAllowances.set(balanceKey, balanceAllowanceData);
-        }
-      });
+      processBatchResponses(batchRequests, batchResponses, permitsByKey, checkedPermitsMap, balancesAndAllowances);
 
       // Apply balance/allowance results to all permits that share the same tuple
-      permits.forEach((permit) => {
-        if (permit.type !== "erc20-permit" || !permit.token?.address || !permit.owner) {
-          return;
-        }
-
-        const balanceKey = `${networkId}-${permit.permit2Address}-${permit.token.address}-${permit.owner}`;
-        const balanceAllowanceData = balancesAndAllowances.get(balanceKey);
-
-        if (balanceAllowanceData) {
-          const updateData: Partial<PermitData & { isNonceUsed?: boolean }> = checkedPermitsMap.get(permit.signature) || {};
-
-          if (balanceAllowanceData.error) {
-            updateData.checkError = balanceAllowanceData.error;
-          } else {
-            if (balanceAllowanceData.balance !== undefined) {
-              updateData.ownerBalanceSufficient = balanceAllowanceData.balance >= permit.amount;
-            }
-            if (balanceAllowanceData.allowance !== undefined) {
-              updateData.permit2AllowanceSufficient = balanceAllowanceData.allowance >= permit.amount;
-            }
-          }
-          checkedPermitsMap.set(permit.signature, updateData);
-        }
-      });
+      applyBalanceAllowanceResults(permits, networkId, balancesAndAllowances, checkedPermitsMap);
     } catch (error: unknown) {
       console.error("Worker: Error during validation batch RPC request:", error);
       // Mark all permits in this validation batch as errored
@@ -508,7 +635,9 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
   for (const nonceGroup of permitsByNonce.values()) {
     const sortedByAmountDescending = nonceGroup.slice().sort((a, b) => {
       const diff = b.amount - a.amount;
-      return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+      if (diff > 0n) return 1;
+      if (diff < 0n) return -1;
+      return 0;
     });
     const passing = sortedByAmountDescending.find((p) => !p.checkError); // find the permit with highest amount and no error
     if (passing) {
@@ -532,73 +661,81 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
 
 // --- Worker Message Handling ---
 
+// Helper function to handle worker initialization
+function handleWorkerInit(payload: any): void {
+  const supabaseUrl = payload.supabaseUrl;
+  const supabaseAnonKey = payload.supabaseAnonKey;
+  PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
+      rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
+      worker.postMessage({ type: "INIT_SUCCESS" });
+    } catch (error: unknown) {
+      console.error("Worker: Error initializing clients:", error);
+      worker.postMessage({ type: "INIT_ERROR", error: error instanceof Error ? error.message : String(error) });
+    }
+  } else {
+    worker.postMessage({ type: "INIT_ERROR", error: "Missing supabaseUrl or supabaseAnonKey" });
+  }
+}
+
+// Helper function to handle fetching new permits
+async function handleFetchNewPermits(payload: any): Promise<void> {
+  const address = payload.address as Address;
+  const lastCheckTimestamp = payload.lastCheckTimestamp;
+  
+  try {
+    if (!supabase) throw new Error("Supabase client not ready.");
+    const lowerCaseWalletAddress = address.toLowerCase();
+
+    // Fetch *only new* permits from DB using the wallet address and timestamp
+    const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
+
+    // Map and pre-filter *new* permits
+    const mappedNewPermits = (
+      await Promise.all(newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)))
+    ).filter((p): p is PermitData => p !== null);
+    
+    // Summary logging instead of individual warnings
+    if (mappedNewPermits.length < newPermitsFromDb.length) {
+      const invalidCount = newPermitsFromDb.length - mappedNewPermits.length;
+      console.info(`Worker: Filtered out ${invalidCount} invalid permits from ${newPermitsFromDb.length} total`);
+
+      if (DEBUG_MODE) {
+        // Only in debug mode, show breakdown
+        console.debug("Invalid permit breakdown:", {
+          total: newPermitsFromDb.length,
+          valid: mappedNewPermits.length,
+          invalid: invalidCount,
+        });
+      }
+    } else if (mappedNewPermits.length > 0) {
+      console.info(`Worker: Mapped ${mappedNewPermits.length} new permits`);
+    } else {
+      console.info("Worker: No new permits to map");
+    }
+
+    if (mappedNewPermits.length === 0) {
+      worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: [], balancesAndAllowances: new Map() });
+      return;
+    }
+
+    const result = await validatePermitsBatch(mappedNewPermits);
+    worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: result.permits, balancesAndAllowances: result.balancesAndAllowances });
+  } catch (error: unknown) {
+    console.error("[Worker] Error fetching new permits:", error);
+    worker.postMessage({ type: "PERMITS_ERROR", error: error instanceof Error ? error.message : String(error) });
+  }
+}
+
 worker.onmessage = async (event) => {
   const { type, payload } = event.data;
 
   if (type === "INIT") {
-    const supabaseUrl = payload.supabaseUrl;
-    const supabaseAnonKey = payload.supabaseAnonKey;
-    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
-
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
-        rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
-        worker.postMessage({ type: "INIT_SUCCESS" });
-      } catch (error: unknown) {
-        console.error("Worker: Error initializing clients:", error);
-        worker.postMessage({ type: "INIT_ERROR", error: error instanceof Error ? error.message : String(error) });
-      }
-    } else {
-      worker.postMessage({ type: "INIT_ERROR", error: "Supabase/RPC credentials not received by worker." });
-    }
+    handleWorkerInit(payload);
   } else if (type === "FETCH_NEW_PERMITS") {
-    const address = payload.address as Address;
-    const lastCheckTimestamp = payload.lastCheckTimestamp;
-    try {
-      if (!supabase) throw new Error("Supabase client not ready.");
-      const lowerCaseWalletAddress = address.toLowerCase();
-
-      // Fetch *only new* permits from DB using the wallet address and timestamp
-      const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
-
-      // 3. Map and pre-filter *new* permits
-      // Add explicit types to map parameters
-      const mappedNewPermits = (
-        await Promise.all(newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)))
-      ).filter((p): p is PermitData => p !== null);
-      // Summary logging instead of individual warnings
-      if (mappedNewPermits.length < newPermitsFromDb.length) {
-        const invalidCount = newPermitsFromDb.length - mappedNewPermits.length;
-        console.info(`Worker: Filtered out ${invalidCount} invalid permits from ${newPermitsFromDb.length} total`);
-
-        if (DEBUG_MODE) {
-          // Only in debug mode, show breakdown
-          console.debug("Invalid permit breakdown:", {
-            total: newPermitsFromDb.length,
-            valid: mappedNewPermits.length,
-            invalid: invalidCount,
-          });
-        }
-      } else if (mappedNewPermits.length > 0) {
-        console.info(`Worker: Mapped ${mappedNewPermits.length} new permits`);
-      }
-
-      // 4. Validate *only* the mapped new permits
-      if (mappedNewPermits.length > 0) {
-        const validatedNewPermits = await validatePermitsBatch(mappedNewPermits);
-        worker.postMessage({
-          type: "NEW_PERMITS_VALIDATED",
-          permits: validatedNewPermits.permits,
-          balancesAndAllowances: validatedNewPermits.balancesAndAllowances,
-        });
-      } else {
-        // If no new permits were found, still send back an empty array for consistency
-        worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: [], balancesAndAllowances: new Map() });
-      }
-    } catch (error: unknown) {
-      console.error("Worker: Error fetching/validating new permits:", error);
-      worker.postMessage({ type: "PERMITS_ERROR", error: error instanceof Error ? error.message : String(error) });
-    }
+    await handleFetchNewPermits(payload);
   }
 };

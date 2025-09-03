@@ -6,8 +6,8 @@ import { getSupportedRewardTokensForChain } from "../constants/supported-reward-
 const LOCAL_STORAGE_KEY = "preferredRewardToken";
 
 interface RewardPreferenceSelectorProps {
-  chainId: number | undefined;
-  onPreferenceChange: (selectedAddress: Address | null) => void; // Callback for parent
+  readonly chainId: number | undefined;
+  readonly onPreferenceChange: (selectedAddress: Address | null) => void; // Callback for parent
 }
 
 export function RewardPreferenceSelector({ chainId, onPreferenceChange }: RewardPreferenceSelectorProps) {

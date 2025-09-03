@@ -4,18 +4,18 @@ import type { PermitData } from "../types.ts";
 import { PermitRow } from "./permit-row.tsx";
 
 interface PermitsTableProps {
-  permits: PermitData[];
-  onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
-  onInvalidatePermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
-  isConnected: boolean;
-  chain: Chain | undefined;
-  claimTxHash?: `0x${string}`;
-  isLoading: boolean;
-  isQuoting: boolean;
-  preferredRewardTokenAddress: Address | null;
-  isFundingWallet: boolean;
-  isInvalidating: Record<string, boolean>;
-  address: Address | undefined;
+  readonly permits: PermitData[];
+  readonly onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  readonly onInvalidatePermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  readonly isConnected: boolean;
+  readonly chain: Chain | undefined;
+  readonly claimTxHash?: `0x${string}`;
+  readonly isLoading: boolean;
+  readonly isQuoting: boolean;
+  readonly preferredRewardTokenAddress: Address | null;
+  readonly isFundingWallet: boolean;
+  readonly isInvalidating: Record<string, boolean>;
+  readonly address: Address | undefined;
 }
 
 export function PermitsTable({

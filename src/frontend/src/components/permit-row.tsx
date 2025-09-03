@@ -11,19 +11,227 @@ import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { parseGitHubUrl, truncateAddress } from "../utils/format-utils.ts";
 import { ICONS } from "./iconography.tsx";
 
+// Helper function to determine row class name based on permit state
+function getRowClassName(permit: PermitData, isInvalidating: boolean): string {
+  const isReadyToClaim = hasRequiredFields(permit);
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
+  const isClaimingThis = permit.claimStatus === "Pending";
+  const claimFailed = permit.claimStatus === "Error";
+  const insufficientBalance = permit.ownerBalanceSufficient === false;
+  const insufficientAllowance = permit.permit2AllowanceSufficient === false;
+  const prerequisiteCheckFailed = !!permit.checkError;
+
+  if (!isReadyToClaim) return "row-invalid";
+  if (isInvalidating) return "row-invalidating";
+  if (isClaimed) return "row-claimed";
+  if (isInvalidated) return "row-invalidated";
+  if (claimFailed) return "row-claim-failed";
+  if (isClaimingThis) return "row-claiming";
+  if (insufficientBalance || insufficientAllowance || prerequisiteCheckFailed) return "row-invalid";
+  if (permit.status === "Valid") return "row-valid";
+  return "";
+}
+
+// Helper function to get status display text
+function getStatusDisplayText(
+  permit: PermitData,
+  networkMismatch: boolean,
+  targetNetworkName: string,
+  isFundingWallet: boolean,
+  isInvalidating: boolean
+): string {
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
+  const isClaimingThis = permit.claimStatus === "Pending";
+  const claimFailed = permit.claimStatus === "Error";
+  const insufficientBalance = permit.ownerBalanceSufficient === false;
+  const insufficientAllowance = permit.permit2AllowanceSufficient === false;
+  const prerequisiteCheckFailed = !!permit.checkError;
+
+  if (networkMismatch) {
+    return `Switch wallet to ${targetNetworkName} to ${isFundingWallet ? "invalidate" : "claim"}`;
+  }
+  if (isClaimed) return "Claimed";
+  if (isInvalidated) return "Invalidated";
+  if (isInvalidating) return "Invalidating...";
+  if (isClaimingThis) return "Claiming...";
+  if (claimFailed) return "Failed";
+  if (insufficientBalance) return "Insolvent";
+  if (insufficientAllowance) return "Permit2 Allowance Low";
+  if (prerequisiteCheckFailed) return "Check Failed";
+  if (permit.status === "Valid") return "Valid";
+  return permit.status || "";
+}
+
+// Helper function to get button text
+function getButtonText(
+  permit: PermitData,
+  isInvalidating: boolean,
+  isFundingWallet: boolean,
+  canInvalidate: boolean
+): string {
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
+  const isClaimingThis = permit.claimStatus === "Pending";
+  const claimFailed = permit.claimStatus === "Error";
+
+  if (isInvalidating) return "Invalidating...";
+  if (isFundingWallet && canInvalidate) return "Invalidate";
+  if (isInvalidated) return "Invalidated";
+  if (isClaimed && permit.transactionHash) return "View";
+  if (isClaimingThis) return "Claiming...";
+  if (claimFailed && permit.transactionHash) return "View";
+  if (claimFailed) return "Retry";
+  return "Claim";
+}
+
+// Helper function to determine if button is disabled
+function getButtonDisabled(
+  permit: PermitData,
+  networkMismatch: boolean,
+  isConnected: boolean,
+  isSwitchingNetwork: boolean,
+  connector: unknown,
+  canSwitchToPermitNetwork: boolean,
+  isInvalidating: boolean,
+  isFundingWallet: boolean,
+  canInvalidate: boolean,
+  canAttemptClaim: boolean
+): boolean {
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
+  const isInvalidated = permit.status === "Invalidated";
+  const isClaimingThis = permit.claimStatus === "Pending";
+  const claimFailed = permit.claimStatus === "Error";
+
+  if (networkMismatch) {
+    return !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork;
+  }
+  if (isInvalidating) return true;
+  if (isFundingWallet && canInvalidate) return !isConnected;
+  if (isInvalidated) return true;
+  
+  return !isConnected ||
+    isClaimingThis ||
+    (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
+    (isClaimed && !permit.transactionHash) ||
+    (claimFailed && !permit.transactionHash && !canAttemptClaim);
+}
+
+// Helper function to get button icon
+function getButtonIcon(
+  isInvalidated: boolean,
+  isInvalidating: boolean,
+  isFundingWallet: boolean,
+  canInvalidate: boolean,
+  showCannotClaimIcon: boolean
+): JSX.Element {
+  if (isInvalidated || isInvalidating) return ICONS.WARNING;
+  if (isFundingWallet && canInvalidate) return ICONS.WARNING;
+  if (showCannotClaimIcon) return ICONS.NO_CLAIM;
+  return ICONS.CLAIM;
+}
+
+// Helper function to get final button text
+function getFinalButtonText(
+  networkMismatch: boolean,
+  isSwitchingNetwork: boolean,
+  targetNetworkName: string,
+  buttonText: string
+): string {
+  if (!networkMismatch) return buttonText;
+  if (isSwitchingNetwork) return "Switching...";
+  return `Switch to ${targetNetworkName}`;
+}
+
+// Helper function to render estimated amount with preferred token
+function renderEstimatedAmount(
+  permit: PermitData,
+  preferredTokenInfo: { symbol: string; decimals: number },
+  chain: Chain | undefined
+): JSX.Element {
+  try {
+    const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut!), preferredTokenInfo.decimals);
+    const numericValue = Number(estimatedValueString);
+    const displayValue = isNaN(numericValue)
+      ? "Error"
+      : numericValue.toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+          minimumFractionDigits: 0,
+        });
+
+    const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
+    const originalSymbol = originalTokenInfo?.symbol || "tokens";
+    const originalAmountFormatted = permit.amount && originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–";
+
+    const explorerUrl = chain?.blockExplorers?.default?.url;
+    const tokenAddress = permit.tokenAddress;
+    const ownerAddress = permit.owner;
+
+    if (explorerUrl && tokenAddress && ownerAddress) {
+      return (
+        <button
+          className="button-as-link monospace"
+          onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+          title={`Original: ${originalAmountFormatted} ${originalSymbol}. Click to view balance on explorer.`}
+        >
+          ≈ {displayValue} {preferredTokenInfo.symbol}
+        </button>
+      );
+    } else {
+      return (
+        <span className="monospace" title={`Original: ${originalAmountFormatted} ${originalSymbol}`}>
+          ≈ {displayValue} {preferredTokenInfo.symbol}
+        </span>
+      );
+    }
+  } catch (e) {
+    console.error("Error formatting estimated amount:", e);
+    return <span title="Error formatting estimated amount">{ICONS.WARNING} Format Error</span>;
+  }
+}
+
+// Helper function to render original token amount
+function renderOriginalAmount(permit: PermitData, chain: Chain | undefined, targetNetworkName: string): JSX.Element {
+  const originalTokenInfo = getTokenInfo(permit.networkId, permit.tokenAddress as Address);
+  const originalSymbol = originalTokenInfo?.symbol || "tokens";
+  
+  if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
+    const explorerUrl = chain.blockExplorers.default.url;
+    const tokenAddress = permit.tokenAddress;
+    const ownerAddress = permit.owner;
+    
+    return (
+      <button
+        className="button-as-link monospace"
+        onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
+        title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress}) on ${targetNetworkName}`}
+      >
+        {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
+      </button>
+    );
+  } else {
+    return (
+      <span title={`Token: ${originalSymbol} (${permit.tokenAddress}) on ${targetNetworkName}`}>
+        {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
+      </span>
+    );
+  }
+}
+
 interface PermitRowProps {
-  permit: PermitData;
-  onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
-  onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
-  isConnected: boolean;
-  chain: Chain | undefined;
-  isQuoting: boolean;
-  preferredRewardTokenAddress: Address | null;
-  confirmingHash?: `0x${string}`;
-  isFundingWallet?: boolean;
-  isInvalidating?: boolean;
-  address?: Address;
-  githubUsername?: string; // GitHub username for the beneficiary
+  readonly permit: PermitData;
+  readonly onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  readonly onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  readonly isConnected: boolean;
+  readonly chain: Chain | undefined;
+  readonly isQuoting: boolean;
+  readonly preferredRewardTokenAddress: Address | null;
+  readonly confirmingHash?: `0x${string}`;
+  readonly isFundingWallet?: boolean;
+  readonly isInvalidating?: boolean;
+  readonly address?: Address;
+  readonly githubUsername?: string; // GitHub username for the beneficiary
 }
 
 export function PermitRow({
@@ -62,85 +270,36 @@ export function PermitRow({
   const isOwner = address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidated && !isInvalidating;
 
-  const rowClassName = !isReadyToClaim
-    ? "row-invalid"
-    : isInvalidating
-      ? "row-invalidating"
-      : isClaimed
-        ? "row-claimed"
-        : isInvalidated
-          ? "row-invalidated"
-          : claimFailed
-            ? "row-claim-failed"
-            : isClaimingThis
-              ? "row-claiming"
-              : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-                ? "row-invalid"
-                : permit.status === "Valid"
-                  ? "row-valid"
-                  : "";
-
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
   const targetNetworkName = switchableChains.find((c: Chain) => c.id === permit.networkId)?.name || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
-  const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet ? "invalidate" : "claim"}`
-    : isClaimed
-      ? "Claimed"
-      : isInvalidated
-        ? "Invalidated"
-        : isInvalidating
-          ? "Invalidating..."
-          : isClaimingThis
-            ? "Claiming..."
-            : claimFailed
-              ? "Failed"
-              : insufficientBalance
-                ? "Insolvent"
-                : insufficientAllowance
-                  ? "Permit2 Allowance Low"
-                  : prerequisiteCheckFailed
-                    ? "Check Failed"
-                    : permit.status === "Valid"
-                      ? "Valid"
-                      : permit.status || "";
-
-  const buttonText = isInvalidating
-    ? "Invalidating..."
-    : isFundingWallet && canInvalidate
-      ? "Invalidate"
-      : isInvalidated
-        ? "Invalidated"
-        : isClaimed && permit.transactionHash
-          ? "View"
-          : isClaimingThis
-            ? "Claiming..."
-            : claimFailed && permit.transactionHash
-              ? "View"
-              : claimFailed
-                ? "Retry"
-                : "Claim";
-
-  const isButtonDisabled = networkMismatch
-    ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
-    : isInvalidating
-      ? true
-      : isFundingWallet && canInvalidate
-        ? !isConnected
-        : isInvalidated
-          ? true
-          : !isConnected ||
-            isClaimingThis ||
-            (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
-            (isClaimed && !permit.transactionHash) ||
-            (claimFailed && !permit.transactionHash && !canAttemptClaim);
+  const rowClassName = getRowClassName(permit, isInvalidating || false);
+  const statusDisplayText = getStatusDisplayText(permit, networkMismatch, targetNetworkName, isFundingWallet || false, isInvalidating || false);
+  const buttonText = getButtonText(permit, isInvalidating || false, isFundingWallet || false, canInvalidate);
+  const isButtonDisabled = getButtonDisabled(
+    permit,
+    networkMismatch,
+    isConnected,
+    isSwitchingNetwork,
+    connector,
+    canSwitchToPermitNetwork,
+    isInvalidating || false,
+    isFundingWallet || false,
+    canInvalidate,
+    canAttemptClaim
+  );
 
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis && !isFundingWallet && !isInvalidated;
   const showButtonIcon =
     !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
-  const buttonIcon =
-    isInvalidated || isInvalidating ? ICONS.WARNING : isFundingWallet && canInvalidate ? ICONS.WARNING : showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
+  const buttonIcon = getButtonIcon(
+    permit.status === "Invalidated",
+    isInvalidating || false,
+    isFundingWallet || false,
+    canInvalidate,
+    showCannotClaimIcon
+  );
 
   const handleButtonClick = async () => {
     if (isInvalidated) {
@@ -166,10 +325,13 @@ export function PermitRow({
     }
   };
 
-  const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
+  const finalButtonText = getFinalButtonText(networkMismatch, isSwitchingNetwork, targetNetworkName, buttonText);
 
-  const formatGithubLink = (url: string | undefined): JSX.Element | string => {
-    if (!url) return "–";
+  const formatGithubLink = (url: string | undefined): JSX.Element => {
+    if (!url) {
+      return <span>–</span>;
+    }
+    
     try {
       const parsed = parseGitHubUrl(url);
       if (parsed) {
@@ -189,10 +351,11 @@ export function PermitRow({
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
     }
-    return "Source Link";
+    
+    return <span>Source Link</span>;
   };
 
-  const renderAmount = () => {
+  const renderAmount = (): JSX.Element => {
     if (isQuoting && preferredRewardTokenAddress && permit.tokenAddress?.toLowerCase() !== preferredRewardTokenAddress.toLowerCase()) {
       return <span title="Fetching swap quote...">...</span>;
     }
@@ -204,75 +367,16 @@ export function PermitRow({
     if (permit.estimatedAmountOut && preferredRewardTokenAddress) {
       const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
       if (preferredTokenInfo) {
-        try {
-          const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut), preferredTokenInfo.decimals);
-          const numericValue = Number(estimatedValueString);
-          const displayValue = isNaN(numericValue)
-            ? "Error"
-            : numericValue.toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-                minimumFractionDigits: 0,
-              });
-
-          const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
-          const originalSymbol = originalTokenInfo?.symbol || "tokens";
-          const originalAmountFormatted = permit.amount && originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–";
-
-          const explorerUrl = chain?.blockExplorers?.default?.url;
-          const tokenAddress = permit.tokenAddress;
-          const ownerAddress = permit.owner;
-
-          if (explorerUrl && tokenAddress && ownerAddress) {
-            return (
-              <button
-                className="button-as-link monospace"
-                onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-                title={`Original: ${originalAmountFormatted} ${originalSymbol}. Click to view balance on explorer.`}
-              >
-                ≈ {displayValue} {preferredTokenInfo.symbol}
-              </button>
-            );
-          } else {
-            return (
-              <span className="monospace" title={`Original: ${originalAmountFormatted} ${originalSymbol}`}>
-                ≈ {displayValue} {preferredTokenInfo.symbol}
-              </span>
-            );
-          }
-        } catch (e) {
-          console.error("Error formatting estimated amount:", e);
-          return <span title="Error formatting estimated amount">{ICONS.WARNING} Format Error</span>;
-        }
+        return renderEstimatedAmount(permit, preferredTokenInfo, chain);
       }
     }
 
     if (permit.type === "erc20-permit" && permit.amount) {
-      const originalTokenInfo = getTokenInfo(permit.networkId, permit.tokenAddress as Address);
-      const originalSymbol = originalTokenInfo?.symbol || "tokens";
-      if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
-        const explorerUrl = chain.blockExplorers.default.url;
-        const tokenAddress = permit.tokenAddress;
-        const ownerAddress = permit.owner;
-        return (
-          <button
-            className="button-as-link monospace"
-            onClick={() => window.open(`${explorerUrl}/token/${tokenAddress}?a=${ownerAddress}`, "_blank")}
-            title={`View ${ownerAddress}'s balance for ${originalSymbol} (${tokenAddress}) on ${targetNetworkName}`}
-          >
-            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
-          </button>
-        );
-      } else {
-        return (
-          <span title={`Token: ${originalSymbol} (${permit.tokenAddress}) on ${targetNetworkName}`}>
-            {originalTokenInfo ? formatAmount(permit.amount, originalTokenInfo.decimals) : "–"} {originalSymbol}
-          </span>
-        );
-      }
+      return renderOriginalAmount(permit, chain, targetNetworkName);
     } else if (permit.type === "erc721-permit") {
-      return "NFT";
+      return <span>NFT</span>;
     } else {
-      return "–";
+      return <span>–</span>;
     }
   };
 

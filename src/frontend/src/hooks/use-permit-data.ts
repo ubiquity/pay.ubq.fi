@@ -6,6 +6,41 @@ import { WorkerRequest, WorkerResponse } from "../workers/permit-checker.worker.
 
 const PERMIT_DATA_CACHE_KEY = "permitDataCache";
 
+// Helper function to get error message from unknown error
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Quote fetching failed";
+}
+
+interface LoadingState {
+  isLoading: boolean;
+  isQuoting: boolean;
+  isWorkerInitialized: boolean;
+}
+
+// Helper function to handle successful quotes
+function handleQuotesSuccess(
+  mapWithQuotes: Map<string, PermitData>,
+  allPermitsRef: { current: Map<string, PermitData> },
+  filterPermits: (permits: Map<string, PermitData>) => void,
+  setLoadingState: React.Dispatch<React.SetStateAction<LoadingState>>
+): void {
+  allPermitsRef.current = mapWithQuotes;
+  filterPermits(allPermitsRef.current);
+  setLoadingState((prev: LoadingState) => ({ ...prev, isLoading: false }));
+}
+
+// Helper function to handle quote errors
+function handleQuotesError(
+  error: unknown,
+  setError: React.Dispatch<React.SetStateAction<string | null>>,
+  setLoadingState: React.Dispatch<React.SetStateAction<LoadingState>>
+): void {
+  setError(`Failed to fetch swap quotes: ${getErrorMessage(error)}`);
+  setLoadingState((prev: LoadingState) => ({ ...prev, isLoading: false }));
+}
+
 interface UsePermitDataProps {
   address: Address | undefined;
   isConnected: boolean;
@@ -156,7 +191,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         } catch (e: unknown) {
           group.forEach((p) => {
             delete p.estimatedAmountOut;
-            p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
+            p.quoteError = getErrorMessage(e);
             updated.set(p.signature, p);
           });
         }
@@ -203,15 +238,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           setBalancesAndAllowances(data.balancesAndAllowances);
           const newPermits = new Map(Object.entries(cache));
           fetchQuotes(newPermits)
-            .then((mapWithQuotes) => {
-              allPermitsRef.current = mapWithQuotes;
-              filterPermits(allPermitsRef.current);
-              setLoadingState((prev) => ({ ...prev, isLoading: false }));
-            })
-            .catch((e) => {
-              setError(`Failed to fetch swap quotes: ${e instanceof Error ? e.message : e}`);
-              setLoadingState((prev) => ({ ...prev, isLoading: false }));
-            });
+            .then((mapWithQuotes) => handleQuotesSuccess(mapWithQuotes, allPermitsRef, filterPermits, setLoadingState))
+            .catch((e) => handleQuotesError(e, setError, setLoadingState));
           break;
         }
         case "PERMITS_ERROR":
