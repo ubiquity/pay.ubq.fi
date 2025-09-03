@@ -11,7 +11,7 @@ import {
   bsc, // 56
   gnosis, // 100
   polygon, // 137
-  // zkSync deprecated - removed
+  zkSync, // 324
   base, // 8453
   arbitrum, // 42161
   celo, // 42220
@@ -24,7 +24,7 @@ import App from "./App.tsx";
 import { grid } from "./the-grid";
 
 // Configure wagmi
-const supportedChains = [mainnet, optimism, bsc, gnosis, polygon, base, arbitrum, celo, avalanche, blast, zora, anvil];
+const supportedChains = [mainnet, optimism, bsc, gnosis, polygon, zkSync, base, arbitrum, celo, avalanche, blast, zora, anvil];
 
 // Get base RPC URL from env or use default
 import { RPC_URL } from "./constants/config";
