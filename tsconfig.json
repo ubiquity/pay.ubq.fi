@@ -23,7 +23,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/frontend/src/*"],
-      "@backend/*": ["src/backend/*"],
       "@lib/*": ["lib/*"]
     }
   },

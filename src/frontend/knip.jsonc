@@ -1,9 +1,0 @@
-{
-  "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/main.tsx!", "src/workers/**/*.worker.ts!"],
-  "project": ["src/**/*.ts!", "src/**/*.tsx!"],
-  "ignore": ["vite.config.ts", "eslint.config.js", "src/vite-env.d.ts"],
-  "vite": {
-    "config": ["vite.config.ts"],
-  },
-}
