@@ -3,12 +3,6 @@
   "workspaces": {
     ".": {
       "entry": [
-        "src/backend/server.ts",
-        "scripts/nonce-migration/analyze-nonces.ts",
-        "scripts/nonce-migration/run-migration.ts",
-        "scripts/nonce-migration/speed-up.ts",
-        "scripts/nonce-migration/check-status.ts",
-        "scripts/nonce-migration/test-nonce-migration.ts",
         "scripts/nonce-migration/index.ts"
       ],
       "project": [
@@ -34,7 +28,11 @@
     "**/*.deno.ts",
     "**/*.deno.tsx",
     "**/deno.json",
-    "**/deno.jsonc"
+    "**/deno.jsonc",
+    "scripts/nonce-migration/blast-migration.ts",
+    "scripts/nonce-migration/continue-migration.ts",
+    "scripts/nonce-migration/simple-nonce-migration.ts",
+    "scripts/rpc-diagnostics.ts"
   ],
   "ignoreDependencies": [
     "@playwright/mcp",

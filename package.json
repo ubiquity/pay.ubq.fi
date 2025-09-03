@@ -1,6 +1,7 @@
 {
   "name": "pay.ubq.fi",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@supabase/supabase-js": "^2.56.0",
@@ -13,8 +14,10 @@
     "@playwright/mcp": "^0.0.35",
     "@types/bun": "^1.2.13",
     "eslint": "^9.34.0",
+    "eslint-plugin-check-file": "^3.3.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "globals": "^16.3.0",
     "knip": "^5.63.0",
     "npm-run-all": "^4.1.5",

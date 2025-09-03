@@ -9,7 +9,7 @@ const GITHUB_URL_REGEX = /https:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pul
  * Parse GitHub URL to extract organization, repository, and issue/PR number
  */
 export function parseGitHubUrl(url: string): { org: string; repo: string; number: string } | null {
-  const match = url.match(GITHUB_URL_REGEX);
+  const match = GITHUB_URL_REGEX.exec(url);
   if (!match) return null;
 
   return {
