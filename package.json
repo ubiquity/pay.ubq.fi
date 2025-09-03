@@ -43,6 +43,12 @@
     "browser:cdp": "./scripts/start-browser-cdp.sh",
     "browser:cdp:chrome": "./scripts/start-browser-cdp.sh --browser=chrome",
     "browser:cdp:brave": "./scripts/start-browser-cdp.sh --browser=brave",
-    "playwright:setup": "claude mcp add playwright bunx '@playwright/mcp@latest' -- --cdp-endpoint=\"http://localhost:9222\""
+    "playwright:setup": "claude mcp add playwright bunx '@playwright/mcp@latest' -- --cdp-endpoint=\"http://localhost:9222\"",
+    "migration:analyze": "bun scripts/nonce-migration/analyze-nonces.ts",
+    "migration:run": "bun scripts/nonce-migration/run-migration.ts",
+    "migration:run:dry": "bun scripts/nonce-migration/run-migration.ts --dry-run",
+    "migration:speed-up": "bun scripts/nonce-migration/speed-up.ts",
+    "migration:status": "bun scripts/nonce-migration/check-status.ts",
+    "migration:test": "bun scripts/nonce-migration/test-nonce-migration.ts --dry-run"
   }
 }
