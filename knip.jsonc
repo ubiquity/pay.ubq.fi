@@ -3,7 +3,6 @@
   "entry": [
     "src/frontend/src/main.tsx!",
     "src/frontend/src/workers/**/*.worker.ts!",
-    "src/backend/server.ts!",
     "scripts/**/*.ts!"
   ],
   "project": [
@@ -24,9 +23,7 @@
     "playwright",
     "puppeteer"
   ],
-  "ignoreBinaries": [
-    "scripts/front.sh"
-  ],
+  "ignoreBinaries": [],
   "vite": {
     "config": ["src/frontend/vite.config.ts"]
   }

@@ -9,7 +9,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createPublicClient, http, type Address, parseAbi } from "viem";
 import { gnosis, mainnet } from "viem/chains";
-import type { Database } from "../src/frontend/src/database.types";
+import type { Database } from "../../src/frontend/src/database.types";
 
 // Contract addresses
 const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address;

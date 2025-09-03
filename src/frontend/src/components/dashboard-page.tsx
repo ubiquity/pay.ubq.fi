@@ -150,7 +150,14 @@ export function DashboardPage() {
     chain: chain ?? null,
   });
 
-  const { handleClaimPermit: originalHandleClaimPermit, handleClaimBatch: originalHandleClaimBatch, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } = usePermitClaiming({
+  const {
+    handleClaimPermit: originalHandleClaimPermit,
+    handleClaimBatch: originalHandleClaimBatch,
+    isClaiming,
+    sequentialClaimError,
+    swapSubmissionStatus,
+    walletConnectionError,
+  } = usePermitClaiming({
     setPermits,
     setError,
     updatePermitStatusCache,
@@ -162,21 +169,27 @@ export function DashboardPage() {
   });
 
   // Wrapper functions to capture transaction hashes
-  const handleClaimPermit = useCallback(async (permit: PermitData) => {
-    const result = await originalHandleClaimPermit(permit);
-    if (result.success && result.txHash) {
-      setClaimTxHash(result.txHash as `0x${string}`);
-    }
-    return result;
-  }, [originalHandleClaimPermit]);
+  const handleClaimPermit = useCallback(
+    async (permit: PermitData) => {
+      const result = await originalHandleClaimPermit(permit);
+      if (result.success && result.txHash) {
+        setClaimTxHash(result.txHash as `0x${string}`);
+      }
+      return result;
+    },
+    [originalHandleClaimPermit]
+  );
 
-  const handleClaimBatch = useCallback(async (permits: PermitData[]) => {
-    const result = await originalHandleClaimBatch(permits);
-    if (result.success && result.txHash) {
-      setClaimTxHash(result.txHash as `0x${string}`);
-    }
-    return result;
-  }, [originalHandleClaimBatch]);
+  const handleClaimBatch = useCallback(
+    async (permits: PermitData[]) => {
+      const result = await originalHandleClaimBatch(permits);
+      if (result.success && result.txHash) {
+        setClaimTxHash(result.txHash as `0x${string}`);
+      }
+      return result;
+    },
+    [originalHandleClaimBatch]
+  );
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
