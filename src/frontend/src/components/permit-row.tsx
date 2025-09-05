@@ -268,15 +268,15 @@ export function PermitRow({
     (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
 
   const isOwner = address && permit.owner.toLowerCase() === address.toLowerCase();
-  const canInvalidate = isOwner && !isClaimed && !isInvalidated && !isInvalidating;
+  const canInvalidate = (isOwner && !isClaimed && !isInvalidated && !(isInvalidating ?? false)) ?? false;
 
-  const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
+  const networkMismatch = !!(isConnected && chain && permit.networkId !== chain.id);
   const targetNetworkName = switchableChains.find((c: Chain) => c.id === permit.networkId)?.name || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
-  const rowClassName = getRowClassName(permit, isInvalidating || false);
-  const statusDisplayText = getStatusDisplayText(permit, networkMismatch, targetNetworkName, isFundingWallet || false, isInvalidating || false);
-  const buttonText = getButtonText(permit, isInvalidating || false, isFundingWallet || false, canInvalidate);
+  const rowClassName = getRowClassName(permit, isInvalidating ?? false);
+  const statusDisplayText = getStatusDisplayText(permit, networkMismatch, targetNetworkName, isFundingWallet ?? false, isInvalidating ?? false);
+  const buttonText = getButtonText(permit, isInvalidating ?? false, isFundingWallet ?? false, canInvalidate);
   const isButtonDisabled = getButtonDisabled(
     permit,
     networkMismatch,
@@ -284,8 +284,8 @@ export function PermitRow({
     isSwitchingNetwork,
     connector,
     canSwitchToPermitNetwork,
-    isInvalidating || false,
-    isFundingWallet || false,
+    isInvalidating ?? false,
+    isFundingWallet ?? false,
     canInvalidate,
     canAttemptClaim
   );
@@ -295,8 +295,8 @@ export function PermitRow({
     !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis && !isInvalidating;
   const buttonIcon = getButtonIcon(
     permit.status === "Invalidated",
-    isInvalidating || false,
-    isFundingWallet || false,
+    isInvalidating ?? false,
+    isFundingWallet ?? false,
     canInvalidate,
     showCannotClaimIcon
   );
@@ -325,7 +325,7 @@ export function PermitRow({
     }
   };
 
-  const finalButtonText = getFinalButtonText(networkMismatch, isSwitchingNetwork, targetNetworkName, buttonText);
+  const finalButtonText = getFinalButtonText(networkMismatch, isSwitchingNetwork ?? false, targetNetworkName, buttonText);
 
   const formatGithubLink = (url: string | undefined): JSX.Element => {
     if (!url) {

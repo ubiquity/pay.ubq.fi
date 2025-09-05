@@ -98,4 +98,12 @@ async function main() {
   console.log(`   View on Gnosisscan: https://gnosisscan.io/address/${wallet}`);
 }
 
-main().catch(console.error);
+// Export the main function as checkStatus for use by other scripts
+export async function checkStatus(options: { cacheFile?: string } = {}) {
+  await main();
+}
+
+// Run the script if executed directly
+if (import.meta.main) {
+  main().catch(console.error);
+}

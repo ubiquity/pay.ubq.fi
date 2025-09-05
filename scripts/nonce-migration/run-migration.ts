@@ -187,8 +187,26 @@ async function main() {
   }
 }
 
-// Run the script
-main().catch(error => {
-  console.error("❌ Fatal error:", error);
-  process.exit(1);
-});
+// Export the main function as runMigration for use by other scripts
+export async function runMigration(options: { dryRun?: boolean; cacheFile?: string } = {}) {
+  // Override process.argv for option handling
+  const originalArgv = process.argv;
+  if (options.dryRun) {
+    process.argv = [...process.argv, "--dry-run"];
+  }
+  
+  try {
+    await main();
+  } finally {
+    // Restore original argv
+    process.argv = originalArgv;
+  }
+}
+
+// Run the script if executed directly
+if (import.meta.main) {
+  main().catch(error => {
+    console.error("❌ Fatal error:", error);
+    process.exit(1);
+  });
+}

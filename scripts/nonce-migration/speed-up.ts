@@ -195,7 +195,15 @@ async function main() {
   console.log("   Check status at: https://gnosisscan.io/address/" + account.address);
 }
 
-main().catch(error => {
-  console.error("❌ Fatal error:", error);
-  process.exit(1);
-});
+// Export the main function as speedUpTransactions for use by other scripts
+export async function speedUpTransactions(options: { cacheFile?: string } = {}) {
+  await main();
+}
+
+// Run the script if executed directly
+if (import.meta.main) {
+  main().catch(error => {
+    console.error("❌ Fatal error:", error);
+    process.exit(1);
+  });
+}

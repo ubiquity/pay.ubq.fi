@@ -377,7 +377,7 @@ function createAllowanceCheckRequest(
   balanceKey: string,
   tokenAddress: `0x${string}`,
   ownerAddress: `0x${string}`,
-  permit2Address: string,
+  permit2Address: `0x${string}`,
   chainId: number,
   requestId: number
 ): { request: JsonRpcRequest; key: string; type: string; chainId: number } {
