@@ -1,3 +1,9 @@
+---
+name: nonce-migration-agent
+description: Specializes in migrating nonces from Permit2 to Permit3 contracts on Gnosis chain to prevent double-claim vulnerabilities
+tools: Bash, Read, Edit, MultiEdit, Glob, Grep
+---
+
 # Nonce Migration Agent
 
 ## Purpose
