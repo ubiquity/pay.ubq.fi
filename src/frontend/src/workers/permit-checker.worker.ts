@@ -1,8 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from "@ubiquity-dao/permit2-rpc-client";
-import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
-import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddress } from "viem";
-import { PERMIT3, PERMIT2 } from "../constants/config.ts";
+import { type Address, encodeFunctionData, erc20Abi, parseAbiItem } from "viem";
+import { PERMIT3 } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
@@ -159,16 +158,8 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   // the beneficiary wallet relationship properly established in the database
   const actualBeneficiary = beneficiaryAddressStr || lowerCaseWalletAddress;
 
-  const permit2Address = await getPermit2Address({
-    nonce: permit.nonce,
-    tokenAddress: tokenAddressStr ?? "",
-    amount: permit.amount,
-    deadline: String(permit.deadline),
-    beneficiary: actualBeneficiary,
-    owner: ownerAddressStr,
-    signature: String(permit.signature),
-    networkId: networkIdNum,
-  });
+  // Since we now only fetch Permit3 permits from DB, use constant
+  const permit2Address = PERMIT3;
 
   const permitData: PermitData = {
     permit2Address: permit2Address as `0x${string}`,
@@ -232,6 +223,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     .from(PERMITS_TABLE)
     .select(beneficiaryJoinQuery)
     .is("transaction", null)
+    .eq("permit2_address", PERMIT3) // Only Permit3 permits
+    .filter("token.network", "eq", 100) // Only Gnosis Chain
     .filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
   // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
@@ -249,6 +242,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     .from(PERMITS_TABLE)
     .select(ownerJoinQuery)
     .is("transaction", null)
+    .eq("permit2_address", PERMIT3) // Only Permit3 permits
+    .filter("token.network", "eq", 100) // Only Gnosis Chain
     .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
@@ -292,34 +287,6 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 }
 
 // --- On-Chain Validation ---
-
-async function getPermit2Address(permitData: {
-  tokenAddress: string;
-  amount: string;
-  nonce: string;
-  deadline: string;
-  beneficiary: string;
-  owner: string;
-  signature: string;
-  networkId: number;
-}): Promise<string> {
-  const permit: PermitTransferFrom = {
-    permitted: {
-      token: permitData.tokenAddress as Address,
-      amount: BigInt(permitData.amount),
-    },
-    nonce: BigInt(permitData.nonce),
-    deadline: BigInt(permitData.deadline),
-    spender: permitData.beneficiary as Address,
-  };
-  const hash = SignatureTransfer.hash(permit, PERMIT3, permitData.networkId) as `0x${string}`;
-  const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
-  if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
-    return PERMIT3;
-  }
-  // If the signer doesn't match, fallback to old permit address
-  return PERMIT2;
-}
 
 // Helper function to create nonce check request
 function createNonceCheckRequest(
@@ -662,7 +629,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
 // --- Worker Message Handling ---
 
 // Helper function to handle worker initialization
-function handleWorkerInit(payload: any): void {
+function handleWorkerInit(payload: { supabaseUrl: string; supabaseAnonKey: string; isDevelopment: boolean }): void {
   const supabaseUrl = payload.supabaseUrl;
   const supabaseAnonKey = payload.supabaseAnonKey;
   PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
@@ -682,7 +649,7 @@ function handleWorkerInit(payload: any): void {
 }
 
 // Helper function to handle fetching new permits
-async function handleFetchNewPermits(payload: any): Promise<void> {
+async function handleFetchNewPermits(payload: { address: Address; lastCheckTimestamp?: string | null }): Promise<void> {
   const address = payload.address as Address;
   const lastCheckTimestamp = payload.lastCheckTimestamp;
   
