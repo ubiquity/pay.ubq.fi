@@ -54,6 +54,7 @@
     "migration:speed-up": "bun scripts/speed-up-migration.ts",
     "migration:status": "bun scripts/check-migration-status.ts",
     "migration:check-nonce": "bun scripts/check-nonce.ts",
-    "migration:test": "bun scripts/nonce-migration/test-nonce-migration.ts --dry-run"
+    "migration:test": "bun scripts/nonce-migration/test-nonce-migration.ts --dry-run",
+    "test": "bun test"
   }
 }
