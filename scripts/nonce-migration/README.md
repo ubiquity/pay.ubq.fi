@@ -34,7 +34,7 @@ export SUPABASE_SERVICE_ROLE_KEY="your_service_role_key"
 # Required for sending transactions (use your private key)
 export MIGRATION_PRIVATE_KEY="0x1234..." # Your private key for the funding wallet
 
-# Optional: Custom Gnosis RPC (default: https://rpc.gnosischain.com)
+# Optional: Custom Gnosis RPC (default: https://rpc.ubq.fi/100)
 export GNOSIS_RPC_URL="https://your-custom-rpc-url"
 ```
 
@@ -148,7 +148,7 @@ If the script fails partway through:
 🚀 Simple Sequential Nonce Migration
 ===================================
 Target contract: 0xd635918A75356D133d5840eE5c9ED070302C9C60
-RPC URL: https://rpc.gnosischain.com
+RPC URL: https://rpc.ubq.fi/100
 Mode: LIVE
 Nonces to migrate: 800
 

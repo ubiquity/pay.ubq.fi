@@ -15,7 +15,7 @@ import path from "path";
 
 // Contract configuration
 const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
-const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.gnosischain.com";
+const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.ubq.fi/100";
 
 const permit3Abi = parseAbi([
   "function invalidateUnorderedNonces(uint256 wordPos, uint256 mask)",
@@ -105,7 +105,7 @@ async function main() {
   let currentNonce: number | undefined;
   if (!isDryRun && walletClient) {
     currentNonce = await publicClient.getTransactionCount({
-      address: walletClient.account.address,
+      address: walletClient.account!.address,
       blockTag: "pending"
     });
     console.log(`🔢 Starting nonce: ${currentNonce}`);
@@ -142,6 +142,8 @@ async function main() {
             args: [wordPos, bitmap],
             nonce: currentNonce,
             gas: 100000n,
+            chain: gnosis,
+            account: walletClient.account!,
           });
 
           console.log(`  ✅ Transaction sent: ${hash}`);

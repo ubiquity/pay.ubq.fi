@@ -7,7 +7,7 @@ import { createPublicClient, http, type Address, parseAbi } from "viem";
 import { gnosis } from "viem/chains";
 
 const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
-const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.gnosischain.com";
+const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.ubq.fi/100";
 
 const permit3Abi = parseAbi([
   "function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)",

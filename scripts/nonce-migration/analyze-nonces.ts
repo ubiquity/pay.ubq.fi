@@ -17,8 +17,8 @@ const PERMIT3_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60" as Address;
 
 // RPC Configuration
 const RPC_URLS = {
-  mainnet: "https://ethereum.publicnode.com",
-  gnosis: process.env.GNOSIS_RPC_URL || "https://rpc.gnosischain.com",
+  mainnet: process.env.MAINNET_RPC_URL || "https://rpc.ubq.fi/1",
+  gnosis: process.env.GNOSIS_RPC_URL || "https://rpc.ubq.fi/100",
 };
 
 const permit2Abi = parseAbi([

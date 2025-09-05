@@ -9,7 +9,7 @@
 import { createPublicClient, http, type Address } from "viem";
 import { gnosis } from "viem/chains";
 
-const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.gnosischain.com";
+const RPC_URL = process.env.GNOSIS_RPC_URL || "https://rpc.ubq.fi/100";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -22,7 +22,7 @@ async function main() {
     console.log("  bun scripts/check-nonce.ts 0x1234567890123456789012345678901234567890 42");
     console.log("");
     console.log("Environment variables:");
-    console.log("  GNOSIS_RPC_URL - Custom RPC endpoint (default: https://rpc.gnosischain.com)");
+    console.log("  GNOSIS_RPC_URL - Custom RPC endpoint (default: https://rpc.ubq.fi/100)");
     process.exit(1);
   }
 
