@@ -40,43 +40,69 @@ export const formatAmount = (rawAmount: string | bigint | undefined | null, deci
 // Debug configuration - set from environment variable
 const DEBUG_VALIDATION = typeof import.meta.env !== "undefined" && import.meta.env.VITE_DEBUG_VALIDATION === "true";
 
-/**
- * Checks if a permit object contains all the essential fields required for claiming or testing.
- * Only logs warnings in debug mode.
- */
-export const hasRequiredFields = (permit: PermitData): boolean => {
-  let isValid = true;
+// Helper function to validate common permit fields
+function validateCommonFields(permit: PermitData): string[] {
   const errors: string[] = [];
-
-  // Common fields
+  
   if (!permit.nonce) errors.push("nonce");
   if (!permit.networkId) errors.push("networkId");
   if (!permit.deadline) errors.push("deadline");
   if (!permit.beneficiary) errors.push("beneficiary");
   if (!permit.owner) errors.push("owner");
   if (!permit.signature) errors.push("signature");
+  
+  return errors;
+}
 
-  // Type-specific fields
+// Helper function to validate ERC20 permit fields
+function validateErc20Fields(permit: PermitData): string[] {
+  const errors: string[] = [];
+  
+  if (!permit.amount) errors.push("amount");
+  if (!permit.token?.address) errors.push("token.address");
+  
+  return errors;
+}
+
+// Helper function to validate ERC721 permit fields
+function validateErc721Fields(permit: PermitData): string[] {
+  const errors: string[] = [];
+  
+  // ERC721 might use tokenAddress or token.address
+  if (!permit.tokenAddress && !permit.token?.address) errors.push("token address");
+  if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id");
+  
+  return errors;
+}
+
+// Helper function to validate type-specific fields
+function validateTypeSpecificFields(permit: PermitData): string[] {
   if (permit.type === "erc20-permit") {
-    if (!permit.amount) errors.push("amount");
-    if (!permit.token?.address) errors.push("token.address");
+    return validateErc20Fields(permit);
   } else if (permit.type === "erc721-permit") {
-    // ERC721 might use tokenAddress or token.address
-    if (!permit.tokenAddress && !permit.token?.address) errors.push("token address");
-    if (permit.token_id === undefined || permit.token_id === null) errors.push("token_id");
+    return validateErc721Fields(permit);
   } else {
     // Handle unknown or potentially missing types
-    errors.push(`unknown type (${permit.type})`);
+    return [`unknown type (${permit.type})`];
   }
+}
+
+/**
+ * Checks if a permit object contains all the essential fields required for claiming or testing.
+ * Only logs warnings in debug mode.
+ */
+export const hasRequiredFields = (permit: PermitData): boolean => {
+  const commonErrors = validateCommonFields(permit);
+  const typeSpecificErrors = validateTypeSpecificFields(permit);
+  const errors = [...commonErrors, ...typeSpecificErrors];
 
   if (errors.length > 0) {
-    isValid = false;
-
     // Only log in debug mode
     if (DEBUG_VALIDATION) {
       console.debug(`[Validation] Permit ${permit.nonce}: Missing ${errors.join(", ")}`);
     }
+    return false;
   }
 
-  return isValid;
+  return true;
 };

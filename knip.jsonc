@@ -3,7 +3,18 @@
   "workspaces": {
     ".": {
       "entry": [
-        "scripts/nonce-migration/index.ts"
+        "scripts/extract-migration-nonces.ts",
+        "scripts/sequential-migration.ts", 
+        "scripts/check-migration-status.ts",
+        "scripts/speed-up-migration.ts",
+        "scripts/check-nonce.ts",
+        "scripts/nonce-migration/analyze-nonces.ts",
+        "scripts/nonce-migration/blast-migration.ts",
+        "scripts/nonce-migration/continue-migration.ts",
+        "scripts/nonce-migration/simple-nonce-migration.ts",
+        "scripts/nonce-migration/speed-up.ts",
+        "scripts/nonce-migration/check-status.ts",
+        "scripts/nonce-migration/test-nonce-migration.ts"
       ],
       "project": [
         "src/backend/**/*.ts",
@@ -29,9 +40,6 @@
     "**/*.deno.tsx",
     "**/deno.json",
     "**/deno.jsonc",
-    "scripts/nonce-migration/blast-migration.ts",
-    "scripts/nonce-migration/continue-migration.ts",
-    "scripts/nonce-migration/simple-nonce-migration.ts",
     "scripts/rpc-diagnostics.ts"
   ],
   "ignoreDependencies": [

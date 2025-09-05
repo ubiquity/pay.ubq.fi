@@ -67,6 +67,147 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
   });
 }
 
+// Helper function to record claim in database
+async function recordClaim(signature: string, transactionHash: string): Promise<void> {
+  try {
+    await fetch("/api/permits/record-claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        signature,
+        transactionHash,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to record transaction:", error);
+  }
+}
+
+// Helper function to process single permit claim
+async function processSinglePermitClaim(
+  permit: PermitData,
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  address: Address,
+  setPermits: Dispatch<SetStateAction<PermitData[]>>,
+  updatePermitStatusCache: (key: string, status: Partial<PermitData>) => void
+): Promise<void> {
+  const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+  console.log("Transaction simulation successful", { request });
+
+  // Send the actual transaction
+  const txHash = await walletClient.writeContract(request);
+
+  // Wait for transaction receipt
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  console.log("Transaction completed", { receipt });
+  
+  if (receipt.status !== "success") {
+    throw new Error(`Transaction failed with status: ${receipt.status}`);
+  }
+
+  // Update status to success
+  setPermits((prev) =>
+    prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
+  );
+  updatePermitStatusCache(permit.signature, { status: "Claimed" });
+
+  // Record transaction in database
+  await recordClaim(permit.signature, txHash);
+}
+
+// Helper function to record batch claims
+async function recordBatchClaims(
+  permitsToClaim: PermitData[],
+  txHash: string,
+  updatePermitStatusCache: (key: string, status: Partial<PermitData>) => void
+): Promise<void> {
+  await Promise.all(
+    permitsToClaim.map((permit) => {
+      updatePermitStatusCache(permit.signature, { status: "Claimed" });
+      return fetch(PERMIT_CLAIM_API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signature: permit.signature,
+          transactionHash: txHash,
+        }),
+      });
+    })
+  );
+}
+
+// Helper function to process sequential permit claim
+async function processSequentialClaim(
+  permit: PermitData,
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  address: Address,
+  setPermits: Dispatch<SetStateAction<PermitData[]>>,
+  updatePermitStatusCache: (key: string, status: Partial<PermitData>) => void,
+  successfullyClaimedPermits: PermitData[]
+): Promise<void> {
+  try {
+    await processSinglePermitClaim(permit, publicClient, walletClient, address, setPermits, updatePermitStatusCache);
+    successfullyClaimedPermits.push(permit);
+  } catch (error) {
+    console.error("Sequential claim processing error", { error });
+    setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error" } : p)));
+  }
+}
+
+// Helper function to map permits for logging
+function mapPermitsForLogging(permits: PermitData[]): Array<{ nonce: string; networkId: number; token: string | undefined }> {
+  return permits.map((p) => ({
+    nonce: p.nonce,
+    networkId: p.networkId,
+    token: p.tokenAddress,
+  }));
+}
+
+// Helper function to set permits to pending status
+function setPermitsToPending(
+  permitsToClaim: PermitData[],
+  setPermits: Dispatch<SetStateAction<PermitData[]>>
+): void {
+  setPermits((prev) => 
+    prev.map((p) => 
+      permitsToClaim.some((c) => c.signature === p.signature) 
+        ? { ...p, claimStatus: "Pending" } 
+        : p
+    )
+  );
+}
+
+// Helper function to update permits to success status
+function updatePermitsToSuccess(
+  permitsToClaim: PermitData[],
+  txHash: `0x${string}`,
+  setPermits: Dispatch<SetStateAction<PermitData[]>>
+): void {
+  setPermits((prev) =>
+    prev.map((p) =>
+      permitsToClaim.some((c) => c.signature === p.signature) 
+        ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } 
+        : p
+    )
+  );
+}
+
+// Helper function to update permits to error status  
+function updatePermitsToError(
+  permitsToClaim: PermitData[],
+  setPermits: Dispatch<SetStateAction<PermitData[]>>
+): void {
+  setPermits((prev) => 
+    prev.map((p) => 
+      permitsToClaim.some((c) => c.signature === p.signature) 
+        ? { ...p, claimStatus: "Error" } 
+        : p
+    )
+  );
+}
+
 export function usePermitClaiming({
   setPermits,
   setError,
@@ -201,51 +342,13 @@ export function usePermitClaiming({
     });
 
     // Update all permits to pending status
-    setPermits((prev) => prev.map((p) => (toClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
+    setPermitsToPending(toClaim, setPermits);
 
     const successfullyClaimedPermits: PermitData[] = [];
     await Promise.allSettled(
-      toClaim.map(async (permit) => {
-        try {
-          const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
-
-          console.log("Transaction simulation successful", { request });
-
-          // 2. Send the actual transaction
-          const txHash = await walletClient.writeContract(request);
-
-          // 3. Wait for transaction receipt
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-          console.log("Transaction completed", { receipt });
-          if (receipt.status !== "success") {
-            throw new Error(`Transaction failed with status: ${receipt.status}`);
-          }
-
-          // Update status to success
-          successfullyClaimedPermits.push(permit);
-          setPermits((prev) =>
-            prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
-          );
-          updatePermitStatusCache(permit.signature, { status: "Claimed" });
-
-          // Record transaction in database
-          try {
-            await fetch("/api/permits/record-claim", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                signature: permit.signature,
-                transactionHash: txHash,
-              }),
-            });
-          } catch (error) {
-            console.error("Failed to record transaction:", error);
-          }
-        } catch (error) {
-          console.error("Sequential claim processing error", { error });
-          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error" } : p)));
-        }
-      })
+      toClaim.map(async (permit) => 
+        processSequentialClaim(permit, publicClient, walletClient, address, setPermits, updatePermitStatusCache, successfullyClaimedPermits)
+      )
     );
     reduceAllowance(successfullyClaimedPermits);
     setIsClaiming(false);
@@ -273,18 +376,14 @@ export function usePermitClaiming({
     }
 
     console.log(`Starting batch RPC for ${permitsToClaim.length} permits`, {
-      permits: permitsToClaim.map((p) => ({
-        nonce: p.nonce,
-        networkId: p.networkId,
-        token: p.tokenAddress,
-      })),
+      permits: mapPermitsForLogging(permitsToClaim),
     });
 
     let success = false;
     let txHash: `0x${string}` | undefined;
     try {
       // Update all permits to pending status
-      setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
+      setPermitsToPending(permitsToClaim, setPermits);
 
       const { request } = await simulateBatchPermitTransferFrom(publicClient, address, permitsToClaim);
 
@@ -300,26 +399,10 @@ export function usePermitClaiming({
         throw new Error(`Transaction failed with status: ${receipt.status}`);
       }
 
-      setPermits((prev) =>
-        prev.map((p) =>
-          permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p
-        )
-      );
+      updatePermitsToSuccess(permitsToClaim, txHash, setPermits);
       reduceAllowance(permitsToClaim);
       try {
-        await Promise.all(
-          permitsToClaim.map((permit) => {
-            updatePermitStatusCache(permit.signature, { status: "Claimed" });
-            return fetch(PERMIT_CLAIM_API_ENDPOINT, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                signature: permit.signature,
-                transactionHash: txHash,
-              }),
-            });
-          })
-        );
+        await recordBatchClaims(permitsToClaim, txHash, updatePermitStatusCache);
       } catch (error) {
         console.error("Failed to record transaction:", error);
       }
@@ -334,7 +417,7 @@ export function usePermitClaiming({
         error,
         context: "batch-processing",
       });
-      setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Error" } : p)));
+      updatePermitsToError(permitsToClaim, setPermits);
       setError("Batch claim failed. Claim each permit individually.");
     } finally {
       setIsClaiming(false);
