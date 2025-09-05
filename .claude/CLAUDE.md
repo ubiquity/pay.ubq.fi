@@ -7,6 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 pay.ubq.fi is a Web3 reward claiming application built on a hybrid frontend/backend architecture with React 19, TypeScript, and Web3 integration.
 
+## Custom Project Agents
+
+### Nonce Migration Agent
+- **Agent**: `nonce-migration-agent` (located at `.claude/agents/nonce-migration-agent.md`)
+- **Purpose**: Specializes in migrating nonces from Permit2 to Permit3 contracts on Gnosis chain to prevent double-claim vulnerabilities
+- **When to Use**: ANY operations related to nonce migration, permit contract analysis, transaction recovery, or double-claim prevention should be delegated to this agent
+- **Invocation**: Use explicit delegation like "Use the nonce-migration-agent to analyze permit database for migration needs"
+- **Expertise**: Contains comprehensive knowledge of nonce encoding, contract interactions, gas strategies, and migration procedures specific to this project
+
 ## Architecture
 
 ### Frontend
