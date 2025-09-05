@@ -223,8 +223,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     .from(PERMITS_TABLE)
     .select(beneficiaryJoinQuery)
     .is("transaction", null)
-    .eq("permit2_address", PERMIT3) // Only Permit3 permits
-    .filter("token.network", "eq", 100) // Only Gnosis Chain
+    // NOTE: Removed permit2_address filter - column doesn't exist in current schema
+    // NOTE: Removed Gnosis Chain filter to test all networks
     .filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
   // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
@@ -242,8 +242,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     .from(PERMITS_TABLE)
     .select(ownerJoinQuery)
     .is("transaction", null)
-    .eq("permit2_address", PERMIT3) // Only Permit3 permits
-    .filter("token.network", "eq", 100) // Only Gnosis Chain
+    // NOTE: Removed permit2_address filter - column doesn't exist in current schema
+    // NOTE: Removed Gnosis Chain filter to test all networks
     .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
@@ -251,8 +251,33 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
     ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
   }
 
+  console.log("=== DATABASE QUERY DEBUG ===");
+  console.log("Normalized wallet address:", normalizedWalletAddress);
+  console.log("Last check timestamp:", lastCheckTimestamp);
+  console.log("Beneficiary query filters:", {
+    transaction: "null",
+    walletAddress: normalizedWalletAddress
+  });
+  console.log("Owner query filters:", {
+    transaction: "null", 
+    walletAddress: normalizedWalletAddress
+  });
+
   // Execute both queries
   const [beneficiaryResult, ownerResult] = await Promise.all([beneficiaryQuery, ownerQuery]);
+
+  console.log("=== QUERY RESULTS DEBUG ===");
+  console.log("Beneficiary query result:", {
+    error: beneficiaryResult.error?.message || null,
+    dataLength: beneficiaryResult.data?.length || 0,
+    data: beneficiaryResult.data?.slice(0, 2) // Show first 2 results for debugging
+  });
+  
+  console.log("Owner query result:", {
+    error: ownerResult.error?.message || null,
+    dataLength: ownerResult.data?.length || 0,
+    data: ownerResult.data?.slice(0, 2) // Show first 2 results for debugging
+  });
 
   // Combine results and remove duplicates
   const permitMap = new Map<number, unknown>();
@@ -262,8 +287,11 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
     console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
     beneficiaryResult.data.forEach((permit) => {
+      console.log(`Beneficiary permit ID ${permit.id}: nonce=${permit.nonce}, amount=${permit.amount}, network=${permit.token?.network}`);
       permitMap.set(permit.id, permit);
     });
+  } else {
+    console.log("Worker: No permits found as beneficiary");
   }
 
   if (ownerResult.error) {
@@ -271,12 +299,16 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   } else if (ownerResult.data && ownerResult.data.length > 0) {
     console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
     ownerResult.data.forEach((permit) => {
+      console.log(`Owner permit ID ${permit.id}: nonce=${permit.nonce}, amount=${permit.amount}, network=${permit.token?.network}`);
       permitMap.set(permit.id, permit);
     });
+  } else {
+    console.log("Worker: No permits found as owner");
   }
 
   permitsData = Array.from(permitMap.values());
   console.log(`Worker: Total unique permits: ${permitsData.length}`);
+  console.log("Final permit map size:", permitMap.size);
 
   if (permitsData.length === 0) {
     return [];
@@ -598,21 +630,55 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
     return map;
   }, new Map<string, PermitData[]>());
 
-  // check duplicated permits by nonce
-  for (const nonceGroup of permitsByNonce.values()) {
-    const sortedByAmountDescending = nonceGroup.slice().sort((a, b) => {
-      const diff = b.amount - a.amount;
-      if (diff > 0n) return 1;
-      if (diff < 0n) return -1;
-      return 0;
-    });
-    const passing = sortedByAmountDescending.find((p) => !p.checkError); // find the permit with highest amount and no error
-    if (passing) {
-      nonceGroup.forEach((p) => {
-        if (!p.checkError && p.signature !== passing.signature) {
-          p.checkError = "permit with same nonce but higher amount exists";
-        }
+  // DEBUG: Log nonce deduplication information
+  console.log("=== NONCE DEDUPLICATION DEBUG ===");
+  console.log("Total permits before deduplication:", finalPermits.length);
+  console.log("Unique nonces found:", permitsByNonce.size);
+  console.log("Nonce groups with multiple permits:", Array.from(permitsByNonce.values()).filter(group => group.length > 1).length);
+  
+  // Log a few examples of nonce groups
+  let groupCount = 0;
+  for (const [nonce, group] of permitsByNonce.entries()) {
+    if (groupCount < 3) { // Show first 3 nonce groups as examples
+      console.log(`Nonce group ${groupCount + 1}: nonce=${nonce.substring(0, 10)}..., permits=${group.length}`);
+      group.forEach((permit, i) => {
+        console.log(`  Permit ${i + 1}: amount=${permit.amount}, signature=${permit.signature.substring(0, 10)}..., error=${permit.checkError || 'none'}`);
       });
+    }
+    groupCount++;
+    if (groupCount >= 3) break;
+  }
+
+  // FIXED: check duplicated permits by nonce (only process groups with multiple permits)
+  for (const nonceGroup of permitsByNonce.values()) {
+    // Only process nonce groups that actually have multiple permits
+    if (nonceGroup.length > 1) {
+      console.log(`Processing nonce group with ${nonceGroup.length} permits`);
+      
+      // Sort by amount descending, then find the best permit without errors
+      const sortedByAmountDescending = nonceGroup.slice().sort((a, b) => {
+        const diff = b.amount - a.amount;
+        if (diff > 0n) return 1;
+        if (diff < 0n) return -1;
+        return 0;
+      });
+      
+      // Find the permit with highest amount and no existing error
+      const passing = sortedByAmountDescending.find((p) => !p.checkError);
+      
+      if (passing) {
+        console.log(`Selected permit with amount ${passing.amount} as the valid one for nonce group`);
+        
+        // Mark all OTHER permits in this nonce group as duplicates
+        nonceGroup.forEach((p) => {
+          if (!p.checkError && p.signature !== passing.signature) {
+            p.checkError = "permit with same nonce but higher amount exists";
+            console.log(`Marked permit ${p.signature.substring(0, 10)}... as duplicate`);
+          }
+        });
+      } else {
+        console.log(`No valid permit found in nonce group - all have errors`);
+      }
     }
   }
 
@@ -653,6 +719,11 @@ async function handleFetchNewPermits(payload: { address: Address; lastCheckTimes
   const address = payload.address as Address;
   const lastCheckTimestamp = payload.lastCheckTimestamp;
   
+  console.log("=== WORKER FETCH_NEW_PERMITS CALLED ===");
+  console.log("Address:", address);
+  console.log("lastCheckTimestamp:", lastCheckTimestamp);
+  console.log("Timestamp is null/undefined:", lastCheckTimestamp == null);
+  
   try {
     if (!supabase) throw new Error("Supabase client not ready.");
     const lowerCaseWalletAddress = address.toLowerCase();
@@ -661,9 +732,23 @@ async function handleFetchNewPermits(payload: { address: Address; lastCheckTimes
     const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
 
     // Map and pre-filter *new* permits
+    console.log("=== PERMIT MAPPING DEBUG ===");
+    console.log("Raw permits from DB:", newPermitsFromDb.length);
+    
     const mappedNewPermits = (
       await Promise.all(newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)))
     ).filter((p): p is PermitData => p !== null);
+    
+    console.log("Mapped permits:", mappedNewPermits.length);
+    if (mappedNewPermits.length > 0) {
+      console.log("Sample mapped permit:", {
+        nonce: mappedNewPermits[0].nonce,
+        amount: mappedNewPermits[0].amount.toString(),
+        networkId: mappedNewPermits[0].networkId,
+        beneficiary: mappedNewPermits[0].beneficiary,
+        owner: mappedNewPermits[0].owner
+      });
+    }
     
     // Summary logging instead of individual warnings
     if (mappedNewPermits.length < newPermitsFromDb.length) {
@@ -690,6 +775,20 @@ async function handleFetchNewPermits(payload: { address: Address; lastCheckTimes
     }
 
     const result = await validatePermitsBatch(mappedNewPermits);
+    
+    console.log("=== FINAL WORKER RESULT ===");
+    console.log("Validated permits count:", result.permits.length);
+    console.log("Balances and allowances count:", result.balancesAndAllowances.size);
+    if (result.permits.length > 0) {
+      console.log("Sample validated permit:", {
+        nonce: result.permits[0].nonce,
+        amount: result.permits[0].amount.toString(),
+        status: result.permits[0].status,
+        checkError: result.permits[0].checkError
+      });
+    }
+    console.log("Sending NEW_PERMITS_VALIDATED message to frontend...");
+    
     worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: result.permits, balancesAndAllowances: result.balancesAndAllowances });
   } catch (error: unknown) {
     console.error("[Worker] Error fetching new permits:", error);

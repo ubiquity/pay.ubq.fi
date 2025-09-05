@@ -71,10 +71,17 @@ deno run --allow-net --allow-read --allow-env --env-file server.ts
 ```
 
 ### Browser Testing (Playwright MCP)
+**IMPORTANT**: We use Brave browser exclusively for testing. Install Brave if not available.
+
 ```bash
 bun run browser:cdp       # Start Brave with Chrome DevTools Protocol
-bun run browser:cdp:chrome # Start Chrome with CDP
 bun run playwright:setup  # Configure Claude Code MCP
+```
+
+**Manual Brave CDP Setup** (if scripts fail):
+```bash
+# Start Brave with CDP enabled
+/Applications/Brave\ Browser.app/Contents/MacOS/Brave\ Browser --remote-debugging-port=9222 --user-data-dir=/tmp/brave-dev
 ```
 
 ## File Structure & Conventions

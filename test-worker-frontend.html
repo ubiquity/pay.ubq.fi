@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Worker Communication</title>
+</head>
+<body>
+    <h1>Test Worker Communication</h1>
+    <p>Open browser console to see worker logs</p>
+    
+    <button onclick="testWorker()">Test Worker with Wallet 0x4007CE2083c7F3E18097aeB3A39bb8eC149a341d</button>
+    <div id="status">Not started</div>
+
+    <script type="module">
+        // Import environment from the frontend .env
+        const SUPABASE_URL = "https://wfzpewmlyiozupulbuur.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmenBld21seWlvenVwdWxidXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU2NzQzMzksImV4cCI6MjAxMTI1MDMzOX0.SKIL3Q0NOBaMehH0ekFspwgcu3afp3Dl9EDzPqs1nKs";
+        
+        const testWalletAddress = "0x4007CE2083c7F3E18097aeB3A39bb8eC149a341d";
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log("Status:", message);
+        }
+
+        window.testWorker = function() {
+            updateStatus("Starting worker test...");
+            
+            try {
+                // Create worker
+                const worker = new Worker('./src/frontend/src/workers/permit-checker.worker.ts', { type: 'module' });
+                
+                worker.onmessage = (event) => {
+                    const data = event.data;
+                    console.log("Worker message received:", data);
+                    
+                    switch (data.type) {
+                        case "INIT_SUCCESS":
+                            updateStatus("Worker initialized successfully. Fetching permits...");
+                            worker.postMessage({
+                                type: "FETCH_NEW_PERMITS",
+                                payload: { address: testWalletAddress }
+                            });
+                            break;
+                            
+                        case "INIT_ERROR":
+                            updateStatus("Worker init failed: " + data.error);
+                            break;
+                            
+                        case "NEW_PERMITS_VALIDATED":
+                            const permitCount = data.permits ? data.permits.length : 0;
+                            updateStatus(`Received ${permitCount} permits from worker`);
+                            console.log("Permits received:", data.permits);
+                            console.log("Balances received:", data.balancesAndAllowances);
+                            break;
+                            
+                        case "PERMITS_ERROR":
+                            updateStatus("Permits error: " + data.error);
+                            break;
+                    }
+                };
+
+                worker.onerror = (error) => {
+                    console.error("Worker error:", error);
+                    updateStatus("Worker error: " + error.message);
+                };
+
+                // Initialize worker
+                updateStatus("Initializing worker...");
+                worker.postMessage({
+                    type: "INIT",
+                    payload: {
+                        supabaseUrl: SUPABASE_URL,
+                        supabaseAnonKey: SUPABASE_ANON_KEY,
+                        isDevelopment: true
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Error creating worker:", error);
+                updateStatus("Error creating worker: " + error.message);
+            }
+        };
+    </script>
+</body>
+</html>

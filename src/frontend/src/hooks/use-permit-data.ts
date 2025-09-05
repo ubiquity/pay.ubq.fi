@@ -85,6 +85,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
   const filterPermits = useCallback(
     (permitsMap: Map<string, PermitData>) => {
+      console.log("=== FILTERING PERMITS ===");
+      console.log("Input permits map size:", permitsMap.size);
+      
       // Check if current wallet is a funding wallet (owns any permits)
       let isFundingAccount = false;
       if (address) {
@@ -98,14 +101,26 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
       // API already filters permits by ownership, so we just need basic status filtering
       const filtered: PermitData[] = [];
+      let filteredOut = 0;
+      
       permitsMap.forEach((permit) => {
-        // Filter out truly claimed/used permits regardless of mode
-        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+        // Filter out only truly claimed/used permits (less aggressive filtering)
+        const definitelyUsed = permit.isNonceUsed === true;
+        const definitelyClaimed = permit.status === "Claimed";
+        const shouldFilter = definitelyUsed || definitelyClaimed;
+        
         if (!shouldFilter) {
           filtered.push(permit);
+        } else {
+          filteredOut++;
+          console.log(`Filtered out permit: nonce=${permit.nonce}, isNonceUsed=${permit.isNonceUsed}, status=${permit.status}`);
         }
       });
+      
+      console.log("Filtered permits count:", filtered.length);
+      console.log("Filtered out count:", filteredOut);
+      console.log("Is funding wallet:", isFundingAccount);
+      
       setPermits(filtered);
     },
     [address]
@@ -229,7 +244,20 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false, isLoading: false }));
           break;
         case "NEW_PERMITS_VALIDATED": {
+          console.log("=== FRONTEND RECEIVED NEW_PERMITS_VALIDATED ===");
           const validated: PermitData[] = data.permits || [];
+          console.log("Validated permits received:", validated.length);
+          console.log("Balances and allowances received:", data.balancesAndAllowances.size);
+          
+          if (validated.length > 0) {
+            console.log("Sample permit received:", {
+              nonce: validated[0].nonce,
+              amount: validated[0].amount.toString(),
+              status: validated[0].status,
+              checkError: validated[0].checkError
+            });
+          }
+          
           const cache: PermitDataCache = {};
           validated.forEach((permit) => {
             cache[permit.signature] = permit;
@@ -237,8 +265,13 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           saveCache(cache);
           setBalancesAndAllowances(data.balancesAndAllowances);
           const newPermits = new Map(Object.entries(cache));
+          
+          console.log("Fetching quotes for permits:", newPermits.size);
           fetchQuotes(newPermits)
-            .then((mapWithQuotes) => handleQuotesSuccess(mapWithQuotes, allPermitsRef, filterPermits, setLoadingState))
+            .then((mapWithQuotes) => {
+              console.log("Quotes fetched, filtering permits...");
+              handleQuotesSuccess(mapWithQuotes, allPermitsRef, filterPermits, setLoadingState);
+            })
             .catch((e) => handleQuotesError(e, setError, setLoadingState));
           break;
         }
