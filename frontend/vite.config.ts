@@ -20,12 +20,12 @@ export default defineConfig({
     proxy: {
       // Proxy /api and any top-level numeric path (e.g., /100, /200) to backend
       "/api": {
-        target: "http://localhost:8000",
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
       // Regex for top-level numeric routes
       "^/\\d+$": {
-        target: "http://localhost:8000",
+        target: "http://localhost:3000",
         changeOrigin: true,
         rewrite: (path) => path,
       },
