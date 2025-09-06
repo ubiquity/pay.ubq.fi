@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
-import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
+// DISABLED: import { getCowSwapQuote } from "../utils/cowswap-utils.ts"; // Fake implementation removed
 import { WorkerRequest, WorkerResponse } from "../workers/permit-checker.worker.ts";
 
 const PERMIT_DATA_CACHE_KEY = "permitDataCache";
@@ -99,38 +99,13 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         });
         continue;
       }
-      try {
-        const quote = await getCowSwapQuote({
-          tokenIn,
-          tokenOut: preferredRewardTokenAddress,
-          amountIn: total,
-          userAddress: address,
-          chainId,
-        });
-        const groupOut = quote.estimatedAmountOut;
-        group.forEach((p) => {
-          if (p.amount && total > 0n) {
-            try {
-              const amt = p.amount;
-              p.estimatedAmountOut = ((amt * groupOut) / total).toString();
-              p.quoteError = null;
-            } catch {
-              p.estimatedAmountOut = undefined;
-              p.quoteError = "Calculation error";
-            }
-          } else {
-            p.estimatedAmountOut = undefined;
-            p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
-          }
-          updated.set(p.signature, p);
-        });
-      } catch (e: unknown) {
-        group.forEach((p) => {
-          delete p.estimatedAmountOut;
-          p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
-          updated.set(p.signature, p);
-        });
-      }
+      // DISABLED: Fake getCowSwapQuote implementation removed - was returning 0n always
+      // TODO: Implement real CowSwap integration or remove quote feature entirely
+      group.forEach((p) => {
+        delete p.estimatedAmountOut;
+        p.quoteError = "Quote feature temporarily disabled (fake implementation removed)";
+        updated.set(p.signature, p);
+      });
     }
     setIsQuoting(false);
     return updated;

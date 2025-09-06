@@ -352,7 +352,10 @@ button {
   border: none;
   background-color: transparent;
   color: #bfbfbf;
-  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition:
+    opacity 0.2s ease-in-out,
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }
 button:not([disabled]):hover {
   opacity: 1;
@@ -519,7 +522,10 @@ button.button-as-link.monospace {
   margin-bottom: 2.5px;
   fill: #bfbfbf;
 
-  transition: fill 0.2s ease-in-out, background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition:
+    fill 0.2s ease-in-out,
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }
 
 button:hover .currency-icon {
@@ -555,7 +561,10 @@ main#root {
   display: flex;
   align-items: center;
   color: #bfbfbf;
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
   /* background: #000; */
 }
 
@@ -588,9 +597,8 @@ main#root {
   cursor: pointer;
 }
 
-
 .preference-dropdown-container:hover {
-    background-color: #111318;
+  background-color: #111318;
 }
 
 .checkbox-cell {

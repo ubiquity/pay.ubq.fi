@@ -1,19 +1,19 @@
 export function grid(node = document.body, callback?: () => void) {
-    // Create canvas and WebGL context
-    const canvas = document.createElement("canvas");
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * devicePixelRatio;
-    canvas.height = window.innerHeight * devicePixelRatio;
-    node.appendChild(canvas);
+  // Create canvas and WebGL context
+  const canvas = document.createElement("canvas");
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  node.appendChild(canvas);
 
-    const gl = canvas.getContext("webgl") as WebGLRenderingContext;
+  const gl = canvas.getContext("webgl") as WebGLRenderingContext;
 
-    // Enable alpha blending
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  // Enable alpha blending
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Define shader sources
-    const vertexShaderSource = `
+  // Define shader sources
+  const vertexShaderSource = `
         attribute vec2 a_position;
 
         void main() {
@@ -21,8 +21,8 @@ export function grid(node = document.body, callback?: () => void) {
         }
     `;
 
-    // cspell:ignore mediump
-    const fragmentShaderSource = `
+  // cspell:ignore mediump
+  const fragmentShaderSource = `
         precision mediump float;
 
         uniform vec2 u_resolution;
@@ -51,112 +51,112 @@ export function grid(node = document.body, callback?: () => void) {
         }
     `;
 
-    // Define shader creation function
-    function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-      const shader = gl.createShader(type);
-      if (!shader) {
-        console.error("An error occurred creating the shaders");
-        return null;
-      }
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        return null;
-      }
-      return shader;
+  // Define shader creation function
+  function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+    const shader = gl.createShader(type);
+    if (!shader) {
+      console.error("An error occurred creating the shaders");
+      return null;
     }
-
-    // Create vertex and fragment shaders
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    if (!vertexShader) {
-      console.error("An error occurred creating the vertex shader");
-      return;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
     }
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!fragmentShader) {
-      console.error("An error occurred creating the fragment shader");
-      return;
-    }
-
-    // Create program, attach shaders, and link
-    const program = gl.createProgram();
-    if (!program) {
-      console.error("An error occurred creating the program");
-      return;
-    }
-
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    // Verify program link status
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error("Unable to initialize the shader program: " + gl.getProgramInfoLog(program));
-      return;
-    }
-
-    // Use the program
-    gl.useProgram(program);
-
-    // Get location of time and resolution uniforms
-    const timeUniformLocation = gl.getUniformLocation(program, "u_time");
-    const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-
-    // Bind the position buffer and set attribute pointer
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-
-    const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(positionAttributeLocation);
-    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
-    // Resize function
-    function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
-      // Lookup the size the browser is displaying the canvas.
-      const displayWidth = window.innerWidth;
-      const displayHeight = window.innerHeight;
-
-      // Check if the canvas is not the same size.
-      if (canvas.width != displayWidth || canvas.height != displayHeight) {
-        // Make the canvas the same size
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-
-        // Update WebGL viewport to match
-        gl.viewport(0, 0, canvas.width, canvas.height);
-      }
-    }
-
-    // Render function
-    function render() {
-      resizeCanvasToDisplaySize(canvas); // Check and update canvas size each frame
-
-      // Update resolution uniform
-      gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
-
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      // Update time uniform
-      gl.uniform1f(timeUniformLocation, performance.now() / 1000.0);
-
-      // Draw
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-      // Request next frame
-      requestAnimationFrame(render);
-    }
-
-    // Handle window resize
-    window.addEventListener("resize", () => resizeCanvasToDisplaySize(canvas));
-
-    // Callback
-    if (callback) {
-      callback();
-    }
-    // Start the render loop
-    render();
+    return shader;
   }
+
+  // Create vertex and fragment shaders
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  if (!vertexShader) {
+    console.error("An error occurred creating the vertex shader");
+    return;
+  }
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+  if (!fragmentShader) {
+    console.error("An error occurred creating the fragment shader");
+    return;
+  }
+
+  // Create program, attach shaders, and link
+  const program = gl.createProgram();
+  if (!program) {
+    console.error("An error occurred creating the program");
+    return;
+  }
+
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+
+  // Verify program link status
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error("Unable to initialize the shader program: " + gl.getProgramInfoLog(program));
+    return;
+  }
+
+  // Use the program
+  gl.useProgram(program);
+
+  // Get location of time and resolution uniforms
+  const timeUniformLocation = gl.getUniformLocation(program, "u_time");
+  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+
+  // Bind the position buffer and set attribute pointer
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+  const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+  // Resize function
+  function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
+    // Lookup the size the browser is displaying the canvas.
+    const displayWidth = window.innerWidth;
+    const displayHeight = window.innerHeight;
+
+    // Check if the canvas is not the same size.
+    if (canvas.width != displayWidth || canvas.height != displayHeight) {
+      // Make the canvas the same size
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // Update WebGL viewport to match
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // Render function
+  function render() {
+    resizeCanvasToDisplaySize(canvas); // Check and update canvas size each frame
+
+    // Update resolution uniform
+    gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Update time uniform
+    gl.uniform1f(timeUniformLocation, performance.now() / 1000.0);
+
+    // Draw
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Request next frame
+    requestAnimationFrame(render);
+  }
+
+  // Handle window resize
+  window.addEventListener("resize", () => resizeCanvasToDisplaySize(canvas));
+
+  // Callback
+  if (callback) {
+    callback();
+  }
+  // Start the render loop
+  render();
+}
