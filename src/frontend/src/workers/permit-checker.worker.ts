@@ -10,7 +10,7 @@ import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
 export type WorkerRequest =
   | { type: "INIT"; payload: { supabaseUrl: string; supabaseAnonKey: string; isDevelopment: boolean } }
-  | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; lastCheckTimestamp?: string | null } };
+  | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; lastCheckTimestamp?: string | null; fetchMode?: 'both' | 'beneficiary' | 'owner' | 'none' } };
 
 export type WorkerResponse =
   | { type: "INIT_SUCCESS" }
@@ -146,8 +146,8 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   return permitData;
 }
 
-// Function to fetch permits from Supabase using the proper relationships
-async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
+// Function to fetch permits from Supabase using optimized queries with left joins
+async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null, fetchMode: string = 'both'): Promise<PermitRow[]> {
   if (!supabase) throw new Error("Supabase client not initialized.");
 
   // Normalize wallet address for consistent comparison
@@ -155,18 +155,35 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   let permitsData: unknown[] = [];
 
-  // This query directly joins permits with users and wallets
-  const directJoinQuery = `
-              *,
-              token:${TOKENS_TABLE}(address, network),
-              partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
-              location:${LOCATIONS_TABLE}(node_url),
-              users!inner(
-                  wallets!inner(address)
-              )
-    `;
+  // Optimized query using left joins and proper null handling
+  const optimizedQuery = `
+    *,
+    token:${TOKENS_TABLE}!left(address, network),
+    partner:${PARTNERS_TABLE}!left(
+      wallet:${WALLETS_TABLE}!left(address)
+    ),
+    location:${LOCATIONS_TABLE}!left(node_url)
+  `;
 
-  let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  let query = supabase.from(PERMITS_TABLE).select(optimizedQuery).is("transaction", null);
+
+  // Apply filters based on fetch mode
+  if (fetchMode === 'beneficiary') {
+    // Fetch permits where user is beneficiary via users->wallets relationship
+    query = query.filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  } else if (fetchMode === 'owner') {
+    // Fetch permits where user is owner via partners->wallets relationship  
+    query = query.filter("partner.wallet.address", "ilike", normalizedWalletAddress);
+  } else if (fetchMode === 'both') {
+    // Fetch permits where user is either beneficiary or owner
+    query = query.or(
+      `users.wallets.address.ilike.${normalizedWalletAddress},` +
+      `partner.wallet.address.ilike.${normalizedWalletAddress}`
+    );
+  } else {
+    // fetchMode === 'none', return empty array
+    return [];
+  }
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
     query = query.gt("created", lastCheckTimestamp);
@@ -175,14 +192,40 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   const result = await query;
 
   if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
-  } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
-    permitsData = result.data;
+    console.error(`Worker: optimized query error: ${result.error.message}`, result.error);
+    
+    // Fallback to original query if optimized query fails
+    console.log('Worker: Falling back to original query...');
+    const fallbackQuery = `
+      *,
+      token:${TOKENS_TABLE}(address, network),
+      partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
+      location:${LOCATIONS_TABLE}(node_url),
+      users!inner(
+          wallets!inner(address)
+      )
+    `;
+    
+    let fallback = supabase.from(PERMITS_TABLE).select(fallbackQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+    
+    if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+      fallback = fallback.gt("created", lastCheckTimestamp);
+    }
+    
+    const fallbackResult = await fallback;
+    
+    if (fallbackResult.error) {
+      console.error(`Worker: fallback query error: ${fallbackResult.error.message}`, fallbackResult.error);
+      return [];
+    }
+    
+    permitsData = fallbackResult.data || [];
+  } else {
+    permitsData = result.data || [];
   }
 
-  if (permitsData.length === 0) {
-    return [];
+  if (permitsData.length > 0) {
+    console.log(`Worker: Found ${permitsData.length} permits (mode: ${fetchMode})`);
   }
 
   // Cast needed because Supabase client doesn't know about the joined types automatically
@@ -491,12 +534,13 @@ worker.onmessage = async (event) => {
   } else if (type === "FETCH_NEW_PERMITS") {
     const address = payload.address as Address;
     const lastCheckTimestamp = payload.lastCheckTimestamp;
+    const fetchMode = payload.fetchMode || 'both';
     try {
       if (!supabase) throw new Error("Supabase client not ready.");
       const lowerCaseWalletAddress = address.toLowerCase();
 
-      // Fetch *only new* permits from DB using the wallet address and timestamp
-      const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null);
+      // Fetch *only new* permits from DB using the wallet address, timestamp, and fetch mode
+      const newPermitsFromDb = await fetchPermitsFromDb(lowerCaseWalletAddress, lastCheckTimestamp ?? null, fetchMode);
 
       // 3. Map and pre-filter *new* permits
       // Add explicit types to map parameters

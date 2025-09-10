@@ -238,16 +238,17 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       setError(null);
       
       // Fetch permits based on role preferences
-      const fetchPayload: any = { address };
+      let fetchMode = 'both';
       if (fetchBeneficiaryPermits && fetchOwnerPermits) {
-        fetchPayload.fetchMode = 'both';
+        fetchMode = 'both';
       } else if (fetchBeneficiaryPermits) {
-        fetchPayload.fetchMode = 'beneficiary';
+        fetchMode = 'beneficiary';
       } else if (fetchOwnerPermits) {
-        fetchPayload.fetchMode = 'owner';
+        fetchMode = 'owner';
       } else {
-        fetchPayload.fetchMode = 'none';
+        fetchMode = 'none';
       }
+      const fetchPayload = { address, fetchMode };
       
       workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: fetchPayload });
     } else if (!isConnected) {
@@ -293,14 +294,23 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
+  // Clear all errors
+  const clearError = () => {
+    setError(null);
+  };
+
   return {
     permits,
     setPermits,
+    permitsToClaim,
+    beneficiaryPermits,
+    ownerPermits,
     balancesAndAllowances,
     setBalancesAndAllowances,
     isLoading,
     error,
     setError,
+    clearError,
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,

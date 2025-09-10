@@ -26,7 +26,7 @@ interface RequestQueue {
   reject: (error: Error) => void;
 }
 
-let requestQueue: RequestQueue[] = [];
+const requestQueue: RequestQueue[] = [];
 let activeRequests = 0;
 let lastRequestTime = 0;
 
