@@ -4,9 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.js";
+import type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.ts";
 
-import { createLogger } from "../../lib/debug/index.js";
+import { createLogger } from "../../lib/debug/index.ts";
 
 const logger = createLogger('backend:server');
 const app = new Hono();
