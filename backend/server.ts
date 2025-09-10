@@ -3,9 +3,9 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
+import { cors } from "hono/cors";\nimport type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.js";
 
-const app = new Hono();
+import { createLogger } from \"../lib/debug/index.js\";\n\nconst logger = createLogger('backend:server');\nconst app = new Hono();
 app.use("*", cors());
 
 // Initialize Supabase client
@@ -16,12 +16,12 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-// API endpoint for recording claims
+// API endpoint for recording claims\ntype RecordClaimRequest = {\n  signature: string;\n  transactionHash: string;\n};
 app.post("/api/permits/record-claim", async (c: Context) => {
   try {
-    const { signature, transactionHash } = await c.req.json();
+    const { signature, transactionHash }: RecordClaimRequest = await c.req.json();
 
     if (!signature || !transactionHash) {
       return c.json({ error: "Missing required fields" }, 400);
@@ -51,7 +51,7 @@ app.use("/*", serveStatic({ path: "./frontend/dist/index.html" }));
 
 // Start server
 const port = parseInt(process.env.PORT || "3000");
-console.log(`Server running on port ${port}`);
+logger.info(`Server running on port ${port}`);
 
 serve({
   fetch: app.fetch,

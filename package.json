@@ -13,7 +13,9 @@
     "@wagmi/core": "^2.17.2",
     "npm-run-all": "^4.1.5",
     "solc": "^0.8.30",
-    "viem": "^2.30.0"
+    "viem": "^2.30.0",
+    "playwright": "^1.44.0",
+    "@playwright/test": "^1.44.0"
   },
   "private": true,
   "scripts": {
@@ -21,6 +23,13 @@
     "_backend": "bun run backend/server.ts",
     "_frontend-build": "cd frontend && bun run build",
     "_browser": "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222",
+    "browser:cdp": "./scripts/start-browser-cdp.sh",
+    "browser:check": "./scripts/start-browser-cdp.sh --check",
+    "browser:stop": "./scripts/start-browser-cdp.sh --stop",
+    "playwright:install": "bunx playwright install chromium",
+    "playwright:test": "bunx playwright test",
+    "playwright:test:headed": "bunx playwright test --headed",
+    "playwright:test:debug": "bunx playwright test --debug",
     "dev": "run-p _frontend _backend",
     "start": "run-s _frontend-build _backend"
   }
