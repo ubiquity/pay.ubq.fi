@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
-// DISABLED: import { getCowSwapQuote } from "../utils/cowswap-utils.ts"; // Fake implementation removed
+import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
+import { logger } from "../utils/logger.ts";
 import { WorkerRequest, WorkerResponse } from "../workers/permit-checker.worker.ts";
 
 const PERMIT_DATA_CACHE_KEY = "permitDataCache";
+// const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache duration (for future use)
+const QUOTE_CACHE_KEY = "quoteCache";
+const QUOTE_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes for quotes
 
 interface UsePermitDataProps {
   address: Address | undefined;
@@ -15,7 +19,18 @@ interface UsePermitDataProps {
   fetchOwnerPermits?: boolean;
 }
 
-type PermitDataCache = Record<string, PermitData>;
+interface CachedPermitData extends PermitData {
+  cachedAt: number;
+}
+
+type PermitDataCache = Record<string, CachedPermitData>;
+
+interface QuoteCache {
+  [key: string]: {
+    quote: string;
+    cachedAt: number;
+  };
+}
 
 interface WorkerGlobalScope extends Worker {
   onmessage: (event: MessageEvent<WorkerResponse>) => void;
@@ -38,9 +53,51 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
   const saveCache = (cache: PermitDataCache) => {
     try {
-      localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
+      const now = Date.now();
+      const cacheWithTimestamp = Object.fromEntries(
+        Object.entries(cache).map(([key, permit]) => [
+          key,
+          { ...permit, cachedAt: now }
+        ])
+      );
+      localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cacheWithTimestamp));
     } catch {
       // Intentionally ignore cache errors
+    }
+  };
+
+
+  const getCachedQuote = (quoteKey: string): string | null => {
+    try {
+      const cacheString = localStorage.getItem(QUOTE_CACHE_KEY);
+      if (!cacheString) return null;
+      
+      const cache = JSON.parse(cacheString) as QuoteCache;
+      const cached = cache[quoteKey];
+      
+      if (cached && (Date.now() - cached.cachedAt) < QUOTE_CACHE_TTL_MS) {
+        return cached.quote;
+      }
+      
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveQuoteToCache = (quoteKey: string, quote: string) => {
+    try {
+      const cacheString = localStorage.getItem(QUOTE_CACHE_KEY);
+      const cache: QuoteCache = cacheString ? JSON.parse(cacheString) : {};
+      
+      cache[quoteKey] = {
+        quote,
+        cachedAt: Date.now()
+      };
+      
+      localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(cache));
+    } catch {
+      // Ignore cache errors
     }
   };
 
@@ -123,7 +180,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           try {
             total += p.amount;
           } catch (e: unknown) {
-            console.warn("Failed to parse permit amount", { amount: p.amount, error: e });
+            logger.warn("Failed to parse permit amount", { amount: p.amount, error: e });
           }
         }
       });
@@ -135,13 +192,50 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         });
         continue;
       }
-      // DISABLED: Fake getCowSwapQuote implementation removed - was returning 0n always
-      // TODO: Implement real CowSwap integration or remove quote feature entirely
-      group.forEach((p) => {
-        delete p.estimatedAmountOut;
-        p.quoteError = "Quote feature temporarily disabled (fake implementation removed)";
-        updated.set(p.signature, p);
-      });
+      try {
+        // Create a cache key for this quote request
+        const quoteKey = `${tokenIn}-${preferredRewardTokenAddress}-${total.toString()}-${chainId}`;
+        let groupOut: string | null = getCachedQuote(quoteKey);
+        
+        if (!groupOut) {
+          // Not in cache, fetch new quote
+          const quote = await getCowSwapQuote({
+            tokenIn,
+            tokenOut: preferredRewardTokenAddress,
+            amountIn: total,
+            userAddress: address,
+            chainId,
+          });
+          groupOut = quote.estimatedAmountOut;
+          
+          // Save to cache
+          if (groupOut) {
+            saveQuoteToCache(quoteKey, groupOut);
+          }
+        }
+        group.forEach((p) => {
+          if (p.amount && total > 0n) {
+            try {
+              const amt = p.amount;
+              p.estimatedAmountOut = ((amt * groupOut) / total).toString();
+              p.quoteError = null;
+            } catch {
+              p.estimatedAmountOut = undefined;
+              p.quoteError = "Calculation error";
+            }
+          } else {
+            p.estimatedAmountOut = undefined;
+            p.quoteError = p.amount ? "Group total is zero" : "Missing amount";
+          }
+          updated.set(p.signature, p);
+        });
+      } catch (e: unknown) {
+        group.forEach((p) => {
+          delete p.estimatedAmountOut;
+          p.quoteError = e instanceof Error ? e.message : typeof e === "string" ? e : "Quote fetching failed";
+          updated.set(p.signature, p);
+        });
+      }
     }
     setIsQuoting(false);
     return updated;
@@ -151,7 +245,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
     const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.warn("[use-permit-data] Supabase client misconfigured: missing URL or Anon Key.");
+      logger.warn("[use-permit-data] Supabase client misconfigured: missing URL or Anon Key.");
       setError("Supabase URL or Anon Key missing in frontend environment variables.");
       setIsWorkerInitialized(false);
       setIsLoading(false);
@@ -204,7 +298,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       }
     };
     workerRef.current.onerror = (event) => {
-      console.error("[use-permit-data] Worker error:", event);
+      logger.error("[use-permit-data] Worker error:", event);
       setError(`Worker error: ${event.message}`);
       setIsLoading(false);
       setIsWorkerInitialized(false);

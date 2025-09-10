@@ -6,7 +6,8 @@ import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { PermitData } from "../types.ts";
-import { hasRequiredFields } from "../utils/permit-utils.ts";
+import { formatDisplayAmount, hasRequiredFields } from "../utils/permit-utils.ts";
+import { logger } from "../utils/logger.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
@@ -91,26 +92,26 @@ export function DashboardPage() {
         try {
           totalSumInWei += permit.amount;
         } catch (e) {
-          console.error(`Error parsing amount for claimableTotalValue calc: ${permit.amount}`, e);
+          logger.warn(`Error parsing amount for claimableTotalValue calc: ${permit.amount}`, e);
         }
       }
     }
     try {
       return parseFloat(formatUnits(totalSumInWei, assumedDecimals));
     } catch (e) {
-      console.error("Error formatting total sum:", e);
+      logger.error("Error formatting total sum:", e);
       return 0;
     }
   }, [claimablePermits]);
 
   const estimatedTotalValueDisplay = useMemo(() => {
     if (!preferredRewardTokenAddress) {
-      return `$${claimableTotalValue.toFixed(2)}`;
+      return `$${formatDisplayAmount(claimableTotalValue, { maximumFractionDigits: 2 })}`;
     }
 
     const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
     if (!preferredTokenInfo) {
-      return `$${claimableTotalValue.toFixed(2)} (Unknown Pref Token)`;
+      return `$${formatDisplayAmount(claimableTotalValue, { maximumFractionDigits: 2 })} (Unknown Pref Token)`;
     }
 
     let totalEstimatedValueInWei = 0n;
@@ -122,23 +123,23 @@ export function DashboardPage() {
           try {
             totalEstimatedValueInWei += BigInt(permit.amount);
           } catch (e) {
-            console.error(`Error parsing original amount for estimatedTotalValue calc: ${permit.amount}`, e);
+            logger.warn(`Error parsing original amount for estimatedTotalValue calc: ${permit.amount}`, e);
           }
         }
       } else if (permit.estimatedAmountOut) {
         try {
           totalEstimatedValueInWei += BigInt(permit.estimatedAmountOut);
         } catch (e) {
-          console.error(`Error parsing estimated amount for estimatedTotalValue calc: ${permit.estimatedAmountOut}`, e);
+          logger.warn(`Error parsing estimated amount for estimatedTotalValue calc: ${permit.estimatedAmountOut}`, e);
         }
       }
     });
 
     try {
       const formattedValue = parseFloat(formatUnits(totalEstimatedValueInWei, preferredTokenInfo.decimals));
-      return `≈ ${formattedValue.toFixed(2)} ${preferredTokenInfo.symbol}`;
+      return `≈ ${formatDisplayAmount(formattedValue, { maximumFractionDigits: 4 })} ${preferredTokenInfo.symbol}`;
     } catch (e) {
-      console.error("Error formatting estimated total value:", e);
+      logger.error("Error formatting estimated total value:", e);
       return `Error (${preferredTokenInfo.symbol})`;
     }
   }, [claimableTotalValue, preferredRewardTokenAddress, chain?.id, permits, claimablePermits]);
@@ -163,12 +164,12 @@ export function DashboardPage() {
 
   const handlePreferenceChange = (selectedAddress: Address | null) => {
     setPreferredRewardTokenAddress(selectedAddress);
-    console.log("DashboardPage received preference change:", selectedAddress);
+    // Preference change logged only in development
   };
 
   const claimPermits = async (permitsToClaim: PermitData[]) => {
     if (!isConnected || !address || !chain) {
-      console.error("Cannot claim permits: Wallet not connected or address/chain missing");
+      logger.error("Cannot claim permits: Wallet not connected or address/chain missing");
       return;
     }
     const currentNetworkId = chain.id;
@@ -189,7 +190,7 @@ export function DashboardPage() {
 
       try {
         if (currentNetworkId !== networkId) {
-          console.log("Switching to network:", networkId);
+          logger.debug("Switching to network:", networkId);
           setIsSwitchingNetwork({ isSwitching: true, expectedNetworkId: networkId, permitsToClaim });
           await switchChainAsync({ chainId: networkId });
           return;
@@ -199,23 +200,23 @@ export function DashboardPage() {
         const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
         const sequentialPermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
         if (batchablePermits.length > 0) {
-          console.log(`Claiming ${batchablePermits.length} batchable permits on network ${networkId}`);
+          logger.info(`Claiming ${batchablePermits.length} batchable permits on network ${networkId}`);
           await handleClaimBatch(batchablePermits);
         }
 
         if (sequentialPermits.length > 0) {
-          console.log(`Claiming ${sequentialPermits.length} sequential permits on network ${networkId}`);
+          logger.info(`Claiming ${sequentialPermits.length} sequential permits on network ${networkId}`);
           await handleClaimSequential(sequentialPermits);
         }
       } catch (error) {
-        console.error(`Error claiming permits on network ${networkId}:`, error);
+        logger.error(`Error claiming permits on network ${networkId}:`, error);
       }
     }
   };
 
   useEffect(() => {
     if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
-      console.log(`Switched to expected network: ${chain.id}`);
+      logger.debug(`Switched to expected network: ${chain.id}`);
       setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
       claimPermits(claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature)));
     }

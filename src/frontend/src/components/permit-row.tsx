@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -6,7 +6,8 @@ import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
-import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
+import { formatAmount, formatDisplayAmount, hasRequiredFields } from "../utils/permit-utils.ts";
+import { logger } from "../utils/logger.ts";
 import { ICONS } from "./iconography.tsx";
 
 interface PermitRowProps {
@@ -25,18 +26,44 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
 
   const switchableChains = config.chains ?? [];
 
-  const isReadyToClaim = hasRequiredFields(permit);
-  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
-  const isClaimingThis = permit.claimStatus === "Pending";
-  const claimFailed = permit.claimStatus === "Error";
-  const insufficientBalance = permit.ownerBalanceSufficient === false;
-  const insufficientAllowance = permit.permit2AllowanceSufficient === false;
-  const prerequisiteCheckFailed = !!permit.checkError;
-  const canAttemptClaim =
-    isReadyToClaim &&
-    !isClaimingThis &&
-    !isClaimed &&
-    (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
+  // Memoize expensive calculations to prevent unnecessary re-renders
+  const permitStatus = useMemo(() => {
+    const isReadyToClaim = hasRequiredFields(permit);
+    const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
+    const isClaimingThis = permit.claimStatus === "Pending";
+    const claimFailed = permit.claimStatus === "Error";
+    const insufficientBalance = permit.ownerBalanceSufficient === false;
+    const insufficientAllowance = permit.permit2AllowanceSufficient === false;
+    const prerequisiteCheckFailed = !!permit.checkError;
+    const canAttemptClaim =
+      isReadyToClaim &&
+      !isClaimingThis &&
+      !isClaimed &&
+      (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
+
+    return {
+      isReadyToClaim,
+      isClaimed,
+      isClaimingThis,
+      claimFailed,
+      insufficientBalance,
+      insufficientAllowance,
+      prerequisiteCheckFailed,
+      canAttemptClaim
+    };
+  }, [permit]);
+  
+  // Destructure for easier access
+  const { 
+    isReadyToClaim, 
+    isClaimed, 
+    isClaimingThis, 
+    claimFailed, 
+    insufficientBalance, 
+    insufficientAllowance, 
+    prerequisiteCheckFailed, 
+    canAttemptClaim 
+  } = permitStatus;
 
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
@@ -97,14 +124,14 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
   const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis;
   const buttonIcon = showCannotClaimIcon ? ICONS.NO_CLAIM : ICONS.CLAIM;
 
-  const handleButtonClick = async () => {
+  const handleButtonClick = useCallback(async () => {
     if (networkMismatch) {
       if (connector && canSwitchToPermitNetwork && !isSwitchingNetwork) {
         setIsSwitchingNetwork(true);
         try {
           await switchChainAsync({ chainId: permit.networkId });
         } catch (error) {
-          console.error("Failed to switch network:", error);
+          logger.error("Failed to switch network:", error);
           setIsSwitchingNetwork(false);
         }
       }
@@ -113,11 +140,23 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
     } else if (!isButtonDisabled) {
       await onClaimPermit(permit);
     }
-  };
+  }, [
+    networkMismatch,
+    connector,
+    canSwitchToPermitNetwork,
+    isSwitchingNetwork,
+    switchChainAsync,
+    permit,
+    isClaimed,
+    claimFailed,
+    chain,
+    isButtonDisabled,
+    onClaimPermit
+  ]);
 
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
-  const formatGithubLink = (url: string | undefined): string => {
+  const formatGithubLink = useCallback((url: string | undefined): string => {
     if (!url) return "N/A";
     try {
       const match = url.match(/github\.com\/[^/]+\/([^/]+)\/issues\/(\d+)/);
@@ -125,12 +164,12 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
         return match[1];
       }
     } catch (e) {
-      console.error("Error parsing GitHub URL:", e);
+      logger.warn("Error parsing GitHub URL:", e);
     }
     return "Source Link";
-  };
+  }, []);
 
-  const renderAmount = () => {
+  const renderAmount = useMemo(() => {
     if (isQuoting && preferredRewardTokenAddress && permit.tokenAddress?.toLowerCase() !== preferredRewardTokenAddress.toLowerCase()) {
       return <span title="Fetching swap quote...">...</span>;
     }
@@ -145,7 +184,11 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
         try {
           const estimatedValueString = formatUnits(BigInt(permit.estimatedAmountOut), preferredTokenInfo.decimals);
           const numericValue = Number(estimatedValueString);
-          const displayValue = isNaN(numericValue) ? "Error" : numericValue.toLocaleString(undefined, { maximumSignificantDigits: 2 });
+          const displayValue = isNaN(numericValue) ? "Error" : formatDisplayAmount(numericValue, { 
+            maximumFractionDigits: 4,
+            useSignificantDigits: true,
+            significantDigits: 4
+          });
 
           const originalTokenInfo = getTokenInfo(chain?.id, permit.tokenAddress as Address);
           const originalSymbol = originalTokenInfo?.symbol || "tokens";
@@ -173,7 +216,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
             );
           }
         } catch (e) {
-          console.error("Error formatting estimated amount:", e);
+          logger.warn("Error formatting estimated amount:", e);
           return <span title="Error formatting estimated amount">{ICONS.WARNING} Format Error</span>;
         }
       }
@@ -207,7 +250,13 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
     } else {
       return "N/A";
     }
-  };
+  }, [
+    isQuoting,
+    preferredRewardTokenAddress,
+    permit,
+    chain,
+    targetNetworkName
+  ]);
 
   return (
     <div className={`permit-row ${rowClassName}`}>
@@ -246,3 +295,6 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
     </div>
   );
 }
+
+// Export the memoized version as the default export for performance optimization
+export default memo(PermitRow);

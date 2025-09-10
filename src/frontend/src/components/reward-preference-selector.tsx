@@ -55,7 +55,7 @@ export function RewardPreferenceSelector({ chainId, onPreferenceChange }: Reward
     }
     // Trigger callback to notify parent component (e.g., DashboardPage)
     onPreferenceChange(finalAddress);
-    console.log(`Preferred reward token set to: ${finalAddress || "None"}`);
+    // Preference debug: ${finalAddress || "None"}`);
   };
 
   // Disable selector if no tokens are available for the current chain
