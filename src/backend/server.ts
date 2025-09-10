@@ -4,7 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.js";
 
+import { createLogger } from "../lib/debug/index.js";
+
+const logger = createLogger('backend:server');
 const app = new Hono();
 app.use("*", cors());
 
@@ -16,12 +20,16 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // API endpoint for recording claims
+type RecordClaimRequest = {
+  signature: string;
+  transactionHash: string;
+};
 app.post("/api/permits/record-claim", async (c: Context) => {
   try {
-    const { signature, transactionHash } = await c.req.json();
+    const { signature, transactionHash }: RecordClaimRequest = await c.req.json();
 
     if (!signature || !transactionHash) {
       return c.json({ error: "Missing required fields" }, 400);
@@ -53,7 +61,7 @@ if (process.env.NODE_ENV === "production") {
 
 // Start server
 const port = parseInt(process.env.PORT || "3000");
-console.log(`Server running on port ${port}`);
+logger.info(`Server running on port ${port}`);
 
 serve({
   fetch: app.fetch,

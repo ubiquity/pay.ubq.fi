@@ -1,0 +1,77 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp-config.schema.json",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-playwright"
+      ],
+      "env": {
+        "PLAYWRIGHT_CDP_PORT": "9222",
+        "PLAYWRIGHT_CDP_HOST": "localhost",
+        "PLAYWRIGHT_HEADLESS": "false",
+        "PLAYWRIGHT_SLOW_MO": "100",
+        "PLAYWRIGHT_TIMEOUT": "30000",
+        "BROWSER_USER_DATA_DIR": "./.playwright-mcp/user-data",
+        "BROWSER_DOWNLOADS_DIR": "./.playwright-mcp/downloads"
+      },
+      "description": "Playwright MCP server for browser automation and testing",
+      "capabilities": [
+        "browser_automation",
+        "web_scraping",
+        "screenshot_capture",
+        "pdf_generation",
+        "element_interaction"
+      ]
+    }
+  },
+  "defaults": {
+    "timeout": 30000,
+    "retries": 2,
+    "headless": false,
+    "slowMo": 100
+  },
+  "browser": {
+    "type": "chromium",
+    "cdp": {
+      "host": "localhost",
+      "port": 9222
+    },
+    "launchOptions": {
+      "args": [
+        "--remote-debugging-port=9222",
+        "--disable-web-security",
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-blink-features=AutomationControlled"
+      ],
+      "ignoreDefaultArgs": [
+        "--enable-blink-features=IdleDetection"
+      ]
+    }
+  },
+  "automation": {
+    "screenshots": {
+      "enabled": true,
+      "path": "./.playwright-mcp/screenshots",
+      "format": "png",
+      "fullPage": true
+    },
+    "videos": {
+      "enabled": true,
+      "path": "./.playwright-mcp/videos",
+      "format": "webm"
+    },
+    "traces": {
+      "enabled": true,
+      "path": "./.playwright-mcp/traces",
+      "screenshots": true,
+      "snapshots": true
+    }
+  },
+  "logging": {
+    "level": "info",
+    "file": "./.playwright-mcp/mcp-playwright.log"
+  }
+}

@@ -1,4 +1,5 @@
 import { useAccount } from "wagmi"; // Import useAccount hook from wagmi
+import { useDebug, useDebugLifecycle } from "./hooks/useDebug";
 
 // Import page components
 import { LoginPage } from "./components/login-page";
