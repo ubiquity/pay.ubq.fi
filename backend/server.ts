@@ -3,9 +3,13 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { cors } from "hono/cors";\nimport type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.js";
+import { cors } from "hono/cors";
+import type { Database, Tables, TablesInsert, TablesUpdate } from "../frontend/src/database.types.js";
 
-import { createLogger } from \"../lib/debug/index.js\";\n\nconst logger = createLogger('backend:server');\nconst app = new Hono();
+import { createLogger } from "../lib/debug/index.js";
+
+const logger = createLogger('backend:server');
+const app = new Hono();
 app.use("*", cors());
 
 // Initialize Supabase client
@@ -18,7 +22,11 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-// API endpoint for recording claims\ntype RecordClaimRequest = {\n  signature: string;\n  transactionHash: string;\n};
+// API endpoint for recording claims
+type RecordClaimRequest = {
+  signature: string;
+  transactionHash: string;
+};
 app.post("/api/permits/record-claim", async (c: Context) => {
   try {
     const { signature, transactionHash }: RecordClaimRequest = await c.req.json();

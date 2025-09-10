@@ -162,9 +162,9 @@ kill_chrome_processes() {
     # Kill processes using the CDP port
     if lsof -ti:"$CDP_PORT" >/dev/null 2>&1; then
         log_info "Killing process using port $CDP_PORT"
-        kill -TERM $(lsof -ti:"$CDP_PORT") 2>/dev/null || true
+        kill -TERM "$(lsof -ti:"$CDP_PORT")" 2>/dev/null || true
         sleep 2
-        kill -KILL $(lsof -ti:"$CDP_PORT") 2>/dev/null || true
+        kill -KILL "$(lsof -ti:"$CDP_PORT")" 2>/dev/null || true
     fi
     
     # Kill Chrome processes with remote debugging
