@@ -5,6 +5,7 @@ import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddres
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
+import { workerLogger } from "../utils/logger.ts";
 
 // --- Worker Setup ---
 
@@ -59,31 +60,34 @@ type PermitRow = Tables<"permits"> & {
   location: Tables<"locations"> | null;
 };
 
+// Track validation issues for batched logging
+const validationIssues: Array<{ nonce: string; issue: string }> = [];
+
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   if (!ownerAddressStr) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no owner address`);
+    validationIssues.push({ nonce: permit.nonce, issue: "missing owner address" });
     return null;
   }
   const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
   if (!tokenAddressStr) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no token address`);
+    validationIssues.push({ nonce: permit.nonce, issue: "missing token address" });
     return null;
   }
   const networkIdNum = Number(tokenData?.network ?? 0);
   if (networkIdNum === 0) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid network ID: ${tokenData?.network}`);
+    validationIssues.push({ nonce: permit.nonce, issue: `invalid network ID: ${tokenData?.network}` });
     return null;
   }
   if (!permit.deadline) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no deadline`);
+    validationIssues.push({ nonce: permit.nonce, issue: "missing deadline" });
     return null;
   }
   if (!permit.signature || !permit.signature.startsWith("0x")) {
-    console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid signature format: ${permit.signature}`);
+    validationIssues.push({ nonce: permit.nonce, issue: `invalid signature format: ${permit.signature?.substring(0, 10)}...` });
     return null;
   }
 
@@ -93,7 +97,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     try {
       BigInt(permit.amount);
     } catch {
-      console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has invalid amount format: ${permit.amount}`);
+      validationIssues.push({ nonce: permit.nonce, issue: `invalid amount format: ${permit.amount}` });
       return null;
     }
   }
@@ -175,9 +179,9 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   const result = await query;
 
   if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
+    workerLogger.error(`query error: ${result.error.message}`, result.error);
   } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
+    workerLogger.info(`Found ${result.data.length} permits`);
     permitsData = result.data;
   }
 
@@ -406,7 +410,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
         }
       });
     } catch (error: unknown) {
-      console.error("Worker: Error during validation batch RPC request:", error);
+      workerLogger.error("Error during validation batch RPC request:", error);
       // Mark all permits in this validation batch as errored
       permitsToValidate.forEach((permit) => {
         const updateData = checkedPermitsMap.get(permit.signature) || {
@@ -476,7 +480,7 @@ worker.onmessage = async (event) => {
         rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
         worker.postMessage({ type: "INIT_SUCCESS" });
       } catch (error: unknown) {
-        console.error("Worker: Error initializing clients:", error);
+        workerLogger.error("Error initializing clients:", error);
         worker.postMessage({ type: "INIT_ERROR", error: error instanceof Error ? error.message : String(error) });
       }
     } else {
@@ -498,7 +502,24 @@ worker.onmessage = async (event) => {
         await Promise.all(newPermitsFromDb.map((p: PermitRow, i: number) => mapDbPermitToPermitData(p, i, lowerCaseWalletAddress)))
       ).filter((p): p is PermitData => p !== null);
       // One-line summary for mapped permits
-      console.log(`Worker: Mapped ${mappedNewPermits.length} new permits`);
+      workerLogger.info(`Mapped ${mappedNewPermits.length} new permits`);
+    
+    // Log validation issues in batches to reduce console noise
+    if (validationIssues.length > 0) {
+      const issueSummary = validationIssues.reduce((acc, item) => {
+        acc[item.issue] = (acc[item.issue] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      workerLogger.warn(`Validation issues found:`, issueSummary);
+      if (validationIssues.length <= 5) {
+        validationIssues.forEach(issue => 
+          workerLogger.warn(`Permit ${issue.nonce}: ${issue.issue}`)
+        );
+      }
+      // Clear the issues array after logging
+      validationIssues.length = 0;
+    }
 
       // 4. Validate *only* the mapped new permits
       if (mappedNewPermits.length > 0) {
@@ -513,7 +534,7 @@ worker.onmessage = async (event) => {
         worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: [], balancesAndAllowances: new Map() });
       }
     } catch (error: unknown) {
-      console.error("Worker: Error fetching/validating new permits:", error);
+      workerLogger.error("Error fetching/validating new permits:", error);
       worker.postMessage({ type: "PERMITS_ERROR", error: error instanceof Error ? error.message : String(error) });
     }
   }

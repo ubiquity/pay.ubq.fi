@@ -36,7 +36,29 @@ export default defineConfig({
   },
   build: {
     cssCodeSplit: false,
-    outDir: 'dist'
+    outDir: 'dist',
+    // Performance optimizations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunk for large libraries
+          vendor: ['react', 'react-dom'],
+          crypto: ['viem', '@uniswap/permit2-sdk'],
+          ui: ['@tanstack/react-query', 'react-router-dom']
+        }
+      }
+    },
+    // Enable source maps in production for debugging
+    sourcemap: true,
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000
   },
   worker: {
     format: 'es'
@@ -46,6 +68,14 @@ export default defineConfig({
       define: {
         global: 'globalThis'
       }
-    }
+    },
+    // Pre-bundle these dependencies for faster startup
+    include: [
+      'react',
+      'react-dom', 
+      'viem',
+      '@tanstack/react-query',
+      'react-router-dom'
+    ]
   }
 }) as UserConfig;

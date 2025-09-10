@@ -75,7 +75,7 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount React app");
 }
 if (!gridElement) {
-  console.warn("Could not find grid element for background animation"); // Warn if grid element is missing
+  // Grid element not found - background animation disabled // Warn if grid element is missing
 }
 
 createRoot(rootElement).render(
