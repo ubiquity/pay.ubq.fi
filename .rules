@@ -33,9 +33,9 @@ This file captures project-specific patterns, user preferences, and key insights
 ### Build Process
 1. Run frontend build:
    ```bash
-   cd frontend && bun run build
+   cd src/frontend && bun run build
    ```
-2. Verify output in `frontend/dist`:
+2. Verify output in `src/frontend/dist`:
    - `index.html`
    - `assets/` directory
 
@@ -48,13 +48,13 @@ This file captures project-specific patterns, user preferences, and key insights
 ### Deployment Steps
 1. Build frontend assets
 2. Configure Deno Deploy:
-   - Set entry point to `backend/server.ts`
+   - Set entry point to `src/backend/server.ts`
    - Configure required environment variables
 3. Deploy application
 
 ### Troubleshooting
 - If static files aren't loading:
-  - Verify `frontend/dist` exists
+  - Verify `src/frontend/dist` exists
   - Check server.ts static file serving path
 - If API endpoints fail:
   - Verify Supabase credentials

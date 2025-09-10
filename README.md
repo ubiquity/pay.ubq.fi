@@ -51,12 +51,12 @@ cp .env.example .env
 
 ### Frontend Environment
 
-- Place your frontend `.env` file in the `frontend/` directory (`frontend/.env`).
-- Use `frontend/.env.example` as a template:
+- Place your frontend `.env` file in the `src/frontend/` directory (`src/frontend/.env`).
+- Use `src/frontend/.env.example` as a template:
   ```bash
-  cp frontend/.env.example frontend/.env
+  cp src/frontend/.env.example src/frontend/.env
   ```
-- **Required frontend variables** (see `frontend/.env.example`):
+- **Required frontend variables** (see `src/frontend/.env.example`):
   - `VITE_SUPABASE_URL`: Supabase project URL (for frontend)
   - `VITE_SUPABASE_ANON_KEY`: Supabase anon/public key (for frontend)
   - `VITE_RPC_URL`: Blockchain RPC endpoint for on-chain calls
@@ -66,7 +66,7 @@ All frontend environment variables **must** be prefixed with `VITE_` to be acces
 
 ### About `.env.example` Files
 
-- `.env.example` and `frontend/.env.example` serve as templates for required environment variables.
+- `.env.example` and `src/frontend/.env.example` serve as templates for required environment variables.
 - Never commit real secrets to version control—only the example files.
 - Always copy the example file and fill in your actual values before running the app.
 

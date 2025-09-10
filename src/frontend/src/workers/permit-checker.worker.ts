@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from "@ubiquity-dao/permit2-rpc-client";
 import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddress } from "viem";
-import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { PERMIT3_ADDRESS, NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
@@ -35,7 +35,7 @@ const PARTNERS_TABLE = "partners";
 const LOCATIONS_TABLE = "locations";
 
 // ABIs needed for checks
-const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");
+const permit3Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");
 
 // Initialize Supabase & RPC clients (will be set in INIT)
 let supabase: SupabaseClient<Database> | null = null; // Use Database type
@@ -98,7 +98,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     }
   }
 
-  const permit2Address = await getPermit2Address({
+  const permit3Address = await getPermit3Address({
     nonce: permit.nonce,
     tokenAddress: tokenAddressStr ?? "",
     amount: permit.amount,
@@ -110,7 +110,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   });
 
   const permitData: PermitData = {
-    permit2Address: permit2Address as `0x${string}`,
+    permit2Address: permit3Address as `0x${string}`,
     nonce: String(permit.nonce),
     networkId: networkIdNum,
     beneficiary: lowerCaseWalletAddress, // Keep wallet address as beneficiary for UI/logic consistency
@@ -191,7 +191,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
 // --- On-Chain Validation ---
 
-async function getPermit2Address(permitData: {
+async function getPermit3Address(permitData: {
   tokenAddress: string;
   amount: string;
   nonce: string;
@@ -210,12 +210,18 @@ async function getPermit2Address(permitData: {
     deadline: BigInt(permitData.deadline),
     spender: permitData.beneficiary as Address,
   };
-  const hash = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
+  const hash = SignatureTransfer.hash(permit, PERMIT3_ADDRESS, permitData.networkId) as `0x${string}`;
   const signer = await recoverAddress({ hash, signature: permitData.signature as `0x${string}` });
   if (signer.toLowerCase() === permitData.owner.toLowerCase()) {
+    return PERMIT3_ADDRESS;
+  }
+  // Try NEW_PERMIT2_ADDRESS as fallback
+  const hashPermit2 = SignatureTransfer.hash(permit, NEW_PERMIT2_ADDRESS, permitData.networkId) as `0x${string}`;
+  const signerPermit2 = await recoverAddress({ hash: hashPermit2, signature: permitData.signature as `0x${string}` });
+  if (signerPermit2.toLowerCase() === permitData.owner.toLowerCase()) {
     return NEW_PERMIT2_ADDRESS;
   }
-  // If the signer doesn't match, fallback to old permit address
+  // If neither matches, fallback to old permit address
   return OLD_PERMIT2_ADDRESS;
 }
 
@@ -258,7 +264,7 @@ async function validatePermitsBatch(permitsToValidate: PermitData[]) {
           jsonrpc: "2.0",
           method: "eth_call",
           params: [
-            { to: permit.permit2Address, data: encodeFunctionData({ abi: [permit2Abi], functionName: "nonceBitmap", args: [owner, wordPos] }) },
+            { to: permit.permit2Address, data: encodeFunctionData({ abi: [permit3Abi], functionName: "nonceBitmap", args: [owner, wordPos] }) },
             "latest",
           ],
           id: requestIdCounter++,

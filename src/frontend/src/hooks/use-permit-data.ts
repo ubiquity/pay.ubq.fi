@@ -11,6 +11,8 @@ interface UsePermitDataProps {
   isConnected: boolean;
   preferredRewardTokenAddress: Address | null;
   chainId: number | undefined;
+  fetchBeneficiaryPermits?: boolean;
+  fetchOwnerPermits?: boolean;
 }
 
 type PermitDataCache = Record<string, PermitData>;
@@ -20,8 +22,11 @@ interface WorkerGlobalScope extends Worker {
   postMessage: (message: WorkerRequest) => void;
 }
 
-export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
+export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId, fetchBeneficiaryPermits = true, fetchOwnerPermits = true }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
+  const [permitsToClaim, setPermitsToClaim] = useState<PermitData[]>([]);
+  const [beneficiaryPermits, setBeneficiaryPermits] = useState<PermitData[]>([]);
+  const [ownerPermits, setOwnerPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -29,6 +34,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const workerRef = useRef<WorkerGlobalScope | null>(null);
   const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
+  const lastWalletRef = useRef<Address | undefined>(undefined);
 
   const saveCache = (cache: PermitDataCache) => {
     try {
@@ -39,13 +45,43 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   };
 
   const filterPermits = (permitsMap: Map<string, PermitData>) => {
-    const filtered: PermitData[] = [];
+    const allPermits: PermitData[] = [];
+    const claimablePermits: PermitData[] = [];
+    const beneficiaryList: PermitData[] = [];
+    const ownerList: PermitData[] = [];
+
     permitsMap.forEach((permit) => {
       const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
       const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
+      
+      if (!shouldFilter) {
+        allPermits.push(permit);
+        
+        // Check if permit is claimable (valid and not expired)
+        const isClaimable = permit.status === "Valid" && 
+                           !permit.checkError && 
+                           permit.claimStatus !== "Success" && 
+                           permit.claimStatus !== "Pending";
+        
+        if (isClaimable) {
+          claimablePermits.push(permit);
+        }
+        
+        // Categorize by role
+        if (address && permit.beneficiary?.toLowerCase() === address.toLowerCase()) {
+          beneficiaryList.push(permit);
+        }
+        
+        if (address && permit.owner?.toLowerCase() === address.toLowerCase()) {
+          ownerList.push(permit);
+        }
+      }
     });
-    setPermits(filtered);
+    
+    setPermits(allPermits);
+    setPermitsToClaim(claimablePermits);
+    setBeneficiaryPermits(beneficiaryList);
+    setOwnerPermits(ownerList);
   };
 
   const fetchQuotes = async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
@@ -152,6 +188,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
               allPermitsRef.current = mapWithQuotes;
               filterPermits(allPermitsRef.current);
               setIsLoading(false);
+              // Clear error on successful operation
+              setError(null);
             })
             .catch((e) => {
               setError(`Failed to fetch swap quotes: ${e instanceof Error ? e.message : e}`);
@@ -179,17 +217,49 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     };
   }, []);
 
+  // Handle wallet changes and clear permits when wallet switches
   useEffect(() => {
+    if (address !== lastWalletRef.current) {
+      // Wallet changed, clear previous permits and error state
+      if (lastWalletRef.current !== undefined) {
+        allPermitsRef.current.clear();
+        setPermits([]);
+        setPermitsToClaim([]);
+        setBeneficiaryPermits([]);
+        setOwnerPermits([]);
+        setBalancesAndAllowances(new Map());
+        setError(null); // Clear error on wallet switch
+      }
+      lastWalletRef.current = address;
+    }
+
     if (isConnected && address && isWorkerInitialized && workerRef.current) {
       setIsLoading(true);
       setError(null);
-      workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
+      
+      // Fetch permits based on role preferences
+      const fetchPayload: any = { address };
+      if (fetchBeneficiaryPermits && fetchOwnerPermits) {
+        fetchPayload.fetchMode = 'both';
+      } else if (fetchBeneficiaryPermits) {
+        fetchPayload.fetchMode = 'beneficiary';
+      } else if (fetchOwnerPermits) {
+        fetchPayload.fetchMode = 'owner';
+      } else {
+        fetchPayload.fetchMode = 'none';
+      }
+      
+      workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: fetchPayload });
     } else if (!isConnected) {
       allPermitsRef.current.clear();
       setPermits([]);
+      setPermitsToClaim([]);
+      setBeneficiaryPermits([]);
+      setOwnerPermits([]);
+      setBalancesAndAllowances(new Map());
       setIsLoading(false);
     }
-  }, [isConnected, isWorkerInitialized, address]);
+  }, [isConnected, isWorkerInitialized, address, fetchBeneficiaryPermits, fetchOwnerPermits]);
 
   useEffect(() => {
     if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {

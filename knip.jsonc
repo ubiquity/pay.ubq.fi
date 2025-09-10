@@ -1,0 +1,37 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/frontend/src/main.tsx",
+        "src/backend/server.ts",
+        "src/frontend/src/workers/**/*.worker.ts"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.js"
+      ]
+    },
+    "src/frontend": {
+      "entry": [
+        "src/main.tsx",
+        "src/workers/**/*.worker.ts",
+        "vite.config.ts"
+      ],
+      "project": ["src/**/*.ts", "src/**/*.tsx"]
+    },
+    "src/backend": {
+      "entry": ["server.ts"],
+      "project": ["**/*.ts", "**/*.js"]
+    }
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "eslint.config.js",
+    "src/frontend/vite.config.ts",
+    "src/frontend/src/vite-env.d.ts"
+  ]
+}

@@ -13,6 +13,7 @@ export const RPC_URL = import.meta.env.DEV ? "https://rpc.ubq.fi" : `${self.loca
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 export const NEW_PERMIT2_ADDRESS: Address = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
+export const PERMIT3_ADDRESS: Address = "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768";
 
 // Removed unused PERMIT_AGGREGATOR_ADDRESS
 

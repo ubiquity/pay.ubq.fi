@@ -2,12 +2,12 @@
 
 import { Dispatch, SetStateAction, useState } from "react";
 import { Address, Chain, PublicClient, WalletClient } from "viem";
-import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
-import permit2Abi from "../fixtures/permit2-abi.ts";
+import { PERMIT3_ADDRESS } from "../constants/config.ts";
+import permit3Abi from "../fixtures/permit3-abi.json";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
 
-if (!permit2Abi) {
-  throw new Error("Permit2 ABI could not be loaded");
+if (!permit3Abi) {
+  throw new Error("Permit3 ABI could not be loaded");
 }
 
 interface UsePermitClaimingProps {
@@ -25,7 +25,7 @@ interface UsePermitClaimingProps {
 async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
   return await publicClient.simulateContract({
     address: permit.permit2Address,
-    abi: permit2Abi,
+    abi: permit3Abi,
     functionName: "permitTransferFrom",
     args: [
       {
@@ -49,8 +49,8 @@ async function simulatePermitTranferFrom(publicClient: PublicClient, address: Ad
 
 async function simulateBatchPermitTransferFrom(publicClient: PublicClient, address: Address, permitsToClaim: PermitData[]) {
   return await publicClient.simulateContract({
-    address: NEW_PERMIT2_ADDRESS,
-    abi: permit2Abi,
+    address: PERMIT3_ADDRESS,
+    abi: permit3Abi,
     functionName: "batchPermitTransferFrom",
     args: [
       permitsToClaim.map((permit) => ({
@@ -118,8 +118,8 @@ export function usePermitClaiming({
 
     try {
       // 1. First simulate the transaction
-      if (!permit2Abi) {
-        throw new Error("Permit2 ABI not found - cannot simulate transaction");
+      if (!permit3Abi) {
+        throw new Error("Permit3 ABI not found - cannot simulate transaction");
       }
 
       const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
