@@ -22,7 +22,7 @@ interface UsePermitClaimingProps {
   setBalancesAndAllowances: Dispatch<SetStateAction<Map<string, AllowanceAndBalance>>>;
 }
 
-async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
+async function simulatePermitTransferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
   return await publicClient.simulateContract({
     address: permit.permit2Address,
     abi: permit3Abi,
@@ -122,7 +122,7 @@ export function usePermitClaiming({
         throw new Error("Permit3 ABI not found - cannot simulate transaction");
       }
 
-      const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+      const { request } = await simulatePermitTransferFrom(publicClient, address, permit);
 
       console.log("Transaction simulation successful", { request });
 
@@ -213,7 +213,7 @@ export function usePermitClaiming({
     await Promise.allSettled(
       toClaim.map(async (permit) => {
         try {
-          const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+          const { request } = await simulatePermitTransferFrom(publicClient, address, permit);
 
           console.log("Transaction simulation successful", { request });
 
