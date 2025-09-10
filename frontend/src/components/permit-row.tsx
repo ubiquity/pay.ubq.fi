@@ -303,5 +303,5 @@ export function PermitRow({
   );
 }
 
-// Wrap with React.memo for performance optimization
-export const OptimizedPermitRow = memo(PermitRow);
+// Export the memoized version as the default export for performance optimization
+export default memo(PermitRow);

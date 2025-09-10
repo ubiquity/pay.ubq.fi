@@ -16,13 +16,30 @@ class AppLogger implements Logger {
   private isDevelopment = import.meta.env.DEV;
   private logCounts = new Map<string, number>();
   private readonly MAX_REPEATED_LOGS = 5;
+  private readonly MAX_LOG_ENTRIES = 1000;
+  private lastCleanup = Date.now();
   
+  private cleanupLogCounts(): void {
+    const now = Date.now();
+    // Clean up every 5 minutes
+    if (now - this.lastCleanup > 5 * 60 * 1000) {
+      if (this.logCounts.size > this.MAX_LOG_ENTRIES) {
+        // Clear all entries when we exceed the limit
+        this.logCounts.clear();
+      }
+      this.lastCleanup = now;
+    }
+  }
+
   private shouldLog(level: LogLevel, message: string): boolean {
     // Always log errors
     if (level === 'error') return true;
     
     // In production, only log warnings and errors
     if (!this.isDevelopment && level === 'debug') return false;
+    
+    // Periodic cleanup to prevent memory leaks
+    this.cleanupLogCounts();
     
     // Rate limiting for repeated messages
     const key = `${level}:${message}`;
@@ -90,9 +107,26 @@ export const logger = new AppLogger();
 export class WorkerLogger implements Logger {
   private logCounts = new Map<string, number>();
   private readonly MAX_REPEATED_LOGS = 3;
+  private readonly MAX_LOG_ENTRIES = 500;
+  private lastCleanup = Date.now();
   
+  private cleanupLogCounts(): void {
+    const now = Date.now();
+    // Clean up every 5 minutes
+    if (now - this.lastCleanup > 5 * 60 * 1000) {
+      if (this.logCounts.size > this.MAX_LOG_ENTRIES) {
+        // Clear all entries when we exceed the limit
+        this.logCounts.clear();
+      }
+      this.lastCleanup = now;
+    }
+  }
+
   private shouldLog(level: LogLevel, message: string): boolean {
     if (level === 'error') return true;
+    
+    // Periodic cleanup to prevent memory leaks
+    this.cleanupLogCounts();
     
     const key = `${level}:${message}`;
     const count = this.logCounts.get(key) || 0;

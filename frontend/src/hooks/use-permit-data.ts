@@ -60,28 +60,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
-  // Load cache utility (currently unused but available for future enhancements)
-  // const loadCache = (): PermitDataCache => {
-  //   try {
-  //     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
-  //     if (!cacheString) return {};
-  //     
-  //     const cache = JSON.parse(cacheString) as PermitDataCache;
-  //     const now = Date.now();
-  //     
-  //     // Filter out expired cache entries
-  //     const validCache: PermitDataCache = {};
-  //     Object.entries(cache).forEach(([key, permit]) => {
-  //       if (permit.cachedAt && (now - permit.cachedAt) < CACHE_TTL_MS) {
-  //         validCache[key] = permit;
-  //       }
-  //     });
-  //     
-  //     return validCache;
-  //   } catch {
-  //     return {};
-  //   }
-  // };
 
   const getCachedQuote = (quoteKey: string): string | null => {
     try {

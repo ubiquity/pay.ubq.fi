@@ -60,8 +60,17 @@ type PermitRow = Tables<"permits"> & {
   location: Tables<"locations"> | null;
 };
 
-// Track validation issues for batched logging
+// Track validation issues for batched logging with circular buffer to prevent memory growth
+const MAX_VALIDATION_ISSUES = 100;
 const validationIssues: Array<{ nonce: string; issue: string }> = [];
+
+function addValidationIssue(nonce: string, issue: string) {
+  validationIssues.push({ nonce, issue });
+  // Implement circular buffer: if we exceed max size, remove oldest entries
+  if (validationIssues.length > MAX_VALIDATION_ISSUES) {
+    validationIssues.splice(0, validationIssues.length - MAX_VALIDATION_ISSUES);
+  }
+}
 
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
@@ -69,25 +78,25 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
   const ownerWalletData = permit.partner?.wallet;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
   if (!ownerAddressStr) {
-    validationIssues.push({ nonce: permit.nonce, issue: "missing owner address" });
+    addValidationIssue(permit.nonce, "missing owner address");
     return null;
   }
   const tokenAddressStr = tokenData?.address ? String(tokenData.address) : undefined;
   if (!tokenAddressStr) {
-    validationIssues.push({ nonce: permit.nonce, issue: "missing token address" });
+    addValidationIssue(permit.nonce, "missing token address");
     return null;
   }
   const networkIdNum = Number(tokenData?.network ?? 0);
   if (networkIdNum === 0) {
-    validationIssues.push({ nonce: permit.nonce, issue: `invalid network ID: ${tokenData?.network}` });
+    addValidationIssue(permit.nonce, `invalid network ID: ${tokenData?.network}`);
     return null;
   }
   if (!permit.deadline) {
-    validationIssues.push({ nonce: permit.nonce, issue: "missing deadline" });
+    addValidationIssue(permit.nonce, "missing deadline");
     return null;
   }
   if (!permit.signature || !permit.signature.startsWith("0x")) {
-    validationIssues.push({ nonce: permit.nonce, issue: `invalid signature format: ${permit.signature?.substring(0, 10)}...` });
+    addValidationIssue(permit.nonce, `invalid signature format: ${permit.signature?.substring(0, 10)}...`);
     return null;
   }
 
@@ -97,7 +106,7 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     try {
       BigInt(permit.amount);
     } catch {
-      validationIssues.push({ nonce: permit.nonce, issue: `invalid amount format: ${permit.amount}` });
+      addValidationIssue(permit.nonce, `invalid amount format: ${permit.amount}`);
       return null;
     }
   }
