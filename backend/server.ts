@@ -1,22 +1,32 @@
-import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
-import { createClient } from "@supabase/supabase-js";
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
+import { createClient } from "npm:@supabase/supabase-js@2.39.8";
+import type { Context } from "npm:hono@4.2.5";
+import { Hono } from "npm:hono@4.2.5";
+import { cors } from "npm:hono@4.2.5/cors";
+import { serveStatic } from "npm:hono@4.2.5/deno";
 
 const app = new Hono();
+
+// CORS middleware
 app.use("*", cors());
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Initialize Supabase client with Deno.env
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Health check endpoint
+app.get("/health", (c: Context) => {
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    env: Deno.env.get("NODE_ENV") || "development"
+  });
+});
 
 // API endpoint for recording claims
 app.post("/api/permits/record-claim", async (c: Context) => {
@@ -45,15 +55,15 @@ app.post("/api/permits/record-claim", async (c: Context) => {
   }
 });
 
-// Serve static files for the frontend
+// Serve static files from frontend/dist
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
-app.use("/*", serveStatic({ path: "./frontend/dist/index.html" }));
 
-// Start server
-const port = parseInt(process.env.PORT || "3000");
+// SPA fallback - serve index.html for all non-API routes
+app.get("*", serveStatic({ path: "./frontend/dist/index.html" }));
+
+// Start server with Deno.serve
+const port = parseInt(Deno.env.get("PORT") || "3000");
 console.log(`Server running on port ${port}`);
+console.log(`Environment: ${Deno.env.get("NODE_ENV") || "development"}`);
 
-serve({
-  fetch: app.fetch,
-  port,
-});
+Deno.serve({ port }, app.fetch);
