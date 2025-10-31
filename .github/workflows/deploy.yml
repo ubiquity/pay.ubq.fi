@@ -31,20 +31,24 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
 
-      - name: Install step
+      - name: Install dependencies
         run: bun install
+
       - name: Install frontend dependencies
         run: |
           cd frontend
           bun install
-      - name: Build step
+
+      - name: Build frontend
         run: "cd frontend && bun run build"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
+
       - name: Upload to Deno Deploy
         uses: denoland/deployctl@v1
         with:
           project: "pay-ubq-fi"
           entrypoint: "backend/server.ts"
+          root: "."
