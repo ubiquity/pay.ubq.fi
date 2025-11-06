@@ -19,6 +19,30 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Root Information
+app.get("/", (c: Context) => {
+  const environment = Deno.env.get("DENO_ENV") ||
+    Deno.env.get("NODE_ENV") ||
+    "production";
+
+  return c.json({
+    name: "pay.ubq.fi API",
+    version: "1.0.0",
+    status: "operational",
+    environment: environment,
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: "/health",
+      recordClaim: "/api/permits/record-claim",
+      documentation: "https://docs.pay.ubq.fi"
+    },
+    services: {
+      supabase: "connected",
+      deno: "deployed"
+    }
+  });
+});
+
 // Health check endpoint
 app.get("/health", (c: Context) => {  
   const environment = Deno.env.get("DENO_ENV") ||
