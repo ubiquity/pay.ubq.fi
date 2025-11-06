@@ -33,8 +33,7 @@ app.get("/", (c: Context) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: "/health",
-      recordClaim: "/api/permits/record-claim",
-      documentation: "https://docs.pay.ubq.fi"
+      recordClaim: "/api/permits/record-claim"      
     },
     services: {
       supabase: "connected",
