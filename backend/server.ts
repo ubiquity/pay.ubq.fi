@@ -20,11 +20,16 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Health check endpoint
-app.get("/health", (c: Context) => {
+app.get("/health", (c: Context) => {  
+  const environment = Deno.env.get("DENO_ENV") ||
+    Deno.env.get("NODE_ENV") ||
+    "production";
+
   return c.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    env: Deno.env.get("NODE_ENV") || "development"
+    env: environment,
+    deploy: "deno-deploy"
   });
 });
 
