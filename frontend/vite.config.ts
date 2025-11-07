@@ -14,6 +14,7 @@ export default defineConfig({
       },
     }),
   ],
+  base: './',
   server: {
     port: 5173,
     hmr: false,
@@ -36,7 +37,14 @@ export default defineConfig({
   },
   build: {
     cssCodeSplit: false,
-    outDir: 'dist'
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      }
+    }
   },
   worker: {
     format: 'es'

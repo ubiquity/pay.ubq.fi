@@ -20,6 +20,18 @@ interface WorkerGlobalScope extends Worker {
   postMessage: (message: WorkerRequest) => void;
 }
 
+
+async function getBackendConfig() {
+  try {
+    const response = await fetch('/api/config');
+    if (!response.ok) throw new Error('Failed to fetch config');
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to load backend config:', error);
+    throw error;
+  }
+}
+
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
@@ -137,65 +149,85 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   };
 
   useEffect(() => {
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.warn("[use-permit-data] Supabase client misconfigured: missing URL or Anon Key.");
-      setError("Supabase URL or Anon Key missing in frontend environment variables.");
-      setIsWorkerInitialized(false);
-      setIsLoading(false);
-      return;
-    }
-    workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
-    workerRef.current.postMessage({
-      type: "INIT",
-      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment: import.meta.env.DEV },
-    });
+    
+    const initializeWorker = async () => {
+      try {
+        const config = await getBackendConfig();
 
-    workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const data = event.data;
-      switch (data.type) {
-        case "INIT_SUCCESS":
-          setIsWorkerInitialized(true);
-          break;
-        case "INIT_ERROR":
-          setError(`Worker initialization failed: ${data.error}`);
+        if (!config.supabaseUrl || !config.supabaseAnonKey) {
+          console.warn("[use-permit-data] Backend config missing Supabase credentials");
+          setError("Backend configuration incomplete");
           setIsWorkerInitialized(false);
           setIsLoading(false);
-          break;
-        case "NEW_PERMITS_VALIDATED": {
-          const validated: PermitData[] = data.permits || [];
-          const cache: PermitDataCache = {};
-          validated.forEach((permit) => {
-            cache[permit.signature] = permit;
-          });
-          saveCache(cache);
-          setBalancesAndAllowances(data.balancesAndAllowances);
-          const newPermits = new Map(Object.entries(cache));
-          fetchQuotes(newPermits)
-            .then((mapWithQuotes) => {
-              allPermitsRef.current = mapWithQuotes;
-              filterPermits(allPermitsRef.current);
-              setIsLoading(false);
-            })
-            .catch((e) => {
-              setError(`Failed to fetch swap quotes: ${e instanceof Error ? e.message : e}`);
-              setIsLoading(false);
-            });
-          break;
+          return;
         }
-        case "PERMITS_ERROR":
-          setError(`Error processing permits: ${data.error}`);
+
+        workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
+
+        workerRef.current.postMessage({
+          type: "INIT",
+          payload: {
+            supabaseUrl: config.supabaseUrl,
+            supabaseAnonKey: config.supabaseAnonKey,
+            isDevelopment: import.meta.env.DEV
+          },
+        });
+
+        workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
+          const data = event.data;
+          switch (data.type) {
+            case "INIT_SUCCESS":
+              setIsWorkerInitialized(true);
+              break;
+            case "INIT_ERROR":
+              setError(`Worker initialization failed: ${data.error}`);
+              setIsWorkerInitialized(false);
+              setIsLoading(false);
+              break;
+            case "NEW_PERMITS_VALIDATED": {
+              const validated: PermitData[] = data.permits || [];
+              const cache: PermitDataCache = {};
+              validated.forEach((permit) => {
+                cache[permit.signature] = permit;
+              });
+              saveCache(cache);
+              setBalancesAndAllowances(data.balancesAndAllowances);
+              const newPermits = new Map(Object.entries(cache));
+              fetchQuotes(newPermits)
+                .then((mapWithQuotes) => {
+                  allPermitsRef.current = mapWithQuotes;
+                  filterPermits(allPermitsRef.current);
+                  setIsLoading(false);
+                })
+                .catch((e) => {
+                  setError(`Failed to fetch swap quotes: ${e instanceof Error ? e.message : e}`);
+                  setIsLoading(false);
+                });
+              break;
+            }
+            case "PERMITS_ERROR":
+              setError(`Error processing permits: ${data.error}`);
+              setIsLoading(false);
+              break;
+          }
+        };
+
+        workerRef.current.onerror = (event) => {
+          console.error("[use-permit-data] Worker error:", event);
+          setError(`Worker error: ${event.message}`);
           setIsLoading(false);
-          break;
+          setIsWorkerInitialized(false);
+        };
+
+      } catch (error) {
+        console.error("[use-permit-data] Failed to initialize:", error);
+        setError(`Failed to initialize: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIsLoading(false);
+        setIsWorkerInitialized(false);
       }
     };
-    workerRef.current.onerror = (event) => {
-      console.error("[use-permit-data] Worker error:", event);
-      setError(`Worker error: ${event.message}`);
-      setIsLoading(false);
-      setIsWorkerInitialized(false);
-    };
+
+    initializeWorker();
 
     return () => {
       workerRef.current?.terminate();
@@ -248,6 +280,31 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
+  
+  const recordClaim = async (signature: string, transactionHash: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch('/api/permits/record-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature, transactionHash })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to record claim');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error recording claim:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  };
+
   return {
     permits,
     setPermits,
@@ -259,5 +316,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isWorkerInitialized,
     updatePermitStatusCache,
     isQuoting,
+    recordClaim, 
   };
 }

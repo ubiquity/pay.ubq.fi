@@ -1,49 +1,19 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.8";
 import type { Context } from "npm:hono@4.2.5";
 import { Hono } from "npm:hono@4.2.5";
-import { cors } from "npm:hono@4.2.5/cors";
 import { serveStatic } from "npm:hono@4.2.5/deno";
 
 const app = new Hono();
 
-// CORS middleware
-app.use("*", cors());
-
-// Initialize Supabase client with Deno.env
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
-}
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = Deno.env.get("VITE_SUPABASE_ANON_KEY");
 
-// Root Information
-app.get("/", (c: Context) => {
-  const environment = Deno.env.get("DENO_ENV") ||
-    Deno.env.get("NODE_ENV") ||
-    "production";
-
-  return c.json({
-    name: "pay.ubq.fi API",
-    version: "1.0.0",
-    status: "operational",
-    environment: environment,
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      health: "/health",
-      recordClaim: "/api/permits/record-claim"      
-    },
-    services: {
-      supabase: "connected",
-      deno: "deployed"
-    }
-  });
-});
-
-// Health check endpoint
-app.get("/health", (c: Context) => {  
+// Health check
+app.get("/health", (c: Context) => {
   const environment = Deno.env.get("DENO_ENV") ||
     Deno.env.get("NODE_ENV") ||
     "production";
@@ -56,8 +26,15 @@ app.get("/health", (c: Context) => {
   });
 });
 
-// API endpoint for recording claims
-app.post("/api/permits/record-claim", async (c: Context) => {
+
+app.get("/api/config", (c) => {
+  return c.json({
+    supabaseUrl: supabaseUrl,
+    supabaseAnonKey: supabaseAnonKey,
+  });
+});
+
+app.post("/api/permits/record-claim", async (c) => {
   try {
     const { signature, transactionHash } = await c.req.json();
 
@@ -65,10 +42,12 @@ app.post("/api/permits/record-claim", async (c: Context) => {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
+    
     const { error } = await supabase
       .from("permits")
       .update({
         transaction: transactionHash,
+        claimed_at: new Date().toISOString()
       })
       .eq("signature", signature)
       .is("transaction", null);
@@ -78,20 +57,35 @@ app.post("/api/permits/record-claim", async (c: Context) => {
     return c.json({ success: true });
   } catch (error) {
     console.error("Error recording claim:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return c.json({ error: "Failed to record claim", details: message }, 500);
+    return c.json({ error: "Failed to record claim" }, 500);
   }
 });
 
-// Serve static files from frontend/dist
-app.use("/*", serveStatic({ root: "./frontend/dist" }));
 
-// SPA fallback - serve index.html for all non-API routes
+app.get("/api/permits/:signature", async (c) => {
+  const signature = c.req.param("signature");
+
+  const { data, error } = await supabase
+    .from("permits")
+    .select("*")
+    .eq("signature", signature)
+    .single();
+
+  if (error) return c.json({ error: "Not found" }, 404);
+
+  
+  return c.json({
+    signature: data.signature,
+    claimed: !!data.transaction,
+    claimed_at: data.claimed_at
+  });
+});
+
+
+app.use("/*", serveStatic({ root: "./frontend/dist" }));
 app.get("*", serveStatic({ path: "./frontend/dist/index.html" }));
 
-// Start server with Deno.serve
 const port = parseInt(Deno.env.get("PORT") || "3000");
-console.log(`Server running on port ${port}`);
-console.log(`Environment: ${Deno.env.get("NODE_ENV") || "development"}`);
+console.log(`🚀 Secure server running on port ${port}`);
 
 Deno.serve({ port }, app.fetch);
