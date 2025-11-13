@@ -6,10 +6,10 @@ import { serveStatic } from "hono/deno";
 const app = new Hono();
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
 const supabaseAnonKey = Deno.env.get("VITE_SUPABASE_ANON_KEY");
+
+const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+
 
 // Health check
 app.get("/health", (c: Context) => {
