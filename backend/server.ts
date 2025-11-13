@@ -90,7 +90,7 @@ app.get("*", (c) => {
   return serveStatic({ path: "./frontend/dist/index.html" })(c);
 });
 
-const port = parseInt(Deno.env.get("PORT") || "3000");
+const port = parseInt(Deno.env.get("PORT") || "8000");
 console.log(`🚀 Secure server running on port ${port}`);
 
 Deno.serve({ port }, app.fetch);
