@@ -18,10 +18,12 @@
   "private": true,
   "scripts": {
     "_frontend": "cd frontend && bun run dev --host",
-    "_backend": "bun run backend/server.ts",
+    "_backend": "deno run --env --allow-net --allow-read --allow-env --watch backend/server.ts",
+    "_backend-prod": "deno run --allow-net --allow-read --allow-env backend/server.ts",
     "_frontend-build": "cd frontend && bun run build",
     "_browser": "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222",
     "dev": "run-p _frontend _backend",
-    "start": "run-s _frontend-build _backend"
+    "start": "run-s _frontend-build _backend-prod",
+    "build": "cd frontend && bun run build"
   }
 }
