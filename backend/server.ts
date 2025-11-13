@@ -1,14 +1,13 @@
-import { createClient } from "npm:@supabase/supabase-js@2.39.8";
-import type { Context } from "npm:hono@4.2.5";
-import { Hono } from "npm:hono@4.2.5";
-import { serveStatic } from "npm:hono@4.2.5/deno";
+import { createClient } from "@supabase/supabase-js";
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { serveStatic } from "hono/deno";
 
 const app = new Hono();
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
 
 const supabaseAnonKey = Deno.env.get("VITE_SUPABASE_ANON_KEY");
 
@@ -22,10 +21,9 @@ app.get("/health", (c: Context) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     env: environment,
-    deploy: "deno-deploy"
+    deploy: "production"
   });
 });
-
 
 app.get("/api/config", (c) => {
   return c.json({
@@ -42,7 +40,6 @@ app.post("/api/permits/record-claim", async (c) => {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
-    
     const { error } = await supabase
       .from("permits")
       .update({
@@ -61,7 +58,6 @@ app.post("/api/permits/record-claim", async (c) => {
   }
 });
 
-
 app.get("/api/permits/:signature", async (c) => {
   const signature = c.req.param("signature");
 
@@ -71,9 +67,10 @@ app.get("/api/permits/:signature", async (c) => {
     .eq("signature", signature)
     .single();
 
-  if (error) return c.json({ error: "Not found" }, 404);
+  if (error || !data) {
+    return c.json({ error: "Permit not found" }, 404);
+  }
 
-  
   return c.json({
     signature: data.signature,
     claimed: !!data.transaction,
@@ -83,7 +80,15 @@ app.get("/api/permits/:signature", async (c) => {
 
 
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
-app.get("*", serveStatic({ path: "./frontend/dist/index.html" }));
+
+
+app.get("*", (c) => {
+  const path = c.req.path;
+  if (path.startsWith("/api/")) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  return serveStatic({ path: "./frontend/dist/index.html" })(c);
+});
 
 const port = parseInt(Deno.env.get("PORT") || "3000");
 console.log(`🚀 Secure server running on port ${port}`);
