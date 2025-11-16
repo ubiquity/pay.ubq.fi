@@ -7,9 +7,9 @@ const app = new Hono();
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("VITE_SUPABASE_ANON_KEY");
+const rpcUrl = Deno.env.get("VITE_RPC_URL") || "https://rpc.ubq.fi";
 
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
-
 
 // Health check
 app.get("/health", (c: Context) => {
@@ -79,15 +79,89 @@ app.get("/api/permits/:signature", async (c) => {
 });
 
 
+app.post("/rpc/:chainId", async (c) => {
+  try {
+    const chainId = c.req.param("chainId");
+    const body = await c.req.json();
+
+    console.log(`Proxying RPC request for chain ${chainId} to ${rpcUrl}`, {
+      isBatch: Array.isArray(body),
+      batchSize: Array.isArray(body) ? body.length : 1
+    });
+
+    const response = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`RPC request failed: ${response.status} ${errorText}`);
+
+      if (Array.isArray(body)) {
+        const errorResponses = body.map((req: any) => ({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: `RPC request failed: ${response.status}`
+          },
+          id: req.id || null
+        }));
+        return c.json(errorResponses);
+      } else {
+        return c.json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: `RPC request failed: ${response.status}`
+          },
+          id: body.id || null
+        });
+      }
+    }
+
+    const data = await response.json();
+    return c.json(data);
+
+  } catch (error) {
+    console.error("RPC proxy error:", error);
+
+    const body = await c.req.json().catch(() => null);
+    if (Array.isArray(body)) {
+      const errorResponses = body.map((req: any) => ({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: "Internal server error"
+        },
+        id: req.id || null
+      }));
+      return c.json(errorResponses);
+    } else {
+      return c.json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: "Internal server error"
+        },
+        id: body?.id || null
+      });
+    }
+  }
+});
+
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
 
 
-app.get("*", (c) => {
+app.get("*", async (c, next) => {
   const path = c.req.path;
   if (path.startsWith("/api/")) {
     return c.json({ error: "Not found" }, 404);
   }
-  return serveStatic({ path: "./frontend/dist/index.html" })(c);
+  return serveStatic({ path: "./frontend/dist/index.html" })(c, next);
 });
 
 const port = parseInt(Deno.env.get("PORT") || "8000");
