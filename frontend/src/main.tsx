@@ -92,7 +92,7 @@ createRoot(rootElement).render(
 );
 
 // Initialize the grid animation, targeting the #grid div if it exists
-if (gridElement && window.location.href.includes("pay.ubq.fi")) {
+if (gridElement) {
   // Call grid with the element and the callback
   grid(gridElement, () => document.body.classList.add("grid-loaded"));
 }
