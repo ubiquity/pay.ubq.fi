@@ -134,7 +134,7 @@ export function PermitRow({
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
     }
-    return "Source Link lol";
+    return "Source Link";
   };
 
   const renderAmount = () => {
