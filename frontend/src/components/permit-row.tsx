@@ -127,14 +127,14 @@ export function PermitRow({
   const formatGithubLink = (url: string | undefined): string => {
     if (!url) return "N/A";
     try {
-      const match = url.match(/github\.com\/[^/]+\/([^/]+)\/issues\/(\d+)/);
+      const match = url.match(/github\.com\/[^/]+\/([^/]+)\/(issues|pull)\/(\d+)/);
       if (match && match[1]) {
         return match[1];
       }
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
     }
-    return "Source Link";
+    return "Source Link lol";
   };
 
   const renderAmount = () => {
