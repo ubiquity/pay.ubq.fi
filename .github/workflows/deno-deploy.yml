@@ -12,15 +12,25 @@ jobs:
       entrypoint: serve.ts
       bun_version: 1.2.x
       deno_version: 2.x
-      install_command: bun install
-      build_command: bun run build
+      install_command: |
+        cd frontend && bun install
+      build_command: |
+        cd frontend
+        bun run build
       build_env: |
-        SUPABASE_URL=$SUPABASE_URL
-        SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-        FRONTEND_URL=https://pay.ubq.fi
+        VITE_SUPABASE_URL=$SUPABASE_URL
+        VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
       runtime_env: |
-        STATIC_DIR=static
+        STATIC_DIR=frontend/dist
       include: |
-        static/**
+        frontend/dist/**
+      exclude: |
+        .git
+        .github
+        node_modules
+        coverage
+        .turbo
+        .next
+        .vercel
     secrets:
       DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
