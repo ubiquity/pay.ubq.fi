@@ -1,6 +1,7 @@
 import { serveDir } from "jsr:@std/http/file-server";
 
-const root = Deno.env.get("STATIC_DIR") ?? "static";
+// Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
+const root = Deno.env.get("STATIC_DIR") ?? "frontend/dist";
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
