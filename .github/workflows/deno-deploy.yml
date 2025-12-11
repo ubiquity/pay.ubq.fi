@@ -37,5 +37,4 @@ jobs:
         DENO_DEPLOY_TOKEN
         SUPABASE_URL
         SUPABASE_ANON_KEY
-    secrets:
-      DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+    secrets: inherit
