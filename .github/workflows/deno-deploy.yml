@@ -32,7 +32,6 @@ jobs:
         .turbo
         .next
         .vercel
-      index_html_path: frontend/dist/index.html
       debug_fetch_fail: true
     secrets:
       DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
