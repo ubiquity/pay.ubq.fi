@@ -12,17 +12,17 @@ jobs:
       entrypoint: serve.ts
       bun_version: 1.3.4
       install_command: |
-        cd frontend && bun install
+        cd src/frontend && bun install
       build_command: |
-        cd frontend
+        cd src/frontend
         bun run build
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
       runtime_env: |
-        STATIC_DIR=frontend/dist
+        STATIC_DIR=src/frontend/dist
       include: |
-        frontend/dist/**
+        src/frontend/dist/**
       exclude: |
         .git
         .github
