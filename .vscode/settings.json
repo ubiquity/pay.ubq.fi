@@ -1,8 +1,10 @@
 {
   "deno.enable": true,
+  "deno.enablePaths": [
+    "serve.ts"
+  ],
   "deno.lint": true,
   "deno.unstable": true,
-  "deno.config": "src/backend/deno.jsonc",
   "cSpell.words": [
     "SUPABASE"
   ]

@@ -468,7 +468,9 @@ worker.onmessage = async (event) => {
   if (type === "INIT") {
     const supabaseUrl = payload.supabaseUrl;
     const supabaseAnonKey = payload.supabaseAnonKey;
-    PROXY_BASE_URL = payload.isDevelopment ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
+    const hostname = self.location.hostname;
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+    PROXY_BASE_URL = payload.isDevelopment || isLocalhost ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
 
     if (supabaseUrl && supabaseAnonKey) {
       try {

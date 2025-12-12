@@ -10,10 +10,19 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
 
 /**
  * RPC endpoint for blockchain calls.
- * - In development, it uses https://rpc.ubq.fi
- * - In production, it uses /rpc for performance.
+ * - `VITE_RPC_URL` (if set) wins.
+ * - In dev or when running on localhost, default to https://rpc.ubq.fi.
+ * - In production on the real domain, default to /rpc for performance.
  */
-export const RPC_URL = import.meta.env.DEV ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
+const envRpcUrl = import.meta.env.VITE_RPC_URL as string | undefined;
+const hostname = typeof self !== "undefined" ? self.location.hostname : "";
+const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+export const RPC_URL =
+  envRpcUrl && envRpcUrl.length > 0
+    ? envRpcUrl
+    : import.meta.env.DEV || isLocalhost
+      ? "https://rpc.ubq.fi"
+      : `${self.location.origin}/rpc`;
 
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
@@ -48,7 +48,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     setPermits(filtered);
   };
 
-  const fetchQuotes = async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
+  const fetchQuotes = useCallback(async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
     if (!preferredRewardTokenAddress || !address || !chainId) {
       permitsMap.forEach((permit) => {
         delete permit.estimatedAmountOut;
@@ -134,7 +134,13 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
     setIsQuoting(false);
     return updated;
-  };
+  }, [preferredRewardTokenAddress, address, chainId]);
+
+  const fetchQuotesRef = useRef(fetchQuotes);
+
+  useEffect(() => {
+    fetchQuotesRef.current = fetchQuotes;
+  }, [fetchQuotes]);
 
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -172,7 +178,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           saveCache(cache);
           setBalancesAndAllowances(data.balancesAndAllowances);
           const newPermits = new Map(Object.entries(cache));
-          fetchQuotes(newPermits)
+          fetchQuotesRef.current(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
               filterPermits(allPermitsRef.current);
@@ -232,7 +238,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes]);
 
   const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);

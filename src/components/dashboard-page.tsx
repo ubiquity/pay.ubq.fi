@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
@@ -166,7 +166,7 @@ export function DashboardPage() {
     console.log("DashboardPage received preference change:", selectedAddress);
   };
 
-  const claimPermits = async (permitsToClaim: PermitData[]) => {
+  const claimPermits = useCallback(async (permitsToClaim: PermitData[]) => {
     if (!isConnected || !address || !chain) {
       console.error("Cannot claim permits: Wallet not connected or address/chain missing");
       return;
@@ -211,7 +211,7 @@ export function DashboardPage() {
         console.error(`Error claiming permits on network ${networkId}:`, error);
       }
     }
-  };
+  }, [isConnected, address, chain, switchChainAsync, setPermits, handleClaimBatch, handleClaimSequential]);
 
   useEffect(() => {
     if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
@@ -219,7 +219,7 @@ export function DashboardPage() {
       setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
       claimPermits(claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature)));
     }
-  }, [isConnected, walletClient, chain, isSwitchingNetwork]);
+  }, [isConnected, walletClient, chain, isSwitchingNetwork, claimPermits, claimablePermits]);
 
   // --- Rendering ---
   return (
