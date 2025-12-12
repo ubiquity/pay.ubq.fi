@@ -22,11 +22,7 @@ jobs:
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-        SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
-      project_secrets: |
-        SUPABASE_URL=SUPABASE_URL
-        SUPABASE_ANON_KEY=SUPABASE_ANON_KEY
-        SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY
+      forward_all_secrets: true
       runtime_env: |
         STATIC_DIR=dist
       include: |
@@ -43,5 +39,6 @@ jobs:
       required_env: |
         DENO_DEPLOY_TOKEN
         SUPABASE_URL
+        SUPABASE_SERVICE_ROLE_KEY
         SUPABASE_ANON_KEY
     secrets: inherit
