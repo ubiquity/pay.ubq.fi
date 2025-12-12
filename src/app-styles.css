@@ -509,6 +509,28 @@ button#claim-all:hover:not([disabled]) {
   text-align: left;
 }
 
+.permits-list .github-repo-name {
+  color: #bfbfbf;
+  margin: 0 2px;
+}
+.permits-list .github-issue-number {
+  color: #fff;
+  margin: 0 2px;
+}
+.permits-list .github-issue-number::before {
+  color: #bfbfbf;
+  font-weight: 900;
+  content: "/ ";
+}
+.permits-list .github-beneficiary {
+  color: #bfbfbf;
+  margin: 0 2px;
+}
+.permits-list .github-beneficiary::before {
+  font-weight: 900;
+  content: "/ ";
+}
+
 button.button-as-link.monospace {
   text-align: right;
 }

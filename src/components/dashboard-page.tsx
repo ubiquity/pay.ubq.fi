@@ -3,8 +3,10 @@ import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { useGithubUsernames } from "../hooks/use-github-usernames.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
+import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { PermitData } from "../types.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
@@ -41,12 +43,15 @@ export function DashboardPage() {
     setError,
     updatePermitStatusCache,
     isQuoting,
+    isFundingWallet,
   } = usePermitData({
     address,
     isConnected,
     preferredRewardTokenAddress,
     chainId: chain?.id,
   });
+
+  const { usernames: githubUsernames } = useGithubUsernames(permits);
 
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
@@ -155,6 +160,16 @@ export function DashboardPage() {
       chain: chain ?? null,
       setBalancesAndAllowances,
     });
+
+  const { handleInvalidatePermit, isInvalidating } = usePermitInvalidation({
+    setPermits,
+    setError,
+    updatePermitStatusCache,
+    publicClient: publicClient ?? null,
+    walletClient: walletClient ?? null,
+    address,
+    chain: chain ?? null,
+  });
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
@@ -329,11 +344,16 @@ export function DashboardPage() {
           claimablePermits={claimablePermits}
           onClaimPermit={handleClaimPermit}
           onClaimPermits={claimPermits}
+          onInvalidatePermit={handleInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
+          isFundingWallet={isFundingWallet}
+          address={address}
+          githubUsernames={githubUsernames}
+          isInvalidating={isInvalidating}
         />
       )}
 

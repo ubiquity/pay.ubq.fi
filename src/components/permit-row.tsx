@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { JSX } from "react";
 import type { Address, Chain } from "viem";
 import { formatUnits } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -6,19 +7,37 @@ import { NETWORK_NAMES } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
+import { parseGitHubUrl, truncateAddress } from "../utils/format-utils.ts";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 
 interface PermitRowProps {
   permit: PermitData;
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   isConnected: boolean;
   chain: Chain | undefined;
   isQuoting: boolean;
   preferredRewardTokenAddress: Address | null;
+  isFundingWallet?: boolean;
+  address?: Address;
+  githubUsername?: string;
+  isInvalidating?: boolean;
 }
 
-export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
+export function PermitRow({
+  permit,
+  onClaimPermit,
+  onInvalidatePermit,
+  isConnected,
+  chain,
+  isQuoting,
+  preferredRewardTokenAddress,
+  isFundingWallet = false,
+  address,
+  githubUsername,
+  isInvalidating = false,
+}: PermitRowProps) {
   const { connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
@@ -26,7 +45,7 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
   const switchableChains = config.chains ?? [];
 
   const isReadyToClaim = hasRequiredFields(permit);
-  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed";
+  const isClaimed = permit.claimStatus === "Success" || permit.status === "Claimed" || permit.isNonceUsed === true;
   const isClaimingThis = permit.claimStatus === "Pending";
   const claimFailed = permit.claimStatus === "Error";
   const insufficientBalance = permit.ownerBalanceSufficient === false;
@@ -38,28 +57,35 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
     !isClaimed &&
     (permit.type !== "erc20-permit" || (!insufficientBalance && !insufficientAllowance && !prerequisiteCheckFailed));
 
+  const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
+  const canInvalidate = isOwner && !isClaimed && !isInvalidating;
+
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
-    : isClaimed
-      ? "row-claimed"
-      : claimFailed
-        ? "row-claim-failed"
-        : isClaimingThis
-          ? "row-claiming"
-          : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-            ? "row-invalid"
-            : permit.status === "Valid"
-              ? "row-valid"
-              : "";
+    : isInvalidating
+      ? "row-invalidating"
+      : isClaimed
+        ? "row-claimed"
+        : claimFailed
+          ? "row-claim-failed"
+          : isClaimingThis
+            ? "row-claiming"
+            : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
+              ? "row-invalid"
+              : permit.status === "Valid"
+                ? "row-valid"
+                : "";
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
   const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
   const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to claim`
+    ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "invalidate" : "claim"}`
     : isClaimed
       ? "Claimed"
+      : isInvalidating
+        ? "Invalidating..."
       : isClaimingThis
         ? "Claiming..."
         : claimFailed
@@ -74,24 +100,31 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
                   ? "Valid"
                   : permit.status || "";
 
-  const buttonText =
-    isClaimed && permit.transactionHash
-      ? "View"
-      : isClaimingThis
-        ? "Claiming..."
-        : claimFailed && permit.transactionHash
-          ? "View"
-          : claimFailed
-            ? "Retry"
-            : "Claim";
+  const buttonText = isInvalidating
+    ? "Invalidating..."
+    : isFundingWallet && canInvalidate
+      ? "Invalidate"
+      : isClaimed && permit.transactionHash
+        ? "View"
+        : isClaimingThis
+          ? "Claiming..."
+          : claimFailed && permit.transactionHash
+            ? "View"
+            : claimFailed
+              ? "Retry"
+              : "Claim";
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
-    : !isConnected ||
-      isClaimingThis ||
-      (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
-      (isClaimed && !permit.transactionHash) ||
-      (claimFailed && !permit.transactionHash && !canAttemptClaim);
+    : isInvalidating
+      ? true
+      : isFundingWallet && canInvalidate
+        ? !isConnected
+        : !isConnected ||
+          isClaimingThis ||
+          (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
+          (isClaimed && !permit.transactionHash) ||
+          (claimFailed && !permit.transactionHash && !canAttemptClaim);
 
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis;
   const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis;
@@ -110,6 +143,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
       }
     } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
       window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
+    } else if (isFundingWallet && canInvalidate && onInvalidatePermit) {
+      await onInvalidatePermit(permit);
     } else if (!isButtonDisabled) {
       await onClaimPermit(permit);
     }
@@ -117,12 +152,22 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
 
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
 
-  const formatGithubLink = (url: string | undefined): string => {
-    if (!url) return "N/A";
+  const formatGithubLink = (url: string | undefined): JSX.Element | string => {
+    if (!url) return "–";
     try {
-      const match = url.match(/github\.com\/[^/]+\/([^/]+)\/(issues|pull)\/(\d+)/);
-      if (match && match[1]) {
-        return match[1];
+      const parsed = parseGitHubUrl(url);
+      if (parsed) {
+        return (
+          <>
+            <span className="github-repo-name">{parsed.repo}</span>
+            <span className="github-issue-number">{parsed.number}</span>
+            {isFundingWallet && (
+              <span title={`Beneficiary wallet: ${permit.beneficiary}`} style={{ cursor: "help" }} className="github-beneficiary">
+                {githubUsername ? githubUsername : truncateAddress(permit.beneficiary)}
+              </span>
+            )}
+          </>
+        );
       }
     } catch (e) {
       console.error("Error parsing GitHub URL:", e);
@@ -211,6 +256,8 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
 
   return (
     <div className={`permit-row ${rowClassName}`}>
+      <div className="permit-cell align-right monospace">{renderAmount()}</div>
+
       <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button
@@ -221,11 +268,9 @@ export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting
             {formatGithubLink(permit.githubCommentUrl)}
           </button>
         ) : (
-          "N/A"
+          "–"
         )}
       </div>
-
-      <div className="permit-cell align-right monospace">{renderAmount()}</div>
 
       <div className="permit-cell actions-cell">
         <button

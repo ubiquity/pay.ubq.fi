@@ -20,14 +20,24 @@ interface WorkerGlobalScope extends Worker {
   postMessage: (message: WorkerRequest) => void;
 }
 
+interface LoadingState {
+  isLoading: boolean;
+  isQuoting: boolean;
+  isWorkerInitialized: boolean;
+  isFundingWallet: boolean;
+}
+
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
-  const [isQuoting, setIsQuoting] = useState(false);
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    isLoading: true,
+    isQuoting: false,
+    isWorkerInitialized: false,
+    isFundingWallet: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<WorkerGlobalScope | null>(null);
-  const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
 
   const saveCache = (cache: PermitDataCache) => {
@@ -38,15 +48,28 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   };
 
-  const filterPermits = (permitsMap: Map<string, PermitData>) => {
-    const filtered: PermitData[] = [];
-    permitsMap.forEach((permit) => {
-      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
-    });
-    setPermits(filtered);
-  };
+  const filterPermits = useCallback(
+    (permitsMap: Map<string, PermitData>) => {
+      let isFundingAccount = false;
+      if (address) {
+        permitsMap.forEach((permit) => {
+          if (permit.owner.toLowerCase() === address.toLowerCase()) {
+            isFundingAccount = true;
+          }
+        });
+      }
+      setLoadingState((prev) => ({ ...prev, isFundingWallet: isFundingAccount }));
+
+      const filtered: PermitData[] = [];
+      permitsMap.forEach((permit) => {
+        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+        if (!shouldFilter) filtered.push(permit);
+      });
+      setPermits(filtered);
+    },
+    [address]
+  );
 
   const fetchQuotes = useCallback(async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
     if (!preferredRewardTokenAddress || !address || !chainId) {
@@ -56,7 +79,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       });
       return permitsMap;
     }
-    setIsQuoting(true);
+    setLoadingState((prev) => ({ ...prev, isQuoting: true }));
     const updated = new Map(permitsMap);
     const byToken = new Map<Address, PermitData[]>();
     updated.forEach((permit) => {
@@ -132,15 +155,20 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         });
       }
     }
-    setIsQuoting(false);
+    setLoadingState((prev) => ({ ...prev, isQuoting: false }));
     return updated;
   }, [preferredRewardTokenAddress, address, chainId]);
 
   const fetchQuotesRef = useRef(fetchQuotes);
+  const filterPermitsRef = useRef(filterPermits);
 
   useEffect(() => {
     fetchQuotesRef.current = fetchQuotes;
   }, [fetchQuotes]);
+
+  useEffect(() => {
+    filterPermitsRef.current = filterPermits;
+  }, [filterPermits]);
 
   useEffect(() => {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -148,26 +176,25 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       console.warn("[use-permit-data] Supabase client misconfigured: missing URL or Anon Key.");
       setError("Supabase URL or Anon Key missing in frontend environment variables.");
-      setIsWorkerInitialized(false);
-      setIsLoading(false);
+      setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false, isLoading: false }));
       return;
     }
     workerRef.current = new Worker(new URL("../workers/permit-checker.worker.ts", import.meta.url), { type: "module" }) as WorkerGlobalScope;
+    const isDevelopment = Boolean(import.meta.env.DEV) || window.location.hostname.includes(".deno.dev");
     workerRef.current.postMessage({
       type: "INIT",
-      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment: !!import.meta.env.DEV },
+      payload: { supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY, isDevelopment },
     });
 
     workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
       const data = event.data;
       switch (data.type) {
         case "INIT_SUCCESS":
-          setIsWorkerInitialized(true);
+          setLoadingState((prev) => ({ ...prev, isWorkerInitialized: true }));
           break;
         case "INIT_ERROR":
           setError(`Worker initialization failed: ${data.error}`);
-          setIsWorkerInitialized(false);
-          setIsLoading(false);
+          setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false, isLoading: false }));
           break;
         case "NEW_PERMITS_VALIDATED": {
           const validated: PermitData[] = data.permits || [];
@@ -181,49 +208,51 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           fetchQuotesRef.current(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
-              filterPermits(allPermitsRef.current);
-              setIsLoading(false);
+              filterPermitsRef.current(allPermitsRef.current);
+              setLoadingState((prev) => ({ ...prev, isLoading: false }));
             })
             .catch((e) => {
               setError(`Failed to fetch swap quotes: ${e instanceof Error ? e.message : e}`);
-              setIsLoading(false);
+              setLoadingState((prev) => ({ ...prev, isLoading: false }));
             });
           break;
         }
         case "PERMITS_ERROR":
           setError(`Error processing permits: ${data.error}`);
-          setIsLoading(false);
+          setLoadingState((prev) => ({ ...prev, isLoading: false }));
           break;
       }
     };
     workerRef.current.onerror = (event) => {
       console.error("[use-permit-data] Worker error:", event);
       setError(`Worker error: ${event.message}`);
-      setIsLoading(false);
-      setIsWorkerInitialized(false);
+      setLoadingState((prev) => ({ ...prev, isLoading: false, isWorkerInitialized: false }));
     };
 
     return () => {
       workerRef.current?.terminate();
       workerRef.current = null;
-      setIsWorkerInitialized(false);
+      setLoadingState((prev) => ({ ...prev, isWorkerInitialized: false }));
     };
   }, []);
 
   useEffect(() => {
-    if (isConnected && address && isWorkerInitialized && workerRef.current) {
-      setIsLoading(true);
+    if (isConnected && address && loadingState.isWorkerInitialized && workerRef.current) {
+      // Clear existing permits when wallet changes to avoid mixing results
+      allPermitsRef.current.clear();
+      setPermits([]);
+      setLoadingState((prev) => ({ ...prev, isLoading: true }));
       setError(null);
       workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
     } else if (!isConnected) {
       allPermitsRef.current.clear();
       setPermits([]);
-      setIsLoading(false);
+      setLoadingState((prev) => ({ ...prev, isLoading: false, isFundingWallet: false }));
     }
-  }, [isConnected, isWorkerInitialized, address]);
+  }, [isConnected, loadingState.isWorkerInitialized, address]);
 
   useEffect(() => {
-    if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
+    if (isConnected && address && chainId && loadingState.isWorkerInitialized && !loadingState.isLoading) {
       fetchQuotes(new Map(allPermitsRef.current))
         .then((mapWithQuotes: Map<string, PermitData>) => {
           allPermitsRef.current = mapWithQuotes;
@@ -238,7 +267,16 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes]);
+  }, [
+    preferredRewardTokenAddress,
+    isConnected,
+    address,
+    chainId,
+    loadingState.isWorkerInitialized,
+    loadingState.isLoading,
+    fetchQuotes,
+    filterPermits,
+  ]);
 
   const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
@@ -249,7 +287,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       const existing = allPermitsRef.current.get(permitKey);
       if (existing) {
         allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
-        filterPermits(allPermitsRef.current);
+        filterPermitsRef.current(allPermitsRef.current);
       }
     }
   };
@@ -259,11 +297,12 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     setPermits,
     balancesAndAllowances,
     setBalancesAndAllowances,
-    isLoading,
+    isLoading: loadingState.isLoading,
     error,
     setError,
-    isWorkerInitialized,
+    isWorkerInitialized: loadingState.isWorkerInitialized,
     updatePermitStatusCache,
-    isQuoting,
+    isQuoting: loadingState.isQuoting,
+    isFundingWallet: loadingState.isFundingWallet,
   };
 }

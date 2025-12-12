@@ -59,11 +59,24 @@ type PermitRow = Tables<"permits"> & {
   location: Tables<"locations"> | null;
 };
 
+// Permit rows can include beneficiary relationship via users->wallets join
+interface PermitWithBeneficiary extends PermitRow {
+  users?: {
+    wallets?: {
+      address?: string | null;
+    };
+  };
+}
+
 // Function to map DB result to PermitData (ERC20 only focus)
 async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCaseWalletAddress: string): Promise<PermitData | null> {
   const tokenData = permit.token;
   const ownerWalletData = permit.partner?.wallet;
+  const permitWithBeneficiary = permit as PermitWithBeneficiary;
+  const beneficiaryWalletData = permitWithBeneficiary.users?.wallets;
   const ownerAddressStr = ownerWalletData?.address ? String(ownerWalletData.address) : "";
+  const beneficiaryAddressStr = beneficiaryWalletData?.address ? String(beneficiaryWalletData.address) : "";
+  const beneficiaryUserId = permit.beneficiary_id;
   if (!ownerAddressStr) {
     console.warn(`Worker: Permit [${index}] with nonce ${permit.nonce} has no owner address`);
     return null;
@@ -98,12 +111,15 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     }
   }
 
+  // Fallback to connected wallet address when beneficiary is not joined
+  const actualBeneficiary = beneficiaryAddressStr || lowerCaseWalletAddress;
+
   const permit2Address = await getPermit2Address({
     nonce: permit.nonce,
     tokenAddress: tokenAddressStr ?? "",
     amount: permit.amount,
     deadline: String(permit.deadline),
-    beneficiary: lowerCaseWalletAddress,
+    beneficiary: actualBeneficiary,
     owner: ownerAddressStr,
     signature: String(permit.signature),
     networkId: networkIdNum,
@@ -113,7 +129,8 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
     permit2Address: permit2Address as `0x${string}`,
     nonce: String(permit.nonce),
     networkId: networkIdNum,
-    beneficiary: lowerCaseWalletAddress, // Keep wallet address as beneficiary for UI/logic consistency
+    beneficiary: actualBeneficiary,
+    beneficiaryUserId: beneficiaryUserId ? Number(beneficiaryUserId) : undefined,
     deadline: String(permit.deadline),
     signature: String(permit.signature),
     type: "erc20-permit",
@@ -153,10 +170,8 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   // Normalize wallet address for consistent comparison
   const normalizedWalletAddress = walletAddress.toLowerCase();
 
-  let permitsData: unknown[] = [];
-
-  // This query directly joins permits with users and wallets
-  const directJoinQuery = `
+  // Query for permits where user can claim (beneficiary) - only unclaimed
+  const beneficiaryJoinQuery = `
               *,
               token:${TOKENS_TABLE}(address, network),
               partner:${PARTNERS_TABLE}(wallet:${WALLETS_TABLE}(address)),
@@ -166,20 +181,58 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  let beneficiaryQuery = supabase
+    .from(PERMITS_TABLE)
+    .select(beneficiaryJoinQuery)
+    .is("transaction", null)
+    .filter("users.wallets.address", "ilike", normalizedWalletAddress);
+
+  // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
+  const ownerJoinQuery = `
+              *,
+              token:${TOKENS_TABLE}(address, network),
+              partner:${PARTNERS_TABLE}!inner(wallet:${WALLETS_TABLE}!inner(address)),
+              location:${LOCATIONS_TABLE}(node_url),
+              users(
+                  wallets(address)
+              )
+    `;
+
+  let ownerQuery = supabase
+    .from(PERMITS_TABLE)
+    .select(ownerJoinQuery)
+    .is("transaction", null)
+    .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
 
   if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-    query = query.gt("created", lastCheckTimestamp);
+    beneficiaryQuery = beneficiaryQuery.gt("created", lastCheckTimestamp);
+    ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
   }
 
-  const result = await query;
+  const [beneficiaryResult, ownerResult] = await Promise.all([beneficiaryQuery, ownerQuery]);
 
-  if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
-  } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
-    permitsData = result.data;
+  const permitMap = new Map<number, unknown>();
+
+  if (beneficiaryResult.error) {
+    console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
+  } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
+    console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
+    beneficiaryResult.data.forEach((permit) => {
+      permitMap.set(permit.id, permit);
+    });
   }
+
+  if (ownerResult.error) {
+    console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
+  } else if (ownerResult.data && ownerResult.data.length > 0) {
+    console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
+    ownerResult.data.forEach((permit) => {
+      permitMap.set(permit.id, permit);
+    });
+  }
+
+  const permitsData = Array.from(permitMap.values());
+  console.log(`Worker: Total unique permits: ${permitsData.length}`);
 
   if (permitsData.length === 0) {
     return [];
