@@ -7,13 +7,11 @@ interface ClaimAllProgressProps {
 }
 
 export function ClaimAllProgress({ permits }: ClaimAllProgressProps) {
-  const queued = permits.filter(p => p.claimStatus === "Idle").length;
-  const pending = permits.filter(p => p.claimStatus === "Pending").length;
-  const succeeded = permits.filter(p => p.claimStatus === "Success").length;
-  const failed = permits.filter(p => p.claimStatus === "Error").length;
-  const totalClaimed = permits
-    .filter(p => p.claimStatus === "Success" && p.amount)
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const queued = permits.filter((p) => p.claimStatus === "Idle").length;
+  const pending = permits.filter((p) => p.claimStatus === "Pending").length;
+  const succeeded = permits.filter((p) => p.claimStatus === "Success").length;
+  const failed = permits.filter((p) => p.claimStatus === "Error").length;
+  const totalClaimed = permits.filter((p) => p.claimStatus === "Success" && p.amount).reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
     <div className="claim-all-progress" style={{ marginBottom: 16 }}>

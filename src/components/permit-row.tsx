@@ -18,14 +18,7 @@ interface PermitRowProps {
   preferredRewardTokenAddress: Address | null;
 }
 
-export function PermitRow({
-  permit,
-  onClaimPermit,
-  isConnected,
-  chain,
-  isQuoting,
-  preferredRewardTokenAddress
-}: PermitRowProps) {
+export function PermitRow({ permit, onClaimPermit, isConnected, chain, isQuoting, preferredRewardTokenAddress }: PermitRowProps) {
   const { connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
@@ -48,16 +41,16 @@ export function PermitRow({
   const rowClassName = !isReadyToClaim
     ? "row-invalid"
     : isClaimed
-    ? "row-claimed"
-    : claimFailed
-    ? "row-claim-failed"
-    : isClaimingThis
-    ? "row-claiming"
-    : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-    ? "row-invalid"
-    : permit.status === "Valid"
-    ? "row-valid"
-    : "";
+      ? "row-claimed"
+      : claimFailed
+        ? "row-claim-failed"
+        : isClaimingThis
+          ? "row-claiming"
+          : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
+            ? "row-invalid"
+            : permit.status === "Valid"
+              ? "row-valid"
+              : "";
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
   const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
@@ -66,31 +59,31 @@ export function PermitRow({
   const statusDisplayText = networkMismatch
     ? `Switch wallet to ${targetNetworkName} to claim`
     : isClaimed
-    ? "Claimed"
-    : isClaimingThis
-    ? "Claiming..."
-    : claimFailed
-    ? "Failed"
-    : insufficientBalance
-    ? "Insolvent"
-    : insufficientAllowance
-    ? "Permit2 Allowance Low"
-    : prerequisiteCheckFailed
-    ? "Check Failed"
-    : permit.status === "Valid"
-    ? "Valid"
-    : permit.status || "";
+      ? "Claimed"
+      : isClaimingThis
+        ? "Claiming..."
+        : claimFailed
+          ? "Failed"
+          : insufficientBalance
+            ? "Insolvent"
+            : insufficientAllowance
+              ? "Permit2 Allowance Low"
+              : prerequisiteCheckFailed
+                ? "Check Failed"
+                : permit.status === "Valid"
+                  ? "Valid"
+                  : permit.status || "";
 
   const buttonText =
     isClaimed && permit.transactionHash
       ? "View"
       : isClaimingThis
-      ? "Claiming..."
-      : claimFailed && permit.transactionHash
-      ? "View"
-      : claimFailed
-      ? "Retry"
-      : "Claim";
+        ? "Claiming..."
+        : claimFailed && permit.transactionHash
+          ? "View"
+          : claimFailed
+            ? "Retry"
+            : "Claim";
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork

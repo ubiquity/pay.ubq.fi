@@ -1,7 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [],
-  "project": [],
   "ignore": [
     "eslint.config.js",
     "**/*.deno.ts",
@@ -12,45 +10,24 @@
   ],
   "ignoreDependencies": [
     "@playwright/mcp",
-    "playwright",
-    "puppeteer"
+    "playwright"
   ],
   "ignoreBinaries": [
     "claude"
   ],
   "ignoreIssues": {
-    "src/frontend/src/constants/config.ts": ["exports"],
-    "src/frontend/src/constants/supported-reward-tokens.ts": ["exports", "types"],
-    "src/frontend/src/utils/permit-utils.ts": ["exports"],
-    "src/frontend/src/database.types.ts": ["exports", "types"]
+    "src/constants/config.ts": ["exports"],
+    "src/constants/supported-reward-tokens.ts": ["exports", "types"],
+    "src/utils/permit-utils.ts": ["exports"],
+    "src/database.types.ts": ["exports", "types"]
   },
-  "workspaces": {
-    ".": {
-      "entry": [
-        "serve.ts!",
-        "src/backend/server.ts!"
-      ],
-      "project": [
-        "src/backend/**/*.ts!"
-      ]
-    },
-    "src/frontend": {
-      "entry": [
-        "src/main.tsx!",
-        "src/workers/**/*.worker.ts!"
-      ],
-      "project": [
-        "src/**/*.ts!",
-        "src/**/*.tsx!"
-      ],
-      "ignore": [
-        "vite.config.ts",
-        "eslint.config.js",
-        "src/vite-env.d.ts"
-      ],
-      "vite": {
-        "config": ["vite.config.ts"]
-      }
-    }
-  }
+  "entry": [
+    "serve.ts!",
+    "src/main.tsx!",
+    "src/workers/**/*.worker.ts!"
+  ],
+  "project": [
+    "src/**/*.ts!",
+    "src/**/*.tsx!"
+  ]
 }

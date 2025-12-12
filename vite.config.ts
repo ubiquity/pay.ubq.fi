@@ -2,14 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import type { UserConfig } from 'vite';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  // Load env vars from the repo root so the frontend picks up the same .env file as the backend.
-  envDir: resolve(__dirname, '..', '..'),
+  // Load env vars from the repo root so the frontend picks up the same .env file as the server.
+  envDir: __dirname,
   plugins: [
     react(),
     nodePolyfills({

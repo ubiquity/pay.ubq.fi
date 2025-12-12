@@ -4,8 +4,6 @@ dist
 build
 coverage
 *.config.js
-src/frontend/dist
-src/backend/**/*
 **/*.deno.ts
 **/*.deno.tsx
 **/deno.json

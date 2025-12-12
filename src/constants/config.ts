@@ -1,4 +1,4 @@
-// frontend/src/constants/config.ts
+// src/constants/config.ts
 import { Address } from "viem";
 
 // Address that receives CowSwap partner fees

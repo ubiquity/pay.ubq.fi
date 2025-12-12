@@ -18,10 +18,9 @@ export default tseslint.config(
       '**/*.deno.tsx',
       '**/deno.json',
       '**/deno.jsonc',
-      'src/backend/**/*',
       'lib/**/*',
-      'src/frontend/dist/**/*',
-      'src/frontend/src/vite-env.d.ts'
+      'dist/**/*',
+      'src/vite-env.d.ts'
     ]
   },
   {

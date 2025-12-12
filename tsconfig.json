@@ -22,8 +22,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/frontend/src/*"],
-      "@backend/*": ["src/backend/*"],
+      "@/*": ["src/*"],
       "@lib/*": ["lib/*"]
     }
   },
@@ -35,8 +34,6 @@
     "node_modules",
     "dist",
     "build",
-    "src/backend/**/*.ts",
-    "src/backend/**/*.tsx",
     "**/*.d.ts"
   ]
 }

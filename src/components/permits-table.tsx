@@ -15,15 +15,7 @@ interface PermitsTableProps {
   preferredRewardTokenAddress: Address | null;
 }
 
-export function PermitsTable({
-  permits,
-  onClaimPermit,
-  isConnected,
-  chain,
-  isLoading,
-  isQuoting,
-  preferredRewardTokenAddress,
-}: PermitsTableProps) {
+export function PermitsTable({ permits, onClaimPermit, isConnected, chain, isLoading, isQuoting, preferredRewardTokenAddress }: PermitsTableProps) {
   const sortedPermits = permits.sort((a, b) => (b.amount < a.amount ? -1 : b.amount > a.amount ? 1 : 0));
 
   // Show message only if NOT loading/quoting and there are no valid permits
