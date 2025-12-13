@@ -148,12 +148,13 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
 
 // Function to fetch permits from Supabase using the proper relationships
 async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
-  if (!supabase) throw new Error("Supabase client not initialized.");
+  const supabaseClient = supabase;
+  if (!supabaseClient) throw new Error("Supabase client not initialized.");
 
   // Normalize wallet address for consistent comparison
   const normalizedWalletAddress = walletAddress.toLowerCase();
 
-  let permitsData: unknown[] = [];
+  const permitsData: unknown[] = [];
 
   // This query directly joins permits with users and wallets
   const directJoinQuery = `
@@ -166,20 +167,38 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let query = supabase.from(PERMITS_TABLE).select(directJoinQuery).is("transaction", null).filter("users.wallets.address", "ilike", normalizedWalletAddress);
+  const buildQuery = () => {
+    let query = supabaseClient
+      .from(PERMITS_TABLE)
+      .select(directJoinQuery)
+      .is("transaction", null)
+      .filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
-  if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-    query = query.gt("created", lastCheckTimestamp);
+    if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+      query = query.gt("created", lastCheckTimestamp);
+    }
+
+    return query;
+  };
+
+  // Supabase PostgREST commonly caps responses at 1000 rows; page to avoid missing data.
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const result = await buildQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+
+    if (result.error) {
+      console.error(`Worker: query error: ${result.error.message}`, result.error);
+      return [];
+    }
+
+    const page = result.data ?? [];
+    if (page.length === 0) break;
+
+    permitsData.push(...page);
+    if (page.length < pageSize) break;
   }
 
-  const result = await query;
-
-  if (result.error) {
-    console.error(`Worker: query error: ${result.error.message}`, result.error);
-  } else if (result.data && result.data.length > 0) {
-    console.log(`Worker: Found ${result.data.length} permits`);
-    permitsData = result.data;
-  }
+  console.log(`Worker: Found ${permitsData.length} permits`);
 
   if (permitsData.length === 0) {
     return [];
