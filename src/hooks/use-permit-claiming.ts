@@ -73,7 +73,6 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
 }
 
 export function usePermitClaiming({
-  permits,
   setPermits,
   setError,
   updatePermitStatusCache,
@@ -151,6 +150,7 @@ export function usePermitClaiming({
           body: JSON.stringify({
             signature: permit.signature,
             transactionHash: txHash,
+            networkId: permit.networkId,
           }),
         });
       } catch (error) {
@@ -242,6 +242,7 @@ export function usePermitClaiming({
               body: JSON.stringify({
                 signature: permit.signature,
                 transactionHash: txHash,
+                networkId: permit.networkId,
               }),
             });
           } catch (error) {
@@ -314,14 +315,15 @@ export function usePermitClaiming({
       reduceAllowance(permitsToClaim);
       try {
         await Promise.all(
-          permits.map((permit) => {
+          permitsToClaim.map((permit) => {
             updatePermitStatusCache(permit.signature, { status: "Claimed" });
-            return fetch("http://localhost:8001/api/permits/record-claim", {
+            return fetch("/api/permits/record-claim", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 signature: permit.signature,
                 transactionHash: txHash,
+                networkId: permit.networkId,
               }),
             });
           })

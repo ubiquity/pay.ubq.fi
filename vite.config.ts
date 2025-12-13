@@ -1,30 +1,18 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import type { UserConfig } from 'vite';
-import { dirname, resolve as resolvePath } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import type { UserConfig } from "vite";
+import { dirname, resolve as resolvePath } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const reactJsxRuntimeProd = resolvePath(__dirname, "node_modules/react/cjs/react-jsx-runtime.production.js");
 const reactJsxDevRuntimeProd = resolvePath(__dirname, "node_modules/react/cjs/react-jsx-dev-runtime.production.js");
-
-// Only use node polyfills during dev; it currently overrides Rollup plugin
-// config during build in a way that breaks CJS interop for React 19.
-const devNodePolyfills = nodePolyfills({
-  globals: {
-    global: true,
-    Buffer: true,
-    process: true,
-  },
-}).map((plugin) => ({ ...plugin, apply: "serve" }));
 
 export default defineConfig(({ command }) => ({
   // Load env vars from the repo root so the frontend picks up the same .env file as the server.
   envDir: __dirname,
   plugins: [
     react(),
-    devNodePolyfills,
   ],
   resolve: {
     // React 19 ships CJS entrypoints behind a NODE_ENV switch. Rollup can't
@@ -43,24 +31,24 @@ export default defineConfig(({ command }) => ({
     hmr: false,
     proxy: {
       // Proxy /api and any top-level numeric path (e.g., /100, /200) to backend
-      '/api': {
-        target: 'http://localhost:8000',
+      "/api": {
+        target: "http://localhost:8000",
         changeOrigin: true,
       },
       // Regex for top-level numeric routes
-      '^/\\d+$': {
-        target: 'http://localhost:8000',
+      "^/\\d+$": {
+        target: "http://localhost:8000",
         changeOrigin: true,
         rewrite: (path) => path,
-      }
-    }
+      },
+    },
   },
   css: {
-    devSourcemap: true
+    devSourcemap: true,
   },
   build: {
     cssCodeSplit: false,
-    outDir: 'dist',
+    outDir: "dist",
     commonjsOptions: {
       transformMixedEsModules: true,
       requireReturnsDefault: "auto",
@@ -68,13 +56,13 @@ export default defineConfig(({ command }) => ({
     },
   },
   worker: {
-    format: 'es'
+    format: "es",
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: 'globalThis'
-      }
-    }
-  }
+        global: "globalThis",
+      },
+    },
+  },
 })) as UserConfig;
