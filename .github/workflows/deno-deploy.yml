@@ -1,7 +1,6 @@
 name: Deno Deploy
 
 on:
-  pull_request:
   push:
   workflow_dispatch:
 
@@ -10,6 +9,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: read
     uses: ubiquity/deno-deploy-workflow/.github/workflows/deno-deploy-reusable.yml@pr-comments-test
     with:
       project: pay-ubq-fi
