@@ -60,59 +60,42 @@ export function PermitRow({
   const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidating;
 
-  const rowClassName = !isReadyToClaim
-    ? "row-invalid"
-    : isInvalidating
-      ? "row-invalidating"
-      : isClaimed
-        ? "row-claimed"
-        : claimFailed
-          ? "row-claim-failed"
-          : isClaimingThis
-            ? "row-claiming"
-            : insufficientBalance || insufficientAllowance || prerequisiteCheckFailed
-              ? "row-invalid"
-              : permit.status === "Valid"
-                ? "row-valid"
-                : "";
+  const rowClassName = (() => {
+    if (!isReadyToClaim) return "row-invalid";
+    if (isInvalidating) return "row-invalidating";
+    if (isClaimed) return "row-claimed";
+    if (claimFailed) return "row-claim-failed";
+    if (isClaimingThis) return "row-claiming";
+    if (insufficientBalance || insufficientAllowance || prerequisiteCheckFailed) return "row-invalid";
+    if (permit.status === "Valid") return "row-valid";
+    return "";
+  })();
 
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
   const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
 
-  const statusDisplayText = networkMismatch
-    ? `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "invalidate" : "claim"}`
-    : isClaimed
-      ? "Claimed"
-      : isInvalidating
-        ? "Invalidating..."
-      : isClaimingThis
-        ? "Claiming..."
-        : claimFailed
-          ? "Failed"
-          : insufficientBalance
-            ? "Insolvent"
-            : insufficientAllowance
-              ? "Permit2 Allowance Low"
-              : prerequisiteCheckFailed
-                ? "Check Failed"
-                : permit.status === "Valid"
-                  ? "Valid"
-                  : permit.status || "";
+  const statusDisplayText = (() => {
+    if (networkMismatch) return `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "invalidate" : "claim"}`;
+    if (isClaimed) return "Claimed";
+    if (isInvalidating) return "Invalidating...";
+    if (isClaimingThis) return "Claiming...";
+    if (claimFailed) return "Failed";
+    if (insufficientBalance) return "Insolvent";
+    if (insufficientAllowance) return "Permit2 Allowance Low";
+    if (prerequisiteCheckFailed) return "Check Failed";
+    if (permit.status === "Valid") return "Valid";
+    return permit.status || "";
+  })();
 
-  const buttonText = isInvalidating
-    ? "Invalidating..."
-    : isFundingWallet && canInvalidate
-      ? "Invalidate"
-      : isClaimed && permit.transactionHash
-        ? "View"
-        : isClaimingThis
-          ? "Claiming..."
-          : claimFailed && permit.transactionHash
-            ? "View"
-            : claimFailed
-              ? "Retry"
-              : "Claim";
+  const buttonText = (() => {
+    if (isInvalidating) return "Invalidating...";
+    if (isFundingWallet && canInvalidate) return "Invalidate";
+    if ((isClaimed || claimFailed) && permit.transactionHash) return "View";
+    if (isClaimingThis) return "Claiming...";
+    if (claimFailed) return "Retry";
+    return "Claim";
+  })();
 
   const isButtonDisabled = networkMismatch
     ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork

@@ -150,6 +150,7 @@ export function usePermitClaiming({
           body: JSON.stringify({
             signature: permit.signature,
             transactionHash: txHash,
+            networkId: permit.networkId,
           }),
         });
       } catch (error) {
@@ -241,6 +242,7 @@ export function usePermitClaiming({
               body: JSON.stringify({
                 signature: permit.signature,
                 transactionHash: txHash,
+                networkId: permit.networkId,
               }),
             });
           } catch (error) {
@@ -321,6 +323,7 @@ export function usePermitClaiming({
               body: JSON.stringify({
                 signature: permit.signature,
                 transactionHash: txHash,
+                networkId: permit.networkId,
               }),
             });
           })

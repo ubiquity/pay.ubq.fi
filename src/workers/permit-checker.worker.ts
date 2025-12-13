@@ -165,7 +165,8 @@ async function mapDbPermitToPermitData(permit: PermitRow, index: number, lowerCa
 
 // Function to fetch permits from Supabase using the proper relationships
 async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: string | null): Promise<PermitRow[]> {
-  if (!supabase) throw new Error("Supabase client not initialized.");
+  const supabaseClient = supabase;
+  if (!supabaseClient) throw new Error("Supabase client not initialized.");
 
   // Normalize wallet address for consistent comparison
   const normalizedWalletAddress = walletAddress.toLowerCase();
@@ -181,12 +182,6 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let beneficiaryQuery = supabase
-    .from(PERMITS_TABLE)
-    .select(beneficiaryJoinQuery)
-    .is("transaction", null)
-    .filter("users.wallets.address", "ilike", normalizedWalletAddress);
-
   // Query for permits where user is the owner (funding wallet) - only unclaimed for invalidation
   const ownerJoinQuery = `
               *,
@@ -198,36 +193,79 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
               )
     `;
 
-  let ownerQuery = supabase
-    .from(PERMITS_TABLE)
-    .select(ownerJoinQuery)
-    .is("transaction", null)
-    .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
+  const buildBeneficiaryQuery = () => {
+    let query = supabaseClient
+      .from(PERMITS_TABLE)
+      .select(beneficiaryJoinQuery)
+      .is("transaction", null)
+      .filter("users.wallets.address", "ilike", normalizedWalletAddress);
 
-  if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
-    beneficiaryQuery = beneficiaryQuery.gt("created", lastCheckTimestamp);
-    ownerQuery = ownerQuery.gt("created", lastCheckTimestamp);
+    if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+      query = query.gt("created", lastCheckTimestamp);
+    }
+
+    return query;
+  };
+
+  // Supabase PostgREST commonly caps responses at 1000 rows; page to avoid missing data.
+  const pageSize = 1000;
+  const beneficiaryRows: unknown[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const result = await buildBeneficiaryQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    if (result.error) {
+      console.error(`Worker: beneficiary query error: ${result.error.message}`, result.error);
+      break;
+    }
+
+    const page = result.data ?? [];
+    if (page.length === 0) break;
+
+    beneficiaryRows.push(...page);
+    if (page.length < pageSize) break;
   }
 
-  const [beneficiaryResult, ownerResult] = await Promise.all([beneficiaryQuery, ownerQuery]);
+  const buildOwnerQuery = () => {
+    let query = supabaseClient
+      .from(PERMITS_TABLE)
+      .select(ownerJoinQuery)
+      .is("transaction", null)
+      .filter("partner.wallet.address", "ilike", normalizedWalletAddress);
+
+    if (lastCheckTimestamp && !isNaN(Date.parse(lastCheckTimestamp))) {
+      query = query.gt("created", lastCheckTimestamp);
+    }
+
+    return query;
+  };
+
+  const ownerRows: unknown[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const result = await buildOwnerQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    if (result.error) {
+      console.error(`Worker: owner query error: ${result.error.message}`, result.error);
+      break;
+    }
+
+    const page = result.data ?? [];
+    if (page.length === 0) break;
+
+    ownerRows.push(...page);
+    if (page.length < pageSize) break;
+  }
 
   const permitMap = new Map<number, unknown>();
 
-  if (beneficiaryResult.error) {
-    console.error(`Worker: beneficiary query error: ${beneficiaryResult.error.message}`, beneficiaryResult.error);
-  } else if (beneficiaryResult.data && beneficiaryResult.data.length > 0) {
-    console.log(`Worker: Found ${beneficiaryResult.data.length} permits as beneficiary`);
-    beneficiaryResult.data.forEach((permit) => {
-      permitMap.set(permit.id, permit);
+  if (beneficiaryRows.length > 0) {
+    console.log(`Worker: Found ${beneficiaryRows.length} permits as beneficiary`);
+    beneficiaryRows.forEach((permit) => {
+      permitMap.set((permit as { id: number }).id, permit);
     });
   }
 
-  if (ownerResult.error) {
-    console.error(`Worker: owner query error: ${ownerResult.error.message}`, ownerResult.error);
-  } else if (ownerResult.data && ownerResult.data.length > 0) {
-    console.log(`Worker: Found ${ownerResult.data.length} permits as owner`);
-    ownerResult.data.forEach((permit) => {
-      permitMap.set(permit.id, permit);
+  if (ownerRows.length > 0) {
+    console.log(`Worker: Found ${ownerRows.length} permits as owner`);
+    ownerRows.forEach((permit) => {
+      permitMap.set((permit as { id: number }).id, permit);
     });
   }
 

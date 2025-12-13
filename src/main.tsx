@@ -69,7 +69,6 @@ if (!gridElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    {" "}
     {/* Re-enabled StrictMode */}
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
