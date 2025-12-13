@@ -21,13 +21,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+type RequestHandler = (req: Request) => Response | Promise<Response>;
+
 const jsonResponse = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
   });
 
-const withCors = (response: Response) => {
+const withCors = (handler: RequestHandler): RequestHandler => async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  const response = await handler(req);
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(corsHeaders)) {
     headers.set(key, value);
@@ -79,22 +86,23 @@ const handleRecordClaim = async (req: Request) => {
       return jsonResponse(400, { error: "Missing required fields: signature, transactionHash, networkId" });
     }
 
-    const normalizedSignature = signature.toLowerCase().replace(/^0x/, "");
-    const normalizedTxHash = transactionHash.toLowerCase();
+    const normalizedSignature = signature.trim().toLowerCase().replace(/^0x/, "");
+    const txHashNoPrefix = transactionHash.trim().toLowerCase().replace(/^0x/, "");
+    const txHashWithPrefix = `0x${txHashNoPrefix}`;
 
-    if (!/^[0-9a-f]{64}$/.test(normalizedTxHash.replace(/^0x/, ""))) {
+    if (!/^[0-9a-f]{64}$/.test(txHashNoPrefix)) {
       return jsonResponse(400, { error: "Invalid transactionHash" });
     }
     if (!/^[0-9a-f]+$/.test(normalizedSignature) || normalizedSignature.length < 16) {
       return jsonResponse(400, { error: "Invalid signature" });
     }
 
-    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [normalizedTxHash])) as { input?: string; blockHash?: string | null } | null;
+    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [txHashWithPrefix])) as { input?: string; blockHash?: string | null } | null;
     if (!tx?.input || !tx.blockHash) {
       return jsonResponse(400, { error: "Transaction not found or not mined yet" });
     }
 
-    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [normalizedTxHash])) as { status?: string } | null;
+    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [txHashWithPrefix])) as { status?: string } | null;
     if (!receipt?.status || receipt.status.toLowerCase() !== "0x1") {
       return jsonResponse(400, { error: "Transaction failed or receipt unavailable" });
     }
@@ -121,7 +129,7 @@ const handleRecordClaim = async (req: Request) => {
 
     const { data: updatedRows, error: updateError } = await supabase
       .from("permits")
-      .update({ transaction: normalizedTxHash })
+      .update({ transaction: txHashWithPrefix })
       .eq("id", permit.id)
       .is("transaction", null)
       .select("id");
@@ -166,10 +174,4 @@ const handleRequest = async (req: Request) => {
   return response;
 };
 
-Deno.serve({ port }, async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
-
-  return withCors(await handleRequest(req));
-});
+Deno.serve({ port }, withCors(handleRequest));
