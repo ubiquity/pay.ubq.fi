@@ -2,7 +2,6 @@ import { serveDir, serveFile } from "jsr:@std/http/file-server";
 import { createClient } from "npm:@supabase/supabase-js@2.56.0";
 import { decodeFunctionData } from "npm:viem@2.24.1";
 import type { Database } from "./src/database.types.ts";
-import permit2Abi from "./src/fixtures/permit2-abi.ts";
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
 const root = Deno.env.get("STATIC_DIR") ?? "dist";
@@ -20,6 +19,111 @@ const supabase = supabaseUrl && supabaseKey ? createClient<Database>(supabaseUrl
 const OLD_PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const NEW_PERMIT2_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
 const PERMIT2_ADDRESSES = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT2_ADDRESS.toLowerCase()]);
+
+const permit2DecodeAbi = [
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permit",
+        type: "tuple",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple",
+      },
+      { name: "owner", type: "address" },
+      { name: "signature", type: "bytes" },
+    ],
+    name: "permitTransferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple[]",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permit",
+        type: "tuple",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple[]",
+      },
+      { name: "owner", type: "address" },
+      { name: "signature", type: "bytes" },
+    ],
+    name: "permitTransferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permits",
+        type: "tuple[]",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple[]",
+      },
+      { name: "owners", type: "address[]" },
+      { name: "signatures", type: "bytes[]" },
+    ],
+    name: "batchPermitTransferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
 
 const jsonResponse = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
@@ -123,8 +227,7 @@ const handleRecordClaim = async (req: Request) => {
     let extractedSignatures: string[] = [];
     try {
       const decoded = decodeFunctionData({
-        // permit2Abi is a plain JSON ABI object; cast is safe for viem's decoder.
-        abi: permit2Abi as unknown as readonly unknown[],
+        abi: permit2DecodeAbi as unknown as readonly unknown[],
         data: tx.input as `0x${string}`,
       });
 
