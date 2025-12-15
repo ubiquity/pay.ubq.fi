@@ -184,7 +184,9 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   // Supabase PostgREST commonly caps responses at 1000 rows; page to avoid missing data.
   const pageSize = 1000;
   for (let offset = 0; ; offset += pageSize) {
-    const result = await buildQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    const result = await buildQuery()
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
 
     if (result.error) {
       console.error(`Worker: query error: ${result.error.message}`, result.error);

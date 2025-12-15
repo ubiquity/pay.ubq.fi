@@ -1,6 +1,8 @@
 import { serveDir, serveFile } from "jsr:@std/http/file-server";
 import { createClient } from "npm:@supabase/supabase-js@2.56.0";
+import { decodeFunctionData } from "npm:viem@2.24.1";
 import type { Database } from "./src/database.types.ts";
+import permit2Abi from "./src/fixtures/permit2-abi.ts";
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
 const root = Deno.env.get("STATIC_DIR") ?? "dist";
@@ -15,13 +17,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = supabaseUrl && supabaseKey ? createClient<Database>(supabaseUrl, supabaseKey) : null;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS,HEAD",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-type RequestHandler = (req: Request) => Response | Promise<Response>;
+const OLD_PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const NEW_PERMIT2_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
+const PERMIT2_ADDRESSES = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT2_ADDRESS.toLowerCase()]);
 
 const jsonResponse = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
@@ -29,24 +27,20 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const withCors = (handler: RequestHandler): RequestHandler => async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
+const port = parseInt(Deno.env.get("PORT") ?? "8000", 10);
 
-  const response = await handler(req);
-  const headers = new Headers(response.headers);
-  for (const [key, value] of Object.entries(corsHeaders)) {
-    headers.set(key, value);
-  }
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+const normalizeHexLowerNo0x = (value: string) => value.trim().toLowerCase().replace(/^0x/, "");
+
+const isValidTxHash = (value: string) => /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
+
+const isValidAddress = (value: string) => /^[0-9a-f]{40}$/.test(normalizeHexLowerNo0x(value));
+
+const isValidPermitSignatureHex = (value: string) => {
+  const normalized = normalizeHexLowerNo0x(value);
+  return /^[0-9a-f]+$/.test(normalized) && (normalized.length === 128 || normalized.length === 130);
 };
 
-const port = parseInt(Deno.env.get("PORT") ?? "8000", 10);
+const to0xLower = (value: string) => `0x${normalizeHexLowerNo0x(value)}`;
 
 const rpcCall = async (chainId: number, method: string, params: unknown[]) => {
   const endpoint = `${rpcBaseUrl.replace(/\/$/, "")}/${chainId}`;
@@ -74,73 +68,120 @@ const handleRecordClaim = async (req: Request) => {
   }
 
   try {
-    const { signature, transactionHash, networkId } = (await req.json()) as {
-      signature?: string;
+    const body = (await req.json().catch(() => null)) as unknown;
+    if (!body || typeof body !== "object") {
+      return jsonResponse(400, { error: "Invalid JSON body" });
+    }
+
+    const { transactionHash, networkId } = body as {
       transactionHash?: string;
       networkId?: number | string;
+      signature?: string;
     };
 
-    const chainId = typeof networkId === "string" ? Number.parseInt(networkId, 10) : networkId;
-
-    if (typeof signature !== "string" || typeof transactionHash !== "string" || !chainId) {
-      return jsonResponse(400, { error: "Missing required fields: signature, transactionHash, networkId" });
+    const parsedChainId = typeof networkId === "string" ? Number.parseInt(networkId, 10) : networkId;
+    if (typeof parsedChainId !== "number" || !Number.isSafeInteger(parsedChainId) || parsedChainId <= 0) {
+      return jsonResponse(400, { error: "Invalid networkId" });
     }
+    const chainId = parsedChainId;
 
-    const normalizedSignature = signature.trim().toLowerCase().replace(/^0x/, "");
-    const txHashNoPrefix = transactionHash.trim().toLowerCase().replace(/^0x/, "");
-    const txHashWithPrefix = `0x${txHashNoPrefix}`;
-
-    if (!/^[0-9a-f]{64}$/.test(txHashNoPrefix)) {
+    if (typeof transactionHash !== "string" || !isValidTxHash(transactionHash)) {
       return jsonResponse(400, { error: "Invalid transactionHash" });
     }
-    if (!/^[0-9a-f]+$/.test(normalizedSignature) || normalizedSignature.length < 16) {
-      return jsonResponse(400, { error: "Invalid signature" });
+
+    const txHashWithPrefix = to0xLower(transactionHash);
+
+    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [txHashWithPrefix])) as {
+      input?: string;
+      blockHash?: string | null;
+      to?: string | null;
+    } | null;
+
+    if (!tx) {
+      return jsonResponse(404, { error: "Transaction not found" });
+    }
+    if (!tx.blockHash) {
+      return jsonResponse(400, { error: "Transaction not mined yet" });
     }
 
-    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [txHashWithPrefix])) as { input?: string; blockHash?: string | null } | null;
-    if (!tx?.input || !tx.blockHash) {
-      return jsonResponse(400, { error: "Transaction not found or not mined yet" });
+    if (typeof tx.to !== "string" || !isValidAddress(tx.to) || !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())) {
+      return jsonResponse(400, { error: "Transaction is not a Permit2 call" });
     }
 
     const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [txHashWithPrefix])) as { status?: string } | null;
-    if (!receipt?.status || receipt.status.toLowerCase() !== "0x1") {
-      return jsonResponse(400, { error: "Transaction failed or receipt unavailable" });
+    if (!receipt) {
+      return jsonResponse(400, { error: "Transaction receipt unavailable" });
+    }
+    if (receipt.status?.toLowerCase() !== "0x1") {
+      return jsonResponse(400, { error: "Transaction failed" });
     }
 
-    const txInput = tx.input.toLowerCase().replace(/^0x/, "");
-    if (!txInput.includes(normalizedSignature)) {
-      return jsonResponse(400, { error: "Transaction does not include permit signature" });
+    if (typeof tx.input !== "string" || !tx.input.startsWith("0x")) {
+      return jsonResponse(400, { error: "Transaction input unavailable" });
     }
 
-    const { data: candidates, error: selectError } = await supabase.from("permits").select("id, transaction").eq("signature", signature).limit(2);
+    let extractedSignatures: string[] = [];
+    try {
+      const decoded = decodeFunctionData({
+        // permit2Abi is a plain JSON ABI object; cast is safe for viem's decoder.
+        abi: permit2Abi as unknown as readonly unknown[],
+        data: tx.input as `0x${string}`,
+      });
+
+      const args = decoded.args as readonly unknown[];
+      if (decoded.functionName === "permitTransferFrom") {
+        const signature = args.at(-1);
+        if (typeof signature !== "string") {
+          return jsonResponse(400, { error: "Failed to extract Permit2 signature" });
+        }
+        extractedSignatures = [signature];
+      } else if (decoded.functionName === "batchPermitTransferFrom") {
+        const signatures = args.at(-1);
+        if (!Array.isArray(signatures) || !signatures.every((s) => typeof s === "string")) {
+          return jsonResponse(400, { error: "Failed to extract Permit2 signatures" });
+        }
+        extractedSignatures = signatures;
+      } else {
+        return jsonResponse(400, { error: `Unsupported Permit2 function: ${decoded.functionName}` });
+      }
+    } catch (error) {
+      console.error("Error decoding calldata:", error);
+      return jsonResponse(400, { error: "Unable to decode Permit2 calldata" });
+    }
+
+    const normalizedSignatures = Array.from(new Set(extractedSignatures.map(to0xLower)));
+    if (!normalizedSignatures.length) {
+      return jsonResponse(400, { error: "No signatures found in transaction input" });
+    }
+    if (!normalizedSignatures.every(isValidPermitSignatureHex)) {
+      return jsonResponse(400, { error: "Invalid signature format in transaction input" });
+    }
+
+    const { data: existing, error: selectError } = await supabase.from("permits").select("id, signature, transaction").in("signature", normalizedSignatures);
     if (selectError) throw selectError;
 
-    if (!candidates?.length) {
-      return jsonResponse(404, { success: false, error: "Permit not found" });
-    }
-    if (candidates.length > 1) {
-      return jsonResponse(409, { success: false, error: "Multiple permits matched signature; refusing to update" });
-    }
-
-    const permit = candidates[0];
-    if (permit.transaction) {
-      return jsonResponse(409, { success: true, updated: 0 });
+    const conflicting = (existing ?? []).filter((row) => row.transaction && String(row.transaction).toLowerCase() !== txHashWithPrefix);
+    if (conflicting.length > 0) {
+      return jsonResponse(409, {
+        success: false,
+        error: "One or more permits already have a different recorded transaction",
+        conflicts: conflicting.map((row) => row.signature),
+      });
     }
 
     const { data: updatedRows, error: updateError } = await supabase
       .from("permits")
       .update({ transaction: txHashWithPrefix })
-      .eq("id", permit.id)
+      .in("signature", normalizedSignatures)
       .is("transaction", null)
-      .select("id");
+      .select("id, signature");
     if (updateError) throw updateError;
 
     const updated = updatedRows?.length ?? 0;
-    if (!updated) {
-      return jsonResponse(409, { success: true, updated: 0 });
-    }
+    const matched = new Set((existing ?? []).map((row) => row.signature));
+    const missing = normalizedSignatures.filter((sig) => !matched.has(sig));
 
-    return jsonResponse(200, { success: true, updated });
+    return jsonResponse(200, { success: true, extracted: normalizedSignatures.length, updated, missing });
   } catch (error) {
     console.error("Error recording claim:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -174,4 +215,4 @@ const handleRequest = async (req: Request) => {
   return response;
 };
 
-Deno.serve({ port }, withCors(handleRequest));
+Deno.serve({ port }, handleRequest);

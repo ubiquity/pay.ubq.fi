@@ -18,11 +18,7 @@ const envRpcUrl = import.meta.env.VITE_RPC_URL as string | undefined;
 const hostname = typeof self !== "undefined" ? self.location.hostname : "";
 const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
 export const RPC_URL =
-  envRpcUrl && envRpcUrl.length > 0
-    ? envRpcUrl
-    : import.meta.env.DEV || isLocalhost
-      ? "https://rpc.ubq.fi"
-      : `${self.location.origin}/rpc`;
+  envRpcUrl && envRpcUrl.length > 0 ? envRpcUrl : import.meta.env.DEV || isLocalhost ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
 
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";

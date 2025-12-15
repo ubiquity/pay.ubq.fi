@@ -16,21 +16,20 @@ Permit claiming web app for Ubiquity Rewards.
    cp .env.example .env
    ```
 3. Fill in required variables (see `.env.example`):
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (required for the claim API)
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_RPC_URL`
+   - Backend (`serve.ts`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - Frontend (Vite): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_RPC_URL`
+   - CI build convenience: `SUPABASE_ANON_KEY` is used to set `VITE_SUPABASE_ANON_KEY` in `.github/workflows/deno-deploy.yml`
 
 All frontend variables must be prefixed with `VITE_` to be exposed to the app.
 
 ## Development
 
 - Two‑port dev with HMR:
+
   ```bash
   bun run dev
   ```
+
   - Vite runs on `http://localhost:5173`
   - `serve.ts` runs on `http://localhost:8000`
   - Vite proxies `/api/*` and top‑level numeric routes to `:8000`.
@@ -56,6 +55,16 @@ Deployment is handled by GitHub Actions via `.github/workflows/deno-deploy.yml`.
 - Builds `dist/` with Bun/Vite.
 - Deploys `serve.ts` to Deno Deploy and includes `dist/**`.
 - Required Deploy secrets: `DENO_DEPLOY_TOKEN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+## API
+
+`serve.ts` exposes `POST /api/permits/record-claim` which accepts `{ "transactionHash": "0x...", "networkId": 100 }` and derives the permit signature(s) by decoding Permit2 calldata before updating Supabase.
+
+Note: this endpoint uses `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS), so security comes from on-chain transaction verification before writing.
+
+## Formatting
+
+`bun run format` / `bun run format:check` run Prettier across the repo (including `serve.ts`).
 
 ## Contracts
 

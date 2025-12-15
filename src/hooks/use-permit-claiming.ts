@@ -148,7 +148,6 @@ export function usePermitClaiming({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            signature: permit.signature,
             transactionHash: txHash,
             networkId: permit.networkId,
           }),
@@ -240,7 +239,6 @@ export function usePermitClaiming({
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                signature: permit.signature,
                 transactionHash: txHash,
                 networkId: permit.networkId,
               }),
@@ -314,20 +312,23 @@ export function usePermitClaiming({
       );
       reduceAllowance(permitsToClaim);
       try {
-        await Promise.all(
-          permitsToClaim.map((permit) => {
-            updatePermitStatusCache(permit.signature, { status: "Claimed" });
-            return fetch("/api/permits/record-claim", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                signature: permit.signature,
-                transactionHash: txHash,
-                networkId: permit.networkId,
-              }),
-            });
-          })
-        );
+        permitsToClaim.forEach((permit) => {
+          updatePermitStatusCache(permit.signature, { status: "Claimed" });
+        });
+
+        const networkIds = new Set(permitsToClaim.map((permit) => permit.networkId));
+        if (networkIds.size !== 1) {
+          throw new Error("Batch claim expects all permits to share the same networkId");
+        }
+
+        await fetch("/api/permits/record-claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionHash: txHash,
+            networkId: permitsToClaim[0].networkId,
+          }),
+        });
       } catch (error) {
         console.error("Failed to record transaction:", error);
       }

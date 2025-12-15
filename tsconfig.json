@@ -26,14 +26,6 @@
       "@lib/*": ["lib/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "lib/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "**/*.d.ts"
-  ]
+  "include": ["src/**/*", "lib/**/*"],
+  "exclude": ["node_modules", "dist", "build", "**/*.d.ts"]
 }
