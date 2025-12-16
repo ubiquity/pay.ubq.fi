@@ -13,11 +13,13 @@ import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
 import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
+import { TxBanner } from "./tx-banner.tsx";
 
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
+  const [lastTx, setLastTx] = useState<{ txHash: string; chainId: number; label: string } | null>(null);
 
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState({
     isSwitching: false,
@@ -170,6 +172,17 @@ export function DashboardPage() {
     address,
     chain: chain ?? null,
   });
+
+  const onInvalidatePermit = useCallback(
+    async (permit: PermitData) => {
+      const res = await handleInvalidatePermit(permit);
+      if (res.success && res.txHash) {
+        setLastTx({ txHash: res.txHash, chainId: permit.networkId, label: "Permit invalidated" });
+      }
+      return res;
+    },
+    [handleInvalidatePermit]
+  );
 
   // --- UI Logic ---
   const toggleTableVisibility = () => {
@@ -325,6 +338,7 @@ export function DashboardPage() {
           </div>
         </section>
       )}
+      {lastTx && <TxBanner txHash={lastTx.txHash} chainId={lastTx.chainId} label={lastTx.label} onDismiss={() => setLastTx(null)} />}
 
       {/* Swap Status Display */}
       {Object.keys(swapSubmissionStatus).length > 0 && (
@@ -354,7 +368,7 @@ export function DashboardPage() {
           claimablePermits={claimablePermits}
           onClaimPermit={handleClaimPermit}
           onClaimPermits={claimPermits}
-          onInvalidatePermit={handleInvalidatePermit}
+          onInvalidatePermit={onInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
           isLoading={isLoading}

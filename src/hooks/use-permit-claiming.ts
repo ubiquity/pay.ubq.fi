@@ -139,7 +139,7 @@ export function usePermitClaiming({
       setPermits((prev) =>
         prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
       );
-      updatePermitStatusCache(permit.signature, { status: "Claimed" });
+      updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
       reduceAllowance([permit]);
 
       // Record transaction in database
@@ -231,7 +231,7 @@ export function usePermitClaiming({
           setPermits((prev) =>
             prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
           );
-          updatePermitStatusCache(permit.signature, { status: "Claimed" });
+          updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
 
           // Record transaction in database
           try {

@@ -10,13 +10,19 @@ import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
 export type WorkerRequest =
   | { type: "INIT"; payload: { supabaseUrl: string; supabaseAnonKey: string } }
-  | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; lastCheckTimestamp?: string | null } };
+  | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; requestId: number; lastCheckTimestamp?: string | null } };
 
 export type WorkerResponse =
   | { type: "INIT_SUCCESS" }
   | { type: "INIT_ERROR"; error: string }
-  | { type: "NEW_PERMITS_VALIDATED"; permits: PermitData[]; balancesAndAllowances: Map<string, AllowanceAndBalance> }
-  | { type: "PERMITS_ERROR"; error: string };
+  | {
+      type: "NEW_PERMITS_VALIDATED";
+      requestId: number;
+      address: Address;
+      permits: PermitData[];
+      balancesAndAllowances: Map<string, AllowanceAndBalance>;
+    }
+  | { type: "PERMITS_ERROR"; requestId: number; address: Address; error: string };
 
 // Define the worker scope type
 interface WorkerGlobalScope extends Worker {
@@ -573,6 +579,7 @@ worker.onmessage = async (event) => {
     }
   } else if (type === "FETCH_NEW_PERMITS") {
     const address = payload.address as Address;
+    const requestId = Number(payload.requestId);
     const lastCheckTimestamp = payload.lastCheckTimestamp;
     try {
       if (!supabase) throw new Error("Supabase client not ready.");
@@ -594,16 +601,18 @@ worker.onmessage = async (event) => {
         const validatedNewPermits = await validatePermitsBatch(mappedNewPermits);
         worker.postMessage({
           type: "NEW_PERMITS_VALIDATED",
+          requestId,
+          address,
           permits: validatedNewPermits.permits,
           balancesAndAllowances: validatedNewPermits.balancesAndAllowances,
         });
       } else {
         // If no new permits were found, still send back an empty array for consistency
-        worker.postMessage({ type: "NEW_PERMITS_VALIDATED", permits: [], balancesAndAllowances: new Map() });
+        worker.postMessage({ type: "NEW_PERMITS_VALIDATED", requestId, address, permits: [], balancesAndAllowances: new Map() });
       }
     } catch (error: unknown) {
       console.error("Worker: Error fetching/validating new permits:", error);
-      worker.postMessage({ type: "PERMITS_ERROR", error: error instanceof Error ? error.message : String(error) });
+      worker.postMessage({ type: "PERMITS_ERROR", requestId, address, error: error instanceof Error ? error.message : String(error) });
     }
   }
 };
