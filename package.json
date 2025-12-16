@@ -40,6 +40,7 @@
     "_serve": "deno run -A --env-file=.env serve.ts",
     "_frontend-build": "vite build",
     "_browser": "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222",
+    "permit-checker": "deno run -A --env-file=.env scripts/permit-checker.ts",
     "dev": "run-p _frontend _serve",
     "start": "run-s _frontend-build _serve",
     "build": "vite build",

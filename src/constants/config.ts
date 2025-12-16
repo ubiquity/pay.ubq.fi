@@ -14,9 +14,11 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
  * - On all other hostnames (e.g. localhost, *.deno.dev), use https://rpc.ubq.fi.
  */
 const publicRpcUrl = "https://rpc.ubq.fi";
-const hostname = typeof self !== "undefined" ? self.location.hostname.toLowerCase() : "";
+const location = typeof self !== "undefined" ? (self as unknown as { location?: { hostname?: string; origin?: string } }).location : undefined;
+const hostname = typeof location?.hostname === "string" ? location.hostname.toLowerCase() : "";
+const origin = typeof location?.origin === "string" ? location.origin : "";
 
-export const RPC_URL = hostname === "ubq.fi" || hostname.endsWith(".ubq.fi") ? `${self.location.origin}/rpc` : publicRpcUrl;
+export const RPC_URL = hostname === "ubq.fi" || hostname.endsWith(".ubq.fi") ? (origin ? `${origin}/rpc` : publicRpcUrl) : publicRpcUrl;
 
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
