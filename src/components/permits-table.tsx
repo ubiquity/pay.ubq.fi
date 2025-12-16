@@ -1,6 +1,5 @@
 import type { Address, Chain } from "viem";
 import type { PermitData } from "../types.ts";
-import { ClaimAllProgress } from "./claim-all-progress.tsx";
 import { PermitRow } from "./permit-row.tsx";
 
 interface PermitsTableProps {
@@ -52,9 +51,6 @@ export function PermitsTable({
     <>
       {!isLoading && !isQuoting && sortedPermits.length > 0 && (
         <div>
-          <div>
-            <ClaimAllProgress permits={permits} />
-          </div>
           <div className="permits-list">
             <div className="permits-body">
               {sortedPermits.map((permit) => {
