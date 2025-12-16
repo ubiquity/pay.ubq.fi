@@ -116,8 +116,9 @@ export async function mapDbPermitToPermitDataWithIssues({
   } else if (!permit.signature.startsWith("0x")) {
     issues.push("invalid_signature_prefix");
   } else if (!isHexString(permit.signature) || (permit.signature.length !== 130 && permit.signature.length !== 132)) {
-    // Permit signatures are typically 65 bytes (130 hex chars) or EIP-2098 64 bytes (128 hex chars).
-    // Some libraries include "0x" prefix length, so accept both 0x+128 and 0x+130.
+    // The code checks for total string lengths including the "0x" prefix:
+    // - 65 bytes (130 hex chars) + "0x" = 132 total characters
+    // - 64 bytes (128 hex chars, EIP-2098) + "0x" = 130 total characters
     issues.push("invalid_signature_format");
   }
 
@@ -168,10 +169,6 @@ export async function mapDbPermitToPermitDataWithIssues({
     status: "Fetching",
     ...(permit.created && { created_at: permit.created }),
   };
-
-  if (!permitData.nonce || !permitData.deadline || !permitData.signature || !permitData.beneficiary || !permitData.owner || !permitData.token?.address) {
-    return { permitData: null, issues: ["invalid_signature_format"] };
-  }
 
   const deadlineInt = parseInt(permitData.deadline, 10);
   if (isNaN(deadlineInt) || deadlineInt < Math.floor(Date.now() / 1000)) {
