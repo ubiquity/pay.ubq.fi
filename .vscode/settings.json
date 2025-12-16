@@ -1,11 +1,7 @@
 {
   "deno.enable": true,
-  "deno.enablePaths": [
-    "serve.ts"
-  ],
+  "deno.enablePaths": ["serve.ts"],
   "deno.lint": true,
   "deno.unstable": true,
-  "cSpell.words": [
-    "SUPABASE"
-  ]
+  "cSpell.words": ["SUPABASE"]
 }

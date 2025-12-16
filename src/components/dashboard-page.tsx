@@ -181,58 +181,64 @@ export function DashboardPage() {
     console.log("DashboardPage received preference change:", selectedAddress);
   };
 
-  const claimPermits = useCallback(async (permitsToClaim: PermitData[]) => {
-    if (!isConnected || !address || !chain) {
-      console.error("Cannot claim permits: Wallet not connected or address/chain missing");
-      return;
-    }
-    const currentNetworkId = chain.id;
-
-    const permitsByNetwork = permitsToClaim.reduce((acc, permit) => {
-      const key = permit.networkId;
-      const permits = acc.get(key) || [];
-      permits.push(permit);
-      acc.set(key, permits);
-      return acc;
-    }, new Map<number, PermitData[]>());
-
-    const networksToClaim = [currentNetworkId, ...Array.from(permitsByNetwork.keys()).filter((id) => id !== currentNetworkId)];
-
-    for (const networkId of networksToClaim) {
-      const permitsForNetwork = permitsByNetwork.get(networkId) || [];
-      if (permitsForNetwork.length === 0) continue;
-
-      try {
-        if (currentNetworkId !== networkId) {
-          console.log("Switching to network:", networkId);
-          setIsSwitchingNetwork({ isSwitching: true, expectedNetworkId: networkId, permitsToClaim });
-          await switchChainAsync({ chainId: networkId });
-          return;
-        }
-
-        setPermits((prev) => prev.map((p) => (permitsForNetwork.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
-        const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
-        const sequentialPermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
-        if (batchablePermits.length > 0) {
-          console.log(`Claiming ${batchablePermits.length} batchable permits on network ${networkId}`);
-          await handleClaimBatch(batchablePermits);
-        }
-
-        if (sequentialPermits.length > 0) {
-          console.log(`Claiming ${sequentialPermits.length} sequential permits on network ${networkId}`);
-          await handleClaimSequential(sequentialPermits);
-        }
-      } catch (error) {
-        console.error(`Error claiming permits on network ${networkId}:`, error);
+  const claimPermits = useCallback(
+    async (permitsToClaim: PermitData[]) => {
+      if (!isConnected || !address || !chain) {
+        console.error("Cannot claim permits: Wallet not connected or address/chain missing");
+        return;
       }
-    }
-  }, [isConnected, address, chain, switchChainAsync, setPermits, handleClaimBatch, handleClaimSequential]);
+      const currentNetworkId = chain.id;
+
+      const permitsByNetwork = permitsToClaim.reduce((acc, permit) => {
+        const key = permit.networkId;
+        const permits = acc.get(key) || [];
+        permits.push(permit);
+        acc.set(key, permits);
+        return acc;
+      }, new Map<number, PermitData[]>());
+
+      const networksToClaim = [currentNetworkId, ...Array.from(permitsByNetwork.keys()).filter((id) => id !== currentNetworkId)];
+
+      for (const networkId of networksToClaim) {
+        const permitsForNetwork = permitsByNetwork.get(networkId) || [];
+        if (permitsForNetwork.length === 0) continue;
+
+        try {
+          if (currentNetworkId !== networkId) {
+            console.log("Switching to network:", networkId);
+            setIsSwitchingNetwork({ isSwitching: true, expectedNetworkId: networkId, permitsToClaim });
+            await switchChainAsync({ chainId: networkId });
+            return;
+          }
+
+          setPermits((prev) => prev.map((p) => (permitsForNetwork.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
+          const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
+          const sequentialPermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
+          if (batchablePermits.length > 0) {
+            console.log(`Claiming ${batchablePermits.length} batchable permits on network ${networkId}`);
+            await handleClaimBatch(batchablePermits);
+          }
+
+          if (sequentialPermits.length > 0) {
+            console.log(`Claiming ${sequentialPermits.length} sequential permits on network ${networkId}`);
+            await handleClaimSequential(sequentialPermits);
+          }
+        } catch (error) {
+          console.error(`Error claiming permits on network ${networkId}:`, error);
+        }
+      }
+    },
+    [isConnected, address, chain, switchChainAsync, setPermits, handleClaimBatch, handleClaimSequential]
+  );
 
   useEffect(() => {
     if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
       console.log(`Switched to expected network: ${chain.id}`);
+      const permitsToResume = claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature));
       setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
-      claimPermits(claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature)));
+      void claimPermits(permitsToResume).catch((error) => {
+        console.error("Failed to resume claim flow after network switch:", error);
+      });
     }
   }, [isConnected, walletClient, chain, isSwitchingNetwork, claimPermits, claimablePermits]);
 
@@ -258,7 +264,11 @@ export function DashboardPage() {
             </button>
             <button
               id="claim-all"
-              onClick={() => claimPermits(claimablePermits)}
+              onClick={() =>
+                void claimPermits(claimablePermits).catch((error) => {
+                  console.error("Failed to start claim flow:", error);
+                })
+              }
               disabled={isClaiming || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid and available permits (batch RPC)"

@@ -2,14 +2,14 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient, type JsonRpcResponse } from "@ubiquity-dao/permit2-rpc-client";
 import { PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import { type Address, encodeFunctionData, erc20Abi, parseAbiItem, recoverAddress } from "viem";
-import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS, RPC_URL } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts"; // Import generated types
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 
 // --- Worker Setup ---
 
 export type WorkerRequest =
-  | { type: "INIT"; payload: { supabaseUrl: string; supabaseAnonKey: string; isDevelopment: boolean } }
+  | { type: "INIT"; payload: { supabaseUrl: string; supabaseAnonKey: string } }
   | { type: "FETCH_NEW_PERMITS"; payload: { address: Address; lastCheckTimestamp?: string | null } };
 
 export type WorkerResponse =
@@ -40,7 +40,6 @@ const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wor
 // Initialize Supabase & RPC clients (will be set in INIT)
 let supabase: SupabaseClient<Database> | null = null; // Use Database type
 let rpcClient: ReturnType<typeof createRpcClient> | null = null;
-let PROXY_BASE_URL = ""; // Will be set in INIT
 
 // Define type for JSON-RPC Request object
 interface JsonRpcRequest {
@@ -217,7 +216,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
       break;
     }
 
-    const page = result.data ?? [];
+    const page = (result.data ?? []) as PermitRow[];
     if (page.length === 0) break;
 
     beneficiaryRows.push(...page);
@@ -559,14 +558,11 @@ worker.onmessage = async (event) => {
   if (type === "INIT") {
     const supabaseUrl = payload.supabaseUrl;
     const supabaseAnonKey = payload.supabaseAnonKey;
-    const hostname = self.location.hostname;
-    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
-    PROXY_BASE_URL = payload.isDevelopment || isLocalhost ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
 
     if (supabaseUrl && supabaseAnonKey) {
       try {
         supabase = createClient<Database>(supabaseUrl, supabaseAnonKey); // Use Database type
-        rpcClient = createRpcClient({ baseUrl: PROXY_BASE_URL }); // Init RPC client here
+        rpcClient = createRpcClient({ baseUrl: RPC_URL }); // Init RPC client here
         worker.postMessage({ type: "INIT_SUCCESS" });
       } catch (error: unknown) {
         console.error("Worker: Error initializing clients:", error);

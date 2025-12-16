@@ -11,20 +11,19 @@ const reactJsxDevRuntimeProd = resolvePath(__dirname, "node_modules/react/cjs/re
 export default defineConfig(({ command }) => ({
   // Load env vars from the repo root so the frontend picks up the same .env file as the server.
   envDir: __dirname,
-  plugins: [
-    react(),
-  ],
+  plugins: [react()],
   resolve: {
     // React 19 ships CJS entrypoints behind a NODE_ENV switch. Rollup can't
     // statically infer named exports from that wrapper, so alias directly to
     // the production CJS files for build. Use exact match for "react" so we
     // don't rewrite subpath imports.
-    alias: command === "build"
-      ? [
-          { find: "react/jsx-runtime", replacement: reactJsxRuntimeProd },
-          { find: "react/jsx-dev-runtime", replacement: reactJsxDevRuntimeProd },
-        ]
-      : [],
+    alias:
+      command === "build"
+        ? [
+            { find: "react/jsx-runtime", replacement: reactJsxRuntimeProd },
+            { find: "react/jsx-dev-runtime", replacement: reactJsxDevRuntimeProd },
+          ]
+        : [],
   },
   server: {
     port: 5173,

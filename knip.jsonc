@@ -7,31 +7,22 @@
     "**/*.deno.ts",
     "**/*.deno.tsx",
     "**/deno.json",
-    "**/deno.jsonc"
+    "**/deno.jsonc",
   ],
   "ignoreDependencies": [
     // Knip currently treats Deno `jsr:` / `npm:` import specifiers as unlisted deps.
     "jsr",
     "npm",
     "@playwright/mcp",
-    "playwright"
+    "playwright",
   ],
-  "ignoreBinaries": [
-    "claude"
-  ],
+  "ignoreBinaries": ["claude"],
   "ignoreIssues": {
     "src/constants/config.ts": ["exports"],
     "src/constants/supported-reward-tokens.ts": ["exports", "types"],
     "src/utils/permit-utils.ts": ["exports"],
-    "src/database.types.ts": ["exports", "types"]
+    "src/database.types.ts": ["exports", "types"],
   },
-  "entry": [
-    "serve.ts!",
-    "src/main.tsx!",
-    "src/workers/**/*.worker.ts!"
-  ],
-  "project": [
-    "src/**/*.ts!",
-    "src/**/*.tsx!"
-  ]
+  "entry": ["serve.ts!", "src/main.tsx!", "src/workers/**/*.worker.ts!"],
+  "project": ["src/**/*.ts!", "src/**/*.tsx!"],
 }
