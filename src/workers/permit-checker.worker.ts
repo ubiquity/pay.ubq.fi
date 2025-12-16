@@ -216,7 +216,9 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   const pageSize = 1000;
   const beneficiaryRows: unknown[] = [];
   for (let offset = 0; ; offset += pageSize) {
-    const result = await buildBeneficiaryQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    const result = await buildBeneficiaryQuery()
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
     if (result.error) {
       console.error(`Worker: beneficiary query error: ${result.error.message}`, result.error);
       break;
@@ -245,7 +247,9 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   const ownerRows: unknown[] = [];
   for (let offset = 0; ; offset += pageSize) {
-    const result = await buildOwnerQuery().order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    const result = await buildOwnerQuery()
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
     if (result.error) {
       console.error(`Worker: owner query error: ${result.error.message}`, result.error);
       break;

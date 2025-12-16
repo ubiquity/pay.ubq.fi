@@ -84,4 +84,3 @@ export function applyPermitStatusOverrides(permit: PermitData, cache: PermitStat
     ...(override.transactionHash !== undefined && { transactionHash: override.transactionHash }),
   };
 }
-

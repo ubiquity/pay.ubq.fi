@@ -25,27 +25,30 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const requestIdRef = useRef(0);
   const lastAddressRef = useRef<string | null>(null);
 
-  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
-    const normalizedAddress = address?.toLowerCase();
-    let fundingWallet = false;
-    if (normalizedAddress) {
-      for (const permit of permitsMap.values()) {
-        if (permit.owner.toLowerCase() === normalizedAddress) {
-          fundingWallet = true;
-          break;
+  const filterPermits = useCallback(
+    (permitsMap: Map<string, PermitData>) => {
+      const normalizedAddress = address?.toLowerCase();
+      let fundingWallet = false;
+      if (normalizedAddress) {
+        for (const permit of permitsMap.values()) {
+          if (permit.owner.toLowerCase() === normalizedAddress) {
+            fundingWallet = true;
+            break;
+          }
         }
       }
-    }
-    setIsFundingWallet(fundingWallet);
+      setIsFundingWallet(fundingWallet);
 
-    const filtered: PermitData[] = [];
-    permitsMap.forEach((permit) => {
-      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
-    });
-    setPermits(filtered);
-  }, [address]);
+      const filtered: PermitData[] = [];
+      permitsMap.forEach((permit) => {
+        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+        if (!shouldFilter) filtered.push(permit);
+      });
+      setPermits(filtered);
+    },
+    [address]
+  );
 
   const fetchQuotes = useCallback(
     async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {

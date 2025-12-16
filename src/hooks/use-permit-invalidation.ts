@@ -69,11 +69,7 @@ export function usePermitInvalidation({
           throw new Error(`Invalidation failed with status: ${receipt.status}`);
         }
 
-        setPermits((prev) =>
-          prev.map((p) =>
-            p.signature === permit.signature ? { ...p, status: "Claimed", isNonceUsed: true, transactionHash: txHash } : p
-          )
-        );
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, status: "Claimed", isNonceUsed: true, transactionHash: txHash } : p)));
         updatePermitStatusCache(permit.signature, { status: "Claimed", isNonceUsed: true, transactionHash: txHash });
 
         setIsInvalidating((prev) => ({ ...prev, [permitKey]: false }));
@@ -96,4 +92,3 @@ export function usePermitInvalidation({
     invalidationError,
   };
 }
-
