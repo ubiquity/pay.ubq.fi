@@ -12,17 +12,16 @@ jobs:
       entrypoint: serve.ts
       bun_version: 1.3.4
       install_command: |
-        cd frontend && bun install
+        bun install
       build_command: |
-        cd frontend
         bun run build
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
       runtime_env: |
-        STATIC_DIR=frontend/dist
+        STATIC_DIR=dist
       include: |
-        frontend/dist/**
+        dist/**
       exclude: |
         .git
         .github
@@ -35,5 +34,6 @@ jobs:
       required_env: |
         DENO_DEPLOY_TOKEN
         SUPABASE_URL
+        SUPABASE_SERVICE_ROLE_KEY
         SUPABASE_ANON_KEY
     secrets: inherit

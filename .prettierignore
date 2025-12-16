@@ -1,0 +1,10 @@
+node_modules
+/lib
+dist
+build
+coverage
+*.config.js
+**/*.deno.ts
+**/*.deno.tsx
+**/deno.json
+**/deno.jsonc
