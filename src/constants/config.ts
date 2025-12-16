@@ -10,15 +10,13 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
 
 /**
  * RPC endpoint for blockchain calls.
- * - `VITE_RPC_URL` (if set) wins.
- * - In dev or when running on localhost, default to https://rpc.ubq.fi.
- * - In production on the real domain, default to /rpc for performance.
+ * - On `*.ubq.fi`, use `/rpc` for same-origin requests (avoids CORS preflight).
+ * - On all other hostnames (e.g. localhost, *.deno.dev), use https://rpc.ubq.fi.
  */
-const envRpcUrl = import.meta.env.VITE_RPC_URL;
-const hostname = typeof self !== "undefined" ? self.location.hostname : "";
-const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
-export const RPC_URL =
-  envRpcUrl && envRpcUrl.length > 0 ? envRpcUrl : import.meta.env.DEV || isLocalhost ? "https://rpc.ubq.fi" : `${self.location.origin}/rpc`;
+const publicRpcUrl = "https://rpc.ubq.fi";
+const hostname = typeof self !== "undefined" ? self.location.hostname.toLowerCase() : "";
+
+export const RPC_URL = hostname === "ubq.fi" || hostname.endsWith(".ubq.fi") ? `${self.location.origin}/rpc` : publicRpcUrl;
 
 // Universal contract addresses (same on all chains)
 export const OLD_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";

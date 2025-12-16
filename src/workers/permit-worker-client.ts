@@ -52,7 +52,7 @@ export function getPermitCheckerWorker() {
       worker.addEventListener("error", onError as EventListener);
       worker.postMessage({
         type: "INIT",
-        payload: { supabaseUrl, supabaseAnonKey, isDevelopment: !!import.meta.env.DEV },
+        payload: { supabaseUrl, supabaseAnonKey },
       });
     });
   }

@@ -17,10 +17,11 @@ Permit claiming web app for Ubiquity Rewards.
    ```
 3. Fill in required variables (see `.env.example`):
    - Backend (`serve.ts`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-   - Frontend (Vite): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_RPC_URL`
+   - Frontend (Vite): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
    - CI build convenience: `SUPABASE_ANON_KEY` is used to set `VITE_SUPABASE_ANON_KEY` in `.github/workflows/deno-deploy.yml`
 
 All frontend variables must be prefixed with `VITE_` to be exposed to the app.
+RPC uses `/rpc` only on `*.ubq.fi` hostnames; all other hostnames use `https://rpc.ubq.fi`.
 
 ## Development
 
