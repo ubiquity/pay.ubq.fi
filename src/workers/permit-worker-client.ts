@@ -8,8 +8,8 @@ let sharedWorker: PermitCheckerWorker | null = null;
 let initPromise: Promise<void> | null = null;
 
 export function getPermitCheckerWorker() {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase URL or Anon Key missing in frontend environment variables.");

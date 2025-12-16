@@ -1,47 +1,5 @@
-import { erc20Abi, formatUnits, type Abi, type Address } from "viem"; // Import formatUnits
+import { formatUnits } from "viem";
 import type { PermitData } from "../types";
-
-// Removed unused MulticallContractInternal interface
-
-// Define a simpler type for the return value
-type ContractCallConfig = {
-  address: Address;
-  abi: Abi;
-  functionName: string;
-  args?: unknown[];
-};
-
-/**
- * Prepares the contract call objects for checking ERC20 permit prerequisites (balance and allowance).
- * Returns an array of contract call objects or null if not applicable.
- */
-export function preparePermitPrerequisiteContracts(permit: PermitData): ContractCallConfig[] | null {
-  // Updated return type
-  if (permit.type !== "erc20-permit" || !permit.token?.address || !permit.amount || !permit.owner) {
-    return null;
-  }
-
-  const ownerAddress = permit.owner as `0x${string}`;
-  const tokenAddress = permit.token.address as `0x${string}`;
-
-  const balanceCall: ContractCallConfig = {
-    // Use updated type
-    abi: erc20Abi,
-    address: tokenAddress,
-    functionName: "balanceOf",
-    args: [ownerAddress],
-  };
-
-  const allowanceCall: ContractCallConfig = {
-    // Use updated type
-    abi: erc20Abi,
-    address: tokenAddress,
-    functionName: "allowance",
-    args: [ownerAddress, permit.permit2Address],
-  };
-
-  return [balanceCall, allowanceCall];
-}
 
 /**
  * Formats a raw token amount (string or bigint) into a human-readable string.
@@ -54,25 +12,21 @@ export function preparePermitPrerequisiteContracts(permit: PermitData): Contract
  */
 export const formatAmount = (rawAmount: string | bigint | undefined | null, decimals: number, displayDecimals = 2): string => {
   if (rawAmount === undefined || rawAmount === null) {
-    return Number(0).toFixed(displayDecimals); // Return "0.00" if amount is missing
+    return Number(0).toFixed(displayDecimals);
   }
   try {
     const amountBigInt = BigInt(rawAmount);
     const formatted = formatUnits(amountBigInt, decimals);
-    // Use Number() to parse the formatted string and then toLocaleString for formatting
-    // This handles potential large/small numbers better than direct formatting of the string
     const numericValue = Number(formatted);
     if (isNaN(numericValue)) {
       console.warn(`formatAmount: formatted value "${formatted}" resulted in NaN.`);
       return Number(0).toFixed(displayDecimals);
     }
-    // Use toLocaleString with maximumSignificantDigits for better formatting.
     return numericValue.toLocaleString(undefined, {
       maximumSignificantDigits: 2,
     });
   } catch (error) {
     console.warn(`Amount formatting failed for amount: ${rawAmount}, decimals: ${decimals}`, error);
-    // Fallback to fixed decimals on error, as significant digits might not make sense for 0
     return Number(0).toFixed(displayDecimals);
   }
 };

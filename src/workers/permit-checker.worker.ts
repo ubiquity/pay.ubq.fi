@@ -154,7 +154,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
   // Normalize wallet address for consistent comparison
   const normalizedWalletAddress = walletAddress.toLowerCase();
 
-  const permitsData: unknown[] = [];
+  const permitsData: PermitRow[] = [];
 
   // This query directly joins permits with users and wallets
   const directJoinQuery = `
@@ -193,7 +193,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
       return [];
     }
 
-    const page = result.data ?? [];
+    const page = (result.data ?? []) as PermitRow[];
     if (page.length === 0) break;
 
     permitsData.push(...page);
@@ -202,12 +202,7 @@ async function fetchPermitsFromDb(walletAddress: string, lastCheckTimestamp: str
 
   console.log(`Worker: Found ${permitsData.length} permits`);
 
-  if (permitsData.length === 0) {
-    return [];
-  }
-
-  // Cast needed because Supabase client doesn't know about the joined types automatically
-  return permitsData as unknown as PermitRow[];
+  return permitsData;
 }
 
 // --- On-Chain Validation ---

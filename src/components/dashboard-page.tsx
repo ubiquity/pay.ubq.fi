@@ -219,8 +219,11 @@ export function DashboardPage() {
   useEffect(() => {
     if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
       console.log(`Switched to expected network: ${chain.id}`);
+      const permitsToResume = claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature));
       setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
-      claimPermits(claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature)));
+      void claimPermits(permitsToResume).catch((error) => {
+        console.error("Failed to resume claim flow after network switch:", error);
+      });
     }
   }, [isConnected, walletClient, chain, isSwitchingNetwork, claimPermits, claimablePermits]);
 
@@ -246,7 +249,11 @@ export function DashboardPage() {
             </button>
             <button
               id="claim-all"
-              onClick={() => claimPermits(claimablePermits)}
+              onClick={() =>
+                void claimPermits(claimablePermits).catch((error) => {
+                  console.error("Failed to start claim flow:", error);
+                })
+              }
               disabled={isClaiming || !isConnected || claimablePermitCount === 0}
               className="button-with-icon"
               title="Claim all valid and available permits (batch RPC)"

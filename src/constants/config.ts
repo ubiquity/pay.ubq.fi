@@ -14,7 +14,7 @@ export const COWSWAP_PARTNER_FEE_BPS = 10;
  * - In dev or when running on localhost, default to https://rpc.ubq.fi.
  * - In production on the real domain, default to /rpc for performance.
  */
-const envRpcUrl = import.meta.env.VITE_RPC_URL as string | undefined;
+const envRpcUrl = import.meta.env.VITE_RPC_URL;
 const hostname = typeof self !== "undefined" ? self.location.hostname : "";
 const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
 export const RPC_URL =

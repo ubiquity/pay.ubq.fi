@@ -22,8 +22,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const workerRef = useRef<PermitCheckerWorker | null>(null);
-  const [isWorkerInitialized, setIsWorkerInitialized] = useState(false);
+  const [worker, setWorker] = useState<PermitCheckerWorker | null>(null);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
 
   const saveCache = useCallback((cache: PermitDataCache) => {
@@ -141,16 +140,15 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     const initWorker = async () => {
       try {
         const { worker, ready } = getPermitCheckerWorker();
-        workerRef.current = worker;
         await ready;
         if (cancelled) return;
-        setIsWorkerInitialized(true);
+        setWorker(worker);
       } catch (e: unknown) {
         if (cancelled) return;
         const message = e instanceof Error ? e.message : String(e);
         console.warn("[use-permit-data] Worker initialization failed:", message);
         setError(message);
-        setIsWorkerInitialized(false);
+        setWorker(null);
         setIsLoading(false);
       }
     };
@@ -159,14 +157,12 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
     return () => {
       cancelled = true;
-      workerRef.current = null;
-      setIsWorkerInitialized(false);
+      setWorker(null);
     };
   }, []);
 
   useEffect(() => {
-    if (!isWorkerInitialized || !workerRef.current) return;
-    const worker = workerRef.current;
+    if (!worker) return;
 
     const onMessage = (event: MessageEvent<WorkerResponse>) => {
       const data = event.data;
@@ -196,14 +192,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           setError(`Error processing permits: ${data.error}`);
           setIsLoading(false);
           break;
-        case "INIT_ERROR":
-          setError(`Worker initialization failed: ${data.error}`);
-          setIsWorkerInitialized(false);
-          setIsLoading(false);
-          break;
-        case "INIT_SUCCESS":
-          setIsWorkerInitialized(true);
-          break;
       }
     };
 
@@ -211,7 +199,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       console.error("[use-permit-data] Worker error:", event);
       setError(`Worker error: ${event.message}`);
       setIsLoading(false);
-      setIsWorkerInitialized(false);
+      setWorker(null);
     };
 
     worker.addEventListener("message", onMessage as EventListener);
@@ -221,22 +209,22 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       worker.removeEventListener("message", onMessage as EventListener);
       worker.removeEventListener("error", onError as EventListener);
     };
-  }, [fetchQuotes, filterPermits, isWorkerInitialized, saveCache]);
+  }, [worker, fetchQuotes, filterPermits, saveCache]);
 
   useEffect(() => {
-    if (isConnected && address && isWorkerInitialized && workerRef.current) {
+    if (isConnected && address && worker) {
       setIsLoading(true);
       setError(null);
-      workerRef.current.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
+      worker.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
     } else if (!isConnected) {
       allPermitsRef.current.clear();
       setPermits([]);
       setIsLoading(false);
     }
-  }, [isConnected, isWorkerInitialized, address]);
+  }, [isConnected, address, worker]);
 
   useEffect(() => {
-    if (isConnected && address && chainId && isWorkerInitialized && !isLoading) {
+    if (isConnected && address && chainId && worker && !isLoading) {
       fetchQuotes(new Map(allPermitsRef.current))
         .then((mapWithQuotes: Map<string, PermitData>) => {
           allPermitsRef.current = mapWithQuotes;
@@ -251,7 +239,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           filterPermits(allPermitsRef.current);
         });
     }
-  }, [preferredRewardTokenAddress, isConnected, address, chainId, isWorkerInitialized, isLoading, fetchQuotes, filterPermits]);
+  }, [preferredRewardTokenAddress, isConnected, address, chainId, worker, isLoading, fetchQuotes, filterPermits]);
 
   const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
     const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
@@ -275,7 +263,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isLoading,
     error,
     setError,
-    isWorkerInitialized,
+    isWorkerInitialized: !!worker,
     updatePermitStatusCache,
     isQuoting,
   };
