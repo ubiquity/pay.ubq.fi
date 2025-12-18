@@ -15,7 +15,8 @@
   button.button-with-icon span {
     display: none;
   }
-  button[title*="Claim"] span {
+  button[title*="Claim"] span,
+  button[title*="Invalidate"] span {
     display: unset;
   }
 
