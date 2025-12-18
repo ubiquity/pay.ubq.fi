@@ -23,7 +23,6 @@ export function usePermitInvalidation({
   chain,
 }: UsePermitInvalidationProps) {
   const [isInvalidating, setIsInvalidating] = useState<Record<string, boolean>>({});
-  const [invalidationError, setInvalidationError] = useState<string | null>(null);
 
   const nonceBitmap = (nonce: bigint): { wordPos: bigint; bitPos: bigint } => {
     const wordPos = nonce >> 8n;
@@ -36,7 +35,6 @@ export function usePermitInvalidation({
       const permitKey = permit.signature;
 
       setIsInvalidating((prev) => ({ ...prev, [permitKey]: true }));
-      setInvalidationError(null);
 
       if (!address || !chain || !walletClient || !publicClient) {
         setError("Wallet not connected or chain unavailable");
@@ -77,7 +75,6 @@ export function usePermitInvalidation({
       } catch (error) {
         console.error("Failed to invalidate permit:", error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-        setInvalidationError(errorMessage);
         setError(`Failed to invalidate permit: ${errorMessage}`);
         setIsInvalidating((prev) => ({ ...prev, [permitKey]: false }));
         return { success: false, txHash: "" };
@@ -96,7 +93,6 @@ export function usePermitInvalidation({
         for (const key of permitKeys) next[key] = true;
         return next;
       });
-      setInvalidationError(null);
 
       if (!address || !chain || !walletClient || !publicClient) {
         setError("Wallet not connected or chain unavailable");
@@ -173,7 +169,6 @@ export function usePermitInvalidation({
         } catch (error) {
           console.error("Failed to batch invalidate permits:", error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-          setInvalidationError(errorMessage);
           setError(`Failed to invalidate permits: ${errorMessage}`);
           success = false;
           break;
@@ -203,6 +198,5 @@ export function usePermitInvalidation({
     handleInvalidatePermit,
     handleInvalidatePermitsBatch,
     isInvalidating,
-    invalidationError,
   };
 }

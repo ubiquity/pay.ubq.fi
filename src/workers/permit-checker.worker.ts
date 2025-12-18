@@ -117,7 +117,7 @@ worker.onmessage = async (event) => {
 
         if (result.error) {
           console.error(`Worker: owner query error: ${result.error.message}`, result.error);
-          break;
+          throw new Error(`Worker: owner query error: ${result.error.message}`);
         }
 
         const page = (result.data ?? []) as PermitRowWithBeneficiary[];
@@ -129,7 +129,15 @@ worker.onmessage = async (event) => {
 
       const permitMap = new Map<number, PermitRowWithBeneficiary>();
       beneficiaryPermitsFromDb.forEach((permit) => permitMap.set(permit.id, permit));
-      ownerPermitsFromDb.forEach((permit) => permitMap.set(permit.id, permit));
+      ownerPermitsFromDb.forEach((permit) => {
+        if (permitMap.has(permit.id)) {
+          console.warn(
+            `Worker: Permit ID ${permit.id} found in both beneficiary and owner queries for wallet ${connectedWalletAddress}. ` +
+              "This suggests a data inconsistency or unexpected query behavior."
+          );
+        }
+        permitMap.set(permit.id, permit);
+      });
 
       if (ownerPermitsFromDb.length > 0) {
         console.log(`Worker: Found ${ownerPermitsFromDb.length} permits as owner`);
@@ -139,7 +147,12 @@ worker.onmessage = async (event) => {
       const mappedNewPermits = (
         await Promise.all(
           Array.from(permitMap.values()).map(async (permit, index) => {
-            const beneficiaryAddress = permit.users?.wallets?.address ? String(permit.users.wallets.address).toLowerCase() : connectedWalletAddress;
+            const beneficiaryWalletAddress = permit.users?.wallets?.address;
+            if (!beneficiaryWalletAddress) {
+              console.warn(`Worker: Permit ${permit.id} missing beneficiary wallet address; skipping`);
+              return null;
+            }
+            const beneficiaryAddress = String(beneficiaryWalletAddress).toLowerCase();
             const mapped = await mapDbPermitToPermitData({ permit, index, lowerCaseWalletAddress: beneficiaryAddress });
             if (mapped) mapped.beneficiaryUserId = permit.beneficiary_id;
             return mapped;

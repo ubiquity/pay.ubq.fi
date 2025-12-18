@@ -60,8 +60,12 @@ export function DashboardPage() {
 
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
+    const normalizedAddress = address?.toLowerCase();
+    if (!normalizedAddress) return [];
+
     const availableClaimAmount = new Map(Array.from(balancesAndAllowances.entries()).map(([key, value]) => [key, value.maxClaimable]));
     const filteredPermits = permits
+      .filter((p) => p.beneficiary.toLowerCase() === normalizedAddress)
       .filter(
         (p) =>
           p.type === "erc20-permit" &&
@@ -89,7 +93,7 @@ export function DashboardPage() {
       });
 
     return filteredPermits;
-  }, [permits, balancesAndAllowances]);
+  }, [permits, balancesAndAllowances, address]);
 
   const claimablePermitCount = claimablePermits.length;
 

@@ -64,9 +64,9 @@ export function upsertPermitStatusOverride(
 
   const previous = cache[normalizedSignature];
   cache[normalizedSignature] = {
-    status: patch.status ?? previous?.status,
-    isNonceUsed: patch.isNonceUsed ?? previous?.isNonceUsed,
-    transactionHash: patch.transactionHash ?? previous?.transactionHash,
+    status: patch.status !== undefined ? patch.status : previous?.status,
+    isNonceUsed: patch.isNonceUsed !== undefined ? patch.isNonceUsed : previous?.isNonceUsed,
+    transactionHash: patch.transactionHash !== undefined ? patch.transactionHash : previous?.transactionHash,
     updatedAt: patch.updatedAt ?? Date.now(),
   };
 

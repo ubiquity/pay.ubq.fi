@@ -177,9 +177,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       switch (data.type) {
         case "NEW_PERMITS_VALIDATED": {
           if (data.requestId !== requestIdRef.current) return;
+          const normalizedAddress = address?.toLowerCase();
+          if (!normalizedAddress) return;
           const validated: PermitData[] = data.permits || [];
-          const normalizedAddress = address?.toLowerCase() ?? null;
-          if (!normalizedAddress || data.address.toLowerCase() !== normalizedAddress) return;
 
           const statusOverrides = loadPermitStatusCache(normalizedAddress);
           const newPermits = new Map<string, PermitData>();
@@ -202,8 +202,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         }
         case "PERMITS_ERROR": {
           if (data.requestId !== requestIdRef.current) return;
-          const normalizedAddress = address?.toLowerCase() ?? null;
-          if (!normalizedAddress || data.address.toLowerCase() !== normalizedAddress) return;
+          const normalizedAddress = address?.toLowerCase();
+          if (!normalizedAddress) return;
           setError(`Error processing permits: ${data.error}`);
           setIsLoading(false);
           break;
@@ -252,8 +252,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
 
     if (!worker) return;
 
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
     setIsLoading(true);
     setError(null);
     worker.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address, requestId } });

@@ -74,6 +74,7 @@ export function PermitRow({
   const networkMismatch = isConnected && chain && permit.networkId !== chain.id;
   const targetNetworkName = NETWORK_NAMES[permit.networkId] || `Network ${permit.networkId}`;
   const canSwitchToPermitNetwork = switchableChains.some((c: Chain) => c.id === permit.networkId);
+  const explorerUrl = chain?.blockExplorers?.default?.url;
 
   const statusDisplayText = (() => {
     if (networkMismatch) return `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "invalidate" : "claim"}`;
@@ -97,17 +98,25 @@ export function PermitRow({
     return "Claim";
   })();
 
-  const isButtonDisabled = networkMismatch
-    ? !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork
-    : isInvalidating
-      ? true
-      : isFundingWallet && canInvalidate
-        ? !isConnected
-        : !isConnected ||
-          isClaimingThis ||
-          (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
-          (isClaimed && !permit.transactionHash) ||
-          (claimFailed && !permit.transactionHash && !canAttemptClaim);
+  const isSwitchButtonDisabled = !isConnected || isSwitchingNetwork || !connector || !canSwitchToPermitNetwork;
+  const isInvalidateButtonDisabled = !isConnected;
+  const isClaimButtonDisabled =
+    !isConnected ||
+    isClaimingThis ||
+    (!isClaimed && !canAttemptClaim && !(claimFailed && permit.transactionHash)) ||
+    (isClaimed && !permit.transactionHash) ||
+    (claimFailed && !permit.transactionHash && !canAttemptClaim);
+
+  let isButtonDisabled = false;
+  if (networkMismatch) {
+    isButtonDisabled = isSwitchButtonDisabled;
+  } else if (isInvalidating) {
+    isButtonDisabled = true;
+  } else if (isFundingWallet && canInvalidate) {
+    isButtonDisabled = isInvalidateButtonDisabled;
+  } else {
+    isButtonDisabled = isClaimButtonDisabled;
+  }
 
   const showCannotClaimIcon = !networkMismatch && !canAttemptClaim && !isClaimed && !isClaimingThis;
   const showButtonIcon = !networkMismatch && !(isClaimed && permit.transactionHash) && !(claimFailed && permit.transactionHash) && !isClaimingThis;
@@ -124,8 +133,8 @@ export function PermitRow({
           setIsSwitchingNetwork(false);
         }
       }
-    } else if ((isClaimed || claimFailed) && permit.transactionHash && chain?.blockExplorers?.default.url) {
-      window.open(`${chain.blockExplorers.default.url}/tx/${permit.transactionHash}`, "_blank");
+    } else if ((isClaimed || claimFailed) && permit.transactionHash && explorerUrl) {
+      window.open(`${explorerUrl}/tx/${permit.transactionHash}`, "_blank");
     } else if (isFundingWallet && canInvalidate && onInvalidatePermit) {
       await onInvalidatePermit(permit);
     } else if (!isButtonDisabled) {
@@ -210,8 +219,7 @@ export function PermitRow({
     if (permit.type === "erc20-permit" && permit.amount) {
       const originalTokenInfo = getTokenInfo(permit.networkId, permit.tokenAddress as Address);
       const originalSymbol = originalTokenInfo?.symbol || "tokens";
-      if (chain?.blockExplorers?.default.url && permit.owner && permit.tokenAddress) {
-        const explorerUrl = chain.blockExplorers.default.url;
+      if (explorerUrl && permit.owner && permit.tokenAddress) {
         const tokenAddress = permit.tokenAddress;
         const ownerAddress = permit.owner;
         return (
@@ -239,8 +247,6 @@ export function PermitRow({
 
   return (
     <div className={`permit-row ${rowClassName}`}>
-      <div className="permit-cell align-right monospace">{renderAmount()}</div>
-
       <div className="permit-cell github-comment-url">
         {permit.githubCommentUrl ? (
           <button
@@ -254,6 +260,8 @@ export function PermitRow({
           "–"
         )}
       </div>
+
+      <div className="permit-cell align-right monospace">{renderAmount()}</div>
 
       <div className="permit-cell actions-cell">
         <button

@@ -30,11 +30,10 @@ export function useGithubUsernames(permits: PermitData[]) {
   }, [permits]);
 
   useEffect(() => {
-    if (!beneficiaryUserIdsKey) setIsLoading(false);
-  }, [beneficiaryUserIdsKey]);
-
-  useEffect(() => {
-    if (!beneficiaryUserIdsKey) return;
+    if (!beneficiaryUserIdsKey) {
+      setIsLoading(false);
+      return;
+    }
 
     const BATCH_SIZE = 10;
     const CONCURRENCY = 4;

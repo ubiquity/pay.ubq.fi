@@ -226,13 +226,15 @@ class GitHubUsernameCache {
           }
 
           if (response.status === 403 || response.status === 429) {
-            if (this.rateLimit.remaining === 0 && this.rateLimit.resetAtMs != null) {
-              this.markRateLimited(this.rateLimit.resetAtMs, this.rateLimit.resetAtMs, this.rateLimit.remaining);
-            }
+            const now = Date.now();
             const retryAfterHeader = response.headers.get("Retry-After");
             const retryAfterSeconds = retryAfterHeader != null ? Number(retryAfterHeader) : null;
             if (typeof retryAfterSeconds === "number" && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
-              this.markRateLimited(Date.now() + retryAfterSeconds * 1000, null, this.rateLimit.remaining);
+              this.markRateLimited(now + retryAfterSeconds * 1000, null, this.rateLimit.remaining);
+            } else if (this.rateLimit.resetAtMs != null) {
+              this.markRateLimited(this.rateLimit.resetAtMs, this.rateLimit.resetAtMs, this.rateLimit.remaining);
+            } else {
+              this.markRateLimited(now + 60 * 1000, null, this.rateLimit.remaining);
             }
           }
 
