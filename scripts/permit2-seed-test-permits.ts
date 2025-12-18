@@ -60,7 +60,7 @@ Options:
       --beneficiary-user-id GitHub user id to use/create for the beneficiary (required only if no user is linked to the wallet).
       --chain-id            Network id / chain id (default: 100).
       --token-address       ERC20 token address (default: Gnosis UUSD 0xC6ed...2068).
-      --amount              Amount in token base units (default: 1000000000000000000).
+      --amount              Amount in token base units (default: 0000000000000000001).
       --count               Number of permits to create (default: 1).
       --deadline            Permit deadline (unix seconds as a string; default: now + 30 days).
       --target-permit2      Which Permit2 contract to sign for: new | old (default: new).
@@ -87,7 +87,7 @@ const parseArgs = (argv: string[]): CliArgs => {
   const out: Omit<CliArgs, "beneficiary"> = {
     chainId: 100,
     tokenAddress: "0xC6ed4f520f6A4e4DC27273509239b7F8A68d2068",
-    amount: "1000000000000000000",
+    amount: "0000000000000000001",
     count: 1,
     deadline: "",
     targetPermit2: "new",
@@ -450,7 +450,7 @@ const main = async () => {
   try {
     amount = BigInt(args.amount);
   } catch {
-    console.error("Invalid --amount (expected bigint-like string, e.g. 1000000000000000000).");
+    console.error("Invalid --amount (expected bigint-like string, e.g. 0000000000000000001).");
     Deno.exit(1);
     return;
   }
