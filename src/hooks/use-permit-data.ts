@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type Address } from "viem";
 import type { AllowanceAndBalance, PermitData } from "../types.ts";
 import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
+import { applyPermitStatusOverrides, loadPermitStatusCache, upsertPermitStatusOverride } from "../utils/permit-status-cache.ts";
 import type { WorkerResponse } from "../workers/permit-checker.worker.ts";
 import { getPermitCheckerWorker, type PermitCheckerWorker } from "../workers/permit-worker-client.ts";
-
-const PERMIT_DATA_CACHE_KEY = "permitDataCache";
 
 interface UsePermitDataProps {
   address: Address | undefined;
@@ -14,34 +13,42 @@ interface UsePermitDataProps {
   chainId: number | undefined;
 }
 
-type PermitDataCache = Record<string, PermitData>;
-
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoting, setIsQuoting] = useState(false);
+  const [isFundingWallet, setIsFundingWallet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [worker, setWorker] = useState<PermitCheckerWorker | null>(null);
   const allPermitsRef = useRef<Map<string, PermitData>>(new Map());
+  const requestIdRef = useRef(0);
+  const lastAddressRef = useRef<string | null>(null);
 
-  const saveCache = useCallback((cache: PermitDataCache) => {
-    try {
-      localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-    } catch {
-      // Intentionally ignore cache errors
-    }
-  }, []);
+  const filterPermits = useCallback(
+    (permitsMap: Map<string, PermitData>) => {
+      const normalizedAddress = address?.toLowerCase();
+      let fundingWallet = false;
+      if (normalizedAddress) {
+        for (const permit of permitsMap.values()) {
+          if (permit.owner.toLowerCase() === normalizedAddress) {
+            fundingWallet = true;
+            break;
+          }
+        }
+      }
+      setIsFundingWallet(fundingWallet);
 
-  const filterPermits = useCallback((permitsMap: Map<string, PermitData>) => {
-    const filtered: PermitData[] = [];
-    permitsMap.forEach((permit) => {
-      const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-      const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
-      if (!shouldFilter) filtered.push(permit);
-    });
-    setPermits(filtered);
-  }, []);
+      const filtered: PermitData[] = [];
+      permitsMap.forEach((permit) => {
+        const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+        if (!shouldFilter) filtered.push(permit);
+      });
+      setPermits(filtered);
+    },
+    [address]
+  );
 
   const fetchQuotes = useCallback(
     async (permitsMap: Map<string, PermitData>): Promise<Map<string, PermitData>> => {
@@ -150,6 +157,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
         setError(message);
         setWorker(null);
         setIsLoading(false);
+        setIsFundingWallet(false);
       }
     };
 
@@ -168,14 +176,18 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       const data = event.data;
       switch (data.type) {
         case "NEW_PERMITS_VALIDATED": {
+          if (data.requestId !== requestIdRef.current) return;
+          const normalizedAddress = address?.toLowerCase();
+          if (!normalizedAddress) return;
           const validated: PermitData[] = data.permits || [];
-          const cache: PermitDataCache = {};
+
+          const statusOverrides = loadPermitStatusCache(normalizedAddress);
+          const newPermits = new Map<string, PermitData>();
           validated.forEach((permit) => {
-            cache[permit.signature] = permit;
+            newPermits.set(permit.signature, applyPermitStatusOverrides(permit, statusOverrides));
           });
-          saveCache(cache);
+
           setBalancesAndAllowances(data.balancesAndAllowances);
-          const newPermits = new Map(Object.entries(cache));
           fetchQuotes(newPermits)
             .then((mapWithQuotes) => {
               allPermitsRef.current = mapWithQuotes;
@@ -188,10 +200,14 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
             });
           break;
         }
-        case "PERMITS_ERROR":
+        case "PERMITS_ERROR": {
+          if (data.requestId !== requestIdRef.current) return;
+          const normalizedAddress = address?.toLowerCase();
+          if (!normalizedAddress) return;
           setError(`Error processing permits: ${data.error}`);
           setIsLoading(false);
           break;
+        }
       }
     };
 
@@ -209,18 +225,38 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       worker.removeEventListener("message", onMessage as EventListener);
       worker.removeEventListener("error", onError as EventListener);
     };
-  }, [worker, fetchQuotes, filterPermits, saveCache]);
+  }, [worker, address, fetchQuotes, filterPermits]);
 
   useEffect(() => {
-    if (isConnected && address && worker) {
-      setIsLoading(true);
-      setError(null);
-      worker.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address } });
-    } else if (!isConnected) {
+    const normalizedAddress = address?.toLowerCase() ?? null;
+
+    if (!isConnected || !address) {
+      lastAddressRef.current = null;
+      requestIdRef.current += 1;
       allPermitsRef.current.clear();
       setPermits([]);
+      setBalancesAndAllowances(new Map());
       setIsLoading(false);
+      setIsFundingWallet(false);
+      return;
     }
+
+    if (lastAddressRef.current && normalizedAddress && lastAddressRef.current !== normalizedAddress) {
+      requestIdRef.current += 1;
+      allPermitsRef.current.clear();
+      setPermits([]);
+      setBalancesAndAllowances(new Map());
+      setIsFundingWallet(false);
+    }
+    lastAddressRef.current = normalizedAddress;
+
+    if (!worker) return;
+
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+    setIsLoading(true);
+    setError(null);
+    worker.postMessage({ type: "FETCH_NEW_PERMITS", payload: { address, requestId } });
   }, [isConnected, address, worker]);
 
   useEffect(() => {
@@ -241,19 +277,42 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     }
   }, [preferredRewardTokenAddress, isConnected, address, chainId, worker, isLoading, fetchQuotes, filterPermits]);
 
-  const updatePermitStatusCache = (permitKey: string, statusUpdate: Partial<PermitData>) => {
-    const cacheString = localStorage.getItem(PERMIT_DATA_CACHE_KEY);
-    const cache: PermitDataCache = cacheString ? JSON.parse(cacheString) : {};
-    if (cache[permitKey]) {
-      cache[permitKey] = { ...cache[permitKey], ...statusUpdate };
-      localStorage.setItem(PERMIT_DATA_CACHE_KEY, JSON.stringify(cache));
-      const existing = allPermitsRef.current.get(permitKey);
-      if (existing) {
-        allPermitsRef.current.set(permitKey, { ...existing, ...statusUpdate });
-        filterPermits(allPermitsRef.current);
+  const updatePermitStatusCache = useCallback(
+    (permitKey: string, statusUpdate: Partial<PermitData>) => {
+      const walletAddress = address?.toLowerCase();
+      if (!walletAddress) return;
+
+      upsertPermitStatusOverride(walletAddress, permitKey, {
+        status: statusUpdate.status,
+        isNonceUsed: statusUpdate.isNonceUsed,
+        transactionHash: statusUpdate.transactionHash,
+      });
+
+      const normalizedKey = permitKey.toLowerCase();
+      let existingKey: string | undefined;
+
+      if (allPermitsRef.current.has(permitKey)) {
+        existingKey = permitKey;
+      } else if (allPermitsRef.current.has(normalizedKey)) {
+        existingKey = normalizedKey;
+      } else {
+        for (const key of allPermitsRef.current.keys()) {
+          if (key.toLowerCase() === normalizedKey) {
+            existingKey = key;
+            break;
+          }
+        }
       }
-    }
-  };
+
+      if (!existingKey) return;
+      const existing = allPermitsRef.current.get(existingKey);
+      if (!existing) return;
+
+      allPermitsRef.current.set(existingKey, { ...existing, ...statusUpdate });
+      filterPermits(allPermitsRef.current);
+    },
+    [address, filterPermits]
+  );
 
   return {
     permits,
@@ -266,5 +325,6 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
     isWorkerInitialized: !!worker,
     updatePermitStatusCache,
     isQuoting,
+    isFundingWallet,
   };
 }

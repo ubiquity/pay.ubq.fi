@@ -63,6 +63,23 @@ Deployment is handled by GitHub Actions via `.github/workflows/deno-deploy.yml`.
 
 Note: this endpoint uses `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS), so security comes from on-chain transaction verification before writing.
 
+## CLI Tools
+
+One-off tooling lives in `scripts/` (requires `.env` with Supabase + RPC vars).
+
+- Audit permits against both Permit2 contracts (includes “nonce used but DB transaction missing” mismatches):
+  - `bun run permit2:audit -- --owner 0x... --include-permits --out /tmp/permit2-audit.json`
+- Build an invalidation plan (no transactions sent):
+  - `bun run permit2:invalidate -- --owner 0x... --target old --only-db-unclaimed --out /tmp/permit2-invalidate-plan.json`
+- Execute invalidations (sends transactions; use `--max-txs` as a safety brake):
+  - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:invalidate -- --owner 0x... --target old --only-db-unclaimed --execute --max-txs 50 --out /tmp/permit2-invalidate-executed.json`
+- Backfill missing `permits.transaction` values for claim txs:
+  - `bun run permit2:backfill -- --owner 0x... --out /tmp/permit2-backfill.json`
+  - For a more complete one-off backfill on Gnosis, add `--match-mode beneficiary --scan-new-permit2-txlist`.
+  - Add `--execute` to write to Supabase (use `--max-updates` as a safety brake).
+- Seed small test permits for QA (default: 1e18 UUSD on Gnosis; plan-only unless `--execute`):
+  - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:seed-test-permits -- --beneficiary 0x... --beneficiary-user-id <githubUserId> --execute --out /tmp/test-permits.json`
+
 ## Formatting
 
 `bun run format` / `bun run format:check` run Prettier across the repo (including `serve.ts`).

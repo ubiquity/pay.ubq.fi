@@ -149,6 +149,75 @@ footer {
   background-color: #ff000010;
 }
 
+#tx-banner-wrapper {
+  border: 1px solid #ffffff10;
+  text-align: left;
+  margin: 4px auto;
+  background: linear-gradient(0deg, #00aa5510, #00aa5510), #030b16;
+}
+
+.tx-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.tx-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tx-banner-title {
+  font-weight: 700;
+  color: #bfbfbf;
+}
+
+.tx-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tx-banner-network {
+  color: #ffffff80;
+  font-size: 13.3333px;
+}
+
+.tx-banner-hash {
+  font-family: monospace;
+}
+
+.tx-banner-link {
+  color: #fff;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+.tx-banner-link:hover {
+  opacity: 1;
+}
+
+.tx-banner-dismiss {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 1px solid #ffffff10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 20px;
+  opacity: 0.8;
+}
+.tx-banner-dismiss:hover {
+  opacity: 1;
+  background-color: #ffffff1a;
+}
+
 .spinner-or-expand-container {
   display: inline-flex;
   align-items: center;
@@ -276,6 +345,9 @@ footer {
 }
 .permit-row.row-claiming {
   background-color: #fff9e610;
+}
+.permit-row.row-invalidating {
+  background-color: #e6f7ff10;
 }
 
 .permit-row.row-warning {
@@ -507,6 +579,28 @@ button#claim-all:hover:not([disabled]) {
 
 .github-comment-url > button.button-as-link {
   text-align: left;
+}
+
+.permits-list .github-repo-name {
+  color: #bfbfbf;
+  margin: 0 2px;
+}
+.permits-list .github-issue-number {
+  color: #fff;
+  margin: 0 2px;
+}
+.permits-list .github-issue-number::before {
+  color: #bfbfbf;
+  font-weight: 900;
+  content: "/ ";
+}
+.permits-list .github-beneficiary {
+  color: #bfbfbf;
+  margin: 0 2px;
+}
+.permits-list .github-beneficiary::before {
+  font-weight: 900;
+  content: "/ ";
 }
 
 button.button-as-link.monospace {

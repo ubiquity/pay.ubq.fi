@@ -6,6 +6,10 @@ on:
 
 jobs:
   deploy:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ubiquity/deno-deploy-workflow/.github/workflows/deno-deploy-reusable.yml@main
     with:
       project: pay-ubq-fi
@@ -18,6 +22,7 @@ jobs:
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+      forward_all_secrets: true
       runtime_env: |
         STATIC_DIR=dist
       include: |

@@ -3,24 +3,31 @@ import { Address, formatUnits } from "viem";
 import { useAccount, useDisconnect, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { useGithubUsernames } from "../hooks/use-github-usernames.ts";
 import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
+import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { PermitData } from "../types.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
 import { PermitsTable } from "./permits-table.tsx";
 import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
+import { TxBanner } from "./tx-banner.tsx";
 
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
+  const [lastTx, setLastTx] = useState<{ txHash: string; chainId: number; label: string } | null>(null);
 
-  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState({
+  type PendingNetworkAction = "claim" | "invalidate";
+
+  const [pendingNetworkSwitch, setPendingNetworkSwitch] = useState({
     isSwitching: false,
     expectedNetworkId: null as number | null,
-    permitsToClaim: [] as PermitData[],
+    action: "claim" as PendingNetworkAction,
+    permits: [] as PermitData[],
   });
 
   // Wallet Connection Logic
@@ -41,6 +48,7 @@ export function DashboardPage() {
     setError,
     updatePermitStatusCache,
     isQuoting,
+    isFundingWallet,
   } = usePermitData({
     address,
     isConnected,
@@ -48,10 +56,16 @@ export function DashboardPage() {
     chainId: chain?.id,
   });
 
+  const { usernames: githubUsernames } = useGithubUsernames(permits);
+
   // --- Calculations (Depend on permits state from usePermitData) ---
   const claimablePermits = useMemo(() => {
+    const normalizedAddress = address?.toLowerCase();
+    if (!normalizedAddress) return [];
+
     const availableClaimAmount = new Map(Array.from(balancesAndAllowances.entries()).map(([key, value]) => [key, value.maxClaimable]));
     const filteredPermits = permits
+      .filter((p) => p.beneficiary.toLowerCase() === normalizedAddress)
       .filter(
         (p) =>
           p.type === "erc20-permit" &&
@@ -79,9 +93,17 @@ export function DashboardPage() {
       });
 
     return filteredPermits;
-  }, [permits, balancesAndAllowances]);
+  }, [permits, balancesAndAllowances, address]);
 
   const claimablePermitCount = claimablePermits.length;
+
+  const invalidatablePermits = useMemo(() => {
+    const normalizedAddress = address?.toLowerCase();
+    if (!normalizedAddress) return [];
+    return permits.filter((p) => p.owner.toLowerCase() === normalizedAddress && p.status !== "Claimed" && p.isNonceUsed !== true);
+  }, [permits, address]);
+
+  const invalidatablePermitCount = invalidatablePermits.length;
 
   const claimableTotalValue = useMemo(() => {
     const assumedDecimals = 18;
@@ -156,6 +178,29 @@ export function DashboardPage() {
       setBalancesAndAllowances,
     });
 
+  const { handleInvalidatePermit, handleInvalidatePermitsBatch, isInvalidating } = usePermitInvalidation({
+    setPermits,
+    setError,
+    updatePermitStatusCache,
+    publicClient: publicClient ?? null,
+    walletClient: walletClient ?? null,
+    address,
+    chain: chain ?? null,
+  });
+
+  const isInvalidatingAny = useMemo(() => Object.values(isInvalidating).some(Boolean), [isInvalidating]);
+
+  const onInvalidatePermit = useCallback(
+    async (permit: PermitData) => {
+      const res = await handleInvalidatePermit(permit);
+      if (res.success && res.txHash) {
+        setLastTx({ txHash: res.txHash, chainId: permit.networkId, label: "Permit invalidated" });
+      }
+      return res;
+    },
+    [handleInvalidatePermit]
+  );
+
   // --- UI Logic ---
   const toggleTableVisibility = () => {
     setIsTableVisible((prev) => !prev);
@@ -191,7 +236,7 @@ export function DashboardPage() {
         try {
           if (currentNetworkId !== networkId) {
             console.log("Switching to network:", networkId);
-            setIsSwitchingNetwork({ isSwitching: true, expectedNetworkId: networkId, permitsToClaim });
+            setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "claim", permits: permitsToClaim });
             await switchChainAsync({ chainId: networkId });
             return;
           }
@@ -216,16 +261,85 @@ export function DashboardPage() {
     [isConnected, address, chain, switchChainAsync, setPermits, handleClaimBatch, handleClaimSequential]
   );
 
+  const invalidatePermits = useCallback(
+    async (permitsToInvalidate: PermitData[]) => {
+      if (!isConnected || !address || !chain) {
+        console.error("Cannot invalidate permits: Wallet not connected or address/chain missing");
+        return;
+      }
+      const currentNetworkId = chain.id;
+      const normalizedAddress = address.toLowerCase();
+      const ownedPermits = permitsToInvalidate.filter((p) => p.owner.toLowerCase() === normalizedAddress);
+
+      const permitsByNetwork = ownedPermits.reduce((acc, permit) => {
+        const key = permit.networkId;
+        const list = acc.get(key) || [];
+        list.push(permit);
+        acc.set(key, list);
+        return acc;
+      }, new Map<number, PermitData[]>());
+
+      const networksToInvalidate = [currentNetworkId, ...Array.from(permitsByNetwork.keys()).filter((id) => id !== currentNetworkId)];
+
+      for (const networkId of networksToInvalidate) {
+        const permitsForNetwork = permitsByNetwork.get(networkId) || [];
+        if (permitsForNetwork.length === 0) continue;
+
+        try {
+          if (currentNetworkId !== networkId) {
+            console.log("Switching to network for invalidation:", networkId);
+            setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "invalidate", permits: ownedPermits });
+            await switchChainAsync({ chainId: networkId });
+            return;
+          }
+
+          const res = await handleInvalidatePermitsBatch(permitsForNetwork);
+          const lastHash = res.txHashes.at(-1);
+          if (lastHash) {
+            setLastTx({ txHash: lastHash, chainId: networkId, label: "Permits invalidated" });
+          }
+          if (!res.success) return;
+        } catch (error) {
+          console.error(`Error invalidating permits on network ${networkId}:`, error);
+          return;
+        }
+      }
+    },
+    [isConnected, address, chain, handleInvalidatePermitsBatch, switchChainAsync]
+  );
+
   useEffect(() => {
-    if (isConnected && walletClient && chain && isSwitchingNetwork.isSwitching && chain.id === isSwitchingNetwork.expectedNetworkId) {
+    if (
+      isConnected &&
+      walletClient &&
+      chain &&
+      pendingNetworkSwitch.isSwitching &&
+      chain.id === pendingNetworkSwitch.expectedNetworkId &&
+      pendingNetworkSwitch.expectedNetworkId
+    ) {
       console.log(`Switched to expected network: ${chain.id}`);
-      const permitsToResume = claimablePermits.filter((p) => isSwitchingNetwork.permitsToClaim.some((c) => c.signature === p.signature));
-      setIsSwitchingNetwork({ isSwitching: false, expectedNetworkId: null, permitsToClaim: [] });
+      const action = pendingNetworkSwitch.action;
+      const signatureSet = new Set(pendingNetworkSwitch.permits.map((p) => p.signature.toLowerCase()));
+
+      const permitsToResume =
+        action === "invalidate"
+          ? invalidatablePermits.filter((p) => signatureSet.has(p.signature.toLowerCase()))
+          : claimablePermits.filter((p) => signatureSet.has(p.signature.toLowerCase()));
+
+      setPendingNetworkSwitch({ isSwitching: false, expectedNetworkId: null, action: "claim", permits: [] });
+
+      if (action === "invalidate") {
+        void invalidatePermits(permitsToResume).catch((error) => {
+          console.error("Failed to resume invalidation flow after network switch:", error);
+        });
+        return;
+      }
+
       void claimPermits(permitsToResume).catch((error) => {
         console.error("Failed to resume claim flow after network switch:", error);
       });
     }
-  }, [isConnected, walletClient, chain, isSwitchingNetwork, claimPermits, claimablePermits]);
+  }, [isConnected, walletClient, chain, pendingNetworkSwitch, claimPermits, invalidatePermits, claimablePermits, invalidatablePermits]);
 
   // --- Rendering ---
   return (
@@ -250,26 +364,53 @@ export function DashboardPage() {
             <button
               id="claim-all"
               onClick={() =>
-                void claimPermits(claimablePermits).catch((error) => {
-                  console.error("Failed to start claim flow:", error);
+                void (isFundingWallet ? invalidatePermits(invalidatablePermits) : claimPermits(claimablePermits)).catch((error) => {
+                  console.error(`Failed to start ${isFundingWallet ? "invalidation" : "claim"} flow:`, error);
                 })
               }
-              disabled={isClaiming || !isConnected || claimablePermitCount === 0}
+              disabled={
+                isFundingWallet ? isInvalidatingAny || !isConnected || invalidatablePermitCount === 0 : isClaiming || !isConnected || claimablePermitCount === 0
+              }
               className="button-with-icon"
-              title="Claim all valid and available permits (batch RPC)"
+              title={isFundingWallet ? "Invalidate all valid permits (batched by nonce bitmap)" : "Claim all valid and available permits (batch RPC)"}
             >
-              {isClaiming ? <div className="spinner button-spinner"></div> : ICONS.CLAIM}
+              {isFundingWallet ? (
+                isInvalidatingAny ? (
+                  <div className="spinner button-spinner"></div>
+                ) : (
+                  ICONS.CLAIM
+                )
+              ) : isClaiming ? (
+                <div className="spinner button-spinner"></div>
+              ) : (
+                ICONS.CLAIM
+              )}
               <span>
                 {isLoading ? (
-                  "Loading Rewards..."
-                ) : isQuoting ? (
+                  isFundingWallet ? (
+                    "Loading Invalidations..."
+                  ) : (
+                    "Loading Rewards..."
+                  )
+                ) : isQuoting && !isFundingWallet ? (
                   "Calculating..."
                 ) : (
                   <>
-                    <span className="claim-amount">{estimatedTotalValueDisplay}</span>
-                    <span className="claim-count">
-                      ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
-                    </span>
+                    {isFundingWallet ? (
+                      <>
+                        <span className="claim-amount">Invalidate all</span>
+                        <span className="claim-count">
+                          ({invalidatablePermitCount} Permit{invalidatablePermitCount !== 1 ? "s" : ""})
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="claim-amount">{estimatedTotalValueDisplay}</span>
+                        <span className="claim-count">
+                          ({claimablePermitCount} Reward{claimablePermitCount !== 1 ? "s" : ""})
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
               </span>
@@ -310,6 +451,7 @@ export function DashboardPage() {
           </div>
         </section>
       )}
+      {lastTx && <TxBanner txHash={lastTx.txHash} chainId={lastTx.chainId} label={lastTx.label} onDismiss={() => setLastTx(null)} />}
 
       {/* Swap Status Display */}
       {Object.keys(swapSubmissionStatus).length > 0 && (
@@ -339,11 +481,16 @@ export function DashboardPage() {
           claimablePermits={claimablePermits}
           onClaimPermit={handleClaimPermit}
           onClaimPermits={claimPermits}
+          onInvalidatePermit={onInvalidatePermit}
           isConnected={isConnected}
           chain={chain}
           isLoading={isLoading}
           isQuoting={isQuoting}
           preferredRewardTokenAddress={preferredRewardTokenAddress}
+          isFundingWallet={isFundingWallet}
+          address={address}
+          githubUsernames={githubUsernames}
+          isInvalidating={isInvalidating}
         />
       )}
 
