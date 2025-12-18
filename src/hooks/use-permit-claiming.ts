@@ -92,7 +92,7 @@ function isUserRejectedRequest(error: unknown): boolean {
           ? maybeAny.message
           : String(error);
 
-  return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message.toLowerCase());
+  return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
 }
 
 async function recordClaimOnce({

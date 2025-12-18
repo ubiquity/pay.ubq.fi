@@ -15,6 +15,27 @@ import { PermitsTable } from "./permits-table.tsx";
 import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
 import { TxBanner } from "./tx-banner.tsx";
 
+function isUserRejectedRequest(error: unknown): boolean {
+  if (!error) return false;
+
+  const maybeAny = error as { code?: unknown; name?: unknown; shortMessage?: unknown; message?: unknown };
+  if (maybeAny && typeof maybeAny === "object") {
+    if (maybeAny.code === 4001) return true; // EIP-1193 userRejectedRequest
+    if (typeof maybeAny.name === "string" && maybeAny.name.toLowerCase().includes("userrejected")) return true;
+  }
+
+  const message =
+    typeof maybeAny?.shortMessage === "string"
+      ? maybeAny.shortMessage
+      : error instanceof Error
+        ? error.message
+        : typeof maybeAny?.message === "string"
+          ? maybeAny.message
+          : String(error);
+
+  return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
+}
+
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
@@ -248,7 +269,15 @@ export function DashboardPage() {
           if (currentNetworkId !== networkId) {
             console.log("Switching to network:", networkId);
             setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "claim", permits: permitsToClaim });
-            await switchChainAsync({ chainId: networkId });
+            try {
+              await switchChainAsync({ chainId: networkId });
+            } catch (error) {
+              setPendingNetworkSwitch({ isSwitching: false, expectedNetworkId: null, action: "claim", permits: [] });
+              if (!isUserRejectedRequest(error)) {
+                setError(`Network switch failed (chainId: ${networkId}).`);
+              }
+              return;
+            }
             return;
           }
           const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
@@ -267,7 +296,7 @@ export function DashboardPage() {
         }
       }
     },
-    [isConnected, address, chain, switchChainAsync, handleClaimBatch, handleClaimSequential]
+    [isConnected, address, chain, switchChainAsync, handleClaimBatch, handleClaimSequential, setError]
   );
 
   const invalidatePermits = useCallback(
@@ -298,7 +327,15 @@ export function DashboardPage() {
           if (currentNetworkId !== networkId) {
             console.log("Switching to network for invalidation:", networkId);
             setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "invalidate", permits: ownedPermits });
-            await switchChainAsync({ chainId: networkId });
+            try {
+              await switchChainAsync({ chainId: networkId });
+            } catch (error) {
+              setPendingNetworkSwitch({ isSwitching: false, expectedNetworkId: null, action: "claim", permits: [] });
+              if (!isUserRejectedRequest(error)) {
+                setError(`Network switch failed (chainId: ${networkId}).`);
+              }
+              return;
+            }
             return;
           }
 
@@ -314,7 +351,7 @@ export function DashboardPage() {
         }
       }
     },
-    [isConnected, address, chain, handleInvalidatePermitsBatch, switchChainAsync]
+    [isConnected, address, chain, handleInvalidatePermitsBatch, switchChainAsync, setError]
   );
 
   useEffect(() => {
