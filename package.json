@@ -44,6 +44,7 @@
     "permit2:audit": "deno run -A --env-file=.env scripts/permit2-audit.ts",
     "permit2:invalidate": "deno run -A --env-file=.env scripts/permit2-invalidate.ts",
     "permit2:backfill": "deno run -A --env-file=.env scripts/permit2-backfill-transactions.ts",
+    "permit2:seed-test-permits": "deno run -A --env-file=.env scripts/permit2-seed-test-permits.ts",
     "dev": "run-p _frontend _serve",
     "start": "run-s _frontend-build _serve",
     "build": "vite build",

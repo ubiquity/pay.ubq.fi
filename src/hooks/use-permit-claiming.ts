@@ -72,6 +72,69 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
   });
 }
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function recordClaimOnce({
+  txHash,
+  networkId,
+}: {
+  txHash: `0x${string}`;
+  networkId: number;
+}): Promise<{ ok: true } | { ok: false; retryable: boolean; status: number; error: string }> {
+  try {
+    const response = await fetch("/api/permits/record-claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactionHash: txHash, networkId }),
+    });
+
+    if (response.ok) return { ok: true };
+
+    let errorMessage = response.statusText || "Request failed";
+    try {
+      const json = (await response.json().catch(() => null)) as { error?: string; details?: string } | null;
+      if (json?.error) {
+        errorMessage = json.details ? `${json.error}: ${json.details}` : json.error;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+
+    const retryable =
+      response.status === 404 ||
+      (response.status === 400 &&
+        (errorMessage.toLowerCase().includes("not mined") ||
+          errorMessage.toLowerCase().includes("receipt unavailable") ||
+          errorMessage.toLowerCase().includes("not found")));
+
+    return { ok: false, retryable, status: response.status, error: errorMessage };
+  } catch (error) {
+    return { ok: false, retryable: true, status: 0, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function recordClaimWithRetries({
+  txHash,
+  networkId,
+  maxAttempts = 6,
+}: {
+  txHash: `0x${string}`;
+  networkId: number;
+  maxAttempts?: number;
+}): Promise<{ ok: true; attempts: number } | { ok: false; attempts: number; lastError: string }> {
+  let delayMs = 1_000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const res = await recordClaimOnce({ txHash, networkId });
+    if (res.ok) return { ok: true, attempts: attempt };
+    if (!res.retryable) return { ok: false, attempts: attempt, lastError: res.error };
+    await sleep(delayMs);
+    delayMs = Math.min(delayMs * 2, 15_000);
+  }
+
+  return { ok: false, attempts: maxAttempts, lastError: "record-claim retries exhausted" };
+}
+
 export function usePermitClaiming({
   setPermits,
   setError,
@@ -115,6 +178,7 @@ export function usePermitClaiming({
 
     setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending" } : p)));
 
+    let txHash: `0x${string}` | undefined;
     try {
       // 1. First simulate the transaction
       if (!permit2Abi) {
@@ -126,14 +190,38 @@ export function usePermitClaiming({
       console.log("Transaction simulation successful", { request });
 
       // 2. Send the actual transaction
-      const txHash = await walletClient.writeContract(request);
+      txHash = await walletClient.writeContract(request);
+      setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+      updatePermitStatusCache(permit.signature, { transactionHash: txHash });
 
       // 3. Wait for transaction receipt
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      console.log("Transaction completed", { receipt });
-      if (receipt.status !== "success") {
-        throw new Error(`Transaction failed with status: ${receipt.status}`);
+      let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        console.log("Transaction completed", { receipt });
+      } catch (error) {
+        console.warn("Receipt lookup failed after tx submission; will attempt to record via API", { error, txHash, networkId: permit.networkId });
       }
+
+      if (!receipt) {
+        setError(`Claim tx submitted but confirmation failed. Check explorer: ${txHash}`);
+        void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+          if (!result.ok) {
+            console.warn("record-claim did not succeed after retries", { txHash, networkId: permit.networkId, ...result });
+            return;
+          }
+
+          setPermits((prev) =>
+            prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
+          );
+          updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
+          reduceAllowance([permit]);
+          setError(null);
+        });
+        return { success: true, txHash };
+      }
+
+      if (receipt.status !== "success") throw new Error(`Transaction failed with status: ${receipt.status}`);
 
       // Update status to success
       setPermits((prev) =>
@@ -143,21 +231,13 @@ export function usePermitClaiming({
       reduceAllowance([permit]);
 
       // Record transaction in database
-      try {
-        await fetch("/api/permits/record-claim", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            transactionHash: txHash,
-            networkId: permit.networkId,
-          }),
-        });
-      } catch (error) {
-        console.error("Failed to record transaction:", error);
-      }
+      void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+        if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+      });
 
       return { success: true, txHash };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Permit claim failed", {
         error,
         permitKey,
@@ -168,6 +248,20 @@ export function usePermitClaiming({
       if (error instanceof Error && error.message.includes("InvalidNonce")) {
         console.error("Invalid nonce detected - marking permit as invalid");
         updatePermitStatusCache(permitKey, { status: "Invalid" });
+      }
+
+      if (txHash) {
+        if (errorMessage.includes("Transaction failed with status")) {
+          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error", transactionHash: txHash } : p)));
+          return { success: false, txHash };
+        }
+
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+        setError(`Claim tx submitted but confirmation failed. Check explorer: ${txHash}`);
+        void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+          if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+        });
+        return { success: true, txHash };
       }
 
       setPermits((prev) => prev.map((p) => (p.nonce === permit.nonce && p.networkId === permit.networkId ? { ...p, claimStatus: "Error" } : p)));
@@ -211,20 +305,43 @@ export function usePermitClaiming({
     const successfullyClaimedPermits: PermitData[] = [];
     await Promise.allSettled(
       toClaim.map(async (permit) => {
+        let txHash: `0x${string}` | undefined;
         try {
           const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
 
           console.log("Transaction simulation successful", { request });
 
           // 2. Send the actual transaction
-          const txHash = await walletClient.writeContract(request);
+          txHash = await walletClient.writeContract(request);
+          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+          updatePermitStatusCache(permit.signature, { transactionHash: txHash });
 
           // 3. Wait for transaction receipt
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-          console.log("Transaction completed", { receipt });
-          if (receipt.status !== "success") {
-            throw new Error(`Transaction failed with status: ${receipt.status}`);
+          let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
+          try {
+            receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+            console.log("Transaction completed", { receipt });
+          } catch (error) {
+            console.warn("Receipt lookup failed after tx submission; will attempt to record via API", { error, txHash, networkId: permit.networkId });
           }
+
+          if (!receipt) {
+            void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+              if (!result.ok) {
+                console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+                return;
+              }
+
+              setPermits((prev) =>
+                prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
+              );
+              updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
+              reduceAllowance([permit]);
+            });
+            return;
+          }
+
+          if (receipt.status !== "success") throw new Error(`Transaction failed with status: ${receipt.status}`);
 
           // Update status to success
           successfullyClaimedPermits.push(permit);
@@ -234,20 +351,25 @@ export function usePermitClaiming({
           updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
 
           // Record transaction in database
-          try {
-            await fetch("/api/permits/record-claim", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                transactionHash: txHash,
-                networkId: permit.networkId,
-              }),
-            });
-          } catch (error) {
-            console.error("Failed to record transaction:", error);
-          }
+          void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+            if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+          });
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           console.error("Sequential claim processing error", { error });
+          if (txHash) {
+            if (errorMessage.includes("Transaction failed with status")) {
+              setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error", transactionHash: txHash } : p)));
+              return;
+            }
+
+            setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+            void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+              if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+            });
+            return;
+          }
+
           setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error" } : p)));
         }
       })
@@ -287,6 +409,8 @@ export function usePermitClaiming({
 
     let success = false;
     let txHash: `0x${string}` | undefined;
+    const networkIds = new Set(permitsToClaim.map((permit) => permit.networkId));
+    const batchNetworkId = networkIds.size === 1 ? permitsToClaim[0].networkId : null;
     try {
       // Update all permits to pending status
       setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
@@ -297,13 +421,47 @@ export function usePermitClaiming({
 
       // 2. Send the actual transaction
       txHash = await walletClient.writeContract(request);
+      setPermits((prev) =>
+        prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p))
+      );
+      permitsToClaim.forEach((permit) => updatePermitStatusCache(permit.signature, { transactionHash: String(txHash) }));
 
       // 3. Wait for transaction receipt
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      console.log("Transaction completed", { receipt });
-      if (receipt.status !== "success") {
-        throw new Error(`Transaction failed with status: ${receipt.status}`);
+      let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        console.log("Transaction completed", { receipt });
+      } catch (error) {
+        console.warn("Receipt lookup failed after tx submission; will attempt to record via API", { error, txHash, networkId: batchNetworkId });
       }
+
+      if (!receipt) {
+        if (!batchNetworkId) {
+          console.error("Batch claim expects all permits to share the same networkId");
+          setError("Batch claim submitted but could not be recorded (network mismatch).");
+        } else {
+          setError(`Batch claim tx submitted but confirmation failed. Check explorer: ${txHash}`);
+          void recordClaimWithRetries({ txHash, networkId: batchNetworkId }).then((result) => {
+            if (!result.ok) {
+              console.warn("Failed to record batch claim after retries", { txHash, networkId: batchNetworkId, ...result });
+              return;
+            }
+            setPermits((prev) =>
+              prev.map((p) =>
+                permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p
+              )
+            );
+            reduceAllowance(permitsToClaim);
+            permitsToClaim.forEach((permit) => updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: String(txHash) }));
+            setError(null);
+          });
+        }
+
+        success = true;
+        return { success, txHash: String(txHash) };
+      }
+
+      if (receipt.status !== "success") throw new Error(`Transaction failed with status: ${receipt.status}`);
 
       setPermits((prev) =>
         prev.map((p) =>
@@ -311,37 +469,45 @@ export function usePermitClaiming({
         )
       );
       reduceAllowance(permitsToClaim);
-      try {
-        permitsToClaim.forEach((permit) => {
-          updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: String(txHash) });
-        });
+      permitsToClaim.forEach((permit) => {
+        updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: String(txHash) });
+      });
 
-        const networkIds = new Set(permitsToClaim.map((permit) => permit.networkId));
-        if (networkIds.size !== 1) {
-          throw new Error("Batch claim expects all permits to share the same networkId");
-        }
-
-        await fetch("/api/permits/record-claim", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            transactionHash: txHash,
-            networkId: permitsToClaim[0].networkId,
-          }),
+      if (!batchNetworkId) {
+        console.error("Batch claim expects all permits to share the same networkId");
+      } else {
+        void recordClaimWithRetries({ txHash, networkId: batchNetworkId }).then((result) => {
+          if (!result.ok) console.warn("Failed to record batch claim after retries", { txHash, networkId: batchNetworkId, ...result });
         });
-      } catch (error) {
-        console.error("Failed to record transaction:", error);
       }
 
       console.log("Batch RPC completed");
       success = true;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Batch RPC: Unhandled processing error", {
         error,
         context: "batch-processing",
       });
-      setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Error" } : p)));
-      setError("Batch claim failed. Claim each permit individually.");
+      if (txHash && batchNetworkId) {
+        if (errorMessage.includes("Transaction failed with status")) {
+          setPermits((prev) =>
+            prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Error", transactionHash: txHash } : p))
+          );
+          setError(`Batch claim reverted. Check explorer: ${txHash}`);
+        } else {
+          setPermits((prev) =>
+            prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p))
+          );
+          setError(`Batch claim tx submitted but confirmation failed. Check explorer: ${txHash}`);
+          void recordClaimWithRetries({ txHash, networkId: batchNetworkId }).then((result) => {
+            if (!result.ok) console.warn("Failed to record batch claim after retries", { txHash, networkId: batchNetworkId, ...result });
+          });
+        }
+      } else {
+        setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Error" } : p)));
+        setError("Batch claim failed. Claim each permit individually.");
+      }
     } finally {
       setIsClaiming(false);
     }

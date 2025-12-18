@@ -75,7 +75,10 @@ One-off tooling lives in `scripts/` (requires `.env` with Supabase + RPC vars).
   - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:invalidate -- --owner 0x... --target old --only-db-unclaimed --execute --max-txs 50 --out /tmp/permit2-invalidate-executed.json`
 - Backfill missing `permits.transaction` values for claim txs:
   - `bun run permit2:backfill -- --owner 0x... --out /tmp/permit2-backfill.json`
+  - For a more complete one-off backfill on Gnosis, add `--match-mode beneficiary --scan-new-permit2-txlist`.
   - Add `--execute` to write to Supabase (use `--max-updates` as a safety brake).
+- Seed small test permits for QA (default: 1e18 UUSD on Gnosis; plan-only unless `--execute`):
+  - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:seed-test-permits -- --beneficiary 0x... --beneficiary-user-id <githubUserId> --execute --out /tmp/test-permits.json`
 
 ## Formatting
 

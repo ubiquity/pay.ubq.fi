@@ -16,6 +16,8 @@ import {
 type CliArgs = {
   owner: string;
   since?: string;
+  matchMode: "amount" | "beneficiary";
+  scanNewPermit2Txlist: boolean;
   execute: boolean;
   maxUpdates: number;
   out?: string;
@@ -34,6 +36,7 @@ const printUsage = () => {
     `
 Usage:
   deno run -A --env-file=.env scripts/permit2-backfill-transactions.ts --owner 0x... [--since <timestamp>]
+    [--match-mode amount|beneficiary] [--scan-new-permit2-txlist]
     [--out <file>] [--pretty] [--execute] [--max-updates <n>]
 
 What it does:
@@ -44,6 +47,8 @@ What it does:
 Options:
   -o, --owner        Funding wallet (permit owner). Required.
   -s, --since        Only consider permits created after this timestamp (Date.parse-able).
+      --match-mode   Candidate selection for ERC20 transfers: amount (default) or beneficiary (looser).
+      --scan-new-permit2-txlist  Also scan Blockscout txlist for NEW Permit2 contract (default: false).
       --execute      Actually write to Supabase (default: false; dry-run report).
       --max-updates  Safety limit for number of permit rows to update (default: 500).
       --out          Write JSON report to a file (otherwise prints to stdout).
@@ -59,7 +64,14 @@ Env:
 };
 
 const parseArgs = (argv: string[]): CliArgs => {
-  const out: Omit<CliArgs, "owner"> = { execute: false, pretty: false, help: false, maxUpdates: 500 };
+  const out: Omit<CliArgs, "owner"> = {
+    execute: false,
+    pretty: false,
+    help: false,
+    maxUpdates: 500,
+    matchMode: "amount",
+    scanNewPermit2Txlist: false,
+  };
   let owner: string | undefined;
 
   const takeValue = (flag: string, value: string | undefined) => {
@@ -79,6 +91,10 @@ const parseArgs = (argv: string[]): CliArgs => {
     }
     if (arg === "--execute") {
       out.execute = true;
+      continue;
+    }
+    if (arg === "--scan-new-permit2-txlist") {
+      out.scanNewPermit2Txlist = true;
       continue;
     }
     if (arg === "--owner" || arg === "-o") {
@@ -119,6 +135,19 @@ const parseArgs = (argv: string[]): CliArgs => {
       const v = Number(arg.slice("--max-updates=".length));
       if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --max-updates: ${v}`);
       out.maxUpdates = Math.floor(v);
+      continue;
+    }
+    if (arg === "--match-mode") {
+      const v = takeValue(arg, argv[i + 1]);
+      i += 1;
+      if (v !== "amount" && v !== "beneficiary") throw new Error(`Invalid --match-mode: ${v}`);
+      out.matchMode = v;
+      continue;
+    }
+    if (arg.startsWith("--match-mode=")) {
+      const v = arg.slice("--match-mode=".length);
+      if (v !== "amount" && v !== "beneficiary") throw new Error(`Invalid --match-mode: ${v}`);
+      out.matchMode = v;
       continue;
     }
     if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
@@ -169,6 +198,16 @@ type BlockscoutTokenTransfer = {
   value?: string;
   hash?: string;
   contractAddress?: string;
+};
+
+type BlockscoutTxlistTx = {
+  hash?: string;
+  from?: string;
+  to?: string;
+  input?: string;
+  isError?: string;
+  txreceipt_status?: string;
+  timeStamp?: string;
 };
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -429,14 +468,48 @@ async function fetchBlockscoutTokenTransfers({
   return out;
 }
 
+async function fetchBlockscoutTxList({
+  address,
+  page,
+  offset,
+  sort,
+}: {
+  address: `0x${string}`;
+  page: number;
+  offset: number;
+  sort: "asc" | "desc";
+}): Promise<BlockscoutTxlistTx[]> {
+  const url = new URL(GNOSIS_BLOCKSCOUT_API);
+  url.searchParams.set("module", "account");
+  url.searchParams.set("action", "txlist");
+  url.searchParams.set("address", address);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("offset", String(offset));
+  url.searchParams.set("sort", sort);
+
+  const response = await fetch(url.toString(), { method: "GET" });
+  if (!response.ok) throw new Error(`Blockscout txlist failed: HTTP ${response.status}`);
+  const json = (await response.json()) as { status?: string; message?: string; result?: unknown };
+
+  if (json.status !== "1") {
+    const message = typeof json.message === "string" ? json.message : "Unknown Blockscout error";
+    if (message.toLowerCase().includes("no transactions")) return [];
+    throw new Error(`Blockscout txlist error: ${message}`);
+  }
+
+  return Array.isArray(json.result) ? (json.result as BlockscoutTxlistTx[]) : [];
+}
+
 async function discoverCandidateTxHashes({
   rpcBaseUrl,
   permits,
   sinceMs,
+  matchMode,
 }: {
   rpcBaseUrl: string;
   permits: ReturnType<typeof rowToBackfillablePermit>[];
   sinceMs: number;
+  matchMode: "amount" | "beneficiary";
 }): Promise<{
   candidateTxHashesByChain: Map<number, Set<string>>;
   scanSummary: {
@@ -518,6 +591,7 @@ async function discoverCandidateTxHashes({
         continue;
       }
 
+      const beneficiarySetLower = new Set(beneficiaries);
       for (const t of transfers) {
         const from = typeof t.from === "string" ? t.from.toLowerCase() : null;
         const to = typeof t.to === "string" ? t.to.toLowerCase() : null;
@@ -525,10 +599,13 @@ async function discoverCandidateTxHashes({
         const hash = typeof t.hash === "string" ? t.hash.toLowerCase() : null;
         if (!from || !to || !value || !hash) continue;
         if (from !== owner.toLowerCase()) continue;
+        if (!beneficiarySetLower.has(to)) continue;
 
-        const amtKey = `${chainId}:${tokenAddress.toLowerCase()}:${to}`;
-        const wantAmounts = amountsByChainTokenBeneficiary.get(amtKey);
-        if (!wantAmounts || !wantAmounts.has(value)) continue;
+        if (matchMode === "amount") {
+          const amtKey = `${chainId}:${tokenAddress.toLowerCase()}:${to}`;
+          const wantAmounts = amountsByChainTokenBeneficiary.get(amtKey);
+          if (!wantAmounts || !wantAmounts.has(value)) continue;
+        }
 
         const existing = candidateTxHashesByChain.get(chainId) ?? new Set<string>();
         existing.add(hash);
@@ -561,12 +638,14 @@ async function discoverCandidateTxHashes({
           const toTopic = log.topics?.[2];
           if (!toTopic || typeof toTopic !== "string") continue;
           const toAddr = decodeTopicAddress(toTopic);
-          const amt = parseUint256Hex(log.data);
-          if (amt === null) continue;
+          if (matchMode === "amount") {
+            const amt = parseUint256Hex(log.data);
+            if (amt === null) continue;
 
-          const amtKey = `${chainId}:${tokenAddress.toLowerCase()}:${toAddr}`;
-          const wantAmounts = amountsByChainTokenBeneficiary.get(amtKey);
-          if (!wantAmounts || !wantAmounts.has(amt.toString())) continue;
+            const amtKey = `${chainId}:${tokenAddress.toLowerCase()}:${toAddr}`;
+            const wantAmounts = amountsByChainTokenBeneficiary.get(amtKey);
+            if (!wantAmounts || !wantAmounts.has(amt.toString())) continue;
+          }
 
           const existing = candidateTxHashesByChain.get(chainId) ?? new Set<string>();
           existing.add(txHash);
@@ -591,6 +670,143 @@ async function discoverCandidateTxHashes({
       candidateTxCount,
     },
   };
+}
+
+async function decodePermit2SignaturesFromBlockscoutTxlist({
+  permit2Address,
+  ownerFilter,
+  sinceSeconds,
+}: {
+  permit2Address: `0x${string}`;
+  ownerFilter: `0x${string}`;
+  sinceSeconds: number | null;
+}): Promise<{
+  signatureToTx: Map<string, string>;
+  scannedTxCount: number;
+  decodedTxCount: number;
+  skippedTxCount: number;
+  duplicates: { signature: string; txA: string; txB: string }[];
+}> {
+  const signatureToTx = new Map<string, string>();
+  const duplicates: { signature: string; txA: string; txB: string }[] = [];
+  let scannedTxCount = 0;
+  let decodedTxCount = 0;
+  let skippedTxCount = 0;
+
+  const pageSize = 10_000;
+  const maxPages = 50;
+  const permit2Lower = permit2Address.toLowerCase();
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const txs = await fetchBlockscoutTxList({ address: permit2Address, page, offset: pageSize, sort: "desc" });
+    if (txs.length === 0) break;
+
+    let shouldStop = false;
+
+    for (const tx of txs) {
+      scannedTxCount += 1;
+
+      const hashRaw = typeof tx.hash === "string" ? tx.hash.trim().toLowerCase() : null;
+      const hash = hashRaw ? (hashRaw.startsWith("0x") ? hashRaw : `0x${hashRaw}`) : null;
+      if (!hash || !isValidTxHash(hash)) {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      const to = typeof tx.to === "string" ? tx.to.toLowerCase() : null;
+      if (!to || to !== permit2Lower) {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      const timestampSeconds = (() => {
+        if (typeof tx.timeStamp !== "string") return null;
+        const n = Number.parseInt(tx.timeStamp, 10);
+        return Number.isFinite(n) ? n : null;
+      })();
+
+      if (sinceSeconds !== null && timestampSeconds !== null && timestampSeconds < sinceSeconds) {
+        shouldStop = true;
+        break;
+      }
+
+      // Blockscout status flags: treat any non-zero isError or non-1 receipt status as failed.
+      if (tx.isError && tx.isError !== "0") {
+        skippedTxCount += 1;
+        continue;
+      }
+      if (tx.txreceipt_status && tx.txreceipt_status !== "1") {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      const input = typeof tx.input === "string" ? tx.input : null;
+      if (!input || !input.startsWith("0x") || input === "0x") {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      let decoded: { functionName: string; args: readonly unknown[] };
+      try {
+        decoded = decodeFunctionData({ abi: permit2Abi, data: input as `0x${string}` }) as unknown as { functionName: string; args: readonly unknown[] };
+      } catch {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      const extracted: string[] = [];
+
+      if (decoded.functionName === "permitTransferFrom") {
+        const ownerArg = decoded.args.at(-2);
+        if (typeof ownerArg !== "string" || ownerArg.toLowerCase() !== ownerFilter.toLowerCase()) {
+          skippedTxCount += 1;
+          continue;
+        }
+        const sig = decoded.args.at(-1);
+        if (typeof sig === "string") extracted.push(sig);
+      } else if (decoded.functionName === "permitWitnessTransferFrom") {
+        const ownerArg = decoded.args.at(-3);
+        if (typeof ownerArg !== "string" || ownerArg.toLowerCase() !== ownerFilter.toLowerCase()) {
+          skippedTxCount += 1;
+          continue;
+        }
+        const sig = decoded.args.at(-1);
+        if (typeof sig === "string") extracted.push(sig);
+      } else if (decoded.functionName === "batchPermitTransferFrom") {
+        const ownersArg = decoded.args.at(-2);
+        if (!Array.isArray(ownersArg) || !ownersArg.some((o) => typeof o === "string" && o.toLowerCase() === ownerFilter.toLowerCase())) {
+          skippedTxCount += 1;
+          continue;
+        }
+        const sigs = decoded.args.at(-1);
+        if (Array.isArray(sigs) && sigs.every((s) => typeof s === "string")) extracted.push(...(sigs as string[]));
+      } else {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      if (extracted.length === 0) {
+        skippedTxCount += 1;
+        continue;
+      }
+
+      decodedTxCount += 1;
+      for (const sig of extracted) {
+        const normalized = sig.toLowerCase();
+        const existing = signatureToTx.get(normalized);
+        if (existing && existing !== hash) {
+          duplicates.push({ signature: normalized, txA: existing, txB: hash });
+          continue;
+        }
+        signatureToTx.set(normalized, hash);
+      }
+    }
+
+    if (shouldStop) break;
+    if (txs.length < pageSize) break;
+  }
+
+  return { signatureToTx, scannedTxCount, decodedTxCount, skippedTxCount, duplicates };
 }
 
 async function decodePermit2SignaturesFromTxs({
@@ -848,13 +1064,20 @@ const main = async () => {
   const earliestCreatedMs = candidates.reduce((min, p) => (p.createdMs < min ? p.createdMs : min), Number.POSITIVE_INFINITY);
   const effectiveSinceMs = Number.isFinite(sinceMs) ? sinceMs : earliestCreatedMs;
 
-  const { candidateTxHashesByChain, scanSummary } = await discoverCandidateTxHashes({ rpcBaseUrl, permits: candidates, sinceMs: effectiveSinceMs });
+  const { candidateTxHashesByChain, scanSummary } = await discoverCandidateTxHashes({
+    rpcBaseUrl,
+    permits: candidates,
+    sinceMs: effectiveSinceMs,
+    matchMode: args.matchMode,
+  });
 
   const allSignatureToTx = new Map<string, string>();
   const allDuplicates: { signature: string; txA: string; txB: string }[] = [];
   let decodedTxCount = 0;
   let skippedTxCount = 0;
   let candidateTxCount = 0;
+  let txlistScan: { scannedTxCount: number; decodedTxCount: number; skippedTxCount: number; extractedSignatureCount: number } | null = null;
+  let txlistScanError: string | null = null;
 
   for (const [chainId, txHashSet] of candidateTxHashesByChain.entries()) {
     const txHashesSorted = Array.from(txHashSet.values()).sort();
@@ -876,6 +1099,42 @@ const main = async () => {
     for (const [sig, tx] of signatureToTx.entries()) {
       if (allSignatureToTx.has(sig)) continue;
       allSignatureToTx.set(sig, tx);
+    }
+  }
+
+  if (args.scanNewPermit2Txlist) {
+    if (candidates.some((c) => c.chainId === GNOSIS_CHAIN_ID)) {
+      try {
+        const sinceSeconds = Number.isFinite(effectiveSinceMs) ? Math.floor(effectiveSinceMs / 1000) : null;
+        const {
+          signatureToTx: txlistSignatureToTx,
+          scannedTxCount,
+          decodedTxCount: txlistDecoded,
+          skippedTxCount: txlistSkipped,
+          duplicates,
+        } = await decodePermit2SignaturesFromBlockscoutTxlist({
+          permit2Address: NEW_PERMIT2_ADDRESS,
+          ownerFilter: owner,
+          sinceSeconds,
+        });
+
+        txlistScan = { scannedTxCount, decodedTxCount: txlistDecoded, skippedTxCount: txlistSkipped, extractedSignatureCount: txlistSignatureToTx.size };
+        allDuplicates.push(...duplicates);
+
+        for (const [sig, tx] of txlistSignatureToTx.entries()) {
+          const existing = allSignatureToTx.get(sig);
+          if (existing && existing !== tx) {
+            allDuplicates.push({ signature: sig, txA: existing, txB: tx });
+            continue;
+          }
+          if (!existing) allSignatureToTx.set(sig, tx);
+        }
+      } catch (error) {
+        txlistScanError = error instanceof Error ? error.message : String(error);
+        txlistScan = null;
+      }
+    } else {
+      txlistScan = { scannedTxCount: 0, decodedTxCount: 0, skippedTxCount: 0, extractedSignatureCount: 0 };
     }
   }
 
@@ -901,6 +1160,8 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     owner,
     since: args.since ?? null,
+    matchMode: args.matchMode,
+    scanNewPermit2Txlist: args.scanNewPermit2Txlist,
     effectiveSince: new Date(effectiveSinceMs).toISOString(),
     rpcBaseUrl,
     permit2: { old: OLD_PERMIT2_ADDRESS, new: NEW_PERMIT2_ADDRESS },
@@ -910,6 +1171,8 @@ const main = async () => {
     candidateTxCount,
     decodedTxCount,
     skippedTxCount,
+    txlistScan,
+    txlistScanError,
     extractedSignatureCount: allSignatureToTx.size,
     matchedSignatureCount: matched.size,
     duplicates: allDuplicates,
