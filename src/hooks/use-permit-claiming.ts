@@ -83,14 +83,16 @@ function isUserRejectedRequest(error: unknown): boolean {
     if (typeof maybeAny.name === "string" && maybeAny.name.toLowerCase().includes("userrejected")) return true;
   }
 
-  const message =
-    typeof maybeAny?.shortMessage === "string"
-      ? maybeAny.shortMessage
-      : error instanceof Error
-        ? error.message
-        : typeof maybeAny?.message === "string"
-          ? maybeAny.message
-          : String(error);
+  let message: string;
+  if (typeof maybeAny?.shortMessage === "string") {
+    message = maybeAny.shortMessage;
+  } else if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof maybeAny?.message === "string") {
+    message = maybeAny.message;
+  } else {
+    message = String(error);
+  }
 
   return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
 }
