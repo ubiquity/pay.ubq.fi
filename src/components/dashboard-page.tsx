@@ -15,11 +15,33 @@ import { PermitsTable } from "./permits-table.tsx";
 import { PreferredTokenSelectorButton } from "./preferred-token-selector-button.tsx";
 import { TxBanner } from "./tx-banner.tsx";
 
+function isUserRejectedRequest(error: unknown): boolean {
+  if (!error) return false;
+
+  const maybeAny = error as { code?: unknown; name?: unknown; shortMessage?: unknown; message?: unknown };
+  if (maybeAny && typeof maybeAny === "object") {
+    if (maybeAny.code === 4001) return true; // EIP-1193 userRejectedRequest
+    if (typeof maybeAny.name === "string" && maybeAny.name.toLowerCase().includes("userrejected")) return true;
+  }
+
+  const message =
+    typeof maybeAny?.shortMessage === "string"
+      ? maybeAny.shortMessage
+      : error instanceof Error
+        ? error.message
+        : typeof maybeAny?.message === "string"
+          ? maybeAny.message
+          : String(error);
+
+  return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
+}
+
 export function DashboardPage() {
   // UI State
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [preferredRewardTokenAddress, setPreferredRewardTokenAddress] = useState<Address | null>(null);
   const [lastTx, setLastTx] = useState<{ txHash: string; chainId: number; label: string } | null>(null);
+  const [claimAllSnapshot, setClaimAllSnapshot] = useState<{ amountDisplay: string; rewardCount: number } | null>(null);
 
   type PendingNetworkAction = "claim" | "invalidate";
 
@@ -190,6 +212,16 @@ export function DashboardPage() {
 
   const isInvalidatingAny = useMemo(() => Object.values(isInvalidating).some(Boolean), [isInvalidating]);
 
+  const isClaimFlowActive = useMemo(
+    () => isClaiming || (pendingNetworkSwitch.isSwitching && pendingNetworkSwitch.action === "claim"),
+    [isClaiming, pendingNetworkSwitch.isSwitching, pendingNetworkSwitch.action]
+  );
+
+  const isInvalidationFlowActive = useMemo(
+    () => isInvalidatingAny || (pendingNetworkSwitch.isSwitching && pendingNetworkSwitch.action === "invalidate"),
+    [isInvalidatingAny, pendingNetworkSwitch.isSwitching, pendingNetworkSwitch.action]
+  );
+
   const onInvalidatePermit = useCallback(
     async (permit: PermitData) => {
       const res = await handleInvalidatePermit(permit);
@@ -237,11 +269,17 @@ export function DashboardPage() {
           if (currentNetworkId !== networkId) {
             console.log("Switching to network:", networkId);
             setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "claim", permits: permitsToClaim });
-            await switchChainAsync({ chainId: networkId });
+            try {
+              await switchChainAsync({ chainId: networkId });
+            } catch (error) {
+              setPendingNetworkSwitch({ isSwitching: false, expectedNetworkId: null, action: "claim", permits: [] });
+              if (!isUserRejectedRequest(error)) {
+                setError(`Network switch failed (chainId: ${networkId}).`);
+              }
+              return;
+            }
             return;
           }
-
-          setPermits((prev) => prev.map((p) => (permitsForNetwork.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
           const batchablePermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === NEW_PERMIT2_ADDRESS.toLowerCase());
           const sequentialPermits = permitsForNetwork.filter((p) => p.permit2Address.toLowerCase() === OLD_PERMIT2_ADDRESS.toLowerCase());
           if (batchablePermits.length > 0) {
@@ -258,7 +296,7 @@ export function DashboardPage() {
         }
       }
     },
-    [isConnected, address, chain, switchChainAsync, setPermits, handleClaimBatch, handleClaimSequential]
+    [isConnected, address, chain, switchChainAsync, handleClaimBatch, handleClaimSequential, setError]
   );
 
   const invalidatePermits = useCallback(
@@ -289,7 +327,15 @@ export function DashboardPage() {
           if (currentNetworkId !== networkId) {
             console.log("Switching to network for invalidation:", networkId);
             setPendingNetworkSwitch({ isSwitching: true, expectedNetworkId: networkId, action: "invalidate", permits: ownedPermits });
-            await switchChainAsync({ chainId: networkId });
+            try {
+              await switchChainAsync({ chainId: networkId });
+            } catch (error) {
+              setPendingNetworkSwitch({ isSwitching: false, expectedNetworkId: null, action: "claim", permits: [] });
+              if (!isUserRejectedRequest(error)) {
+                setError(`Network switch failed (chainId: ${networkId}).`);
+              }
+              return;
+            }
             return;
           }
 
@@ -305,7 +351,7 @@ export function DashboardPage() {
         }
       }
     },
-    [isConnected, address, chain, handleInvalidatePermitsBatch, switchChainAsync]
+    [isConnected, address, chain, handleInvalidatePermitsBatch, switchChainAsync, setError]
   );
 
   useEffect(() => {
@@ -363,25 +409,40 @@ export function DashboardPage() {
             </button>
             <button
               id="claim-all"
-              onClick={() =>
-                void (isFundingWallet ? invalidatePermits(invalidatablePermits) : claimPermits(claimablePermits)).catch((error) => {
-                  console.error(`Failed to start ${isFundingWallet ? "invalidation" : "claim"} flow:`, error);
-                })
-              }
+              onClick={() => {
+                if (isFundingWallet) {
+                  void invalidatePermits(invalidatablePermits).catch((error) => {
+                    console.error("Failed to start invalidation flow:", error);
+                  });
+                  return;
+                }
+
+                if (claimablePermitCount > 0) {
+                  setClaimAllSnapshot({ amountDisplay: estimatedTotalValueDisplay, rewardCount: claimablePermitCount });
+                }
+
+                void claimPermits(claimablePermits).catch((error) => {
+                  console.error("Failed to start claim flow:", error);
+                });
+              }}
               disabled={
-                isFundingWallet ? isInvalidatingAny || !isConnected || invalidatablePermitCount === 0 : isClaiming || !isConnected || claimablePermitCount === 0
+                isFundingWallet
+                  ? isInvalidationFlowActive || !isConnected || invalidatablePermitCount === 0
+                  : isClaimFlowActive || !isConnected || claimablePermitCount === 0
               }
               className="button-with-icon"
               title={isFundingWallet ? "Invalidate all valid permits (batched by nonce bitmap)" : "Claim all valid and available permits (batch RPC)"}
             >
               {isFundingWallet ? (
-                isInvalidatingAny ? (
+                isInvalidationFlowActive ? (
                   <div className="spinner button-spinner"></div>
                 ) : (
                   ICONS.CLAIM
                 )
-              ) : isClaiming ? (
+              ) : isClaimFlowActive ? (
                 <div className="spinner button-spinner"></div>
+              ) : !isLoading && !isQuoting && claimablePermitCount === 0 ? (
+                ICONS.CHECK
               ) : (
                 ICONS.CLAIM
               )}
@@ -403,6 +464,13 @@ export function DashboardPage() {
                           ({invalidatablePermitCount} Permit{invalidatablePermitCount !== 1 ? "s" : ""})
                         </span>
                       </>
+                    ) : isClaimFlowActive ? (
+                      <>
+                        <span className="claim-amount">{claimAllSnapshot?.amountDisplay ?? estimatedTotalValueDisplay}</span>
+                        <span className="claim-count">Claiming...</span>
+                      </>
+                    ) : claimablePermitCount === 0 ? (
+                      <span className="claim-amount">All Claimed</span>
                     ) : (
                       <>
                         <span className="claim-amount">{estimatedTotalValueDisplay}</span>

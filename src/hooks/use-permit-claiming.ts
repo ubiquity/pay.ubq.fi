@@ -74,6 +74,29 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+function isUserRejectedRequest(error: unknown): boolean {
+  if (!error) return false;
+
+  const maybeAny = error as { code?: unknown; name?: unknown; shortMessage?: unknown; message?: unknown };
+  if (maybeAny && typeof maybeAny === "object") {
+    if (maybeAny.code === 4001) return true; // EIP-1193 userRejectedRequest
+    if (typeof maybeAny.name === "string" && maybeAny.name.toLowerCase().includes("userrejected")) return true;
+  }
+
+  let message: string;
+  if (typeof maybeAny?.shortMessage === "string") {
+    message = maybeAny.shortMessage;
+  } else if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof maybeAny?.message === "string") {
+    message = maybeAny.message;
+  } else {
+    message = String(error);
+  }
+
+  return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
+}
+
 async function recordClaimOnce({
   txHash,
   networkId,
@@ -192,7 +215,7 @@ export function usePermitClaiming({
       // 2. Send the actual transaction
       txHash = await walletClient.writeContract(request);
       setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
-      updatePermitStatusCache(permit.signature, { transactionHash: txHash });
+      updatePermitStatusCache(permit.signature, { claimStatus: "Pending", transactionHash: txHash });
 
       // 3. Wait for transaction receipt
       let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
@@ -237,6 +260,11 @@ export function usePermitClaiming({
 
       return { success: true, txHash };
     } catch (error) {
+      if (isUserRejectedRequest(error)) {
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Idle" } : p)));
+        return { success: false, txHash: "" };
+      }
+
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Permit claim failed", {
         error,
@@ -314,7 +342,7 @@ export function usePermitClaiming({
           // 2. Send the actual transaction
           txHash = await walletClient.writeContract(request);
           setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
-          updatePermitStatusCache(permit.signature, { transactionHash: txHash });
+          updatePermitStatusCache(permit.signature, { claimStatus: "Pending", transactionHash: txHash });
 
           // 3. Wait for transaction receipt
           let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
@@ -355,6 +383,11 @@ export function usePermitClaiming({
             if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
           });
         } catch (error) {
+          if (isUserRejectedRequest(error) && !txHash) {
+            setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Idle" } : p)));
+            return;
+          }
+
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error("Sequential claim processing error", { error });
           if (txHash) {
@@ -424,7 +457,7 @@ export function usePermitClaiming({
       setPermits((prev) =>
         prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p))
       );
-      permitsToClaim.forEach((permit) => updatePermitStatusCache(permit.signature, { transactionHash: String(txHash) }));
+      permitsToClaim.forEach((permit) => updatePermitStatusCache(permit.signature, { claimStatus: "Pending", transactionHash: String(txHash) }));
 
       // 3. Wait for transaction receipt
       let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
@@ -484,6 +517,11 @@ export function usePermitClaiming({
       console.log("Batch RPC completed");
       success = true;
     } catch (error) {
+      if (isUserRejectedRequest(error) && !txHash) {
+        setPermits((prev) => prev.map((p) => (permitsToClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Idle" } : p)));
+        return { success: false, txHash: "" };
+      }
+
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Batch RPC: Unhandled processing error", {
         error,
