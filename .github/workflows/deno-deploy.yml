@@ -14,54 +14,9 @@ jobs:
     with:
       project: pay-ubq-fi
       entrypoint: serve.ts
-      deno_version: v2.6.x
       bun_version: 1.3.4
       install_command: |
         bun install
-        # Work around transient deployctl/Deno HTTP failures in CI:
-        # "TypeError: error reading a body from connection"
-        if [ -x "${HOME}/.deno/bin/deployctl" ] && [ ! -x "${HOME}/.deno/bin/deployctl-real" ]; then
-          mv "${HOME}/.deno/bin/deployctl" "${HOME}/.deno/bin/deployctl-real"
-          cat > "${HOME}/.deno/bin/deployctl" <<'EOF'
-        #!/usr/bin/env bash
-        set -euo pipefail
-        
-        real="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/deployctl-real"
-        if [ ! -x "$real" ]; then
-          echo "deployctl wrapper: missing $real" >&2
-          exit 127
-        fi
-        
-        max_attempts=5
-        attempt=1
-        
-        while true; do
-          set +e
-          output=$("$real" "$@" 2>&1)
-          status=$?
-          set -e
-        
-          if [ "$status" -eq 0 ]; then
-            printf '%s\n' "$output"
-            exit 0
-          fi
-        
-          if printf '%s\n' "$output" | grep -qi "error reading a body from connection"; then
-            if [ "$attempt" -lt "$max_attempts" ]; then
-              sleep_for=$(( attempt * 10 ))
-              echo "::warning::deployctl transient network error (attempt ${attempt}/${max_attempts}); retrying in ${sleep_for}s"
-              sleep "$sleep_for"
-              attempt=$(( attempt + 1 ))
-              continue
-            fi
-          fi
-        
-          printf '%s\n' "$output" >&2
-          exit "$status"
-        done
-        EOF
-          chmod +x "${HOME}/.deno/bin/deployctl"
-        fi
       build_command: |
         bun run build
       build_env: |
