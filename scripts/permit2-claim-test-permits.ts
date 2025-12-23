@@ -346,8 +346,7 @@ const normalizeTxHash = (value: string): `0x${string}` => {
 };
 
 const isReceiptTimeout = (error: unknown) =>
-  error instanceof Error &&
-  (error.name === "WaitForTransactionReceiptTimeoutError" || /timed out while waiting for transaction/i.test(error.message));
+  error instanceof Error && (error.name === "WaitForTransactionReceiptTimeoutError" || /timed out while waiting for transaction/i.test(error.message));
 
 async function recordTransactionForPermits({
   supabase,
@@ -360,12 +359,7 @@ async function recordTransactionForPermits({
 }): Promise<{ ok: true; updated: number } | { ok: false; error: string }> {
   if (permitIds.length === 0) return { ok: true, updated: 0 };
   const normalizedHash = normalizeTxHash(txHash);
-  const { data, error } = await supabase
-    .from("permits")
-    .update({ transaction: normalizedHash })
-    .in("id", permitIds)
-    .is("transaction", null)
-    .select("id");
+  const { data, error } = await supabase.from("permits").update({ transaction: normalizedHash }).in("id", permitIds).is("transaction", null).select("id");
   if (error) return { ok: false, error: error.message };
   return { ok: true, updated: data?.length ?? 0 };
 }
@@ -642,7 +636,7 @@ const main = async () => {
   }));
 
   const batchGroups = args.batch ? groupPermitsForBatch(selected) : null;
-  const plannedTxCount = args.batch ? batchGroups?.size ?? 0 : selected.length;
+  const plannedTxCount = args.batch ? (batchGroups?.size ?? 0) : selected.length;
   if (args.execute && plannedTxCount > args.maxTxs) {
     throw new Error(`Refusing to execute ${plannedTxCount} txs (exceeds --max-txs ${args.maxTxs}).`);
   }

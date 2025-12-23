@@ -460,9 +460,7 @@ async function collectNonces({
     }
 
     const bitmaps: Map<string, NonceBitmapResult> =
-      refsByKey.size > 0
-        ? await fetchNonceBitmaps({ rpcBaseUrl, refs: Array.from(refsByKey.values()) })
-        : new Map<string, NonceBitmapResult>();
+      refsByKey.size > 0 ? await fetchNonceBitmaps({ rpcBaseUrl, refs: Array.from(refsByKey.values()) }) : new Map<string, NonceBitmapResult>();
 
     const nextPending: number[] = [];
 

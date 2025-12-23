@@ -11,11 +11,7 @@ import {
   normalizeHexAddress,
   type NonceBitmapRef,
 } from "./permit2-tools.ts";
-import {
-  fetchPermitsFromDb,
-  mapDbPermitToPermitDataWithIssues,
-  type PermitRow,
-} from "../src/workers/permit-checker.logic.ts";
+import { fetchPermitsFromDb, mapDbPermitToPermitDataWithIssues, type PermitRow } from "../src/workers/permit-checker.logic.ts";
 
 type CliArgs = {
   whitelistPath?: string;
@@ -134,7 +130,7 @@ Notes:
   - Claiming uses --rpc-url to hit the upstream RPC directly (no /<chainId> suffix).
   - When --proxy-url is set, claims go to the proxy with override headers per upstream RPC.
   - Ensure SUPABASE_* and private keys are present in .env before running.
-`.trim(),
+`.trim()
   );
 };
 
@@ -426,16 +422,20 @@ const parseArgs = (argv: string[]): CliArgs => {
 };
 
 const stringifyJson = (value: unknown, pretty: boolean) =>
-  JSON.stringify(
-    value,
-    (_key, v) => (typeof v === "bigint" ? v.toString() : v),
-    pretty ? 2 : undefined,
-  );
+  JSON.stringify(value, (_key, v) => (typeof v === "bigint" ? v.toString() : v), pretty ? 2 : undefined);
 
 const slugify = (value: string) =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "rpc";
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "rpc";
 
-async function runCommand(args: string[], cwd: string, env: Record<string, string | undefined>): Promise<{
+async function runCommand(
+  args: string[],
+  cwd: string,
+  env: Record<string, string | undefined>
+): Promise<{
   ok: boolean;
   code: number;
   stdout: string;
@@ -598,9 +598,7 @@ async function loadEligiblePermitIds({
   }
 
   if (missingNonceBitmap > 0 || usedNonce > 0) {
-    console.log(
-      `Eligible permits filtered: ${filtered.length} kept, ${usedNonce} used, ${missingNonceBitmap} missing nonceBitmap.`,
-    );
+    console.log(`Eligible permits filtered: ${filtered.length} kept, ${usedNonce} used, ${missingNonceBitmap} missing nonceBitmap.`);
   }
 
   filtered.sort((a, b) => b.id - a.id);
@@ -709,7 +707,7 @@ const main = async () => {
     const requiredPermits = rpcUrls.length * args.count;
     if (eligiblePermits.length < requiredPermits) {
       console.error(
-        `Not enough eligible permits. Needed ${requiredPermits} for ${rpcUrls.length} RPCs (count=${args.count}), found ${eligiblePermits.length}.`,
+        `Not enough eligible permits. Needed ${requiredPermits} for ${rpcUrls.length} RPCs (count=${args.count}), found ${eligiblePermits.length}.`
       );
       Deno.exit(1);
       return;
@@ -798,9 +796,7 @@ const main = async () => {
 
         const seedJson = await readJsonFile(seedOut);
         const seedReport = seedJson as SeedReport;
-        permitIds = (seedReport.permits ?? [])
-          .map((entry) => entry.id)
-          .filter((id): id is number => typeof id === "number" && Number.isFinite(id));
+        permitIds = (seedReport.permits ?? []).map((entry) => entry.id).filter((id): id is number => typeof id === "number" && Number.isFinite(id));
 
         const seedOk = permitIds.length > 0;
         result.seed = {
