@@ -338,7 +338,7 @@ const stringifyJson = (value: unknown, pretty: boolean) =>
     pretty ? 2 : undefined
   );
 
-const isHexPrivateKey = (value: string) => /^0x[0-9a-fA-F]{64}$/.test(value.trim());
+const isHexPrivateKey = (value: string) => /^0x[0-9a-fA-F]{64}$/.test(value);
 const normalizeTxHash = (value: string): `0x${string}` => {
   const trimmed = value.trim().toLowerCase();
   if (trimmed.startsWith("0x")) return trimmed as `0x${string}`;

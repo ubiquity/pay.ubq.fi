@@ -425,6 +425,7 @@ async function collectNonces({
     for (let i = 0; i < count; i += 1) {
       let nonce: bigint | null = null;
       for (let attempt = 0; attempt < MAX_NONCE_ATTEMPTS; attempt += 1) {
+        // Guard against a broken RNG returning 0n repeatedly when skipping on-chain checks.
         const candidate = randomNonce();
         if (candidate === 0n) continue;
         nonce = candidate;
