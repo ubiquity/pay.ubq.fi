@@ -6,6 +6,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { Database } from "../src/database.types.ts";
 import {
   createSupabaseClientFromEnv,
+  bitmapKey,
   fetchNonceBitmaps,
   getEnv,
   getRpcBaseUrlFromEnv,
@@ -18,6 +19,7 @@ import {
   PERMIT2_DOMAIN_NAME,
   PERMIT_TRANSFER_FROM_TYPES,
   type NonceBitmapRef,
+  type NonceBitmapResult,
 } from "./permit2-tools.ts";
 
 type TargetPermit2 = "new" | "old";
@@ -64,7 +66,7 @@ Options:
       --count               Number of permits to create (default: 1).
       --deadline            Permit deadline (unix seconds as a string; default: now + 30 days).
       --target-permit2      Which Permit2 contract to sign for: new | old (default: new).
-      --private-key-env     Env var name holding the owner's private key (default: INVALIDATOR_PRIVATE_KEY, fallback: PERMIT_SIGNER_PRIVATE_KEY).
+      --private-key-env     Env var name holding the owner's private key (default: INVALIDATOR_PRIVATE_KEY).
       --node-url            Optional location.node_url to attach to all inserted permits (helps identify test rows in UI).
       --skip-onchain-check  Skip nonceBitmap checks (default: false).
       --execute             Actually insert rows into Supabase (default: false; plan-only).
@@ -274,6 +276,14 @@ const stringifyJson = (value: unknown, pretty: boolean) =>
 
 const isPrivateKey = (value: string) => /^0x[0-9a-fA-F]{64}$/.test(value.trim());
 
+const MAX_NONCE_ATTEMPTS = 25;
+
+const randomNonce = (): bigint => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return bytes.reduce((acc, b) => (acc << 8n) + BigInt(b), 0n);
+};
+
 async function getOrCreateWallet({
   supabase,
   address,
@@ -391,28 +401,104 @@ async function getOrCreateUserForWallet({
   return { id: inserted[0].id, wallet_id: inserted[0].wallet_id };
 }
 
-async function ensureNonceUnused({
+async function collectNonces({
   rpcBaseUrl,
   chainId,
   permit2Address,
   owner,
-  nonce,
+  count,
+  skipOnchainCheck,
 }: {
   rpcBaseUrl: string;
   chainId: number;
   permit2Address: `0x${string}`;
   owner: `0x${string}`;
-  nonce: bigint;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { wordPos, bitPos } = noncePositions(nonce);
-  const refs: NonceBitmapRef[] = [{ chainId, permit2Address, owner, wordPos }];
-  const bitmaps = await fetchNonceBitmaps({ rpcBaseUrl, refs, batchSize: 1, maxRetries: 2 });
-  const key = `${chainId}:${permit2Address.toLowerCase()}:${owner.toLowerCase()}:${wordPos.toString()}`;
-  const res = bitmaps.get(key);
-  if (!res) return { ok: false, error: "Missing nonceBitmap response" };
-  if ("error" in res) return { ok: false, error: res.error };
-  if (isNonceUsed({ bitmap: res.bitmap, bitPos })) return { ok: false, error: "Nonce already used (nonceBitmap bit is set)" };
-  return { ok: true };
+  count: number;
+  skipOnchainCheck: boolean;
+}): Promise<{ nonces: bigint[]; errors: { nonce: string; error: string }[] }> {
+  if (count <= 0) return { nonces: [], errors: [] };
+
+  if (skipOnchainCheck) {
+    const nonces: bigint[] = [];
+    const errors: { nonce: string; error: string }[] = [];
+
+    for (let i = 0; i < count; i += 1) {
+      let nonce: bigint | null = null;
+      for (let attempt = 0; attempt < MAX_NONCE_ATTEMPTS; attempt += 1) {
+        // Guard against a broken RNG returning 0n repeatedly when skipping on-chain checks.
+        const candidate = randomNonce();
+        if (candidate === 0n) continue;
+        nonce = candidate;
+        break;
+      }
+      if (nonce === null) {
+        errors.push({ nonce: "", error: "Failed to find an unused nonce (attempt limit reached)" });
+        continue;
+      }
+      nonces.push(nonce);
+    }
+
+    return { nonces, errors };
+  }
+
+  const assigned: Array<bigint | null> = Array.from({ length: count }, () => null);
+  const lastErrors: Array<string | null> = Array.from({ length: count }, () => null);
+  let pending = Array.from({ length: count }, (_value, index) => index);
+
+  for (let attempt = 0; attempt < MAX_NONCE_ATTEMPTS && pending.length > 0; attempt += 1) {
+    const candidatesByIndex = new Map<number, { nonce: bigint; bitPos: bigint; key: string }>();
+    const refsByKey = new Map<string, NonceBitmapRef>();
+
+    for (const index of pending) {
+      const nonce = randomNonce();
+      if (nonce === 0n) continue;
+      const { wordPos, bitPos } = noncePositions(nonce);
+      const ref: NonceBitmapRef = { chainId, permit2Address, owner, wordPos };
+      const key = bitmapKey(ref);
+      candidatesByIndex.set(index, { nonce, bitPos, key });
+      if (!refsByKey.has(key)) refsByKey.set(key, ref);
+    }
+
+    const bitmaps: Map<string, NonceBitmapResult> =
+      refsByKey.size > 0 ? await fetchNonceBitmaps({ rpcBaseUrl, refs: Array.from(refsByKey.values()) }) : new Map<string, NonceBitmapResult>();
+
+    const nextPending: number[] = [];
+
+    for (const index of pending) {
+      const candidate = candidatesByIndex.get(index);
+      if (!candidate) {
+        nextPending.push(index);
+        continue;
+      }
+      const res = bitmaps.get(candidate.key);
+      if (!res) {
+        lastErrors[index] = "Missing nonceBitmap response";
+        nextPending.push(index);
+        continue;
+      }
+      if ("error" in res) {
+        lastErrors[index] = res.error;
+        nextPending.push(index);
+        continue;
+      }
+      if (isNonceUsed({ bitmap: res.bitmap, bitPos: candidate.bitPos })) {
+        lastErrors[index] = "Nonce already used (nonceBitmap bit is set)";
+        nextPending.push(index);
+        continue;
+      }
+      assigned[index] = candidate.nonce;
+    }
+
+    pending = nextPending;
+  }
+
+  const errors: { nonce: string; error: string }[] = [];
+  for (const index of pending) {
+    errors.push({ nonce: "", error: lastErrors[index] ?? "Failed to find an unused nonce (attempt limit reached)" });
+  }
+
+  const nonces = assigned.filter((nonce): nonce is bigint => nonce !== null);
+  return { nonces, errors };
 }
 
 const main = async () => {
@@ -478,11 +564,10 @@ const main = async () => {
   }
 
   const privateKeyEnvName = args.privateKeyEnv || "INVALIDATOR_PRIVATE_KEY";
-  const fallbackKey = getEnv("PERMIT_SIGNER_PRIVATE_KEY");
   const envKey = getEnv(privateKeyEnvName);
-  const privateKey = (envKey ?? fallbackKey ?? "").trim();
+  const privateKey = (envKey ?? "").trim();
   if (!isPrivateKey(privateKey)) {
-    console.error(`Missing/invalid private key in env var ${privateKeyEnvName} (or PERMIT_SIGNER_PRIVATE_KEY fallback).`);
+    console.error(`Missing/invalid private key in env var ${privateKeyEnvName} (expected 0x + 64 hex chars).`);
     Deno.exit(1);
     return;
   }
@@ -533,37 +618,18 @@ const main = async () => {
 
   const location = args.nodeUrl ? await getOrCreateLocation({ supabase, nodeUrl: args.nodeUrl }) : null;
 
+  const { nonces, errors: usedNonceErrors } = await collectNonces({
+    rpcBaseUrl,
+    chainId: args.chainId,
+    permit2Address,
+    owner,
+    count: args.count,
+    skipOnchainCheck: args.skipOnchainCheck,
+  });
+
   const permits: { nonce: string; signature: string }[] = [];
-  const usedNonceErrors: { nonce: string; error: string }[] = [];
 
-  for (let i = 0; i < args.count; i += 1) {
-    let nonce: bigint | null = null;
-    let nonceError: string | null = null;
-
-    for (let attempt = 0; attempt < 25; attempt += 1) {
-      const bytes = new Uint8Array(32);
-      crypto.getRandomValues(bytes);
-      const candidate = bytes.reduce((acc, b) => (acc << 8n) + BigInt(b), 0n);
-      if (candidate === 0n) continue;
-
-      if (!args.skipOnchainCheck) {
-        const res = await ensureNonceUnused({ rpcBaseUrl, chainId: args.chainId, permit2Address, owner, nonce: candidate });
-        if (!res.ok) {
-          nonceError = res.error;
-          continue;
-        }
-      }
-
-      nonce = candidate;
-      nonceError = null;
-      break;
-    }
-
-    if (nonce === null) {
-      usedNonceErrors.push({ nonce: "", error: nonceError ?? "Failed to find an unused nonce (attempt limit reached)" });
-      continue;
-    }
-
+  for (const nonce of nonces) {
     const signature = await account.signTypedData({
       domain: { name: PERMIT2_DOMAIN_NAME, chainId: args.chainId, verifyingContract: permit2Address },
       types: PERMIT_TRANSFER_FROM_TYPES,
