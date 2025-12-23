@@ -79,6 +79,8 @@ One-off tooling lives in `scripts/` (requires `.env` with Supabase + RPC vars).
   - Add `--execute` to write to Supabase (use `--max-updates` as a safety brake).
 - Seed small test permits for QA (default: 1e18 UUSD on Gnosis; plan-only unless `--execute`):
   - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:seed-test-permits -- --beneficiary 0x... --beneficiary-user-id <githubUserId> --execute --out /tmp/test-permits.json`
+- Sign/broadcast test permit claims (sign-only unless `--execute`):
+  - `BENEFICIARY_PRIVATE_KEY=0x... bun run permit2:claim-test-permits -- --beneficiary 0x... --limit 10 --execute --batch --out /tmp/test-claims.json`
 
 ## Formatting
 

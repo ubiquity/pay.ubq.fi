@@ -544,7 +544,7 @@ const main = async () => {
       throw new Error(`Refusing to execute ${calls.length} txs (exceeds --max-txs ${args.maxTxs}). Re-run with a higher --max-txs if intended.`);
     }
 
-    const rawKey = Deno.env.get(args.privateKeyEnv);
+    const rawKey = Deno.env.get(args.privateKeyEnv)?.trim();
     if (!rawKey || !isHexPrivateKey(rawKey)) {
       throw new Error(`Missing/invalid private key in env var ${args.privateKeyEnv} (expected 0x + 64 hex chars).`);
     }
