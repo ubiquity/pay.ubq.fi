@@ -14,6 +14,7 @@ import {
   NEW_PERMIT2_ADDRESS,
   noncePositions,
   OLD_PERMIT2_ADDRESS,
+  type NonceBitmapProgress,
   type Permit2Kind,
   type PermitDbRowWithJoins,
   type NonceBitmapRef,
@@ -24,6 +25,9 @@ type CliArgs = {
   owner?: string;
   since?: string;
   out?: string;
+  batchSize: number;
+  concurrency: number;
+  verbose: boolean;
   pretty: boolean;
   includePermits: boolean;
   help: boolean;
@@ -33,7 +37,8 @@ const printUsage = () => {
   console.error(
     `
 Usage:
-  deno run -A --env-file=.env scripts/permit2-audit.ts [--owner 0x...] [--since <timestamp>] [--out <file>] [--include-permits] [--pretty]
+  deno run -A --env-file=.env scripts/permit2-audit.ts [--owner 0x...] [--since <timestamp>] [--out <file>]
+    [--batch-size <n>] [--concurrency <n>] [--verbose] [--include-permits] [--pretty]
 
 What it does:
   - Loads permits from Supabase.
@@ -45,6 +50,9 @@ Options:
   -o, --owner            Funding wallet (permit owner) to filter by.
   -s, --since            Only include permits created after this timestamp (Date.parse-able).
       --out              Write report JSON to a file (otherwise prints to stdout).
+      --batch-size       RPC batch size for nonce bitmap calls (default: 500).
+      --concurrency      Number of concurrent nonce bitmap batches (default: 64).
+      --verbose          Emit progress logs to stderr.
       --include-permits  Include full permit list in the report (otherwise only summary + anomalies).
   -p, --pretty           Pretty-print JSON.
   -h, --help             Show help.
@@ -58,7 +66,7 @@ Env:
 };
 
 const parseArgs = (argv: string[]): CliArgs => {
-  const out: CliArgs = { pretty: false, help: false, includePermits: false };
+  const out: CliArgs = { pretty: false, help: false, includePermits: false, batchSize: 500, concurrency: 64, verbose: false };
   const takeValue = (flag: string, value: string | undefined) => {
     if (!value || value.startsWith("-")) throw new Error(`Missing value for ${flag}`);
     return value;
@@ -72,6 +80,10 @@ const parseArgs = (argv: string[]): CliArgs => {
     }
     if (arg === "--pretty" || arg === "-p") {
       out.pretty = true;
+      continue;
+    }
+    if (arg === "--verbose") {
+      out.verbose = true;
       continue;
     }
     if (arg === "--include-permits") {
@@ -105,6 +117,32 @@ const parseArgs = (argv: string[]): CliArgs => {
       out.out = arg.slice("--out=".length);
       continue;
     }
+    if (arg === "--batch-size") {
+      const v = Number(takeValue(arg, argv[i + 1]));
+      i += 1;
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --batch-size: ${argv[i]}`);
+      out.batchSize = Math.floor(v);
+      continue;
+    }
+    if (arg.startsWith("--batch-size=")) {
+      const v = Number(arg.slice("--batch-size=".length));
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --batch-size: ${v}`);
+      out.batchSize = Math.floor(v);
+      continue;
+    }
+    if (arg === "--concurrency") {
+      const v = Number(takeValue(arg, argv[i + 1]));
+      i += 1;
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --concurrency: ${argv[i]}`);
+      out.concurrency = Math.floor(v);
+      continue;
+    }
+    if (arg.startsWith("--concurrency=")) {
+      const v = Number(arg.slice("--concurrency=".length));
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --concurrency: ${v}`);
+      out.concurrency = Math.floor(v);
+      continue;
+    }
     if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
     throw new Error(`Unexpected positional arg: ${arg}`);
   }
@@ -128,6 +166,7 @@ type PermitAuditEntry = {
   wordPos: string | null;
   bitPos: string | null;
   dbTransaction: `0x${string}` | null;
+  dbInvalidation: `0x${string}` | null;
   expectedPermit2: Permit2Kind;
   expectedPermit2Address: `0x${string}` | null;
   nonceUsed: {
@@ -187,7 +226,15 @@ function safe0xHex(value: string | null | undefined): `0x${string}` | null {
   return trimmed.toLowerCase() as `0x${string}`;
 }
 
-async function buildAuditEntries(rows: PermitDbRowWithJoins[], rpcBaseUrl: string): Promise<PermitAuditEntry[]> {
+async function buildAuditEntries(
+  rows: PermitDbRowWithJoins[],
+  rpcBaseUrl: string,
+  options?: {
+    batchSize?: number;
+    concurrency?: number;
+    onProgress?: (progress: NonceBitmapProgress) => void;
+  }
+): Promise<PermitAuditEntry[]> {
   const refs: NonceBitmapRef[] = [];
   const draft: {
     row: PermitDbRowWithJoins;
@@ -258,7 +305,13 @@ async function buildAuditEntries(rows: PermitDbRowWithJoins[], rpcBaseUrl: strin
     uniqRefs.push(ref);
   }
 
-  const bitmapResults = await fetchNonceBitmaps({ rpcBaseUrl, refs: uniqRefs });
+  const bitmapResults = await fetchNonceBitmaps({
+    rpcBaseUrl,
+    refs: uniqRefs,
+    batchSize: options?.batchSize,
+    concurrency: options?.concurrency,
+    onProgress: options?.onProgress,
+  });
 
   const getUsed = ({
     chainId,
@@ -283,6 +336,7 @@ async function buildAuditEntries(rows: PermitDbRowWithJoins[], rpcBaseUrl: strin
   return draft.map((d): PermitAuditEntry => {
     const formatted = formatAmount({ chainId: d.chainId, tokenAddress: d.token, rawAmount: d.row.amount });
     const dbTx = safe0xTxHash(d.row.transaction);
+    const dbInvalidation = safe0xTxHash(d.row.invalidation ?? null);
     const githubUrl = d.row.location?.node_url ? String(d.row.location.node_url) : null;
 
     const usedOld =
@@ -294,9 +348,13 @@ async function buildAuditEntries(rows: PermitDbRowWithJoins[], rpcBaseUrl: strin
         ? getUsed({ chainId: d.chainId, permit2Address: NEW_PERMIT2_ADDRESS, owner: d.owner, wordPos: d.wordPos, bitPos: d.bitPos })
         : { used: null as boolean | null };
 
+    const adjustedExpected =
+      d.expected.kind === "old" && usedOld.used === false && usedNew.used === true
+        ? { kind: "new" as Permit2Kind, address: NEW_PERMIT2_ADDRESS }
+        : d.expected;
     const usedExpected = (() => {
-      if (d.expected.kind === "old") return usedOld.used;
-      if (d.expected.kind === "new") return usedNew.used;
+      if (adjustedExpected.kind === "old") return usedOld.used;
+      if (adjustedExpected.kind === "new") return usedNew.used;
       return null;
     })();
 
@@ -316,8 +374,9 @@ async function buildAuditEntries(rows: PermitDbRowWithJoins[], rpcBaseUrl: strin
       wordPos: d.wordPos !== null ? d.wordPos.toString() : null,
       bitPos: d.bitPos !== null ? d.bitPos.toString() : null,
       dbTransaction: dbTx,
-      expectedPermit2: d.expected.kind,
-      expectedPermit2Address: d.expected.address,
+      dbInvalidation,
+      expectedPermit2: adjustedExpected.kind,
+      expectedPermit2Address: adjustedExpected.address,
       nonceUsed: { old: usedOld.used, new: usedNew.used, expected: usedExpected },
       bitmapErrors: {
         ...(usedOld.error ? { old: usedOld.error } : {}),
@@ -353,14 +412,29 @@ const main = async () => {
     return;
   }
 
+  const log = (...parts: unknown[]) => {
+    if (!args.verbose) return;
+    console.error(`[${new Date().toISOString()}]`, ...parts);
+  };
+
   const { client: supabase, usesServiceRole } = createSupabaseClientFromEnv();
   if (usesServiceRole) {
     console.error("Note: using SUPABASE_SERVICE_ROLE_KEY (bypasses RLS); results may differ from browser worker behavior.");
   }
 
   const rpcBaseUrl = getRpcBaseUrlFromEnv();
+  log(`Config: batchSize=${args.batchSize} concurrency=${args.concurrency}`);
+  log("Fetching permits...");
   const rows = await fetchPermitsFromDb({ supabase, owner: args.owner, since: args.since });
-  const permits = await buildAuditEntries(rows, rpcBaseUrl);
+  log(`Permits loaded: ${rows.length}`);
+  const permits = await buildAuditEntries(rows, rpcBaseUrl, {
+    batchSize: args.batchSize,
+    concurrency: args.concurrency,
+    onProgress: (progress) => {
+      log(`Bitmap ${progress.chunkIndex}/${progress.totalChunks} chain=${progress.chainId} size=${progress.chunkSize}`);
+    },
+  });
+  log(`Audit entries built: ${permits.length}`);
 
   const counts = {
     total: permits.length,
@@ -369,14 +443,20 @@ const main = async () => {
     expectedUnknown: permits.filter((p) => p.expectedPermit2 === "unknown").length,
     dbTransactionSet: permits.filter((p) => p.dbTransaction !== null).length,
     dbTransactionNull: permits.filter((p) => p.dbTransaction === null).length,
+    dbInvalidationSet: permits.filter((p) => p.dbInvalidation !== null).length,
+    dbInvalidationNull: permits.filter((p) => p.dbInvalidation === null).length,
     nonceUsedExpectedTrue: permits.filter((p) => p.nonceUsed.expected === true).length,
     nonceUsedExpectedFalse: permits.filter((p) => p.nonceUsed.expected === false).length,
     nonceUsedExpectedNull: permits.filter((p) => p.nonceUsed.expected === null).length,
   };
 
+  const hasDbUsage = (permit: PermitAuditEntry) => permit.dbTransaction !== null || permit.dbInvalidation !== null;
+
   const anomalies = {
-    onChainUsedButDbTransactionNull: permits.filter((p) => p.nonceUsed.expected === true && p.dbTransaction === null),
-    dbTransactionSetButNonceUnused: permits.filter((p) => p.dbTransaction !== null && p.nonceUsed.expected === false),
+    onChainUsedButDbTransactionNull: permits.filter((p) => p.nonceUsed.expected === true && !hasDbUsage(p)),
+    dbTransactionSetButNonceUnused: permits.filter(
+      (p) => p.dbTransaction !== null && p.nonceUsed.old === false && p.nonceUsed.new === false
+    ),
     expectedOldButUsedNew: permits.filter((p) => p.expectedPermit2 === "old" && p.nonceUsed.old === false && p.nonceUsed.new === true),
     expectedNewButUsedOld: permits.filter((p) => p.expectedPermit2 === "new" && p.nonceUsed.new === false && p.nonceUsed.old === true),
     nonceUsedOnBothContracts: permits.filter((p) => p.nonceUsed.old === true && p.nonceUsed.new === true),
@@ -389,6 +469,8 @@ const main = async () => {
     ownerFilter: args.owner ? args.owner.toLowerCase() : null,
     since: args.since ?? null,
     rpcBaseUrl,
+    batchSize: args.batchSize,
+    concurrency: args.concurrency,
     permit2: {
       old: OLD_PERMIT2_ADDRESS,
       new: NEW_PERMIT2_ADDRESS,
