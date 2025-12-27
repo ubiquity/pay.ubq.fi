@@ -17,9 +17,14 @@ type CliArgs = {
   owner: string;
   since?: string;
   matchMode: "amount" | "beneficiary";
+  matchKey: "signature" | "nonce" | "signature-or-nonce" | "nonce-only" | "signature-or-nonce-only";
   scanNewPermit2Txlist: boolean;
+  scanOldPermit2Txlist: boolean;
   execute: boolean;
   maxUpdates: number;
+  chunkSize: number;
+  concurrency: number;
+  verbose: boolean;
   out?: string;
   pretty: boolean;
   help: boolean;
@@ -31,13 +36,33 @@ const permit2Addresses = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT2
 const GNOSIS_CHAIN_ID = 100;
 const GNOSIS_BLOCKSCOUT_API = "https://gnosis.blockscout.com/api";
 
+const runWithConcurrency = async <T>(
+  items: T[],
+  concurrency: number,
+  task: (item: T, index: number) => Promise<void>
+) => {
+  if (items.length === 0) return;
+  const limit = Math.max(1, Math.floor(concurrency));
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor;
+      if (index >= items.length) break;
+      cursor += 1;
+      await task(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+};
+
 const printUsage = () => {
   console.error(
     `
 Usage:
   deno run -A --env-file=.env scripts/permit2-backfill-transactions.ts --owner 0x... [--since <timestamp>]
-    [--match-mode amount|beneficiary] [--scan-new-permit2-txlist]
-    [--out <file>] [--pretty] [--execute] [--max-updates <n>]
+    [--match-mode amount|beneficiary] [--match-key signature|nonce|signature-or-nonce|nonce-only|signature-or-nonce-only]
+    [--scan-new-permit2-txlist] [--scan-old-permit2-txlist]
+    [--chunk-size <n>] [--concurrency <n>] [--verbose] [--out <file>] [--pretty] [--execute] [--max-updates <n>]
 
 What it does:
   - Finds Permit2 claim txs (permitTransferFrom / batchPermitTransferFrom) and writes missing Supabase permits.transaction.
@@ -48,7 +73,13 @@ Options:
   -o, --owner        Funding wallet (permit owner). Required.
   -s, --since        Only consider permits created after this timestamp (Date.parse-able).
       --match-mode   Candidate selection for ERC20 transfers: amount (default) or beneficiary (looser).
+      --match-key    Match permits by signature (default), nonce+token+amount, or signature-or-nonce.
+                   Use nonce-only / signature-or-nonce-only to match by owner+nonce only (aggressive).
       --scan-new-permit2-txlist  Also scan Blockscout txlist for NEW Permit2 contract (default: false).
+      --scan-old-permit2-txlist  Also scan Blockscout txlist for OLD Permit2 contract (default: false).
+      --chunk-size  Block range size for eth_getLogs (default: 9000).
+      --concurrency Number of concurrent log fetches per token/beneficiary chunk (default: 64).
+      --verbose     Emit progress logs to stderr.
       --execute      Actually write to Supabase (default: false; dry-run report).
       --max-updates  Safety limit for number of permit rows to update (default: 500).
       --out          Write JSON report to a file (otherwise prints to stdout).
@@ -70,7 +101,12 @@ const parseArgs = (argv: string[]): CliArgs => {
     help: false,
     maxUpdates: 500,
     matchMode: "amount",
+    matchKey: "signature",
     scanNewPermit2Txlist: false,
+    scanOldPermit2Txlist: false,
+    chunkSize: 9000,
+    concurrency: 64,
+    verbose: false,
   };
   let owner: string | undefined;
 
@@ -95,6 +131,14 @@ const parseArgs = (argv: string[]): CliArgs => {
     }
     if (arg === "--scan-new-permit2-txlist") {
       out.scanNewPermit2Txlist = true;
+      continue;
+    }
+    if (arg === "--scan-old-permit2-txlist") {
+      out.scanOldPermit2Txlist = true;
+      continue;
+    }
+    if (arg === "--verbose") {
+      out.verbose = true;
       continue;
     }
     if (arg === "--owner" || arg === "-o") {
@@ -137,6 +181,32 @@ const parseArgs = (argv: string[]): CliArgs => {
       out.maxUpdates = Math.floor(v);
       continue;
     }
+    if (arg === "--chunk-size") {
+      const v = Number(takeValue(arg, argv[i + 1]));
+      i += 1;
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --chunk-size: ${argv[i]}`);
+      out.chunkSize = Math.floor(v);
+      continue;
+    }
+    if (arg.startsWith("--chunk-size=")) {
+      const v = Number(arg.slice("--chunk-size=".length));
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --chunk-size: ${v}`);
+      out.chunkSize = Math.floor(v);
+      continue;
+    }
+    if (arg === "--concurrency") {
+      const v = Number(takeValue(arg, argv[i + 1]));
+      i += 1;
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --concurrency: ${argv[i]}`);
+      out.concurrency = Math.floor(v);
+      continue;
+    }
+    if (arg.startsWith("--concurrency=")) {
+      const v = Number(arg.slice("--concurrency=".length));
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --concurrency: ${v}`);
+      out.concurrency = Math.floor(v);
+      continue;
+    }
     if (arg === "--match-mode") {
       const v = takeValue(arg, argv[i + 1]);
       i += 1;
@@ -148,6 +218,35 @@ const parseArgs = (argv: string[]): CliArgs => {
       const v = arg.slice("--match-mode=".length);
       if (v !== "amount" && v !== "beneficiary") throw new Error(`Invalid --match-mode: ${v}`);
       out.matchMode = v;
+      continue;
+    }
+    if (arg === "--match-key") {
+      const v = takeValue(arg, argv[i + 1]);
+      i += 1;
+      if (
+        v !== "signature" &&
+        v !== "nonce" &&
+        v !== "signature-or-nonce" &&
+        v !== "nonce-only" &&
+        v !== "signature-or-nonce-only"
+      ) {
+        throw new Error(`Invalid --match-key: ${v}`);
+      }
+      out.matchKey = v;
+      continue;
+    }
+    if (arg.startsWith("--match-key=")) {
+      const v = arg.slice("--match-key=".length);
+      if (
+        v !== "signature" &&
+        v !== "nonce" &&
+        v !== "signature-or-nonce" &&
+        v !== "nonce-only" &&
+        v !== "signature-or-nonce-only"
+      ) {
+        throw new Error(`Invalid --match-key: ${v}`);
+      }
+      out.matchKey = v;
       continue;
     }
     if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
@@ -210,7 +309,137 @@ type BlockscoutTxlistTx = {
   timeStamp?: string;
 };
 
+type DecodedPermit = {
+  owner: `0x${string}`;
+  nonce: bigint;
+  deadline: bigint;
+  token: `0x${string}`;
+  amount: bigint;
+  beneficiary: `0x${string}` | null;
+  signature: `0x${string}` | null;
+  txHash: `0x${string}`;
+};
+
+type PermitKeyDuplicate = { key: string; txA: string; txB: string };
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const readAddress = (value: unknown): `0x${string}` | null => {
+  if (typeof value !== "string") return null;
+  if (!isHexAddress(value)) return null;
+  return normalizeHexAddress(value);
+};
+
+const readBigInt = (value: unknown): bigint | null => {
+  try {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number" && Number.isFinite(value)) return BigInt(value);
+    if (typeof value === "string") return BigInt(value);
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const buildPermitKey = (permit: { owner: `0x${string}`; nonce: bigint; token: `0x${string}`; amount: bigint }): string =>
+  `${permit.owner.toLowerCase()}:${permit.nonce.toString()}:${permit.token.toLowerCase()}:${permit.amount.toString()}`;
+
+const buildPermitNonceKey = (permit: { chainId: number; owner: `0x${string}`; nonce: bigint }): string =>
+  `${permit.chainId}:${permit.owner.toLowerCase()}:${permit.nonce.toString()}`;
+
+const normalizeSignature = (value: unknown): `0x${string}` | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!/^0x[0-9a-fA-F]+$/.test(trimmed)) return null;
+  return trimmed.toLowerCase() as `0x${string}`;
+};
+
+const extractPermitsFromDecoded = ({
+  decoded,
+  ownerFilter,
+  txHash,
+}: {
+  decoded: { functionName: string; args: readonly unknown[] };
+  ownerFilter?: `0x${string}`;
+  txHash: `0x${string}`;
+}): DecodedPermit[] => {
+  const out: DecodedPermit[] = [];
+  const ownerMatches = (owner: `0x${string}` | null) => !ownerFilter || (owner && owner.toLowerCase() === ownerFilter.toLowerCase());
+
+  const pushPermit = ({
+    owner,
+    nonce,
+    deadline,
+    token,
+    amount,
+    beneficiary,
+    signature,
+  }: {
+    owner: `0x${string}` | null;
+    nonce: bigint | null;
+    deadline: bigint | null;
+    token: `0x${string}` | null;
+    amount: bigint | null;
+    beneficiary: `0x${string}` | null;
+    signature: `0x${string}` | null;
+  }) => {
+    if (!owner || !ownerMatches(owner) || nonce === null || deadline === null || !token || amount === null) return;
+    out.push({ owner, nonce, deadline, token, amount, beneficiary, signature, txHash });
+  };
+
+  const fn = decoded.functionName;
+  const args = decoded.args as unknown[];
+
+  if (fn === "permitTransferFrom" || fn === "permitWitnessTransferFrom") {
+    const permit = args.at(0) as { permitted?: unknown; nonce?: unknown; deadline?: unknown } | undefined;
+    const transferDetails = args.at(1) as unknown;
+    const owner = readAddress(args.at(2));
+    const signature = normalizeSignature(args.at(-1));
+    const nonce = readBigInt(permit?.nonce);
+    const deadline = readBigInt(permit?.deadline);
+
+    const permitted = permit?.permitted as unknown;
+    if (Array.isArray(permitted)) {
+      const transfers = Array.isArray(transferDetails) ? (transferDetails as Array<{ to?: unknown }>) : [];
+      permitted.forEach((entry, index) => {
+        const token = readAddress((entry as { token?: unknown })?.token);
+        const amount = readBigInt((entry as { amount?: unknown })?.amount);
+        const beneficiary = readAddress(transfers[index]?.to ?? null);
+        pushPermit({ owner, nonce, deadline, token, amount, beneficiary, signature });
+      });
+    } else if (permitted && typeof permitted === "object") {
+      const token = readAddress((permitted as { token?: unknown })?.token);
+      const amount = readBigInt((permitted as { amount?: unknown })?.amount);
+      const beneficiary = readAddress((transferDetails as { to?: unknown })?.to ?? null);
+      pushPermit({ owner, nonce, deadline, token, amount, beneficiary, signature });
+    }
+    return out;
+  }
+
+  if (fn === "batchPermitTransferFrom") {
+    const permits = Array.isArray(args.at(0)) ? (args.at(0) as Array<{ permitted?: unknown; nonce?: unknown; deadline?: unknown }>) : [];
+    const transferDetails = Array.isArray(args.at(1)) ? (args.at(1) as Array<{ to?: unknown }>) : [];
+    const owners = Array.isArray(args.at(2)) ? (args.at(2) as unknown[]) : [];
+    const signatures = Array.isArray(args.at(3)) ? (args.at(3) as unknown[]) : [];
+    const count = Math.min(permits.length, transferDetails.length, owners.length, signatures.length);
+
+    for (let i = 0; i < count; i += 1) {
+      const permit = permits[i];
+      const owner = readAddress(owners[i]);
+      const signature = normalizeSignature(signatures[i]);
+      const nonce = readBigInt(permit?.nonce);
+      const deadline = readBigInt(permit?.deadline);
+      const permitted = permit?.permitted as unknown;
+      if (!permitted || typeof permitted !== "object") continue;
+      const token = readAddress((permitted as { token?: unknown })?.token);
+      const amount = readBigInt((permitted as { amount?: unknown })?.amount);
+      const beneficiary = readAddress(transferDetails[i]?.to ?? null);
+      pushPermit({ owner, nonce, deadline, token, amount, beneficiary, signature });
+    }
+  }
+
+  return out;
+};
 
 const rpcCall = async <T>({ rpcBaseUrl, chainId, method, params }: { rpcBaseUrl: string; chainId: number; method: string; params: unknown[] }): Promise<T> => {
   const endpoint = `${rpcBaseUrl}/${chainId}`;
@@ -347,6 +576,8 @@ function rowToBackfillablePermit(row: PermitDbRowWithJoins): {
   beneficiary: `0x${string}`;
   signature: `0x${string}`;
   amount: bigint;
+  nonce: bigint;
+  deadline: bigint;
   createdMs: number;
 } | null {
   if (typeof row.transaction === "string" && isValidTxHash(row.transaction)) return null;
@@ -377,10 +608,24 @@ function rowToBackfillablePermit(row: PermitDbRowWithJoins): {
     return null;
   }
 
+  let nonce: bigint;
+  try {
+    nonce = BigInt(row.nonce);
+  } catch {
+    return null;
+  }
+
+  let deadline: bigint;
+  try {
+    deadline = BigInt(row.deadline);
+  } catch {
+    return null;
+  }
+
   const createdMs = Date.parse(String(row.created));
   if (!Number.isFinite(createdMs)) return null;
 
-  return { id: row.id, chainId, tokenAddress, owner, beneficiary, signature, amount, createdMs };
+  return { id: row.id, chainId, tokenAddress, owner, beneficiary, signature, amount, nonce, deadline, createdMs };
 }
 
 const stringifyJson = (value: unknown, pretty: boolean) =>
@@ -505,11 +750,17 @@ async function discoverCandidateTxHashes({
   permits,
   sinceMs,
   matchMode,
+  chunkSize,
+  concurrency,
+  onProgress,
 }: {
   rpcBaseUrl: string;
   permits: ReturnType<typeof rowToBackfillablePermit>[];
   sinceMs: number;
   matchMode: "amount" | "beneficiary";
+  chunkSize: number;
+  concurrency: number;
+  onProgress?: (message: string) => void;
 }): Promise<{
   candidateTxHashesByChain: Map<number, Set<string>>;
   scanSummary: {
@@ -564,12 +815,14 @@ async function discoverCandidateTxHashes({
     latestBlocksByChain.set(chainId, BigInt(latestHex));
   }
 
-  // Default chunk size for eth_getLogs ranges (varies by provider; keep conservative).
-  const chunkSize = 9_000n;
+  const chunkSizeBig = BigInt(chunkSize);
   const toTopicChunkSize = 50;
 
   const candidateTxHashesByChain = new Map<number, Set<string>>();
   let logCount = 0;
+  for (const chainId of chainIds) {
+    candidateTxHashesByChain.set(chainId, new Set());
+  }
 
   for (const tokenKey of tokenKeys) {
     const [chainIdStr, tokenAddressLower] = tokenKey.split(":");
@@ -618,20 +871,43 @@ async function discoverCandidateTxHashes({
     for (let bOffset = 0; bOffset < beneficiaryTopics.length; bOffset += toTopicChunkSize) {
       const toChunk = beneficiaryTopics.slice(bOffset, bOffset + toTopicChunkSize);
 
-      for (let cursor = fromBlock; cursor <= latestBlock; cursor += chunkSize + 1n) {
-        const toBlock = cursor + chunkSize < latestBlock ? cursor + chunkSize : latestBlock;
+      const ranges: Array<{ start: bigint; end: bigint; index: number }> = [];
+      let rangeIndex = 0;
+      for (let cursor = fromBlock; cursor <= latestBlock; cursor += chunkSizeBig + 1n) {
+        const toBlock = cursor + chunkSizeBig < latestBlock ? cursor + chunkSizeBig : latestBlock;
+        rangeIndex += 1;
+        ranges.push({ start: cursor, end: toBlock, index: rangeIndex });
+      }
 
+      const totalRanges = ranges.length;
+      await runWithConcurrency(ranges, concurrency, async (range) => {
         let logs: RpcLog[] = [];
         try {
-          logs = await fetchTransferLogs({ rpcBaseUrl, chainId, tokenAddress, fromOwner: owner, toAddressTopics: toChunk, fromBlock: cursor, toBlock });
+          logs = await fetchTransferLogs({
+            rpcBaseUrl,
+            chainId,
+            tokenAddress,
+            fromOwner: owner,
+            toAddressTopics: toChunk,
+            fromBlock: range.start,
+            toBlock: range.end,
+          });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`Failed to fetch logs (chain ${chainId}, token ${tokenAddress}) at blocks ${cursor.toString()}..${toBlock.toString()}: ${message}`);
-          continue;
+          console.error(
+            `Failed to fetch logs (chain ${chainId}, token ${tokenAddress}) at blocks ${range.start.toString()}..${range.end.toString()}: ${message}`
+          );
+          return;
         }
 
+        if (onProgress) {
+          onProgress(
+            `chain=${chainId} token=${tokenAddress} chunk=${range.index}/${totalRanges} blocks=${range.start.toString()}..${range.end.toString()} logs=${logs.length}`
+          );
+        }
+
+        logCount += logs.length;
         for (const log of logs) {
-          logCount += 1;
           const txHash = typeof log.transactionHash === "string" ? log.transactionHash.toLowerCase() : null;
           if (!txHash || !txHash.startsWith("0x")) continue;
 
@@ -647,13 +923,10 @@ async function discoverCandidateTxHashes({
             if (!wantAmounts || !wantAmounts.has(amt.toString())) continue;
           }
 
-          const existing = candidateTxHashesByChain.get(chainId) ?? new Set<string>();
-          existing.add(txHash);
-          candidateTxHashesByChain.set(chainId, existing);
+          const existing = candidateTxHashesByChain.get(chainId);
+          if (existing) existing.add(txHash);
         }
-
-        if (toBlock === latestBlock) break;
-      }
+      });
     }
   }
 
@@ -682,15 +955,25 @@ async function decodePermit2SignaturesFromBlockscoutTxlist({
   sinceSeconds: number | null;
 }): Promise<{
   signatureToTx: Map<string, string>;
+  permitKeyToTx: Map<string, string>;
+  permitNonceKeyToTx: Map<string, string>;
   scannedTxCount: number;
   decodedTxCount: number;
+  decodedPermitCount: number;
   skippedTxCount: number;
   duplicates: { signature: string; txA: string; txB: string }[];
+  keyDuplicates: PermitKeyDuplicate[];
+  nonceKeyDuplicates: PermitKeyDuplicate[];
 }> {
   const signatureToTx = new Map<string, string>();
+  const permitKeyToTx = new Map<string, string>();
+  const permitNonceKeyToTx = new Map<string, string>();
   const duplicates: { signature: string; txA: string; txB: string }[] = [];
+  const keyDuplicates: PermitKeyDuplicate[] = [];
+  const nonceKeyDuplicates: PermitKeyDuplicate[] = [];
   let scannedTxCount = 0;
   let decodedTxCount = 0;
+  let decodedPermitCount = 0;
   let skippedTxCount = 0;
 
   const pageSize = 10_000;
@@ -754,6 +1037,26 @@ async function decodePermit2SignaturesFromBlockscoutTxlist({
         continue;
       }
 
+      const decodedPermits = extractPermitsFromDecoded({ decoded, ownerFilter, txHash: hash as `0x${string}` });
+      decodedPermitCount += decodedPermits.length;
+      for (const permit of decodedPermits) {
+        const key = buildPermitKey(permit);
+        const existing = permitKeyToTx.get(key);
+        if (existing && existing !== hash) {
+          keyDuplicates.push({ key, txA: existing, txB: hash });
+          continue;
+        }
+        if (!existing) permitKeyToTx.set(key, hash);
+
+        const nonceKey = buildPermitNonceKey({ chainId: GNOSIS_CHAIN_ID, owner: permit.owner, nonce: permit.nonce });
+        const existingNonce = permitNonceKeyToTx.get(nonceKey);
+        if (existingNonce && existingNonce !== hash) {
+          nonceKeyDuplicates.push({ key: nonceKey, txA: existingNonce, txB: hash });
+          continue;
+        }
+        if (!existingNonce) permitNonceKeyToTx.set(nonceKey, hash);
+      }
+
       const extracted: string[] = [];
 
       if (decoded.functionName === "permitTransferFrom") {
@@ -806,7 +1109,18 @@ async function decodePermit2SignaturesFromBlockscoutTxlist({
     if (txs.length < pageSize) break;
   }
 
-  return { signatureToTx, scannedTxCount, decodedTxCount, skippedTxCount, duplicates };
+  return {
+    signatureToTx,
+    permitKeyToTx,
+    permitNonceKeyToTx,
+    scannedTxCount,
+    decodedTxCount,
+    decodedPermitCount,
+    skippedTxCount,
+    duplicates,
+    keyDuplicates,
+    nonceKeyDuplicates,
+  };
 }
 
 async function decodePermit2SignaturesFromTxs({
@@ -821,13 +1135,23 @@ async function decodePermit2SignaturesFromTxs({
   ownerFilter: `0x${string}`;
 }): Promise<{
   signatureToTx: Map<string, string>;
+  permitKeyToTx: Map<string, string>;
+  permitNonceKeyToTx: Map<string, string>;
   decodedTxCount: number;
+  decodedPermitCount: number;
   skippedTxCount: number;
   duplicates: { signature: string; txA: string; txB: string }[];
+  keyDuplicates: PermitKeyDuplicate[];
+  nonceKeyDuplicates: PermitKeyDuplicate[];
 }> {
   const signatureToTx = new Map<string, string>();
+  const permitKeyToTx = new Map<string, string>();
+  const permitNonceKeyToTx = new Map<string, string>();
   const duplicates: { signature: string; txA: string; txB: string }[] = [];
+  const keyDuplicates: PermitKeyDuplicate[] = [];
+  const nonceKeyDuplicates: PermitKeyDuplicate[] = [];
   let decodedTxCount = 0;
+  let decodedPermitCount = 0;
   let skippedTxCount = 0;
 
   const batchSize = 100;
@@ -895,15 +1219,39 @@ async function decodePermit2SignaturesFromTxs({
         continue;
       }
 
-      if (decoded.functionName !== "permitTransferFrom" && decoded.functionName !== "batchPermitTransferFrom") {
+      if (
+        decoded.functionName !== "permitTransferFrom" &&
+        decoded.functionName !== "permitWitnessTransferFrom" &&
+        decoded.functionName !== "batchPermitTransferFrom"
+      ) {
         skippedTxCount += 1;
         continue;
       }
 
+      const decodedPermits = extractPermitsFromDecoded({ decoded, ownerFilter, txHash: hash as `0x${string}` });
+      decodedPermitCount += decodedPermits.length;
+      for (const permit of decodedPermits) {
+        const key = buildPermitKey(permit);
+        const existing = permitKeyToTx.get(key);
+        if (existing && existing !== hash) {
+          keyDuplicates.push({ key, txA: existing, txB: hash });
+          continue;
+        }
+        if (!existing) permitKeyToTx.set(key, hash);
+
+        const nonceKey = buildPermitNonceKey({ chainId, owner: permit.owner, nonce: permit.nonce });
+        const existingNonce = permitNonceKeyToTx.get(nonceKey);
+        if (existingNonce && existingNonce !== hash) {
+          nonceKeyDuplicates.push({ key: nonceKey, txA: existingNonce, txB: hash });
+          continue;
+        }
+        if (!existingNonce) permitNonceKeyToTx.set(nonceKey, hash);
+      }
+
       // Filter to only txs that actually claim from the funding wallet we’re backfilling.
-      if (decoded.functionName === "permitTransferFrom") {
+      if (decoded.functionName === "permitTransferFrom" || decoded.functionName === "permitWitnessTransferFrom") {
         const args = decoded.args as unknown[];
-        const ownerArg = args.at(-2);
+        const ownerArg = args.at(2);
         if (typeof ownerArg !== "string" || ownerArg.toLowerCase() !== ownerFilter.toLowerCase()) {
           skippedTxCount += 1;
           continue;
@@ -919,6 +1267,9 @@ async function decodePermit2SignaturesFromTxs({
 
       const extracted: string[] = [];
       if (decoded.functionName === "permitTransferFrom") {
+        const sig = decoded.args.at(-1);
+        if (typeof sig === "string") extracted.push(sig);
+      } else if (decoded.functionName === "permitWitnessTransferFrom") {
         const sig = decoded.args.at(-1);
         if (typeof sig === "string") extracted.push(sig);
       } else {
@@ -944,7 +1295,17 @@ async function decodePermit2SignaturesFromTxs({
     }
   }
 
-  return { signatureToTx, decodedTxCount, skippedTxCount, duplicates };
+  return {
+    signatureToTx,
+    permitKeyToTx,
+    permitNonceKeyToTx,
+    decodedTxCount,
+    decodedPermitCount,
+    skippedTxCount,
+    duplicates,
+    keyDuplicates,
+    nonceKeyDuplicates,
+  };
 }
 
 async function updateTransactionsInDb({
@@ -1043,6 +1404,11 @@ const main = async () => {
     return;
   }
 
+  const log = (...parts: unknown[]) => {
+    if (!args.verbose) return;
+    console.error(`[${new Date().toISOString()}]`, ...parts);
+  };
+
   const owner = normalizeHexAddress(args.owner);
   const sinceMs = (() => {
     if (args.since && !Number.isNaN(Date.parse(args.since))) return Date.parse(args.since);
@@ -1058,9 +1424,11 @@ const main = async () => {
   }
 
   const rpcBaseUrl = getRpcBaseUrlFromEnv();
+  log(`Config: chunkSize=${args.chunkSize} concurrency=${args.concurrency} matchMode=${args.matchMode} matchKey=${args.matchKey}`);
   const rows = await fetchPermitsFromDb({ supabase, owner, since: args.since });
 
   const candidates = rows.map(rowToBackfillablePermit).filter((p): p is NonNullable<typeof p> => Boolean(p));
+  log(`Backfillable permits: ${candidates.length}`);
   const earliestCreatedMs = candidates.reduce((min, p) => (p.createdMs < min ? p.createdMs : min), Number.POSITIVE_INFINITY);
   const effectiveSinceMs = Number.isFinite(sinceMs) ? sinceMs : earliestCreatedMs;
 
@@ -1069,24 +1437,96 @@ const main = async () => {
     permits: candidates,
     sinceMs: effectiveSinceMs,
     matchMode: args.matchMode,
+    chunkSize: args.chunkSize,
+    concurrency: args.concurrency,
+    onProgress: args.verbose ? (message) => log(message) : undefined,
   });
 
   const allSignatureToTx = new Map<string, string>();
+  const allPermitKeyToTx = new Map<string, string>();
+  const allPermitNonceKeyToTx = new Map<string, string>();
   const allDuplicates: { signature: string; txA: string; txB: string }[] = [];
+  const allKeyDuplicates: PermitKeyDuplicate[] = [];
+  const allNonceKeyDuplicates: PermitKeyDuplicate[] = [];
   let decodedTxCount = 0;
+  let decodedPermitCount = 0;
   let skippedTxCount = 0;
   let candidateTxCount = 0;
-  let txlistScan: { scannedTxCount: number; decodedTxCount: number; skippedTxCount: number; extractedSignatureCount: number } | null = null;
+  let txlistScan: {
+    scannedTxCount: number;
+    decodedTxCount: number;
+    decodedPermitCount: number;
+    skippedTxCount: number;
+    extractedSignatureCount: number;
+    extractedKeyCount: number;
+    extractedNonceCount: number;
+  } | null = null;
   let txlistScanError: string | null = null;
+  const ensureTxlistScan = () => {
+    if (!txlistScan) {
+      txlistScan = {
+        scannedTxCount: 0,
+        decodedTxCount: 0,
+        decodedPermitCount: 0,
+        skippedTxCount: 0,
+        extractedSignatureCount: 0,
+        extractedKeyCount: 0,
+        extractedNonceCount: 0,
+      };
+    }
+    return txlistScan;
+  };
+  const mergeTxlistResult = (label: string, result: Awaited<ReturnType<typeof decodePermit2SignaturesFromBlockscoutTxlist>>) => {
+    const summary = ensureTxlistScan();
+    summary.scannedTxCount += result.scannedTxCount;
+    summary.decodedTxCount += result.decodedTxCount;
+    summary.decodedPermitCount += result.decodedPermitCount;
+    summary.skippedTxCount += result.skippedTxCount;
+    summary.extractedSignatureCount += result.signatureToTx.size;
+    summary.extractedKeyCount += result.permitKeyToTx.size;
+    summary.extractedNonceCount += result.permitNonceKeyToTx.size;
+    allDuplicates.push(...result.duplicates);
+    allKeyDuplicates.push(...result.keyDuplicates);
+    allNonceKeyDuplicates.push(...result.nonceKeyDuplicates);
+    for (const [sig, tx] of result.signatureToTx.entries()) {
+      const existing = allSignatureToTx.get(sig);
+      if (existing && existing !== tx) {
+        allDuplicates.push({ signature: sig, txA: existing, txB: tx });
+        continue;
+      }
+      if (!existing) allSignatureToTx.set(sig, tx);
+    }
+    for (const [key, tx] of result.permitKeyToTx.entries()) {
+      const existing = allPermitKeyToTx.get(key);
+      if (existing && existing !== tx) {
+        allKeyDuplicates.push({ key, txA: existing, txB: tx });
+        continue;
+      }
+      if (!existing) allPermitKeyToTx.set(key, tx);
+    }
+    for (const [key, tx] of result.permitNonceKeyToTx.entries()) {
+      const existing = allPermitNonceKeyToTx.get(key);
+      if (existing && existing !== tx) {
+        allNonceKeyDuplicates.push({ key, txA: existing, txB: tx });
+        continue;
+      }
+      if (!existing) allPermitNonceKeyToTx.set(key, tx);
+    }
+  };
 
   for (const [chainId, txHashSet] of candidateTxHashesByChain.entries()) {
     const txHashesSorted = Array.from(txHashSet.values()).sort();
     candidateTxCount += txHashesSorted.length;
     const {
       signatureToTx,
+      permitKeyToTx,
+      permitNonceKeyToTx,
       decodedTxCount: decoded,
+      decodedPermitCount: decodedPermits,
       skippedTxCount: skipped,
       duplicates,
+      keyDuplicates,
+      nonceKeyDuplicates,
     } = await decodePermit2SignaturesFromTxs({
       rpcBaseUrl,
       chainId,
@@ -1094,55 +1534,146 @@ const main = async () => {
       ownerFilter: owner,
     });
     decodedTxCount += decoded;
+    decodedPermitCount += decodedPermits;
     skippedTxCount += skipped;
     allDuplicates.push(...duplicates);
+    allKeyDuplicates.push(...keyDuplicates);
+    allNonceKeyDuplicates.push(...nonceKeyDuplicates);
     for (const [sig, tx] of signatureToTx.entries()) {
       if (allSignatureToTx.has(sig)) continue;
       allSignatureToTx.set(sig, tx);
     }
+    for (const [key, tx] of permitKeyToTx.entries()) {
+      const existing = allPermitKeyToTx.get(key);
+      if (existing && existing !== tx) {
+        allKeyDuplicates.push({ key, txA: existing, txB: tx });
+        continue;
+      }
+      if (!existing) allPermitKeyToTx.set(key, tx);
+    }
+    for (const [key, tx] of permitNonceKeyToTx.entries()) {
+      const existing = allPermitNonceKeyToTx.get(key);
+      if (existing && existing !== tx) {
+        allNonceKeyDuplicates.push({ key, txA: existing, txB: tx });
+        continue;
+      }
+      if (!existing) allPermitNonceKeyToTx.set(key, tx);
+    }
   }
 
-  if (args.scanNewPermit2Txlist) {
+  if (args.scanNewPermit2Txlist || args.scanOldPermit2Txlist) {
     if (candidates.some((c) => c.chainId === GNOSIS_CHAIN_ID)) {
-      try {
-        const sinceSeconds = Number.isFinite(effectiveSinceMs) ? Math.floor(effectiveSinceMs / 1000) : null;
-        const {
-          signatureToTx: txlistSignatureToTx,
-          scannedTxCount,
-          decodedTxCount: txlistDecoded,
-          skippedTxCount: txlistSkipped,
-          duplicates,
-        } = await decodePermit2SignaturesFromBlockscoutTxlist({
-          permit2Address: NEW_PERMIT2_ADDRESS,
-          ownerFilter: owner,
-          sinceSeconds,
-        });
-
-        txlistScan = { scannedTxCount, decodedTxCount: txlistDecoded, skippedTxCount: txlistSkipped, extractedSignatureCount: txlistSignatureToTx.size };
-        allDuplicates.push(...duplicates);
-
-        for (const [sig, tx] of txlistSignatureToTx.entries()) {
-          const existing = allSignatureToTx.get(sig);
-          if (existing && existing !== tx) {
-            allDuplicates.push({ signature: sig, txA: existing, txB: tx });
-            continue;
-          }
-          if (!existing) allSignatureToTx.set(sig, tx);
+      const sinceSeconds = Number.isFinite(effectiveSinceMs) ? Math.floor(effectiveSinceMs / 1000) : null;
+      if (args.scanNewPermit2Txlist) {
+        try {
+          const result = await decodePermit2SignaturesFromBlockscoutTxlist({
+            permit2Address: NEW_PERMIT2_ADDRESS,
+            ownerFilter: owner,
+            sinceSeconds,
+          });
+          mergeTxlistResult("new", result);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          txlistScanError = txlistScanError ? `${txlistScanError}; new: ${message}` : `new: ${message}`;
         }
-      } catch (error) {
-        txlistScanError = error instanceof Error ? error.message : String(error);
-        txlistScan = null;
+      }
+      if (args.scanOldPermit2Txlist) {
+        try {
+          const result = await decodePermit2SignaturesFromBlockscoutTxlist({
+            permit2Address: OLD_PERMIT2_ADDRESS,
+            ownerFilter: owner,
+            sinceSeconds,
+          });
+          mergeTxlistResult("old", result);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          txlistScanError = txlistScanError ? `${txlistScanError}; old: ${message}` : `old: ${message}`;
+        }
       }
     } else {
-      txlistScan = { scannedTxCount: 0, decodedTxCount: 0, skippedTxCount: 0, extractedSignatureCount: 0 };
+      txlistScan = {
+        scannedTxCount: 0,
+        decodedTxCount: 0,
+        decodedPermitCount: 0,
+        skippedTxCount: 0,
+        extractedSignatureCount: 0,
+        extractedKeyCount: 0,
+        extractedNonceCount: 0,
+      };
     }
   }
 
   const signaturesInDb = new Set(candidates.map((p) => p.signature.toLowerCase()));
+  const dbKeyToSignature = new Map<string, string>();
+  const duplicateDbKeys: string[] = [];
+  for (const permit of candidates) {
+    const key = buildPermitKey({ owner: permit.owner, nonce: permit.nonce, token: permit.tokenAddress, amount: permit.amount });
+    if (dbKeyToSignature.has(key)) {
+      duplicateDbKeys.push(key);
+      continue;
+    }
+    dbKeyToSignature.set(key, permit.signature.toLowerCase());
+  }
+  if (duplicateDbKeys.length > 0) {
+    const dupSet = new Set(duplicateDbKeys);
+    for (const key of dupSet) dbKeyToSignature.delete(key);
+  }
+
+  const dbNonceKeyToSignature = new Map<string, string>();
+  const duplicateDbNonceKeys: string[] = [];
+  for (const permit of candidates) {
+    const key = buildPermitNonceKey({ chainId: permit.chainId, owner: permit.owner, nonce: permit.nonce });
+    if (dbNonceKeyToSignature.has(key)) {
+      duplicateDbNonceKeys.push(key);
+      continue;
+    }
+    dbNonceKeyToSignature.set(key, permit.signature.toLowerCase());
+  }
+  if (duplicateDbNonceKeys.length > 0) {
+    const dupSet = new Set(duplicateDbNonceKeys);
+    for (const key of dupSet) dbNonceKeyToSignature.delete(key);
+  }
+
+  if (allNonceKeyDuplicates.length > 0) {
+    const dupSet = new Set(allNonceKeyDuplicates.map((d) => d.key));
+    for (const key of dupSet) allPermitNonceKeyToTx.delete(key);
+  }
+
   const matched = new Map<string, string>();
-  for (const [sig, tx] of allSignatureToTx.entries()) {
-    if (!signaturesInDb.has(sig)) continue;
-    matched.set(sig, tx);
+  let matchedSignatureCount = 0;
+  let matchedKeyCount = 0;
+  let matchedNonceCount = 0;
+  const allowSignatureMatch =
+    args.matchKey === "signature" || args.matchKey === "signature-or-nonce" || args.matchKey === "signature-or-nonce-only";
+  const allowKeyMatch = args.matchKey === "nonce" || args.matchKey === "signature-or-nonce";
+  const allowNonceOnlyMatch = args.matchKey === "nonce-only" || args.matchKey === "signature-or-nonce-only";
+
+  if (allowSignatureMatch) {
+    for (const [sig, tx] of allSignatureToTx.entries()) {
+      if (!signaturesInDb.has(sig)) continue;
+      matched.set(sig, tx);
+      matchedSignatureCount += 1;
+    }
+  }
+
+  if (allowKeyMatch) {
+    for (const [key, sig] of dbKeyToSignature.entries()) {
+      if (matched.has(sig)) continue;
+      const tx = allPermitKeyToTx.get(key);
+      if (!tx) continue;
+      matched.set(sig, tx);
+      matchedKeyCount += 1;
+    }
+  }
+
+  if (allowNonceOnlyMatch) {
+    for (const [key, sig] of dbNonceKeyToSignature.entries()) {
+      if (matched.has(sig)) continue;
+      const tx = allPermitNonceKeyToTx.get(key);
+      if (!tx) continue;
+      matched.set(sig, tx);
+      matchedNonceCount += 1;
+    }
   }
 
   let updateResult: Awaited<ReturnType<typeof updateTransactionsInDb>> | null = null;
@@ -1161,7 +1692,11 @@ const main = async () => {
     owner,
     since: args.since ?? null,
     matchMode: args.matchMode,
+    matchKey: args.matchKey,
+    chunkSize: args.chunkSize,
+    concurrency: args.concurrency,
     scanNewPermit2Txlist: args.scanNewPermit2Txlist,
+    scanOldPermit2Txlist: args.scanOldPermit2Txlist,
     effectiveSince: new Date(effectiveSinceMs).toISOString(),
     rpcBaseUrl,
     permit2: { old: OLD_PERMIT2_ADDRESS, new: NEW_PERMIT2_ADDRESS },
@@ -1170,12 +1705,22 @@ const main = async () => {
     scanSummary,
     candidateTxCount,
     decodedTxCount,
+    decodedPermitCount,
     skippedTxCount,
     txlistScan,
     txlistScanError,
     extractedSignatureCount: allSignatureToTx.size,
-    matchedSignatureCount: matched.size,
+    extractedKeyCount: allPermitKeyToTx.size,
+    extractedNonceCount: allPermitNonceKeyToTx.size,
+    matchedSignatureCount,
+    matchedKeyCount,
+    matchedNonceCount,
+    matchedTotalCount: matched.size,
+    dbDuplicateKeyCount: new Set(duplicateDbKeys).size,
+    dbDuplicateNonceKeyCount: new Set(duplicateDbNonceKeys).size,
     duplicates: allDuplicates,
+    keyDuplicates: allKeyDuplicates,
+    nonceKeyDuplicates: allNonceKeyDuplicates,
     executed: args.execute,
     ...(args.execute
       ? { updated: updateResult?.updated ?? 0, conflicts: updateResult?.conflicts ?? [], missing: updateResult?.missing ?? [], updateError }

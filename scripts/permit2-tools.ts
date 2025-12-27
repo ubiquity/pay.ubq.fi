@@ -44,6 +44,12 @@ export type NonceBitmapRef = {
 };
 
 export type NonceBitmapResult = { bitmap: bigint } | { error: string };
+export type NonceBitmapProgress = {
+  chainId: number;
+  chunkIndex: number;
+  totalChunks: number;
+  chunkSize: number;
+};
 
 type JsonRpcRequest = {
   jsonrpc: "2.0";
@@ -60,6 +66,25 @@ type JsonRpcResponse = {
 };
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const runWithConcurrency = async <T>(
+  items: T[],
+  concurrency: number,
+  task: (item: T, index: number) => Promise<void>
+) => {
+  if (items.length === 0) return;
+  const limit = Math.max(1, Math.floor(concurrency));
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor;
+      if (index >= items.length) break;
+      cursor += 1;
+      await task(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+};
 
 export const getEnv = (key: string) => {
   try {
@@ -116,6 +141,7 @@ export async function fetchPermitsFromDb({
     deadline,
     signature,
     transaction,
+    invalidation,
     created,
     beneficiary_id,
     location_id,
@@ -274,11 +300,15 @@ export async function fetchNonceBitmaps({
   refs,
   batchSize = 500,
   maxRetries = 2,
+  concurrency = 64,
+  onProgress,
 }: {
   rpcBaseUrl: string;
   refs: NonceBitmapRef[];
   batchSize?: number;
   maxRetries?: number;
+  concurrency?: number;
+  onProgress?: (progress: NonceBitmapProgress) => void;
 }): Promise<Map<string, NonceBitmapResult>> {
   const out = new Map<string, NonceBitmapResult>();
   const byChain = new Map<number, NonceBitmapRef[]>();
@@ -345,12 +375,25 @@ export async function fetchNonceBitmaps({
     }
   };
 
+  const tasks: Array<{ chainId: number; chunkRefs: NonceBitmapRef[]; index: number }> = [];
+  let totalChunks = 0;
   for (const [chainId, chainRefs] of byChain.entries()) {
     for (let offset = 0; offset < chainRefs.length; offset += batchSize) {
       const chunk = chainRefs.slice(offset, offset + batchSize);
-      await fetchChunk(chainId, chunk);
+      totalChunks += 1;
+      tasks.push({ chainId, chunkRefs: chunk, index: totalChunks });
     }
   }
+
+  await runWithConcurrency(tasks, concurrency, async (task) => {
+    await fetchChunk(task.chainId, task.chunkRefs);
+    onProgress?.({
+      chainId: task.chainId,
+      chunkIndex: task.index,
+      totalChunks,
+      chunkSize: task.chunkRefs.length,
+    });
+  });
 
   return out;
 }

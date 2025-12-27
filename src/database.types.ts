@@ -426,6 +426,7 @@ export type Database = {
           partner_id: number | null;
           signature: string;
           token_id: number | null;
+          invalidation: string | null;
           transaction: string | null;
           updated: string | null;
         };
@@ -440,6 +441,7 @@ export type Database = {
           partner_id?: number | null;
           signature: string;
           token_id?: number | null;
+          invalidation?: string | null;
           transaction?: string | null;
           updated?: string | null;
         };
@@ -454,6 +456,7 @@ export type Database = {
           partner_id?: number | null;
           signature?: string;
           token_id?: number | null;
+          invalidation?: string | null;
           transaction?: string | null;
           updated?: string | null;
         };
