@@ -5,6 +5,7 @@ import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
 import { applyPermitStatusOverrides, loadPermitStatusCache, upsertPermitStatusOverride } from "../utils/permit-status-cache.ts";
 import type { WorkerResponse } from "../workers/permit-checker.worker.ts";
 import { getPermitCheckerWorker, type PermitCheckerWorker } from "../workers/permit-worker-client.ts";
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 
 interface UsePermitDataProps {
   address: Address | undefined;
@@ -67,6 +68,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           // Quotes are chain-specific. Only quote permits on the currently connected chain.
           permit.networkId === chainId &&
           permit.tokenAddress &&
+          // Only quote UUSD permits (settlement token). Other tokens should display as-is.
+          getTokenInfo(chainId, permit.tokenAddress as Address)?.symbol.toUpperCase() === "UUSD" &&
           permit.type === "erc20-permit" &&
           permit.status !== "Claimed" &&
           permit.claimStatus !== "Success" &&

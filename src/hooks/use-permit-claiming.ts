@@ -6,7 +6,7 @@ import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
 import { postCowSwapOrder, getCowSwapVaultRelayerAddress } from "../utils/cowswap-utils.ts";
-import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
+import { getTokenInfo, getTokenBySymbol } from "../constants/supported-reward-tokens.ts";
 
 if (!permit2Abi) {
   throw new Error("Permit2 ABI could not be loaded");
@@ -184,20 +184,27 @@ export function usePermitClaiming({
       const chainId = chain.id;
       const tokenOut = preferredRewardTokenAddress;
 
-      const group = new Map<Address, bigint>();
+      const uusd = getTokenBySymbol(chainId, "UUSD")?.address;
+      if (!uusd) return;
+
+      // Group by receiver so we never accidentally send the output to the wrong address.
+      const group = new Map<string, { tokenIn: Address; receiver: Address; amountIn: bigint }>();
       for (const permit of permitsClaimed) {
         if (permit.networkId !== chainId) continue;
         if (!permit.tokenAddress) continue;
         const tokenIn = permit.tokenAddress as Address;
+        if (tokenIn.toLowerCase() !== uusd.toLowerCase()) continue; // only support UUSD settlements
         if (tokenIn.toLowerCase() === tokenOut.toLowerCase()) continue;
-        const current = group.get(tokenIn) ?? 0n;
-        group.set(tokenIn, current + (permit.amount ?? 0n));
+        const receiver = (permit.beneficiary as Address) ?? address;
+        const key = `${chainId}:${tokenIn.toLowerCase()}->${tokenOut.toLowerCase()}:${receiver.toLowerCase()}`;
+        const current = group.get(key)?.amountIn ?? 0n;
+        group.set(key, { tokenIn, receiver, amountIn: current + (permit.amount ?? 0n) });
       }
 
-      for (const [tokenIn, amountIn] of group.entries()) {
+      for (const { tokenIn, receiver, amountIn } of group.values()) {
         if (amountIn <= 0n) continue;
 
-        const key = `${chainId}:${tokenIn}->${tokenOut}`;
+        const key = `${chainId}:${tokenIn}->${tokenOut}:${receiver}`;
         setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Preparing swap order..." } }));
 
         try {
@@ -236,7 +243,7 @@ export function usePermitClaiming({
             tokenOut,
             amountIn,
             owner: address,
-            receiver: address,
+            receiver,
             chainId,
             walletClient,
           });
