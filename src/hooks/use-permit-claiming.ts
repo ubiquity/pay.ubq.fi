@@ -1,7 +1,7 @@
 // use-permit-claiming.ts: Handles single and batch permit claiming
 
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
-import { Address, Chain, PublicClient, WalletClient, erc20Abi } from "viem";
+import { Address, Chain, PublicClient, WalletClient, erc20Abi, isAddress } from "viem";
 import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
@@ -219,7 +219,8 @@ export function usePermitClaiming({
         const tokenIn = permit.tokenAddress as Address;
         if (tokenIn.toLowerCase() !== uusd.toLowerCase()) continue; // only support UUSD settlements
         if (tokenIn.toLowerCase() === tokenOut.toLowerCase()) continue;
-        const receiver = (permit.beneficiary as Address) ?? address;
+        const rawBeneficiary = (permit.beneficiary ?? "").trim();
+        const receiver = rawBeneficiary && isAddress(rawBeneficiary) ? (rawBeneficiary as Address) : address;
         const key = `${chainId}:${tokenIn.toLowerCase()}->${tokenOut.toLowerCase()}:${receiver.toLowerCase()}`;
         const current = group.get(key)?.amountIn ?? 0n;
         group.set(key, { tokenIn, receiver, amountIn: current + (permit.amount ?? 0n) });
@@ -269,15 +270,24 @@ export function usePermitClaiming({
           }));
         }
 
-        const approveTx = await walletClient.writeContract({
-          address: tokenIn,
-          abi: erc20Abi,
-          functionName: "approve",
-          // Prefer least-privilege approvals since this swap is best-effort.
-          args: [spender, totalAmountIn],
-          account: address,
-          chain,
-        });
+        let approveTx: `0x${string}` | null = null;
+        try {
+          approveTx = await walletClient.writeContract({
+            address: tokenIn,
+            abi: erc20Abi,
+            functionName: "approve",
+            // Prefer least-privilege approvals since this swap is best-effort.
+            args: [spender, totalAmountIn],
+            account: address,
+            chain,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          for (const g of tokenGroups) {
+            setSwapSubmissionStatus((prev) => ({ ...prev, [g.key]: { status: "error", message: `Swap failed: Approve failed (${message})` } }));
+          }
+          continue;
+        }
         try {
           await publicClient.waitForTransactionReceipt({ hash: approveTx, timeout: 60_000 });
           approvedTokenIns.add(tokenIn);
@@ -411,7 +421,7 @@ export function usePermitClaiming({
       });
 
       // Best-effort: if user selected a preferred payout token, post a CoW swap order after claiming.
-      void maybeSubmitCowSwap([permit]);
+      void maybeSubmitCowSwap([permit]).catch((err) => console.warn("CoW swap submission failed", err));
 
       return { success: true, txHash };
     } catch (error) {
@@ -566,7 +576,7 @@ export function usePermitClaiming({
     console.log("Sequential claim completed successfully");
 
     // Best-effort: post swap orders for aggregated claimed amounts.
-    void maybeSubmitCowSwap(successfullyClaimedPermits);
+    void maybeSubmitCowSwap(successfullyClaimedPermits).catch((err) => console.warn("CoW swap submission failed", err));
   };
 
   const handleClaimBatch = async (permitsToClaim: PermitData[]) => {
@@ -665,7 +675,7 @@ export function usePermitClaiming({
       });
 
       // Best-effort: post swap orders for aggregated claimed amounts.
-      void maybeSubmitCowSwap(permitsToClaim);
+      void maybeSubmitCowSwap(permitsToClaim).catch((err) => console.warn("CoW swap submission failed", err));
 
       if (!batchNetworkId) {
         console.error("Batch claim expects all permits to share the same networkId");
