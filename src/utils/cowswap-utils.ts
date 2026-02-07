@@ -40,10 +40,49 @@ interface CowSwapOrderParams {
 
 const DEFAULT_SLIPPAGE_BPS = 50; // 0.5%
 
+function buildCowQuoteRequest({
+  tokenIn,
+  tokenOut,
+  from,
+  receiver,
+  amountIn,
+  appDataInfo,
+}: {
+  tokenIn: Address;
+  tokenOut: Address;
+  from: Address;
+  receiver: Address;
+  amountIn: bigint;
+  appDataInfo: { fullAppData: string; appDataKeccak256: string };
+}) {
+  return {
+    sellToken: tokenIn,
+    buyToken: tokenOut,
+    from,
+    receiver,
+    sellAmountBeforeFee: amountIn.toString(),
+    kind: OrderQuoteSideKindSell.SELL,
+    appData: appDataInfo.fullAppData,
+    appDataHash: appDataInfo.appDataKeccak256,
+  };
+}
+
+function assertQuoteShape(quote: Record<string, unknown>) {
+  // Minimal runtime guard before using the quote in an EIP-712 signature.
+  for (const key of ["sellToken", "buyToken", "sellAmount", "buyAmount", "validTo"]) {
+    if (!(key in quote)) throw new Error(`CoW quote missing required field: ${key}`);
+  }
+}
+
 /**
- * CoW SDK expects a specific chain id enum type. We validate supported chains upstream and cast here.
+ * CoW SDK expects a specific chain id enum type. We validate at runtime to avoid silently
+ * targeting the wrong OrderBook API endpoint.
  */
 function asSupportedChainId(chainId: number): SupportedChainId {
+  const supported = Object.values(SupportedChainId).filter((v) => typeof v === "number") as number[];
+  if (!supported.includes(chainId)) {
+    throw new Error(`Unsupported CoW Protocol chainId: ${chainId}`);
+  }
   return chainId as SupportedChainId;
 }
 
@@ -68,6 +107,17 @@ function getPartnerFeeBps(chainId: number, tokenOut: Address): number | undefine
   return info.symbol.toUpperCase() === "UUSD" ? undefined : COWSWAP_PARTNER_FEE_BPS;
 }
 
+async function buildCowAppDataInfo(partnerFeeBps: number | undefined) {
+  return await buildAppData({
+    slippageBps: DEFAULT_SLIPPAGE_BPS,
+    appCode: "pay.ubq.fi",
+    orderClass: "market",
+    ...(partnerFeeBps
+      ? { partnerFee: { bps: partnerFeeBps, recipient: COWSWAP_PARTNER_FEE_RECIPIENT } }
+      : {}),
+  });
+}
+
 /**
  * Fetches a quote from the CowSwap API for a potential swap.
  * Does not require signing or submit an order.
@@ -85,26 +135,19 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
   }
 
   const partnerFeeBps = getPartnerFeeBps(params.chainId, params.tokenOut);
-  const appDataInfo = await buildAppData({
-    slippageBps: DEFAULT_SLIPPAGE_BPS,
-    appCode: "pay.ubq.fi",
-    orderClass: "market",
-    ...(partnerFeeBps
-      ? { partnerFee: { bps: partnerFeeBps, recipient: COWSWAP_PARTNER_FEE_RECIPIENT } }
-      : {}),
-  });
+  const appDataInfo = await buildCowAppDataInfo(partnerFeeBps);
 
   const orderBookApi = new OrderBookApi({ chainId: asSupportedChainId(params.chainId) });
-  const quoteResponse = await orderBookApi.getQuote({
-    sellToken: params.tokenIn,
-    buyToken: params.tokenOut,
-    from: params.userAddress,
-    receiver: params.userAddress,
-    sellAmountBeforeFee: params.amountIn.toString(),
-    kind: OrderQuoteSideKindSell.SELL,
-    appData: appDataInfo.fullAppData,
-    appDataHash: appDataInfo.appDataKeccak256,
-  });
+  const quoteResponse = await orderBookApi.getQuote(
+    buildCowQuoteRequest({
+      tokenIn: params.tokenIn,
+      tokenOut: params.tokenOut,
+      from: params.userAddress,
+      receiver: params.userAddress,
+      amountIn: params.amountIn,
+      appDataInfo,
+    })
+  );
 
   const amountsAndCosts = getQuoteAmountsAndCosts({
     orderParams: quoteResponse.quote,
@@ -137,26 +180,19 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
   }
 
   const partnerFeeBps = getPartnerFeeBps(params.chainId, params.tokenOut);
-  const appDataInfo = await buildAppData({
-    slippageBps: DEFAULT_SLIPPAGE_BPS,
-    appCode: "pay.ubq.fi",
-    orderClass: "market",
-    ...(partnerFeeBps
-      ? { partnerFee: { bps: partnerFeeBps, recipient: COWSWAP_PARTNER_FEE_RECIPIENT } }
-      : {}),
-  });
+  const appDataInfo = await buildCowAppDataInfo(partnerFeeBps);
 
   const orderBookApi = new OrderBookApi({ chainId: asSupportedChainId(params.chainId) });
-  const quoteResponse = await orderBookApi.getQuote({
-    sellToken: params.tokenIn,
-    buyToken: params.tokenOut,
-    from: params.owner,
-    receiver: params.receiver,
-    sellAmountBeforeFee: params.amountIn.toString(),
-    kind: OrderQuoteSideKindSell.SELL,
-    appData: appDataInfo.fullAppData,
-    appDataHash: appDataInfo.appDataKeccak256,
-  });
+  const quoteResponse = await orderBookApi.getQuote(
+    buildCowQuoteRequest({
+      tokenIn: params.tokenIn,
+      tokenOut: params.tokenOut,
+      from: params.owner,
+      receiver: params.receiver,
+      amountIn: params.amountIn,
+      appDataInfo,
+    })
+  );
 
   const rawDomain = await OrderSigningUtils.getDomain(params.chainId);
   const domain = {
@@ -167,12 +203,14 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
   };
   const types = OrderSigningUtils.getEIP712Types() as unknown as Record<string, Array<{ name: string; type: string }>>;
 
+  const message = quoteResponse.quote as unknown as Record<string, unknown>;
+  assertQuoteShape(message);
   const signature = await params.walletClient.signTypedData({
     account: params.owner,
     domain,
     primaryType: "Order",
     types,
-    message: quoteResponse.quote as unknown as Record<string, unknown>,
+    message,
   });
 
   const orderId = await orderBookApi.sendOrder({

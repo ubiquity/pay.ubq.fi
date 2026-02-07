@@ -228,7 +228,7 @@ export function usePermitClaiming({
       for (const { tokenIn, receiver, amountIn } of group.values()) {
         if (amountIn <= 0n) continue;
 
-        const key = `${chainId}:${tokenIn}->${tokenOut}:${receiver}`;
+        const key = `${chainId}:${tokenIn.toLowerCase()}->${tokenOut.toLowerCase()}:${receiver.toLowerCase()}`;
         setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Preparing swap order..." } }));
 
         try {
@@ -248,12 +248,12 @@ export function usePermitClaiming({
               [key]: { status: "submitting", message: `Approving ${tokenInfo?.symbol ?? "token"} for CoW Swap...` },
             }));
 
-            const MAX_UINT256 = (1n << 256n) - 1n;
             const approveTx = await walletClient.writeContract({
               address: tokenIn,
               abi: erc20Abi,
               functionName: "approve",
-              args: [spender, MAX_UINT256],
+              // Approve only what is needed for this swap, reducing exposure vs MAX_UINT256 approvals.
+              args: [spender, amountIn],
               account: address,
               chain,
             });
@@ -274,6 +274,10 @@ export function usePermitClaiming({
 
           setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitted", message: `Swap order posted: ${orderId}` } }));
         } catch (error) {
+          if (isUserRejectedRequest(error)) {
+            setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "rejected", message: "Swap rejected in wallet" } }));
+            continue;
+          }
           const message = error instanceof Error ? error.message : String(error);
           setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "error", message: `Swap failed: ${message}` } }));
         }
@@ -308,6 +312,9 @@ export function usePermitClaiming({
       setError("Wallet not connected or chain unavailable");
       return { success: false, txHash: "" };
     }
+
+    // Clear prior swap banners/status so the user sees only the current claim's swap attempts.
+    setSwapSubmissionStatus({});
 
     setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending" } : p)));
 
@@ -422,6 +429,7 @@ export function usePermitClaiming({
     setIsClaiming(true);
     setSequentialClaimError(null);
     setError(null);
+    setSwapSubmissionStatus({});
 
     const toClaim = permitsToClaim;
 
@@ -444,82 +452,80 @@ export function usePermitClaiming({
     setPermits((prev) => prev.map((p) => (toClaim.some((c) => c.signature === p.signature) ? { ...p, claimStatus: "Pending" } : p)));
 
     const successfullyClaimedPermits: PermitData[] = [];
-    await Promise.allSettled(
-      toClaim.map(async (permit) => {
-        let txHash: `0x${string}` | undefined;
+    for (const permit of toClaim) {
+      let txHash: `0x${string}` | undefined;
+      try {
+        const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+
+        console.log("Transaction simulation successful", { request });
+
+        // 2. Send the actual transaction
+        txHash = await walletClient.writeContract(request);
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+        updatePermitStatusCache(permit.signature, { claimStatus: "Pending", transactionHash: txHash });
+
+        // 3. Wait for transaction receipt
+        let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
         try {
-          const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
-
-          console.log("Transaction simulation successful", { request });
-
-          // 2. Send the actual transaction
-          txHash = await walletClient.writeContract(request);
-          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
-          updatePermitStatusCache(permit.signature, { claimStatus: "Pending", transactionHash: txHash });
-
-          // 3. Wait for transaction receipt
-          let receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>> | null = null;
-          try {
-            receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-            console.log("Transaction completed", { receipt });
-          } catch (error) {
-            console.warn("Receipt lookup failed after tx submission; will attempt to record via API", { error, txHash, networkId: permit.networkId });
-          }
-
-          if (!receipt) {
-            void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
-              if (!result.ok) {
-                console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
-                return;
-              }
-
-              setPermits((prev) =>
-                prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
-              );
-              updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
-              reduceAllowance([permit]);
-            });
-            return;
-          }
-
-          if (receipt.status !== "success") throw new Error(`Transaction failed with status: ${receipt.status}`);
-
-          // Update status to success
-          successfullyClaimedPermits.push(permit);
-          setPermits((prev) =>
-            prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
-          );
-          updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
-
-          // Record transaction in database
-          void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
-            if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
-          });
+          receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+          console.log("Transaction completed", { receipt });
         } catch (error) {
-          if (isUserRejectedRequest(error) && !txHash) {
-            setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Idle" } : p)));
-            return;
-          }
+          console.warn("Receipt lookup failed after tx submission; will attempt to record via API", { error, txHash, networkId: permit.networkId });
+        }
 
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error("Sequential claim processing error", { error });
-          if (txHash) {
-            if (errorMessage.includes("Transaction failed with status")) {
-              setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error", transactionHash: txHash } : p)));
+        if (!receipt) {
+          void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+            if (!result.ok) {
+              console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
               return;
             }
 
-            setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
-            void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
-              if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
-            });
-            return;
+            setPermits((prev) =>
+              prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
+            );
+            updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
+            reduceAllowance([permit]);
+          });
+          continue;
+        }
+
+        if (receipt.status !== "success") throw new Error(`Transaction failed with status: ${receipt.status}`);
+
+        // Update status to success
+        successfullyClaimedPermits.push(permit);
+        setPermits((prev) =>
+          prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Success", status: "Claimed", transactionHash: txHash } : p))
+        );
+        updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: txHash });
+
+        // Record transaction in database
+        void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+          if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+        });
+      } catch (error) {
+        if (isUserRejectedRequest(error) && !txHash) {
+          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Idle" } : p)));
+          continue;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("Sequential claim processing error", { error });
+        if (txHash) {
+          if (errorMessage.includes("Transaction failed with status")) {
+            setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error", transactionHash: txHash } : p)));
+            continue;
           }
 
-          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error" } : p)));
+          setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Pending", transactionHash: txHash } : p)));
+          void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
+            if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
+          });
+          continue;
         }
-      })
-    );
+
+        setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Error" } : p)));
+      }
+    }
     reduceAllowance(successfullyClaimedPermits);
     setIsClaiming(false);
     console.log("Sequential claim completed successfully");
@@ -540,6 +546,7 @@ export function usePermitClaiming({
     setIsClaiming(true);
     setSequentialClaimError(null);
     setError(null);
+    setSwapSubmissionStatus({});
 
     if (!permitsToClaim.length) {
       console.warn("Batch RPC: No claimable permits found");
