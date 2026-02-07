@@ -223,12 +223,22 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
 
   // Send order with explicit fields to avoid passing unexpected keys to the API.
   type SendOrderParams = Parameters<OrderBookApi["sendOrder"]>[0];
+
+  // If we provide appDataHash alongside appData, CoW requires appData to be the JSON string.
+  // Ensure the hash we built from appDataInfo matches the hash that we signed over.
+  const signedAppData = (message as Record<string, unknown>)["appData"];
+  if (typeof signedAppData === "string" && signedAppData.toLowerCase() !== appDataInfo.appDataKeccak256.toLowerCase()) {
+    throw new Error("CoW appData hash mismatch between quote/signature and appDataInfo");
+  }
+
   const orderId = await orderBookApi.sendOrder({
     ...message,
     from: params.owner,
     quoteId: quoteResponse.id ?? null,
     signature,
     signingScheme: SigningScheme.EIP712,
+    appData: appDataInfo.fullAppData,
+    appDataHash: appDataInfo.appDataKeccak256,
   } as unknown as SendOrderParams);
 
   return { orderId };
