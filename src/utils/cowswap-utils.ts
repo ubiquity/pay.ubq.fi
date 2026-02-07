@@ -68,8 +68,11 @@ function buildCowQuoteRequest({
 }
 
 function assertQuoteShape(quote: Record<string, unknown>) {
-  // Minimal runtime guard before using the quote in an EIP-712 signature.
-  for (const key of ["sellToken", "buyToken", "sellAmount", "buyAmount", "validTo"]) {
+  // Runtime guard before using the quote in an EIP-712 signature.
+  // Keep in sync with `OrderSigningUtils.getEIP712Types().Order`.
+  const eip712Types = OrderSigningUtils.getEIP712Types() as unknown as { Order: Array<{ name: string; type: string }> };
+  const required = eip712Types.Order.map((t) => t.name);
+  for (const key of required) {
     if (!(key in quote)) throw new Error(`CoW quote missing required field: ${key}`);
   }
 }
@@ -111,7 +114,7 @@ async function buildCowAppDataInfo(partnerFeeBps: number | undefined) {
     slippageBps: DEFAULT_SLIPPAGE_BPS,
     appCode: "pay.ubq.fi",
     orderClass: "market",
-    ...(partnerFeeBps
+    ...(partnerFeeBps !== undefined
       ? { partnerFee: { bps: partnerFeeBps, recipient: COWSWAP_PARTNER_FEE_RECIPIENT } }
       : {}),
   });
@@ -202,8 +205,12 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
   };
   const types = OrderSigningUtils.getEIP712Types() as unknown as Record<string, Array<{ name: string; type: string }>>;
 
-  const message = quoteResponse.quote as unknown as Record<string, unknown>;
-  assertQuoteShape(message);
+  const quote = quoteResponse.quote as unknown as Record<string, unknown>;
+  assertQuoteShape(quote);
+
+  // Build the message explicitly from the EIP-712 Order fields to avoid leaking extra fields into the signature.
+  const orderFields = (types.Order ?? []).map((t) => t.name);
+  const message = Object.fromEntries(orderFields.map((name) => [name, quote[name]])) as Record<string, unknown>;
   const signature = await params.walletClient.signTypedData({
     account: params.owner,
     domain,
@@ -212,15 +219,15 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
     message,
   });
 
+  // Send order with explicit fields to avoid passing unexpected keys to the API.
+  type SendOrderParams = Parameters<OrderBookApi["sendOrder"]>[0];
   const orderId = await orderBookApi.sendOrder({
-    ...quoteResponse.quote,
-    appData: appDataInfo.fullAppData,
-    appDataHash: appDataInfo.appDataKeccak256,
+    ...message,
     from: params.owner,
     quoteId: quoteResponse.id ?? null,
     signature,
     signingScheme: SigningScheme.EIP712,
-  });
+  } as unknown as SendOrderParams);
 
   return { orderId };
 }
