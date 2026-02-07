@@ -29,7 +29,7 @@ interface UsePermitClaimingProps {
  * Simulate a single Permit2 `permitTransferFrom` call.
  * Used to validate tx shape before broadcasting.
  */
-async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
+async function simulatePermitTransferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
   return await publicClient.simulateContract({
     address: permit.permit2Address,
     abi: permit2Abi,
@@ -250,12 +250,24 @@ export function usePermitClaiming({
         const totalAmountIn = tokenGroups.reduce((sum, g) => sum + g.amountIn, 0n);
         if (totalAmountIn <= 0n) continue;
 
-        const allowance = (await publicClient.readContract({
-          address: tokenIn,
-          abi: erc20Abi,
-          functionName: "allowance",
-          args: [address, spender],
-        })) as bigint;
+        let allowance: bigint;
+        try {
+          allowance = (await publicClient.readContract({
+            address: tokenIn,
+            abi: erc20Abi,
+            functionName: "allowance",
+            args: [address, spender],
+          })) as bigint;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          for (const g of tokenGroups) {
+            setSwapSubmissionStatus((prev) => ({
+              ...prev,
+              [g.key]: { status: "error", message: `Swap failed: allowance check failed (${message})` },
+            }));
+          }
+          continue;
+        }
 
         if (allowance >= totalAmountIn) {
           approvedTokenIns.add(tokenIn);
@@ -301,7 +313,10 @@ export function usePermitClaiming({
 
       for (const { key, tokenIn, receiver, amountIn } of groups) {
         if (!approvedTokenIns.has(tokenIn)) {
-          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "error", message: "Swap skipped: approval missing" } }));
+          setSwapSubmissionStatus((prev) => {
+            if (prev[key]?.status === "error") return prev; // keep earlier, more descriptive message
+            return { ...prev, [key]: { status: "error", message: "Swap skipped: approval missing" } };
+          });
           continue;
         }
         setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Signing and posting swap order..." } }));
@@ -370,7 +385,7 @@ export function usePermitClaiming({
         throw new Error("Permit2 ABI not found - cannot simulate transaction");
       }
 
-      const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+      const { request } = await simulatePermitTransferFrom(publicClient, address, permit);
 
       console.log("Transaction simulation successful", { request });
 
@@ -500,7 +515,7 @@ export function usePermitClaiming({
     for (const permit of toClaim) {
       let txHash: `0x${string}` | undefined;
       try {
-        const { request } = await simulatePermitTranferFrom(publicClient, address, permit);
+        const { request } = await simulatePermitTransferFrom(publicClient, address, permit);
 
         console.log("Transaction simulation successful", { request });
 

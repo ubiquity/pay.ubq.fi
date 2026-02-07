@@ -139,7 +139,8 @@ export async function getCowSwapQuote(params: CowSwapQuoteParams): Promise<CowSw
   const partnerFeeBps = getPartnerFeeBps(params.chainId, params.tokenOut);
   const appDataInfo = await buildCowAppDataInfo(partnerFeeBps);
 
-  const orderBookApi = new OrderBookApi({ chainId: asSupportedChainId(params.chainId) });
+  const chainId = asSupportedChainId(params.chainId);
+  const orderBookApi = new OrderBookApi({ chainId });
   const quoteResponse = await orderBookApi.getQuote(
     buildCowQuoteRequest({
       tokenIn: params.tokenIn,
@@ -184,7 +185,8 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
   const partnerFeeBps = getPartnerFeeBps(params.chainId, params.tokenOut);
   const appDataInfo = await buildCowAppDataInfo(partnerFeeBps);
 
-  const orderBookApi = new OrderBookApi({ chainId: asSupportedChainId(params.chainId) });
+  const chainId = asSupportedChainId(params.chainId);
+  const orderBookApi = new OrderBookApi({ chainId });
   const quoteResponse = await orderBookApi.getQuote(
     buildCowQuoteRequest({
       tokenIn: params.tokenIn,
@@ -196,11 +198,11 @@ export async function postCowSwapOrder(params: CowSwapOrderParams): Promise<{ or
     })
   );
 
-  const rawDomain = await OrderSigningUtils.getDomain(params.chainId);
+  const rawDomain = await OrderSigningUtils.getDomain(chainId);
   const domain = {
     name: rawDomain.name,
     version: rawDomain.version,
-    chainId: params.chainId,
+    chainId,
     verifyingContract: rawDomain.verifyingContract as Address,
   };
   const types = OrderSigningUtils.getEIP712Types() as unknown as Record<string, Array<{ name: string; type: string }>>;
