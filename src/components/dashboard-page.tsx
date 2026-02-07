@@ -198,6 +198,7 @@ export function DashboardPage() {
       address,
       chain: chain ?? null,
       setBalancesAndAllowances,
+      preferredRewardTokenAddress,
     });
 
   const { handleInvalidatePermit, handleInvalidatePermitsBatch, isInvalidating } = usePermitInvalidation({

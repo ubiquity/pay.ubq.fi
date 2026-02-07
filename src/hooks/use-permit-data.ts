@@ -64,6 +64,8 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       const byToken = new Map<Address, PermitData[]>();
       updated.forEach((permit) => {
         if (
+          // Quotes are chain-specific. Only quote permits on the currently connected chain.
+          permit.networkId === chainId &&
           permit.tokenAddress &&
           permit.type === "erc20-permit" &&
           permit.status !== "Claimed" &&
@@ -73,6 +75,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           const group = byToken.get(permit.tokenAddress as Address) || [];
           group.push(permit);
           byToken.set(permit.tokenAddress as Address, group);
+        } else {
+          // Clear stale quote data if permit isn't quoteable in the current context.
+          delete permit.estimatedAmountOut;
+          delete permit.quoteError;
         }
       });
       for (const [tokenIn, group] of byToken.entries()) {

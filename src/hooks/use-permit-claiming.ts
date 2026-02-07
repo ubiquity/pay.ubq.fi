@@ -1,10 +1,12 @@
 // use-permit-claiming.ts: Handles single and batch permit claiming
 
-import { Dispatch, SetStateAction, useState } from "react";
-import { Address, Chain, PublicClient, WalletClient } from "viem";
+import { Dispatch, SetStateAction, useCallback, useState } from "react";
+import { Address, Chain, PublicClient, WalletClient, erc20Abi } from "viem";
 import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
+import { postCowSwapOrder, getCowSwapVaultRelayerAddress } from "../utils/cowswap-utils.ts";
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 
 if (!permit2Abi) {
   throw new Error("Permit2 ABI could not be loaded");
@@ -20,6 +22,7 @@ interface UsePermitClaimingProps {
   address: Address | undefined;
   chain: Chain | null;
   setBalancesAndAllowances: Dispatch<SetStateAction<Map<string, AllowanceAndBalance>>>;
+  preferredRewardTokenAddress: Address | null;
 }
 
 async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
@@ -167,10 +170,86 @@ export function usePermitClaiming({
   address,
   chain,
   setBalancesAndAllowances,
+  preferredRewardTokenAddress,
 }: UsePermitClaimingProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
-  const [swapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
+  const [swapSubmissionStatus, setSwapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
+
+  const maybeSubmitCowSwap = useCallback(
+    async (permitsClaimed: PermitData[]) => {
+      if (!preferredRewardTokenAddress) return;
+      if (!address || !chain || !walletClient || !publicClient) return;
+
+      const chainId = chain.id;
+      const tokenOut = preferredRewardTokenAddress;
+
+      const group = new Map<Address, bigint>();
+      for (const permit of permitsClaimed) {
+        if (permit.networkId !== chainId) continue;
+        if (!permit.tokenAddress) continue;
+        const tokenIn = permit.tokenAddress as Address;
+        if (tokenIn.toLowerCase() === tokenOut.toLowerCase()) continue;
+        const current = group.get(tokenIn) ?? 0n;
+        group.set(tokenIn, current + (permit.amount ?? 0n));
+      }
+
+      for (const [tokenIn, amountIn] of group.entries()) {
+        if (amountIn <= 0n) continue;
+
+        const key = `${chainId}:${tokenIn}->${tokenOut}`;
+        setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Preparing swap order..." } }));
+
+        try {
+          // Best-effort allowance: approve the CoW vault relayer if needed.
+          const spender = getCowSwapVaultRelayerAddress(chainId);
+          const allowance = (await publicClient.readContract({
+            address: tokenIn,
+            abi: erc20Abi,
+            functionName: "allowance",
+            args: [address, spender],
+          })) as bigint;
+
+          if (allowance < amountIn) {
+            const tokenInfo = getTokenInfo(chainId, tokenIn);
+            setSwapSubmissionStatus((prev) => ({
+              ...prev,
+              [key]: { status: "submitting", message: `Approving ${tokenInfo?.symbol ?? "token"} for CoW Swap...` },
+            }));
+
+            const MAX_UINT256 = (1n << 256n) - 1n;
+            const approveTx = await walletClient.writeContract({
+              address: tokenIn,
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [spender, MAX_UINT256],
+              account: address,
+              chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: approveTx });
+          }
+
+          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Signing and posting swap order..." } }));
+
+          const { orderId } = await postCowSwapOrder({
+            tokenIn,
+            tokenOut,
+            amountIn,
+            owner: address,
+            receiver: address,
+            chainId,
+            walletClient,
+          });
+
+          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitted", message: `Swap order posted: ${orderId}` } }));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "error", message: `Swap failed: ${message}` } }));
+        }
+      }
+    },
+    [preferredRewardTokenAddress, address, chain, walletClient, publicClient]
+  );
 
   const reduceAllowance = (permits: PermitData[]) => {
     setBalancesAndAllowances((prev) => {
@@ -257,6 +336,9 @@ export function usePermitClaiming({
       void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
         if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
       });
+
+      // Best-effort: if user selected a preferred payout token, post a CoW swap order after claiming.
+      void maybeSubmitCowSwap([permit]);
 
       return { success: true, txHash };
     } catch (error) {
@@ -410,6 +492,9 @@ export function usePermitClaiming({
     reduceAllowance(successfullyClaimedPermits);
     setIsClaiming(false);
     console.log("Sequential claim completed successfully");
+
+    // Best-effort: post swap orders for aggregated claimed amounts.
+    void maybeSubmitCowSwap(successfullyClaimedPermits);
   };
 
   const handleClaimBatch = async (permitsToClaim: PermitData[]) => {
@@ -505,6 +590,9 @@ export function usePermitClaiming({
       permitsToClaim.forEach((permit) => {
         updatePermitStatusCache(permit.signature, { status: "Claimed", transactionHash: String(txHash) });
       });
+
+      // Best-effort: post swap orders for aggregated claimed amounts.
+      void maybeSubmitCowSwap(permitsToClaim);
 
       if (!batchNetworkId) {
         console.error("Batch claim expects all permits to share the same networkId");
