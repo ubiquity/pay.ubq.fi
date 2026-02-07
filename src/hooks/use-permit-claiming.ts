@@ -252,12 +252,16 @@ export function usePermitClaiming({
               address: tokenIn,
               abi: erc20Abi,
               functionName: "approve",
-              // Approve only what is needed for this swap, reducing exposure vs MAX_UINT256 approvals.
+              // Prefer least-privilege approvals since this swap is best-effort.
               args: [spender, amountIn],
               account: address,
               chain,
             });
-            await publicClient.waitForTransactionReceipt({ hash: approveTx });
+            try {
+              await publicClient.waitForTransactionReceipt({ hash: approveTx, timeout: 60_000 });
+            } catch (error) {
+              throw new Error(`Approve tx confirmation timed out: ${error instanceof Error ? error.message : String(error)}`);
+            }
           }
 
           setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Signing and posting swap order..." } }));
@@ -275,7 +279,7 @@ export function usePermitClaiming({
           setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitted", message: `Swap order posted: ${orderId}` } }));
         } catch (error) {
           if (isUserRejectedRequest(error)) {
-            setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "rejected", message: "Swap rejected in wallet" } }));
+            setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "rejected", message: "Swap signing rejected by user" } }));
             continue;
           }
           const message = error instanceof Error ? error.message : String(error);

@@ -75,11 +75,10 @@ function assertQuoteShape(quote: Record<string, unknown>) {
 }
 
 /**
- * CoW SDK expects a specific chain id enum type. We validate at runtime to avoid silently
- * targeting the wrong OrderBook API endpoint.
+ * CoW SDK expects a specific chain id enum type. Validate at runtime to avoid silently targeting the wrong endpoint.
  */
 function asSupportedChainId(chainId: number): SupportedChainId {
-  const supported = Object.values(SupportedChainId).filter((v) => typeof v === "number") as number[];
+  const supported = Object.values(SupportedChainId).filter((v): v is number => typeof v === "number");
   if (!supported.includes(chainId)) {
     throw new Error(`Unsupported CoW Protocol chainId: ${chainId}`);
   }
