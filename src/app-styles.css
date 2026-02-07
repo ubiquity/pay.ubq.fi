@@ -381,6 +381,12 @@ footer {
 
   width: 100%;
 }
+.permit-cell .button-small {
+  height: 28px;
+  font-size: 12px;
+  padding-inline: 8px;
+  margin-top: 6px;
+}
 .permit-cell button:not([disabled]):hover {
   opacity: 1;
   background-color: #ffffff1a;

@@ -8,6 +8,7 @@ interface PermitsTableProps {
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   onClaimPermits: (permit: PermitData[]) => Promise<void>;
   onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  onDismissPermit?: (permit: PermitData) => void;
   isConnected: boolean;
   chain: Chain | undefined;
   isLoading: boolean;
@@ -23,6 +24,7 @@ export function PermitsTable({
   permits,
   onClaimPermit,
   onInvalidatePermit,
+  onDismissPermit,
   isConnected,
   chain,
   isLoading,
@@ -62,6 +64,7 @@ export function PermitsTable({
                     permit={permit}
                     onClaimPermit={onClaimPermit}
                     onInvalidatePermit={onInvalidatePermit}
+                    onDismissPermit={onDismissPermit}
                     isConnected={isConnected}
                     chain={chain}
                     isQuoting={isQuoting}

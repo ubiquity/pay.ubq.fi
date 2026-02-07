@@ -233,6 +233,14 @@ export function DashboardPage() {
     [handleInvalidatePermit]
   );
 
+  const onDismissPermit = useCallback(
+    (permit: PermitData) => {
+      // Local-only dismissal: mark as claimed/used so it gets filtered out.
+      updatePermitStatusCache(permit.signature, { status: "Claimed", isNonceUsed: true });
+    },
+    [updatePermitStatusCache]
+  );
+
   // --- UI Logic ---
   const toggleTableVisibility = () => {
     setIsTableVisible((prev) => !prev);
@@ -550,6 +558,7 @@ export function DashboardPage() {
           onClaimPermit={handleClaimPermit}
           onClaimPermits={claimPermits}
           onInvalidatePermit={onInvalidatePermit}
+          onDismissPermit={onDismissPermit}
           isConnected={isConnected}
           chain={chain}
           isLoading={isLoading}

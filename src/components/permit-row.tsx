@@ -15,6 +15,7 @@ interface PermitRowProps {
   permit: PermitData;
   onClaimPermit: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
   onInvalidatePermit?: (permit: PermitData) => Promise<{ success: boolean; txHash: string }>;
+  onDismissPermit?: (permit: PermitData) => void;
   isConnected: boolean;
   chain: Chain | undefined;
   isQuoting: boolean;
@@ -29,6 +30,7 @@ export function PermitRow({
   permit,
   onClaimPermit,
   onInvalidatePermit,
+  onDismissPermit,
   isConnected,
   chain,
   isQuoting,
@@ -59,6 +61,8 @@ export function PermitRow({
 
   const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidating;
+  const isBeneficiary = !!address && permit.beneficiary.toLowerCase() === address.toLowerCase();
+  const canDismiss = Boolean(isConnected && isBeneficiary && !isClaimed && !isClaimingThis);
 
   const rowClassName = (() => {
     if (!isReadyToClaim) return "row-invalid";
@@ -140,6 +144,15 @@ export function PermitRow({
     } else if (!isButtonDisabled) {
       await onClaimPermit(permit);
     }
+  };
+
+  const handleDismissClick = () => {
+    if (!canDismiss || !onDismissPermit) return;
+    const ok = window.confirm(
+      "Hide this permit from your pending list?\n\nThis only affects your current browser (stored locally) and can be undone by clearing site storage."
+    );
+    if (!ok) return;
+    onDismissPermit(permit);
   };
 
   const finalButtonText = networkMismatch ? (isSwitchingNetwork ? "Switching..." : `Switch to ${targetNetworkName}`) : buttonText;
@@ -273,6 +286,11 @@ export function PermitRow({
           {showButtonIcon && buttonIcon}
           <span>{finalButtonText}</span>
         </button>
+        {canDismiss && (
+          <button onClick={handleDismissClick} className="button-as-link button-small" title="Hide this permit from your pending list">
+            Dismiss
+          </button>
+        )}
         {!networkMismatch && permit.claimError && <div className="status-error extra-small-font margin-top-4">Error: {permit.claimError}</div>}
         {!networkMismatch && permit.checkError && <div className="status-error extra-small-font margin-top-4">Check Failed: {permit.checkError}</div>}
         {!permit.claimError && !permit.checkError && permit.testError && (
