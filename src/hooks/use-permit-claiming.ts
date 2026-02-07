@@ -237,7 +237,16 @@ export function usePermitClaiming({
 
       // Best-effort allowance: approve CoW vault relayer once per (tokenIn, spender) for the total amount needed
       // so multi-group submissions don't overwrite allowances and starve earlier orders.
-      const spender = getCowSwapVaultRelayerAddress(chainId);
+      let spender: Address;
+      try {
+        spender = getCowSwapVaultRelayerAddress(chainId);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        for (const g of groups) {
+          setSwapSubmissionStatus((prev) => ({ ...prev, [g.key]: { status: "error", message: `Swap failed: unsupported chain (${message})` } }));
+        }
+        return;
+      }
       const groupsByTokenIn = new Map<Address, typeof groups>();
       const approvedTokenIns = new Set<Address>();
       for (const g of groups) {
