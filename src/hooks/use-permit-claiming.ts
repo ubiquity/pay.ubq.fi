@@ -225,47 +225,78 @@ export function usePermitClaiming({
         group.set(key, { tokenIn, receiver, amountIn: current + (permit.amount ?? 0n) });
       }
 
-      for (const { tokenIn, receiver, amountIn } of group.values()) {
-        if (amountIn <= 0n) continue;
+      const groups = [...group.entries()]
+        .map(([key, value]) => ({ key, ...value }))
+        .filter((g) => g.amountIn > 0n);
 
-        const key = `${chainId}:${tokenIn.toLowerCase()}->${tokenOut.toLowerCase()}:${receiver.toLowerCase()}`;
-        setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Preparing swap order..." } }));
+      // Initialize UI state.
+      for (const g of groups) {
+        setSwapSubmissionStatus((prev) => ({ ...prev, [g.key]: { status: "submitting", message: "Preparing swap order..." } }));
+      }
+
+      // Best-effort allowance: approve CoW vault relayer once per (tokenIn, spender) for the total amount needed
+      // so multi-group submissions don't overwrite allowances and starve earlier orders.
+      const spender = getCowSwapVaultRelayerAddress(chainId);
+      const groupsByTokenIn = new Map<Address, typeof groups>();
+      const approvedTokenIns = new Set<Address>();
+      for (const g of groups) {
+        const arr = groupsByTokenIn.get(g.tokenIn) ?? [];
+        arr.push(g);
+        groupsByTokenIn.set(g.tokenIn, arr);
+      }
+
+      for (const [tokenIn, tokenGroups] of groupsByTokenIn.entries()) {
+        const totalAmountIn = tokenGroups.reduce((sum, g) => sum + g.amountIn, 0n);
+        if (totalAmountIn <= 0n) continue;
+
+        const allowance = (await publicClient.readContract({
+          address: tokenIn,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [address, spender],
+        })) as bigint;
+
+        if (allowance >= totalAmountIn) {
+          approvedTokenIns.add(tokenIn);
+          continue;
+        }
+
+        const tokenInfo = getTokenInfo(chainId, tokenIn);
+        for (const g of tokenGroups) {
+          setSwapSubmissionStatus((prev) => ({
+            ...prev,
+            [g.key]: { status: "submitting", message: `Approving ${tokenInfo?.symbol ?? "token"} for CoW Swap...` },
+          }));
+        }
+
+        const approveTx = await walletClient.writeContract({
+          address: tokenIn,
+          abi: erc20Abi,
+          functionName: "approve",
+          // Prefer least-privilege approvals since this swap is best-effort.
+          args: [spender, totalAmountIn],
+          account: address,
+          chain,
+        });
+        try {
+          await publicClient.waitForTransactionReceipt({ hash: approveTx, timeout: 60_000 });
+          approvedTokenIns.add(tokenIn);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          for (const g of tokenGroups) {
+            setSwapSubmissionStatus((prev) => ({ ...prev, [g.key]: { status: "error", message: `Swap failed: Approve timed out (${message})` } }));
+          }
+        }
+      }
+
+      for (const { key, tokenIn, receiver, amountIn } of groups) {
+        if (!approvedTokenIns.has(tokenIn)) {
+          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "error", message: "Swap skipped: approval missing" } }));
+          continue;
+        }
+        setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Signing and posting swap order..." } }));
 
         try {
-          // Best-effort allowance: approve the CoW vault relayer if needed.
-          const spender = getCowSwapVaultRelayerAddress(chainId);
-          const allowance = (await publicClient.readContract({
-            address: tokenIn,
-            abi: erc20Abi,
-            functionName: "allowance",
-            args: [address, spender],
-          })) as bigint;
-
-          if (allowance < amountIn) {
-            const tokenInfo = getTokenInfo(chainId, tokenIn);
-            setSwapSubmissionStatus((prev) => ({
-              ...prev,
-              [key]: { status: "submitting", message: `Approving ${tokenInfo?.symbol ?? "token"} for CoW Swap...` },
-            }));
-
-            const approveTx = await walletClient.writeContract({
-              address: tokenIn,
-              abi: erc20Abi,
-              functionName: "approve",
-              // Prefer least-privilege approvals since this swap is best-effort.
-              args: [spender, amountIn],
-              account: address,
-              chain,
-            });
-            try {
-              await publicClient.waitForTransactionReceipt({ hash: approveTx, timeout: 60_000 });
-            } catch (error) {
-              throw new Error(`Approve tx confirmation timed out: ${error instanceof Error ? error.message : String(error)}`);
-            }
-          }
-
-          setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Signing and posting swap order..." } }));
-
           const { orderId } = await postCowSwapOrder({
             tokenIn,
             tokenOut,
