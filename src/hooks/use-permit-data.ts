@@ -14,6 +14,10 @@ interface UsePermitDataProps {
   chainId: number | undefined;
 }
 
+/**
+ * Hook that loads and filters permits, tracks balances/allowances, and optionally fetches CoW quotes
+ * (UUSD-only) for a preferred reward token on the connected chain.
+ */
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());

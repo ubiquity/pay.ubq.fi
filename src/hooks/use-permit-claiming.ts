@@ -25,6 +25,10 @@ interface UsePermitClaimingProps {
   preferredRewardTokenAddress: Address | null;
 }
 
+/**
+ * Simulate a single Permit2 `permitTransferFrom` call.
+ * Used to validate tx shape before broadcasting.
+ */
 async function simulatePermitTranferFrom(publicClient: PublicClient, address: Address, permit: PermitData) {
   return await publicClient.simulateContract({
     address: permit.permit2Address,
@@ -50,6 +54,10 @@ async function simulatePermitTranferFrom(publicClient: PublicClient, address: Ad
   });
 }
 
+/**
+ * Simulate a batch Permit2 `batchPermitTransferFrom` call.
+ * Used to validate tx shape before broadcasting.
+ */
 async function simulateBatchPermitTransferFrom(publicClient: PublicClient, address: Address, permitsToClaim: PermitData[]) {
   return await publicClient.simulateContract({
     address: NEW_PERMIT2_ADDRESS,
@@ -75,8 +83,14 @@ async function simulateBatchPermitTransferFrom(publicClient: PublicClient, addre
   });
 }
 
+/**
+ * Promise-based sleep helper for retry/backoff.
+ */
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Best-effort detection for wallet "user rejected" errors across clients/providers.
+ */
 function isUserRejectedRequest(error: unknown): boolean {
   if (!error) return false;
 
@@ -100,6 +114,9 @@ function isUserRejectedRequest(error: unknown): boolean {
   return /user rejected|user denied|rejected the request|denied transaction signature|request rejected|action_rejected/i.test(message);
 }
 
+/**
+ * Persist a claim tx hash to the backend once. Returns retryability hints.
+ */
 async function recordClaimOnce({
   txHash,
   networkId,
@@ -139,6 +156,9 @@ async function recordClaimOnce({
   }
 }
 
+/**
+ * Persist a claim tx hash with exponential backoff retries for eventual-consistency windows.
+ */
 async function recordClaimWithRetries({
   txHash,
   networkId,
@@ -161,6 +181,10 @@ async function recordClaimWithRetries({
   return { ok: false, attempts: maxAttempts, lastError: "record-claim retries exhausted" };
 }
 
+/**
+ * Hook that claims Permit2 permits (single, batch, sequential fallback).
+ * Also optionally posts CoW Swap orders after successful claim based on preferred token settings.
+ */
 export function usePermitClaiming({
   setPermits,
   setError,

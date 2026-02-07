@@ -40,16 +40,27 @@ interface CowSwapOrderParams {
 
 const DEFAULT_SLIPPAGE_BPS = 50; // 0.5%
 
+/**
+ * CoW SDK expects a specific chain id enum type. We validate supported chains upstream and cast here.
+ */
 function asSupportedChainId(chainId: number): SupportedChainId {
   return chainId as SupportedChainId;
 }
 
+/**
+ * Returns CoW Protocol vault relayer address for a given chain.
+ * This is the spender that must be approved for ERC20 sell tokens.
+ */
 export function getCowSwapVaultRelayerAddress(chainId: number): Address {
   const addr = (COW_PROTOCOL_VAULT_RELAYER_ADDRESS as Record<number, Address>)[chainId];
   if (!addr) throw new Error(`Unsupported chainId for CoW vault relayer: ${chainId}`);
   return addr;
 }
 
+/**
+ * Returns partner fee bps for a given chain and output token (if applicable).
+ * Partner fee is disabled for UUSD output to avoid reducing the settlement token.
+ */
 function getPartnerFeeBps(chainId: number, tokenOut: Address): number | undefined {
   const info = getTokenInfo(chainId, tokenOut);
   if (!info) return undefined;
