@@ -127,34 +127,40 @@ export function DashboardPage() {
 
   const invalidatablePermitCount = invalidatablePermits.length;
 
-  const claimableTotalValue = useMemo(() => {
-    const assumedDecimals = 18;
-    let totalSumInWei = 0n;
+  const claimableTotalsByToken = useMemo(() => {
+    const totals = new Map<string, { networkId: number; tokenAddress: Address; total: bigint }>();
     for (const permit of claimablePermits) {
-      if (permit.amount) {
-        try {
-          totalSumInWei += permit.amount;
-        } catch (e) {
-          console.error(`Error parsing amount for claimableTotalValue calc: ${permit.amount}`, e);
-        }
-      }
+      if (!permit.amount || !permit.tokenAddress) continue;
+      const tokenAddress = permit.tokenAddress as Address;
+      const key = `${permit.networkId}:${tokenAddress.toLowerCase()}`;
+      const current = totals.get(key)?.total ?? 0n;
+      totals.set(key, { networkId: permit.networkId, tokenAddress, total: current + permit.amount });
     }
-    try {
-      return parseFloat(formatUnits(totalSumInWei, assumedDecimals));
-    } catch (e) {
-      console.error("Error formatting total sum:", e);
-      return 0;
-    }
+    return totals;
   }, [claimablePermits]);
 
   const estimatedTotalValueDisplay = useMemo(() => {
     if (!preferredRewardTokenAddress) {
-      return `$${claimableTotalValue.toFixed(2)}`;
+      if (claimableTotalsByToken.size === 1) {
+        const [{ networkId, tokenAddress, total }] = Array.from(claimableTotalsByToken.values());
+        const tokenInfo = getTokenInfo(networkId, tokenAddress);
+        if (tokenInfo) {
+          try {
+            const formatted = parseFloat(formatUnits(total, tokenInfo.decimals));
+            return `${formatted.toFixed(2)} ${tokenInfo.symbol}`;
+          } catch {
+            // fallthrough
+          }
+        }
+      }
+
+      // Fallback when multiple tokens are claimable or token metadata is unknown.
+      return `${claimablePermitCount} Reward${claimablePermitCount !== 1 ? "s" : ""}`;
     }
 
     const preferredTokenInfo = getTokenInfo(chain?.id, preferredRewardTokenAddress);
     if (!preferredTokenInfo) {
-      return `$${claimableTotalValue.toFixed(2)} (Unknown Pref Token)`;
+      return `${claimablePermitCount} Reward${claimablePermitCount !== 1 ? "s" : ""} (Unknown Pref Token)`;
     }
 
     let totalEstimatedValueInWei = 0n;
@@ -185,7 +191,7 @@ export function DashboardPage() {
       console.error("Error formatting estimated total value:", e);
       return `Error (${preferredTokenInfo.symbol})`;
     }
-  }, [claimableTotalValue, preferredRewardTokenAddress, chain?.id, permits, claimablePermits]);
+  }, [preferredRewardTokenAddress, chain?.id, permits, claimablePermits, claimableTotalsByToken, claimablePermitCount]);
 
   const { handleClaimPermit, handleClaimBatch, handleClaimSequential, isClaiming, sequentialClaimError, swapSubmissionStatus, walletConnectionError } =
     usePermitClaiming({
@@ -198,6 +204,7 @@ export function DashboardPage() {
       address,
       chain: chain ?? null,
       setBalancesAndAllowances,
+      preferredRewardTokenAddress,
     });
 
   const { handleInvalidatePermit, handleInvalidatePermitsBatch, isInvalidating } = usePermitInvalidation({

@@ -5,6 +5,7 @@ import { getCowSwapQuote } from "../utils/cowswap-utils.ts";
 import { applyPermitStatusOverrides, loadPermitStatusCache, upsertPermitStatusOverride } from "../utils/permit-status-cache.ts";
 import type { WorkerResponse } from "../workers/permit-checker.worker.ts";
 import { getPermitCheckerWorker, type PermitCheckerWorker } from "../workers/permit-worker-client.ts";
+import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 
 interface UsePermitDataProps {
   address: Address | undefined;
@@ -13,6 +14,10 @@ interface UsePermitDataProps {
   chainId: number | undefined;
 }
 
+/**
+ * Hook that loads and filters permits, tracks balances/allowances, and optionally fetches CoW quotes
+ * (UUSD-only) for a preferred reward token on the connected chain.
+ */
 export function usePermitData({ address, isConnected, preferredRewardTokenAddress, chainId }: UsePermitDataProps) {
   const [permits, setPermits] = useState<PermitData[]>([]);
   const [balancesAndAllowances, setBalancesAndAllowances] = useState<Map<string, AllowanceAndBalance>>(new Map());
@@ -64,7 +69,11 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       const byToken = new Map<Address, PermitData[]>();
       updated.forEach((permit) => {
         if (
+          // Quotes are chain-specific. Only quote permits on the currently connected chain.
+          permit.networkId === chainId &&
           permit.tokenAddress &&
+          // Only quote UUSD permits (settlement token). Other tokens should display as-is.
+          getTokenInfo(chainId, permit.tokenAddress as Address)?.symbol.toUpperCase() === "UUSD" &&
           permit.type === "erc20-permit" &&
           permit.status !== "Claimed" &&
           permit.claimStatus !== "Success" &&
@@ -73,6 +82,10 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           const group = byToken.get(permit.tokenAddress as Address) || [];
           group.push(permit);
           byToken.set(permit.tokenAddress as Address, group);
+        } else {
+          // Clear stale quote data if permit isn't quoteable in the current context.
+          delete permit.estimatedAmountOut;
+          delete permit.quoteError;
         }
       });
       for (const [tokenIn, group] of byToken.entries()) {
