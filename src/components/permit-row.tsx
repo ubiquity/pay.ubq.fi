@@ -149,7 +149,7 @@ export function PermitRow({
   const handleDismissClick = () => {
     if (!canDismiss || !onDismissPermit) return;
     const ok = window.confirm(
-      "Hide this permit from your pending list?\n\nThis only affects your current browser (stored locally) and can be undone by clearing site storage."
+      "Dismiss this permit?\n\nThis will mark the permit as invalid and hide it from your pending list. It only affects your current browser (stored locally) and can be undone by clearing site storage."
     );
     if (!ok) return;
     onDismissPermit(permit);
@@ -287,7 +287,7 @@ export function PermitRow({
           <span>{finalButtonText}</span>
         </button>
         {canDismiss && (
-          <button onClick={handleDismissClick} className="button-as-link button-small" title="Hide this permit from your pending list">
+          <button onClick={handleDismissClick} className="button-as-link button-small" title="Mark this permit as invalid and hide it from your pending list">
             Dismiss
           </button>
         )}

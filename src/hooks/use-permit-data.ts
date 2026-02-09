@@ -42,7 +42,9 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
       const filtered: PermitData[] = [];
       permitsMap.forEach((permit) => {
         const nonceCheckFailed = !!(permit.checkError && permit.checkError.toLowerCase().includes("nonce"));
-        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed";
+        // Only show permits that are actionable to the current user.
+        // "Invalid" includes user-dismissed bogus permits (persisted locally) and other explicit invalid states.
+        const shouldFilter = permit.isNonceUsed === true || nonceCheckFailed || permit.status === "Claimed" || permit.status === "Invalid";
         if (!shouldFilter) filtered.push(permit);
       });
       setPermits(filtered);
@@ -67,6 +69,7 @@ export function usePermitData({ address, isConnected, preferredRewardTokenAddres
           permit.tokenAddress &&
           permit.type === "erc20-permit" &&
           permit.status !== "Claimed" &&
+          permit.status !== "Invalid" &&
           permit.claimStatus !== "Success" &&
           permit.claimStatus !== "Pending"
         ) {

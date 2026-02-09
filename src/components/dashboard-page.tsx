@@ -235,8 +235,8 @@ export function DashboardPage() {
 
   const onDismissPermit = useCallback(
     (permit: PermitData) => {
-      // Local-only dismissal: mark as claimed/used so it gets filtered out.
-      updatePermitStatusCache(permit.signature, { status: "Claimed", isNonceUsed: true });
+      // Local-only dismissal: mark as invalid so it naturally gets filtered out from the UI.
+      updatePermitStatusCache(permit.signature, { status: "Invalid" });
     },
     [updatePermitStatusCache]
   );
