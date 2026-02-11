@@ -62,7 +62,7 @@ export function PermitRow({
   const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidating;
   const isBeneficiary = !!address && permit.beneficiary.toLowerCase() === address.toLowerCase();
-  const canDismiss = Boolean(isConnected && isBeneficiary && !isClaimed && !isClaimingThis);
+  const canDismiss = Boolean(onDismissPermit && isConnected && isBeneficiary && !isClaimed && !isClaimingThis);
 
   const rowClassName = (() => {
     if (!isReadyToClaim) return "row-invalid";
