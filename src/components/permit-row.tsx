@@ -91,7 +91,7 @@ export function PermitRow({
 
   const buttonText = (() => {
     if (isInvalidating) return "Invalidating...";
-    if (isFundingWallet && canInvalidate) return "Invalidate";
+    if (canInvalidate) return "Invalidate";
     if ((isClaimed || claimFailed) && permit.transactionHash) return "View";
     if (isClaimingThis) return "Claiming...";
     if (claimFailed) return "Retry";
@@ -112,7 +112,7 @@ export function PermitRow({
     isButtonDisabled = isSwitchButtonDisabled;
   } else if (isInvalidating) {
     isButtonDisabled = true;
-  } else if (isFundingWallet && canInvalidate) {
+  } else if (canInvalidate) {
     isButtonDisabled = isInvalidateButtonDisabled;
   } else {
     isButtonDisabled = isClaimButtonDisabled;
@@ -135,7 +135,7 @@ export function PermitRow({
       }
     } else if ((isClaimed || claimFailed) && permit.transactionHash && explorerUrl) {
       window.open(`${explorerUrl}/tx/${permit.transactionHash}`, "_blank");
-    } else if (isFundingWallet && canInvalidate && onInvalidatePermit) {
+    } else if (canInvalidate && onInvalidatePermit) {
       await onInvalidatePermit(permit);
     } else if (!isButtonDisabled) {
       await onClaimPermit(permit);
