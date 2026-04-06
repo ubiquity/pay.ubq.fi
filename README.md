@@ -1,123 +1,91 @@
-# Multi-Chain PermitAggregator Deployment
+# pay.ubq.fi
 
-This repository contains a script for deploying and verifying the PermitAggregator contract across multiple chains using CREATE2 for deterministic addresses, powered by Etherscan's V2 API for unified verification.
+Permit claiming web app for Ubiquity Rewards.
 
-## Supported Networks
-
-- Ethereum (1)
-- Optimism (10)
-- BNB Smart Chain (56)
-- Gnosis Chain (100)
-- Polygon (137)
-- Base (8453)
-- Arbitrum One (42161)
-- Celo (42220)
-- Avalanche C-Chain (43114)
-- Blast (81457)
-- Zora (7777777)
+- Frontend: React + TypeScript + Vite in `src/`.
+- Server: `serve.ts` (Deno Deploy) serves the built SPA from `dist/` and exposes a small API to record permit claims in Supabase.
 
 ## Setup
 
 1. Install dependencies:
-```bash
-bun install
-```
+   ```bash
+   bun install
+   ```
+2. Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Fill in required variables (see `.env.example`):
+   - Backend (`serve.ts`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - Frontend (Vite): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+   - CI build convenience: `SUPABASE_ANON_KEY` is used to set `VITE_SUPABASE_ANON_KEY` in `.github/workflows/deno-deploy.yml`
 
-2. Create a `.env` file using `.env.example` as a template:
-```bash
-cp .env.example .env
-```
+All frontend variables must be prefixed with `VITE_` to be exposed to the app.
+RPC uses `/rpc` only on `*.ubq.fi` hostnames; all other hostnames use `https://rpc.ubq.fi`.
 
-3. Configure your `.env` file with:
-- `DEPLOYER_PRIVATE_KEY`: Your deployer wallet's private key
-- `ETHERSCAN_API_KEY`: Your single Etherscan V2 API key (works for all supported chains)
+## Development
 
----
+- Two‑port dev with HMR:
 
-## Environment Variable Setup
-
-### Backend Environment
-
-- Place your backend `.env` file in the project root (`./.env`).
-- Use `.env.example` as a template:
   ```bash
-  cp .env.example .env
+  bun run dev
   ```
-- **Required backend variables** (see `.env.example`):
-  - `SUPABASE_URL`: Supabase project URL (for backend API/database access)
-  - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (for backend API/database access)
-  - `DEPLOYER_PRIVATE_KEY`: Private key for contract deployment scripts
-  - `ETHERSCAN_API_KEY`: Etherscan API key for contract verification
 
-### Frontend Environment
+  - Vite runs on `http://localhost:5173`
+  - `serve.ts` runs on `http://localhost:8000`
+  - Vite proxies `/api/*` and top‑level numeric routes to `:8000`.
 
-- Place your frontend `.env` file in the `frontend/` directory (`frontend/.env`).
-- Use `frontend/.env.example` as a template:
+- Production‑like single‑port (no HMR):
   ```bash
-  cp frontend/.env.example frontend/.env
+  bun run start
   ```
-- **Required frontend variables** (see `frontend/.env.example`):
-  - `VITE_SUPABASE_URL`: Supabase project URL (for frontend)
-  - `VITE_SUPABASE_ANON_KEY`: Supabase anon/public key (for frontend)
-  - `VITE_RPC_URL`: Blockchain RPC endpoint for on-chain calls
+  Builds the frontend and serves it + API on `http://localhost:8000`.
 
-**Note:**
-All frontend environment variables **must** be prefixed with `VITE_` to be accessible in the app (Vite requirement).
+## Build
 
-### About `.env.example` Files
-
-- `.env.example` and `frontend/.env.example` serve as templates for required environment variables.
-- Never commit real secrets to version control—only the example files.
-- Always copy the example file and fill in your actual values before running the app.
-
-## Usage
-
-Deploy and verify on all chains:
 ```bash
-bun run deploy-all
+bun run build
 ```
 
-The script will:
-1. Calculate the expected contract address (same across all chains)
-2. Deploy to each chain using CREATE2
-3. Verify the contract source on each block explorer using the unified Etherscan V2 API
+Outputs static files to `dist/`.
 
-## Required Funds
+## Deployment
 
-Make sure your deployer address has enough native tokens on each chain:
+Deployment is handled by GitHub Actions via `.github/workflows/deno-deploy.yml`.
 
-- Ethereum (ETH): ~0.01 ETH
-- Optimism (ETH): ~0.001 ETH
-- BSC (BNB): ~0.005 BNB
-- Gnosis (xDAI): ~0.1 xDAI
-- Polygon (MATIC): ~1 MATIC
-- Base (ETH): ~0.001 ETH
-- Arbitrum (ETH): ~0.001 ETH
-- Celo (CELO): ~1 CELO
-- Avalanche (AVAX): ~0.1 AVAX
-- Blast (ETH): ~0.001 ETH
-- Zora (ETH): ~0.001 ETH
+- Builds `dist/` with Bun/Vite.
+- Deploys `serve.ts` to Deno Deploy and includes `dist/**`.
+- Required Deploy secrets: `DENO_DEPLOY_TOKEN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 
-## Contract Verification
+## API
 
-The script automatically verifies the contract on each chain's block explorer using the Etherscan V2 API. You only need to provide a single API key in the `.env` file.
+`serve.ts` exposes `POST /api/permits/record-claim` which accepts `{ "transactionHash": "0x...", "networkId": 100 }` and derives the permit signature(s) by decoding Permit2 calldata before updating Supabase.
 
-Explorer URLs:
+Note: this endpoint uses `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS), so security comes from on-chain transaction verification before writing.
 
-- Ethereum: https://etherscan.io
-- Optimism: https://optimistic.etherscan.io
-- BSC: https://bscscan.com
-- Gnosis: https://gnosisscan.io
-- Polygon: https://polygonscan.com
-- Base: https://basescan.org
-- Arbitrum: https://arbiscan.io
-- Celo: https://celoscan.io
-- Avalanche: https://snowtrace.io
-- Blast: https://blastscan.io
-- Zora: https://explorer.zora.energy
+## CLI Tools
 
-## Etherscan V2 API Reference
+One-off tooling lives in `scripts/` (requires `.env` with Supabase + RPC vars).
 
-- [Etherscan V2 Docs](https://docs.etherscan.io/)
-- Unified API key for all supported chains
-- Use `chainid` parameter to specify the target network for verification
+- Audit permits against both Permit2 contracts (includes “nonce used but DB transaction missing” mismatches):
+  - `bun run permit2:audit -- --owner 0x... --include-permits --out /tmp/permit2-audit.json`
+- Build an invalidation plan (no transactions sent):
+  - `bun run permit2:invalidate -- --owner 0x... --target old --only-db-unclaimed --out /tmp/permit2-invalidate-plan.json`
+- Execute invalidations (sends transactions; use `--max-txs` as a safety brake):
+  - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:invalidate -- --owner 0x... --target old --only-db-unclaimed --execute --max-txs 50 --out /tmp/permit2-invalidate-executed.json`
+- Backfill missing `permits.transaction` values for claim txs:
+  - `bun run permit2:backfill -- --owner 0x... --out /tmp/permit2-backfill.json`
+  - For a more complete one-off backfill on Gnosis, add `--match-mode beneficiary --scan-new-permit2-txlist`.
+  - Add `--execute` to write to Supabase (use `--max-updates` as a safety brake).
+- Seed small test permits for QA (default: 1e18 UUSD on Gnosis; plan-only unless `--execute`):
+  - `INVALIDATOR_PRIVATE_KEY=0x... bun run permit2:seed-test-permits -- --beneficiary 0x... --beneficiary-user-id <githubUserId> --execute --out /tmp/test-permits.json`
+- Sign/broadcast test permit claims (sign-only unless `--execute`):
+  - `BENEFICIARY_PRIVATE_KEY=0x... bun run permit2:claim-test-permits -- --beneficiary 0x... --limit 10 --execute --batch --out /tmp/test-claims.json`
+
+## Formatting
+
+`bun run format` / `bun run format:check` run Prettier across the repo (including `serve.ts`).
+
+## Contracts
+
+Permit2 and PermitAggregator addresses used by the UI are in `src/constants/config.ts`.

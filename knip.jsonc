@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": [
+    // Tooling/config files that are not part of the runtime bundle.
+    "eslint.config.js",
+    // Deno-specific entrypoints/config (kept out of the TS/Vite project graph).
+    "**/*.deno.ts",
+    "**/*.deno.tsx",
+    "**/deno.json",
+    "**/deno.jsonc",
+  ],
+  "ignoreDependencies": [
+    // Knip currently treats Deno `jsr:` / `npm:` import specifiers as unlisted deps.
+    "jsr",
+    "npm",
+    "@playwright/mcp",
+    "playwright",
+  ],
+  "ignoreBinaries": ["claude"],
+  "ignoreIssues": {
+    "src/constants/config.ts": ["exports"],
+    "src/constants/supported-reward-tokens.ts": ["exports", "types"],
+    "src/utils/permit-utils.ts": ["exports"],
+    "src/database.types.ts": ["exports", "types"],
+  },
+  "entry": ["serve.ts!", "src/main.tsx!", "src/workers/**/*.worker.ts!"],
+  "project": ["src/**/*.ts!", "src/**/*.tsx!"],
+}

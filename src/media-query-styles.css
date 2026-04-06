@@ -1,0 +1,46 @@
+@media (max-width: 640px) {
+  /* Target button directly under #header */
+  #header > .button-with-icon:nth-of-type(2) span {
+    /* display: none; */
+  }
+  #logo-wrapper h1 > span:nth-of-type(2) {
+    display: none;
+  }
+  /* Target button and container directly under #header */
+  #header > .button-with-icon,
+  #header > .spinner-or-expand-container {
+    flex-grow: unset;
+    justify-content: center;
+  }
+  button.button-with-icon span {
+    display: none;
+  }
+  button[title*="Claim"] span,
+  button[title*="Invalidate"] span {
+    display: unset;
+  }
+
+  /*  */
+  /*  */
+  /*  */
+
+  #claim-all .claim-count {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111;
+    --text: #eee;
+    --text-light: #aaa;
+    --border: #333;
+    --primary: #3399ff;
+    --hover: #222;
+    --error: #ff6666;
+    --success: #00cc66;
+  }
+}
+
+@media (max-width: 400px) {
+}
