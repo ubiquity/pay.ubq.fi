@@ -883,3 +883,47 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;
+
+// Helper types for improved type safety
+export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"];
+export type TablesInsert<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Insert"];
+export type TablesUpdate<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Update"];
+
+// Enums type helper
+export type Enums = Database["public"]["Enums"];
+
+// Type-safe database operations
+export type TableNames = keyof Database["public"]["Tables"];
+export type SchemaTables = Database["public"]["Tables"];
+
+// Utility types for Supabase queries
+export type QueryResult<T extends TableNames> = {
+  data: Tables<T>[];
+  error: null;
+} | {
+  data: null;
+  error: {
+    message: string;
+    code: string;
+    details: string | null;
+    hint: string | null;
+  };
+};
+
+export type SingleResult<T extends TableNames> = {
+  data: Tables<T>;
+  error: null;
+} | {
+  data: null;
+  error: {
+    message: string;
+    code: string;
+    details: string | null;
+    hint: string | null;
+  };
+};
+
+// Type guard for Supabase responses
+export function isSupabaseError<T>(result: { data: T | null; error: { message: string } | null }): result is { data: null; error: { message: string } } {
+  return result.error !== null;
+}
