@@ -3,7 +3,7 @@ import type { JsonRpcResponse, createRpcClient } from "@ubiquity-dao/permit2-rpc
 import { type Address, encodeFunctionData, erc20Abi, hashTypedData, parseAbiItem, recoverAddress } from "viem";
 import { NEW_PERMIT2_ADDRESS, OLD_PERMIT2_ADDRESS } from "../constants/config.ts";
 import type { Database, Tables } from "../database.types.ts";
-import type { AllowanceAndBalance, PermitData } from "../types.ts";
+import type { AllowanceAndBalance, PermitData, TABLE_NAMES } from "../types.ts";
 
 export interface Logger {
   log: (...args: unknown[]) => void;
@@ -13,12 +13,7 @@ export interface Logger {
 
 const defaultLogger: Logger = console;
 
-// Define table names
-const PERMITS_TABLE = "permits";
-const WALLETS_TABLE = "wallets";
-const TOKENS_TABLE = "tokens";
-const PARTNERS_TABLE = "partners";
-const LOCATIONS_TABLE = "locations";
+const { permits: PERMITS_TABLE, wallets: WALLETS_TABLE, tokens: TOKENS_TABLE, partners: PARTNERS_TABLE, locations: LOCATIONS_TABLE } = TABLE_NAMES;
 
 // ABIs needed for checks
 const permit2Abi = parseAbiItem("function nonceBitmap(address owner, uint256 wordPos) view returns (uint256)");

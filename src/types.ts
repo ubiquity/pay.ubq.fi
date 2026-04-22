@@ -23,6 +23,27 @@ export interface AllowanceAndBalance {
 }
 
 // Keep PermitData as it seems to be used
+import type { Tables } from "./database.types.ts";
+
+// Re-export database helper types for convenience
+export type { Tables, TablesInsert, TablesUpdate, Enums } from "./database.types.ts";
+
+// Type-safe table name constants
+export const TABLE_NAMES = {
+  permits: "permits",
+  tokens: "tokens",
+  partners: "partners",
+  wallets: "wallets",
+  locations: "locations",
+  users: "users",
+} as const;
+
+export type TableName = keyof typeof TABLE_NAMES;
+
+// Type-safe permit status
+export type PermitStatus = "Valid" | "Claimed" | "Expired" | "Invalid" | "Fetching" | "Testing";
+export type ClaimStatus = "Idle" | "Pending" | "Success" | "Error";
+
 export interface PermitData {
   nonce: string;
   amount: bigint;
@@ -40,12 +61,15 @@ export interface PermitData {
   partner?: PartnerInfoInternal; // Use internal type
   permit2Address: `0x${string}`;
 
+  // Database row reference timestamp
+  created_at?: string;
+
   // Frontend-specific statuses for validation/testing
-  status?: "Valid" | "Claimed" | "Expired" | "Invalid" | "Fetching" | "Testing";
+  status?: PermitStatus;
   testError?: string; // For storing error messages during claim testing
 
   // Frontend-specific statuses for actual claiming
-  claimStatus?: "Idle" | "Pending" | "Success" | "Error";
+  claimStatus?: ClaimStatus;
   claimError?: string;
   transactionHash?: string; // Store claim tx hash
 
