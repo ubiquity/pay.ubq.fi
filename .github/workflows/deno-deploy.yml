@@ -4,6 +4,8 @@ on:
   push:
     branches-ignore:
       - dist/**
+    tags-ignore:
+      - "**"
   workflow_dispatch:
   delete:
 
@@ -72,25 +74,47 @@ jobs:
             printf '%s' "$value"
           }
 
-          app_slug="$BASE_APP"
-          if [ "$REF_NAME" != "$DEFAULT_BRANCH" ]; then
-            suffix="$(slugify "$REF_NAME")"
-            if [ -z "$suffix" ]; then
-              suffix="branch"
+          resolve_app_slug() {
+            local ref_name="$1"
+            local app_slug="$BASE_APP"
+            if [ "$ref_name" != "$DEFAULT_BRANCH" ]; then
+              local suffix
+              suffix="$(slugify "$ref_name")"
+              if [ -z "$suffix" ]; then
+                suffix="branch"
+              fi
+              local suffix_budget
+              suffix_budget=$((32 - ${#BASE_APP} - 1))
+              if [ "$suffix_budget" -gt 25 ]; then
+                suffix_budget=25
+              fi
+              if [ "$suffix_budget" -lt 1 ]; then
+                suffix_budget=1
+              fi
+              local suffix_hash
+              suffix_hash="$(printf '%s' "$ref_name" | sha256sum | cut -c1-8)"
+              if [ "$suffix_budget" -le 8 ]; then
+                suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
+              else
+                local suffix_head_budget
+                suffix_head_budget=$((suffix_budget - 9))
+                local suffix_head
+                suffix_head="$(trim_slug "$suffix" "$suffix_head_budget")"
+                if [ -z "$suffix_head" ]; then
+                  suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
+                else
+                  suffix="$suffix_head-$suffix_hash"
+                fi
+              fi
+              if [ -z "$suffix" ]; then
+                suffix="b"
+              fi
+              app_slug="$BASE_APP-$suffix"
             fi
-            suffix_budget=$((32 - ${#BASE_APP} - 1))
-            if [ "$suffix_budget" -gt 25 ]; then
-              suffix_budget=25
-            fi
-            if [ "$suffix_budget" -lt 1 ]; then
-              suffix_budget=1
-            fi
-            suffix="$(trim_slug "$suffix" "$suffix_budget")"
-            if [ -z "$suffix" ]; then
-              suffix="b"
-            fi
-            app_slug="${BASE_APP}-${suffix}"
-          fi
+            printf '%s' "$app_slug"
+          }
+
+          app_slug="$(resolve_app_slug "$REF_NAME")"
 
           echo "app_slug=$app_slug" >> "$GITHUB_OUTPUT"
 
@@ -151,7 +175,7 @@ jobs:
             --build-manifest=false
 
   delete-branch-app:
-    if: github.event_name == 'delete' && github.event.ref_type == 'branch' && github.event.ref != github.event.repository.default_branch
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch' && !startsWith(github.event.ref, 'dist/') && github.event.ref != github.event.repository.default_branch
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -192,25 +216,47 @@ jobs:
             printf '%s' "$value"
           }
 
-          app_slug="$BASE_APP"
-          if [ "$DELETED_REF" != "$DEFAULT_BRANCH" ]; then
-            suffix="$(slugify "$DELETED_REF")"
-            if [ -z "$suffix" ]; then
-              suffix="branch"
+          resolve_app_slug() {
+            local ref_name="$1"
+            local app_slug="$BASE_APP"
+            if [ "$ref_name" != "$DEFAULT_BRANCH" ]; then
+              local suffix
+              suffix="$(slugify "$ref_name")"
+              if [ -z "$suffix" ]; then
+                suffix="branch"
+              fi
+              local suffix_budget
+              suffix_budget=$((32 - ${#BASE_APP} - 1))
+              if [ "$suffix_budget" -gt 25 ]; then
+                suffix_budget=25
+              fi
+              if [ "$suffix_budget" -lt 1 ]; then
+                suffix_budget=1
+              fi
+              local suffix_hash
+              suffix_hash="$(printf '%s' "$ref_name" | sha256sum | cut -c1-8)"
+              if [ "$suffix_budget" -le 8 ]; then
+                suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
+              else
+                local suffix_head_budget
+                suffix_head_budget=$((suffix_budget - 9))
+                local suffix_head
+                suffix_head="$(trim_slug "$suffix" "$suffix_head_budget")"
+                if [ -z "$suffix_head" ]; then
+                  suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
+                else
+                  suffix="$suffix_head-$suffix_hash"
+                fi
+              fi
+              if [ -z "$suffix" ]; then
+                suffix="b"
+              fi
+              app_slug="$BASE_APP-$suffix"
             fi
-            suffix_budget=$((32 - ${#BASE_APP} - 1))
-            if [ "$suffix_budget" -gt 25 ]; then
-              suffix_budget=25
-            fi
-            if [ "$suffix_budget" -lt 1 ]; then
-              suffix_budget=1
-            fi
-            suffix="$(trim_slug "$suffix" "$suffix_budget")"
-            if [ -z "$suffix" ]; then
-              suffix="b"
-            fi
-            app_slug="${BASE_APP}-${suffix}"
-          fi
+            printf '%s' "$app_slug"
+          }
+
+          app_slug="$(resolve_app_slug "$DELETED_REF")"
 
           echo "app_slug=$app_slug" >> "$GITHUB_OUTPUT"
 
