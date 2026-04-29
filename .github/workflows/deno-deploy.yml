@@ -10,6 +10,7 @@ jobs:
     with:
       project: pay-ubq-fi
       deploy_platform: deno2
+      deno_build_memory_limit: 2048
       entrypoint: serve.ts
       install_command: deno install
       build_command: deno task build

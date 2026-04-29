@@ -1,7 +1,11 @@
 {
   "nodeModulesDir": "auto",
   "tasks": {
-    "build": "deno run -A npm:vite@^6.2.0 build",
+    "build": "deno run -A --v8-flags=--max-old-space-size=736 npm:vite@^6.2.0 build",
     "serve": "deno run --allow-all serve.ts"
+  },
+  "deploy": {
+    "org": "ubiquity-dao",
+    "app": "p-pay-ubq-fi"
   }
 }
