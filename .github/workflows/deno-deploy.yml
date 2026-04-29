@@ -2,18 +2,10 @@ name: Deno Deploy
 
 on:
   push:
-    branches-ignore:
-      - dist/**
-    tags-ignore:
-      - "**"
   workflow_dispatch:
 
 jobs:
   deploy:
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
     uses: ubiquity/deno-deploy-workflow/.github/workflows/deno-deploy-reusable.yml@codex/deno-2-programmatic
     with:
       project: pay-ubq-fi
@@ -30,8 +22,6 @@ jobs:
         SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
       include: |
         dist/**
-      extra_paths: |
-        /smoke/path
       debug_fetch_fail: true
       required_env: |
         DENO_DEPLOY_TOKEN
