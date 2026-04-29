@@ -7,275 +7,35 @@ on:
     tags-ignore:
       - "**"
   workflow_dispatch:
-  delete:
 
 jobs:
-  provision:
-    if: github.event_name != 'delete'
-    runs-on: ubuntu-latest
+  deploy:
     permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
-
-      - name: Install dependencies
-        shell: bash
-        run: bun install
-
-      - name: Build frontend
-        shell: bash
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          set -euo pipefail
-          : "${VITE_SUPABASE_URL:?SUPABASE_URL is required}"
-          : "${VITE_SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}"
-          bun run build
-          test -f dist/index.html
-
-      - name: Fetch Deno deploy helper
-        shell: bash
-        run: |
-          set -euo pipefail
-          git clone --depth=1 https://github.com/ubiquity-os/deno-deploy.git "$RUNNER_TEMP/deno-deploy-action"
-
-      - name: Resolve Deno app slug
-        id: deploy-target
-        shell: bash
-        env:
-          BASE_APP: pay-ubq-fi
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-
-          slugify() {
-            local value="$1"
-            value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g')"
-            printf '%s' "$value"
-          }
-
-          trim_slug() {
-            local value="$1"
-            local limit="$2"
-            if [ "${#value}" -gt "$limit" ]; then
-              value="${value:0:$limit}"
-            fi
-            value="$(printf '%s' "$value" | sed -E 's/-+$//')"
-            printf '%s' "$value"
-          }
-
-          resolve_app_slug() {
-            local ref_name="$1"
-            local app_slug="$BASE_APP"
-            if [ "$ref_name" != "$DEFAULT_BRANCH" ]; then
-              local suffix
-              suffix="$(slugify "$ref_name")"
-              if [ -z "$suffix" ]; then
-                suffix="branch"
-              fi
-              local suffix_budget
-              suffix_budget=$((32 - ${#BASE_APP} - 1))
-              if [ "$suffix_budget" -gt 25 ]; then
-                suffix_budget=25
-              fi
-              if [ "$suffix_budget" -lt 1 ]; then
-                suffix_budget=1
-              fi
-              local suffix_hash
-              suffix_hash="$(printf '%s' "$ref_name" | sha256sum | cut -c1-8)"
-              if [ "$suffix_budget" -le 8 ]; then
-                suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
-              else
-                local suffix_head_budget
-                suffix_head_budget=$((suffix_budget - 9))
-                local suffix_head
-                suffix_head="$(trim_slug "$suffix" "$suffix_head_budget")"
-                if [ -z "$suffix_head" ]; then
-                  suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
-                else
-                  suffix="$suffix_head-$suffix_hash"
-                fi
-              fi
-              if [ -z "$suffix" ]; then
-                suffix="b"
-              fi
-              app_slug="$BASE_APP-$suffix"
-            fi
-            printf '%s' "$app_slug"
-          }
-
-          app_slug="$(resolve_app_slug "$REF_NAME")"
-
-          echo "app_slug=$app_slug" >> "$GITHUB_OUTPUT"
-
-      - name: Provision Deno app
-        shell: bash
-        env:
-          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STATIC_DIR: dist
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        run: |
-          set -euo pipefail
-          action_path="$RUNNER_TEMP/deno-deploy-action"
-          runtime_env_file="$RUNNER_TEMP/pay-runtime.env"
-
-          RUNTIME_ENV_FILE="$runtime_env_file" deno eval '
-            const keys = ["STATIC_DIR", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
-            const file = Deno.env.get("RUNTIME_ENV_FILE");
-            if (!file) {
-              throw new Error("RUNTIME_ENV_FILE is required");
-            }
-            const lines = [];
-            const missing = [];
-            for (const key of keys) {
-              const value = Deno.env.get(key)?.trim();
-              if (!value) {
-                missing.push(key);
-                continue;
-              }
-              lines.push(`${key}=${JSON.stringify(value)}`);
-            }
-            if (missing.length) {
-              throw new Error(`${missing.join(", ")} required`);
-            }
-            await Deno.writeTextFile(file, lines.join("\n") + "\n");
-          '
-
-          deno run \
-            --allow-env \
-            --allow-sys=osRelease \
-            --allow-read="$action_path,$runtime_env_file,$GITHUB_WORKSPACE,/proc/version,/proc/sys/fs/binfmt_misc/WSLInterop,/run/WSL" \
-            --allow-write="$GITHUB_WORKSPACE,$GITHUB_OUTPUT${GITHUB_STEP_SUMMARY:+,$GITHUB_STEP_SUMMARY}" \
-            --allow-run=git,deno \
-            --allow-net=api.deno.com,api.github.com,console.deno.com \
-            "$action_path/scripts/provision.js" \
-            --repo-root "$GITHUB_WORKSPACE" \
-            --env-file "$runtime_env_file" \
-            --token "$DENO_DEPLOY_TOKEN" \
-            --organization ubiquity-dao \
-            --github-owner "${GITHUB_REPOSITORY_OWNER}" \
-            --github-repo "${GITHUB_REPOSITORY#*/}" \
-            --github-token "$GITHUB_TOKEN" \
-            --ref-name "${GITHUB_REF_NAME}" \
-            --default-branch "${{ github.event.repository.default_branch }}" \
-            --app "${{ steps.deploy-target.outputs.app_slug }}" \
-            --entrypoint serve.ts \
-            --build-manifest=false
-
-  delete-branch-app:
-    if: github.event_name == 'delete' && github.event.ref_type == 'branch' && !startsWith(github.event.ref, 'dist/') && github.event.ref != github.event.repository.default_branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Fetch Deno deploy helper
-        shell: bash
-        run: |
-          set -euo pipefail
-          git clone --depth=1 https://github.com/ubiquity-os/deno-deploy.git "$RUNNER_TEMP/deno-deploy-action"
-
-      - name: Resolve Deno app slug
-        id: delete-target
-        shell: bash
-        env:
-          BASE_APP: pay-ubq-fi
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          DELETED_REF: ${{ github.event.ref }}
-        run: |
-          set -euo pipefail
-
-          slugify() {
-            local value="$1"
-            value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g')"
-            printf '%s' "$value"
-          }
-
-          trim_slug() {
-            local value="$1"
-            local limit="$2"
-            if [ "${#value}" -gt "$limit" ]; then
-              value="${value:0:$limit}"
-            fi
-            value="$(printf '%s' "$value" | sed -E 's/-+$//')"
-            printf '%s' "$value"
-          }
-
-          resolve_app_slug() {
-            local ref_name="$1"
-            local app_slug="$BASE_APP"
-            if [ "$ref_name" != "$DEFAULT_BRANCH" ]; then
-              local suffix
-              suffix="$(slugify "$ref_name")"
-              if [ -z "$suffix" ]; then
-                suffix="branch"
-              fi
-              local suffix_budget
-              suffix_budget=$((32 - ${#BASE_APP} - 1))
-              if [ "$suffix_budget" -gt 25 ]; then
-                suffix_budget=25
-              fi
-              if [ "$suffix_budget" -lt 1 ]; then
-                suffix_budget=1
-              fi
-              local suffix_hash
-              suffix_hash="$(printf '%s' "$ref_name" | sha256sum | cut -c1-8)"
-              if [ "$suffix_budget" -le 8 ]; then
-                suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
-              else
-                local suffix_head_budget
-                suffix_head_budget=$((suffix_budget - 9))
-                local suffix_head
-                suffix_head="$(trim_slug "$suffix" "$suffix_head_budget")"
-                if [ -z "$suffix_head" ]; then
-                  suffix="$(trim_slug "$suffix_hash" "$suffix_budget")"
-                else
-                  suffix="$suffix_head-$suffix_hash"
-                fi
-              fi
-              if [ -z "$suffix" ]; then
-                suffix="b"
-              fi
-              app_slug="$BASE_APP-$suffix"
-            fi
-            printf '%s' "$app_slug"
-          }
-
-          app_slug="$(resolve_app_slug "$DELETED_REF")"
-
-          echo "app_slug=$app_slug" >> "$GITHUB_OUTPUT"
-
-      - name: Delete Deno branch app
-        shell: bash
-        env:
-          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          action_path="$RUNNER_TEMP/deno-deploy-action"
-          deno run \
-            --allow-env \
-            --allow-read="$action_path" \
-            --allow-net=api.deno.com,api.github.com \
-            "$action_path/scripts/delete_dist_branch.js" \
-            --token "$DENO_DEPLOY_TOKEN" \
-            --github-owner "${GITHUB_REPOSITORY_OWNER}" \
-            --github-repo "${GITHUB_REPOSITORY#*/}" \
-            --github-token "$GITHUB_TOKEN" \
-            --artifact-ref "dist/${{ github.event.ref }}" \
-            --app "${{ steps.delete-target.outputs.app_slug }}"
+      contents: read
+      issues: write
+      pull-requests: write
+    uses: ubiquity/deno-deploy-workflow/.github/workflows/deno-deploy-reusable.yml@codex/deno-2-programmatic
+    with:
+      project: pay-ubq-fi
+      deploy_platform: deno2
+      entrypoint: serve.ts
+      install_command: deno install
+      build_command: deno task build
+      build_env: |
+        VITE_SUPABASE_URL=$SUPABASE_URL
+        VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+      runtime_env: |
+        STATIC_DIR=dist
+        SUPABASE_URL=$SUPABASE_URL
+        SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+      include: |
+        dist/**
+      extra_paths: |
+        /smoke/path
+      debug_fetch_fail: true
+      required_env: |
+        DENO_DEPLOY_TOKEN
+        SUPABASE_URL
+        SUPABASE_SERVICE_ROLE_KEY
+        SUPABASE_ANON_KEY
+    secrets: inherit
