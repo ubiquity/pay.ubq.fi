@@ -24,6 +24,15 @@ jobs:
         cp src/database.types.ts .deploy-root/src/database.types.ts
       include: |
         dist/**
+      exclude: |
+        .git
+        .github
+        node_modules
+        build
+        coverage
+        .turbo
+        .next
+        .vercel
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
