@@ -19,8 +19,11 @@ jobs:
         rm -rf .deploy-root
         mkdir -p .deploy-root/src
         cp -R dist .deploy-root/dist
-        cp serve.ts deno.jsonc deno.lock .deploy-root/
+        cp serve.ts deno.lock .deploy-root/
+        cp deno.jsonc .deploy-root/deno.json
         cp src/database.types.ts .deploy-root/src/database.types.ts
+      include: |
+        dist/**
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY

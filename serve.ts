@@ -4,7 +4,13 @@ import { decodeFunctionData } from "npm:viem@2.24.1";
 import type { Database } from "./src/database.types.ts";
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
-const root = Deno.env.get("STATIC_DIR") ?? "dist";
+const staticDir = Deno.env.get("STATIC_DIR") ?? "dist";
+const root = staticDir.startsWith("/") ? staticDir : decodeURIComponent(
+  new URL(
+    staticDir.endsWith("/") ? staticDir : `${staticDir}/`,
+    import.meta.url,
+  ).pathname,
+).replace(/\/$/, "");
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -14,11 +20,16 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn("[serve] Supabase env missing; permit claim API disabled.");
 }
 
-const supabase = supabaseUrl && supabaseKey ? createClient<Database>(supabaseUrl, supabaseKey) : null;
+const supabase = supabaseUrl && supabaseKey
+  ? createClient<Database>(supabaseUrl, supabaseKey)
+  : null;
 
 const OLD_PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const NEW_PERMIT2_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
-const PERMIT2_ADDRESSES = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT2_ADDRESS.toLowerCase()]);
+const PERMIT2_ADDRESSES = new Set([
+  OLD_PERMIT2_ADDRESS.toLowerCase(),
+  NEW_PERMIT2_ADDRESS.toLowerCase(),
+]);
 
 const permit2DecodeAbi = [
   {
@@ -131,15 +142,19 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const normalizeHexLowerNo0x = (value: string) => value.trim().toLowerCase().replace(/^0x/, "");
+const normalizeHexLowerNo0x = (value: string) =>
+  value.trim().toLowerCase().replace(/^0x/, "");
 
-const isValidTxHash = (value: string) => /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
+const isValidTxHash = (value: string) =>
+  /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
 
-const isValidAddress = (value: string) => /^[0-9a-f]{40}$/.test(normalizeHexLowerNo0x(value));
+const isValidAddress = (value: string) =>
+  /^[0-9a-f]{40}$/.test(normalizeHexLowerNo0x(value));
 
 const isValidPermitSignatureHex = (value: string) => {
   const normalized = normalizeHexLowerNo0x(value);
-  return /^[0-9a-f]+$/.test(normalized) && (normalized.length === 128 || normalized.length === 130);
+  return /^[0-9a-f]+$/.test(normalized) &&
+    (normalized.length === 128 || normalized.length === 130);
 };
 
 const to0xLower = (value: string) => `0x${normalizeHexLowerNo0x(value)}`;
@@ -156,7 +171,10 @@ const rpcCall = async (chainId: number, method: string, params: unknown[]) => {
     throw new Error(`RPC ${method} failed: HTTP ${response.status}`);
   }
 
-  const json = (await response.json()) as { error?: { message?: string }; result?: unknown };
+  const json = (await response.json()) as {
+    error?: { message?: string };
+    result?: unknown;
+  };
   if (json.error) {
     throw new Error(json.error.message ?? `RPC ${method} error`);
   }
@@ -181,19 +199,28 @@ const handleRecordClaim = async (req: Request) => {
       signature?: string;
     };
 
-    const parsedChainId = typeof networkId === "string" ? Number.parseInt(networkId, 10) : networkId;
-    if (typeof parsedChainId !== "number" || !Number.isSafeInteger(parsedChainId) || parsedChainId <= 0) {
+    const parsedChainId = typeof networkId === "string"
+      ? Number.parseInt(networkId, 10)
+      : networkId;
+    if (
+      typeof parsedChainId !== "number" ||
+      !Number.isSafeInteger(parsedChainId) || parsedChainId <= 0
+    ) {
       return jsonResponse(400, { error: "Invalid networkId" });
     }
     const chainId = parsedChainId;
 
-    if (typeof transactionHash !== "string" || !isValidTxHash(transactionHash)) {
+    if (
+      typeof transactionHash !== "string" || !isValidTxHash(transactionHash)
+    ) {
       return jsonResponse(400, { error: "Invalid transactionHash" });
     }
 
     const txHashWithPrefix = to0xLower(transactionHash);
 
-    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [txHashWithPrefix])) as {
+    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [
+      txHashWithPrefix,
+    ])) as {
       input?: string;
       blockHash?: string | null;
       to?: string | null;
@@ -206,11 +233,16 @@ const handleRecordClaim = async (req: Request) => {
       return jsonResponse(400, { error: "Transaction not mined yet" });
     }
 
-    if (typeof tx.to !== "string" || !isValidAddress(tx.to) || !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())) {
+    if (
+      typeof tx.to !== "string" || !isValidAddress(tx.to) ||
+      !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())
+    ) {
       return jsonResponse(400, { error: "Transaction is not a Permit2 call" });
     }
 
-    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [txHashWithPrefix])) as { status?: string } | null;
+    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [
+      txHashWithPrefix,
+    ])) as { status?: string } | null;
     if (!receipt) {
       return jsonResponse(400, { error: "Transaction receipt unavailable" });
     }
@@ -233,39 +265,63 @@ const handleRecordClaim = async (req: Request) => {
       if (decoded.functionName === "permitTransferFrom") {
         const signature = args.at(-1);
         if (typeof signature !== "string") {
-          return jsonResponse(400, { error: "Failed to extract Permit2 signature" });
+          return jsonResponse(400, {
+            error: "Failed to extract Permit2 signature",
+          });
         }
         extractedSignatures = [signature];
       } else if (decoded.functionName === "batchPermitTransferFrom") {
         const signatures = args.at(-1);
-        if (!Array.isArray(signatures) || !signatures.every((s) => typeof s === "string")) {
-          return jsonResponse(400, { error: "Failed to extract Permit2 signatures" });
+        if (
+          !Array.isArray(signatures) ||
+          !signatures.every((s) => typeof s === "string")
+        ) {
+          return jsonResponse(400, {
+            error: "Failed to extract Permit2 signatures",
+          });
         }
         extractedSignatures = signatures;
       } else {
-        return jsonResponse(400, { error: `Unsupported Permit2 function: ${decoded.functionName}` });
+        return jsonResponse(400, {
+          error: `Unsupported Permit2 function: ${decoded.functionName}`,
+        });
       }
     } catch (error) {
       console.error("Error decoding calldata:", error);
       return jsonResponse(400, { error: "Unable to decode Permit2 calldata" });
     }
 
-    const normalizedSignatures = Array.from(new Set(extractedSignatures.map(to0xLower)));
+    const normalizedSignatures = Array.from(
+      new Set(extractedSignatures.map(to0xLower)),
+    );
     if (!normalizedSignatures.length) {
-      return jsonResponse(400, { error: "No signatures found in transaction input" });
+      return jsonResponse(400, {
+        error: "No signatures found in transaction input",
+      });
     }
     if (!normalizedSignatures.every(isValidPermitSignatureHex)) {
-      return jsonResponse(400, { error: "Invalid signature format in transaction input" });
+      return jsonResponse(400, {
+        error: "Invalid signature format in transaction input",
+      });
     }
 
-    const { data: existing, error: selectError } = await supabase.from("permits").select("id, signature, transaction").in("signature", normalizedSignatures);
+    const { data: existing, error: selectError } = await supabase.from(
+      "permits",
+    ).select("id, signature, transaction").in(
+      "signature",
+      normalizedSignatures,
+    );
     if (selectError) throw selectError;
 
-    const conflicting = (existing ?? []).filter((row) => row.transaction && String(row.transaction).toLowerCase() !== txHashWithPrefix);
+    const conflicting = (existing ?? []).filter((row) =>
+      row.transaction &&
+      String(row.transaction).toLowerCase() !== txHashWithPrefix
+    );
     if (conflicting.length > 0) {
       return jsonResponse(409, {
         success: false,
-        error: "One or more permits already have a different recorded transaction",
+        error:
+          "One or more permits already have a different recorded transaction",
         conflicts: conflicting.map((row) => row.signature),
       });
     }
@@ -282,11 +338,19 @@ const handleRecordClaim = async (req: Request) => {
     const matched = new Set((existing ?? []).map((row) => row.signature));
     const missing = normalizedSignatures.filter((sig) => !matched.has(sig));
 
-    return jsonResponse(200, { success: true, extracted: normalizedSignatures.length, updated, missing });
+    return jsonResponse(200, {
+      success: true,
+      extracted: normalizedSignatures.length,
+      updated,
+      missing,
+    });
   } catch (error) {
     console.error("Error recording claim:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return jsonResponse(500, { error: "Failed to record claim", details: message });
+    return jsonResponse(500, {
+      error: "Failed to record claim",
+      details: message,
+    });
   }
 };
 
@@ -299,7 +363,9 @@ const handleRequest = async (req: Request) => {
   }
 
   const isHead = req.method === "HEAD";
-  const request = isHead ? new Request(req.url, { method: "GET", headers: req.headers }) : req;
+  const request = isHead
+    ? new Request(req.url, { method: "GET", headers: req.headers })
+    : req;
 
   // Try to serve the file directly (HEAD is coerced to GET to avoid 405s on probes)
   let response = await serveDir(request, { fsRoot: root, quiet: true });
@@ -310,7 +376,10 @@ const handleRequest = async (req: Request) => {
   }
 
   if (isHead) {
-    return new Response(null, { status: response.status, headers: response.headers });
+    return new Response(null, {
+      status: response.status,
+      headers: response.headers,
+    });
   }
 
   return response;
