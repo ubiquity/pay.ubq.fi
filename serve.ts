@@ -4,13 +4,7 @@ import { decodeFunctionData } from "npm:viem@2.24.1";
 import type { Database } from "./src/database.types.ts";
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
-const staticDir = Deno.env.get("STATIC_DIR") ?? "dist";
-const root = staticDir.startsWith("/") ? staticDir : decodeURIComponent(
-  new URL(
-    staticDir.endsWith("/") ? staticDir : `${staticDir}/`,
-    import.meta.url,
-  ).pathname,
-).replace(/\/$/, "");
+const root = Deno.env.get("STATIC_DIR") ?? "dist";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

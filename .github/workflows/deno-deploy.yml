@@ -23,6 +23,10 @@ jobs:
         cp deno.jsonc .deploy-root/deno.json
         cp src/database.types.ts .deploy-root/src/database.types.ts
       include: |
+        serve.ts
+        deno.json
+        deno.lock
+        src/**
         dist/**
       exclude: |
         .git
