@@ -180,6 +180,20 @@ const isValidPermitSignatureHex = (value: string) => {
 
 const to0xLower = (value: string) => `0x${normalizeHexLowerNo0x(value)}`;
 
+const listDirectory = async (path: string) => {
+  try {
+    const entries: string[] = [];
+    for await (const entry of Deno.readDir(path)) {
+      entries.push(`${entry.isDirectory ? "dir" : "file"}:${entry.name}`);
+    }
+    return entries.sort();
+  } catch (error) {
+    return error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error);
+  }
+};
+
 const rpcCall = async (chainId: number, method: string, params: unknown[]) => {
   const endpoint = `${rpcBaseUrl.replace(/\/$/, "")}/${chainId}`;
   const response = await fetch(endpoint, {
@@ -381,6 +395,21 @@ const handleRequest = async (req: Request) => {
 
   if (req.method === "POST" && pathname === "/api/permits/record-claim") {
     return await handleRecordClaim(req);
+  }
+  if (req.method === "GET" && pathname === "/api/deno2-static-diagnostics") {
+    const paths = Array.from(new Set([...staticRoots, "dist", "/dist"]));
+    const directories = Object.fromEntries(
+      await Promise.all(
+        paths.map(async (path) => [path, await listDirectory(path)]),
+      ),
+    );
+    return jsonResponse(200, {
+      cwd: Deno.cwd(),
+      importMetaUrl: import.meta.url,
+      configuredStaticDir,
+      staticRoots,
+      directories,
+    });
   }
 
   const isHead = req.method === "HEAD";
