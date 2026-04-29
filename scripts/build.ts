@@ -1,17 +1,6 @@
 const encoder = new TextEncoder();
 const markerPath = "dist/build-source-hash.txt";
-const sourceRoots = [
-  "index.html",
-  "package.json",
-  "deno.jsonc",
-  "deno.lock",
-  "vite.config.ts",
-  "tsconfig.json",
-  "src",
-  "public",
-  "lib",
-  "scripts/build.ts",
-];
+const sourceRoots = ["index.html", "package.json", "deno.jsonc", "deno.lock", "vite.config.ts", "tsconfig.json", "src", "public", "lib", "scripts/build.ts"];
 
 async function listFiles(path: string): Promise<string[]> {
   const stat = await Deno.stat(path);
@@ -27,9 +16,7 @@ async function listFiles(path: string): Promise<string[]> {
     entries.push(`${path}/${entry.name}`);
   }
 
-  const files = await Promise.all(
-    entries.sort().map((entry) => listFiles(entry)),
-  );
+  const files = await Promise.all(entries.sort().map((entry) => listFiles(entry)));
   return files.flat();
 }
 
@@ -58,18 +45,12 @@ async function sourceHash() {
   }
 
   const digest = await crypto.subtle.digest("SHA-256", input);
-  return Array.from(
-    new Uint8Array(digest),
-    (byte) => byte.toString(16).padStart(2, "0"),
-  ).join("");
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function hasCurrentDist(hash: string) {
   try {
-    const [marker] = await Promise.all([
-      Deno.readTextFile(markerPath),
-      Deno.stat("dist/index.html"),
-    ]);
+    const [marker] = await Promise.all([Deno.readTextFile(markerPath), Deno.stat("dist/index.html")]);
     return marker.trim() === hash;
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
@@ -86,13 +67,7 @@ if (await hasCurrentDist(hash)) {
 }
 
 const command = new Deno.Command(Deno.execPath(), {
-  args: [
-    "run",
-    "-A",
-    "--v8-flags=--max-old-space-size=736",
-    "npm:vite@^6.2.0",
-    "build",
-  ],
+  args: ["run", "-A", "--v8-flags=--max-old-space-size=736", "npm:vite@^6.2.0", "build"],
   stdin: "inherit",
   stdout: "inherit",
   stderr: "inherit",
