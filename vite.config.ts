@@ -48,6 +48,23 @@ export default defineConfig(({ command }) => ({
   build: {
     cssCodeSplit: false,
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (
+            id.includes("wagmi") ||
+            id.includes("viem") ||
+            id.includes("@walletconnect") ||
+            id.includes("@reown") ||
+            id.includes("@metamask") ||
+            id.includes("@coinbase")
+          ) {
+            return "wallet";
+          }
+          return undefined;
+        },
+      },
+    },
     commonjsOptions: {
       transformMixedEsModules: true,
       requireReturnsDefault: "auto",
