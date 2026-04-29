@@ -12,8 +12,15 @@ jobs:
       deploy_platform: deno2
       deno_build_memory_limit: 2048
       entrypoint: serve.ts
+      root: .deploy-root
       install_command: deno install
-      build_command: deno task build
+      build_command: |
+        deno task build:ci
+        rm -rf .deploy-root
+        mkdir -p .deploy-root/src
+        cp -R dist .deploy-root/dist
+        cp serve.ts deno.jsonc deno.lock .deploy-root/
+        cp src/database.types.ts .deploy-root/src/database.types.ts
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
@@ -21,8 +28,6 @@ jobs:
         STATIC_DIR=dist
         SUPABASE_URL=$SUPABASE_URL
         SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
-      include: |
-        dist/**
       debug_fetch_fail: true
       required_env: |
         DENO_DEPLOY_TOKEN

@@ -1,7 +1,8 @@
 {
   "nodeModulesDir": "auto",
   "tasks": {
-    "build": "deno run -A --v8-flags=--max-old-space-size=736 npm:vite@^6.2.0 build",
+    "build": "deno eval \"\"",
+    "build:ci": "deno run -A scripts/build.ts",
     "serve": "deno run --allow-all serve.ts"
   },
   "deploy": {
