@@ -15,10 +15,12 @@ jobs:
       install_command: deno install
       build_command: deno task build:ci
       include: |
-        deno.jsonc
-        deno.lock
-        src/database.types.ts
-        dist/**
+        ./serve.ts
+        ./deno.jsonc
+        ./deno.lock
+        ./src/database.types.ts
+        ./dist
+        ./dist/**
       exclude: |
         .git
         .github
