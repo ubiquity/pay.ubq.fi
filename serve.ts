@@ -131,8 +131,6 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const port = parseInt(Deno.env.get("PORT") ?? "8000", 10);
-
 const normalizeHexLowerNo0x = (value: string) => value.trim().toLowerCase().replace(/^0x/, "");
 
 const isValidTxHash = (value: string) => /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
@@ -318,4 +316,4 @@ const handleRequest = async (req: Request) => {
   return response;
 };
 
-Deno.serve({ port }, handleRequest);
+Deno.serve(handleRequest);
