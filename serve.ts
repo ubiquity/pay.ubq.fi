@@ -4,7 +4,34 @@ import { decodeFunctionData } from "npm:viem@2.24.1";
 import type { Database } from "./src/database.types.ts";
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
-const root = Deno.env.get("STATIC_DIR") ?? "dist";
+const configuredStaticDir = Deno.env.get("STATIC_DIR") ?? "dist";
+const normalizeRoot = (value: string) => value.replace(/\/+$/, "");
+const joinRoot = (base: string, child: string) =>
+  `${base.replace(/\/+$/, "")}/${child.replace(/^\/+/, "")}`;
+const moduleRelativeRoot = (() => {
+  if (configuredStaticDir.startsWith("/")) {
+    return null;
+  }
+  const moduleUrl = new URL(import.meta.url);
+  return moduleUrl.protocol === "file:"
+    ? normalizeRoot(
+      decodeURIComponent(
+        new URL(`${configuredStaticDir}/`, moduleUrl).pathname,
+      ),
+    )
+    : null;
+})();
+const staticRoots = Array.from(
+  new Set(
+    [
+      configuredStaticDir,
+      configuredStaticDir.startsWith("/")
+        ? null
+        : joinRoot(Deno.cwd(), configuredStaticDir),
+      moduleRelativeRoot,
+    ].filter((value): value is string => Boolean(value)).map(normalizeRoot),
+  ),
+);
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -362,12 +389,33 @@ const handleRequest = async (req: Request) => {
     : req;
 
   // Try to serve the file directly (HEAD is coerced to GET to avoid 405s on probes)
-  let response = await serveDir(request, { fsRoot: root, quiet: true });
+  let response: Response | null = null;
+  for (const root of staticRoots) {
+    response = await serveDir(request, { fsRoot: root, quiet: true });
+    if (response.status !== 404) {
+      break;
+    }
+  }
 
   // If it's a 404 and not a file request, serve index.html for SPA routing
-  if (response.status === 404 && !pathname.includes(".")) {
-    response = await serveFile(request, `${root}/index.html`);
+  if (response?.status === 404 && !pathname.includes(".")) {
+    for (const root of staticRoots) {
+      try {
+        response = await serveFile(request, `${root}/index.html`);
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          response = new Response("Not Found", { status: 404 });
+          continue;
+        }
+        throw error;
+      }
+      if (response.status !== 404) {
+        break;
+      }
+    }
   }
+
+  response ??= new Response("Not Found", { status: 404 });
 
   if (isHead) {
     return new Response(null, {
