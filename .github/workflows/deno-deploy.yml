@@ -2,40 +2,33 @@ name: Deno Deploy
 
 on:
   push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
   deploy:
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
     uses: ubiquity/deno-deploy-workflow/.github/workflows/deno-deploy-reusable.yml@main
     with:
       project: pay-ubq-fi
+      deploy_platform: deno2
+      deno_build_memory_limit: 2048
       entrypoint: serve.ts
-      bun_version: 1.3.4
-      install_command: |
-        bun install
+      root: .deploy-root
+      install_command: deno install
       build_command: |
-        bun run build
+        deno task build:ci
+        rm -rf .deploy-root
+        mkdir -p .deploy-root/src .deploy-root/static
+        cp -R dist/. .deploy-root/static/
+        cp serve.ts deno.lock .deploy-root/
+        cp deno.jsonc .deploy-root/deno.json
+        cp src/database.types.ts .deploy-root/src/database.types.ts
       build_env: |
         VITE_SUPABASE_URL=$SUPABASE_URL
         VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-      forward_all_secrets: true
       runtime_env: |
-        STATIC_DIR=dist
-      include: |
-        dist/**
-      exclude: |
-        .git
-        .github
-        node_modules
-        coverage
-        .turbo
-        .next
-        .vercel
+        STATIC_DIR=static
+        SUPABASE_URL=$SUPABASE_URL
+        SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
       debug_fetch_fail: true
       required_env: |
         DENO_DEPLOY_TOKEN
