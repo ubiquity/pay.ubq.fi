@@ -8,6 +8,7 @@ import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
 import { parseGitHubUrl, truncateAddress } from "../utils/format-utils.ts";
+import { getFundingWalletActionLabels } from "../utils/permit-invalidation-utils.ts";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 
@@ -59,6 +60,7 @@ export function PermitRow({
 
   const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidating;
+  const fundingWalletActionLabels = getFundingWalletActionLabels(isInvalidating, 1);
 
   const rowClassName = (() => {
     if (!isReadyToClaim) return "row-invalid";
@@ -77,9 +79,9 @@ export function PermitRow({
   const explorerUrl = chain?.blockExplorers?.default?.url;
 
   const statusDisplayText = (() => {
-    if (networkMismatch) return `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "invalidate" : "claim"}`;
+    if (networkMismatch) return `Switch wallet to ${targetNetworkName} to ${isFundingWallet && isOwner ? "delete" : "claim"}`;
     if (isClaimed) return "Claimed";
-    if (isInvalidating) return "Invalidating...";
+    if (isInvalidating) return fundingWalletActionLabels.pendingText;
     if (isClaimingThis) return "Claiming...";
     if (claimFailed) return "Failed";
     if (insufficientBalance) return "Insolvent";
@@ -90,8 +92,8 @@ export function PermitRow({
   })();
 
   const buttonText = (() => {
-    if (isInvalidating) return "Invalidating...";
-    if (isFundingWallet && canInvalidate) return "Invalidate";
+    if (isInvalidating) return fundingWalletActionLabels.buttonText;
+    if (isFundingWallet && canInvalidate) return fundingWalletActionLabels.buttonText;
     if ((isClaimed || claimFailed) && permit.transactionHash) return "View";
     if (isClaimingThis) return "Claiming...";
     if (claimFailed) return "Retry";
@@ -268,7 +270,7 @@ export function PermitRow({
           onClick={handleButtonClick}
           disabled={isButtonDisabled}
           className={`button-with-icon ${isClaimed && permit.transactionHash ? "view-button" : ""}`}
-          title={statusDisplayText}
+          title={isFundingWallet && isOwner ? fundingWalletActionLabels.title : statusDisplayText}
         >
           {showButtonIcon && buttonIcon}
           <span>{finalButtonText}</span>

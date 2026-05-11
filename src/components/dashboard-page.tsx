@@ -8,6 +8,7 @@ import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { PermitData } from "../types.ts";
+import { getFundingWalletActionLabels } from "../utils/permit-invalidation-utils.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
@@ -221,6 +222,7 @@ export function DashboardPage() {
     () => isInvalidatingAny || (pendingNetworkSwitch.isSwitching && pendingNetworkSwitch.action === "invalidate"),
     [isInvalidatingAny, pendingNetworkSwitch.isSwitching, pendingNetworkSwitch.action]
   );
+  const fundingWalletActionLabels = getFundingWalletActionLabels(isInvalidationFlowActive, invalidatablePermitCount);
 
   const onInvalidatePermit = useCallback(
     async (permit: PermitData) => {
@@ -431,7 +433,7 @@ export function DashboardPage() {
                   : isClaimFlowActive || !isConnected || claimablePermitCount === 0
               }
               className="button-with-icon"
-              title={isFundingWallet ? "Invalidate all valid permits (batched by nonce bitmap)" : "Claim all valid and available permits (batch RPC)"}
+              title={isFundingWallet ? fundingWalletActionLabels.title : "Claim all valid and available permits (batch RPC)"}
             >
               {isFundingWallet ? (
                 isInvalidationFlowActive ? (
@@ -449,7 +451,7 @@ export function DashboardPage() {
               <span>
                 {isLoading ? (
                   isFundingWallet ? (
-                    "Loading Invalidations..."
+                    "Loading Deletes..."
                   ) : (
                     "Loading Rewards..."
                   )
@@ -459,10 +461,8 @@ export function DashboardPage() {
                   <>
                     {isFundingWallet ? (
                       <>
-                        <span className="claim-amount">Invalidate all</span>
-                        <span className="claim-count">
-                          ({invalidatablePermitCount} Permit{invalidatablePermitCount !== 1 ? "s" : ""})
-                        </span>
+                        <span className="claim-amount">{fundingWalletActionLabels.primaryText}</span>
+                        <span className="claim-count">{fundingWalletActionLabels.countText}</span>
                       </>
                     ) : isClaimFlowActive ? (
                       <>

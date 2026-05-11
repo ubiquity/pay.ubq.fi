@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Address, Chain, PublicClient, WalletClient } from "viem";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { PermitData } from "../types.ts";
+import { deriveNonceBitmap, groupPermitsForInvalidation } from "../utils/permit-invalidation-utils.ts";
 
 interface UsePermitInvalidationProps {
   setPermits: React.Dispatch<React.SetStateAction<PermitData[]>>;
@@ -24,12 +25,6 @@ export function usePermitInvalidation({
 }: UsePermitInvalidationProps) {
   const [isInvalidating, setIsInvalidating] = useState<Record<string, boolean>>({});
 
-  const nonceBitmap = (nonce: bigint): { wordPos: bigint; bitPos: bigint } => {
-    const wordPos = nonce >> 8n;
-    const bitPos = nonce & 0xffn;
-    return { wordPos, bitPos };
-  };
-
   const handleInvalidatePermit = useCallback(
     async (permit: PermitData): Promise<{ success: boolean; txHash: string }> => {
       const permitKey = permit.signature;
@@ -50,13 +45,13 @@ export function usePermitInvalidation({
 
       try {
         const nonceBigInt = BigInt(permit.nonce);
-        const { wordPos, bitPos } = nonceBitmap(nonceBigInt);
+        const { wordPos, bitMask } = deriveNonceBitmap(nonceBigInt);
 
         const { request } = await publicClient.simulateContract({
           address: permit.permit2Address,
           abi: permit2Abi,
           functionName: "invalidateUnorderedNonces",
-          args: [wordPos, 1n << bitPos],
+          args: [wordPos, bitMask],
           account: address,
         });
 
@@ -116,34 +111,15 @@ export function usePermitInvalidation({
         return { success: false, txHashes: [] };
       }
 
-      const grouped = new Map<
-        string,
-        {
-          permit2Address: `0x${string}`;
-          wordPos: bigint;
-          mask: bigint;
-          signatures: string[];
-        }
-      >();
-
-      for (const permit of permits) {
-        const nonceBigInt = BigInt(permit.nonce);
-        const { wordPos, bitPos } = nonceBitmap(nonceBigInt);
-        const groupKey = `${permit.permit2Address.toLowerCase()}:${wordPos.toString()}`;
-        const existing = grouped.get(groupKey) ?? { permit2Address: permit.permit2Address, wordPos, mask: 0n, signatures: [] };
-        existing.mask |= 1n << bitPos;
-        existing.signatures.push(permit.signature);
-        grouped.set(groupKey, existing);
-      }
-
+      const groups = groupPermitsForInvalidation(permits);
       const txHashes: string[] = [];
       let success = true;
 
-      for (const group of grouped.values()) {
+      for (const group of groups) {
         const groupPermitKeys = Array.from(new Set(group.signatures));
         try {
           const { request } = await publicClient.simulateContract({
-            address: group.permit2Address,
+            address: group.permit2Address as `0x${string}`,
             abi: permit2Abi,
             functionName: "invalidateUnorderedNonces",
             args: [group.wordPos, group.mask],
