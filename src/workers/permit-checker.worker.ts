@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createRpcClient } from "@ubiquity-dao/permit2-rpc-client";
 import { type Address } from "viem";
 import { RPC_URL } from "../constants/config.ts";
