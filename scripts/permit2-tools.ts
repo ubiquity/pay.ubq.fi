@@ -67,11 +67,7 @@ type JsonRpcResponse = {
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const runWithConcurrency = async <T>(
-  items: T[],
-  concurrency: number,
-  task: (item: T, index: number) => Promise<void>
-) => {
+const runWithConcurrency = async <T>(items: T[], concurrency: number, task: (item: T, index: number) => Promise<void>) => {
   if (items.length === 0) return;
   const limit = Math.max(1, Math.floor(concurrency));
   let cursor = 0;
@@ -141,7 +137,6 @@ export async function fetchPermitsFromDb({
     deadline,
     signature,
     transaction,
-    invalidation,
     created,
     beneficiary_id,
     location_id,

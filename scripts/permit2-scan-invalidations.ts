@@ -1,15 +1,7 @@
 #!/usr/bin/env -S deno run -A --ext=ts --env-file=.env
 
 import { keccak256, stringToHex } from "viem";
-import {
-  createSupabaseClientFromEnv,
-  getRpcBaseUrlFromEnv,
-  isHexAddress,
-  NEW_PERMIT2_ADDRESS,
-  noncePositions,
-  normalizeHexAddress,
-  OLD_PERMIT2_ADDRESS,
-} from "./permit2-tools.ts";
+import { getRpcBaseUrlFromEnv, isHexAddress, NEW_PERMIT2_ADDRESS, noncePositions, normalizeHexAddress, OLD_PERMIT2_ADDRESS } from "./permit2-tools.ts";
 
 type CliArgs = {
   report: string;
@@ -22,8 +14,6 @@ type CliArgs = {
   chunkSize: number;
   useBlockscout: boolean;
   verbose: boolean;
-  execute: boolean;
-  maxUpdates: number;
   concurrency: number;
   pretty: boolean;
   help: boolean;
@@ -40,14 +30,13 @@ const printUsage = () => {
     `
 Usage:
   deno run -A --env-file=.env scripts/permit2-scan-invalidations.ts [--report <file>] [--out <file>]
-    [--owner 0x...] [--since <timestamp>] [--until <timestamp>] [--pretty] [--execute] [--max-updates <n>]
+    [--owner 0x...] [--since <timestamp>] [--until <timestamp>] [--pretty]
     [--from-block <n>] [--chunk-size <n>] [--timeout-ms <n>] [--use-blockscout] [--verbose] [--concurrency <n>]
 
 What it does:
   - Reads a permit2 audit report (default: ${DEFAULT_REPORT}).
   - Scans Permit2 UnorderedNonceInvalidation logs for the owners in the report.
   - Matches invalidation masks to permit nonces and outputs a JSON report.
-  - Optionally writes invalidation tx hashes into Supabase permits.invalidation.
 
 Options:
   -r, --report  Audit report JSON path (default: ${DEFAULT_REPORT}).
@@ -56,8 +45,6 @@ Options:
   -s, --since   Only scan logs from this timestamp (Date.parse-able).
       --until   Only scan logs up to this timestamp (Date.parse-able).
       --from-block  Start scanning from this block number (decimal or hex).
-      --execute Actually write invalidation tx hashes to Supabase (default: false).
-      --max-updates  Safety limit for number of permit rows to update (default: 500).
       --chunk-size   Block range size for eth_getLogs (default: 10000).
       --timeout-ms   RPC timeout in milliseconds (default: 20000; 0 disables).
       --use-blockscout  Use Blockscout logs API for chain 100 (default: false).
@@ -78,8 +65,6 @@ const parseArgs = (argv: string[]): CliArgs => {
     out: DEFAULT_OUT,
     pretty: false,
     help: false,
-    execute: false,
-    maxUpdates: 500,
     timeoutMs: 20_000,
     chunkSize: 10_000,
     useBlockscout: false,
@@ -99,10 +84,6 @@ const parseArgs = (argv: string[]): CliArgs => {
     }
     if (arg === "--pretty" || arg === "-p") {
       out.pretty = true;
-      continue;
-    }
-    if (arg === "--execute") {
-      out.execute = true;
       continue;
     }
     if (arg === "--report" || arg === "-r") {
@@ -157,19 +138,6 @@ const parseArgs = (argv: string[]): CliArgs => {
     }
     if (arg.startsWith("--until=")) {
       out.until = arg.slice("--until=".length);
-      continue;
-    }
-    if (arg === "--max-updates") {
-      const v = Number(takeValue(arg, argv[i + 1]));
-      i += 1;
-      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --max-updates: ${argv[i]}`);
-      out.maxUpdates = Math.floor(v);
-      continue;
-    }
-    if (arg.startsWith("--max-updates=")) {
-      const v = Number(arg.slice("--max-updates=".length));
-      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --max-updates: ${v}`);
-      out.maxUpdates = Math.floor(v);
       continue;
     }
     if (arg === "--timeout-ms") {
@@ -337,22 +305,11 @@ const parseBlockValue = (value: string | undefined): bigint | null => {
   return null;
 };
 
-const normalizeTxHash = (value: string | null | undefined): `0x${string}` | null => {
-  if (!value) return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!/^0x[0-9a-f]{64}$/.test(trimmed)) return null;
-  return trimmed as `0x${string}`;
-};
-
 let rpcTimeoutMs = 20_000;
 
 const nowIso = () => new Date().toISOString();
 
-const runWithConcurrency = async <T>(
-  items: T[],
-  concurrency: number,
-  task: (item: T, index: number) => Promise<void>
-) => {
+const runWithConcurrency = async <T>(items: T[], concurrency: number, task: (item: T, index: number) => Promise<void>) => {
   if (items.length === 0) return;
   const limit = Math.max(1, Math.floor(concurrency));
   let cursor = 0;
@@ -367,17 +324,7 @@ const runWithConcurrency = async <T>(
   await Promise.all(workers);
 };
 
-const rpcCall = async <T>({
-  rpcBaseUrl,
-  chainId,
-  method,
-  params,
-}: {
-  rpcBaseUrl: string;
-  chainId: number;
-  method: string;
-  params: unknown[];
-}): Promise<T> => {
+const rpcCall = async <T>({ rpcBaseUrl, chainId, method, params }: { rpcBaseUrl: string; chainId: number; method: string; params: unknown[] }): Promise<T> => {
   const endpoint = `${rpcBaseUrl}/${chainId}`;
   const controller = rpcTimeoutMs > 0 ? new AbortController() : null;
   const timeout = controller ? setTimeout(() => controller.abort(), rpcTimeoutMs) : null;
@@ -653,78 +600,6 @@ const pickInvalidation = ({
   return sorted[0] ?? null;
 };
 
-async function updateInvalidationsInDb({
-  supabase,
-  selected,
-  maxUpdates,
-}: {
-  supabase: ReturnType<typeof createSupabaseClientFromEnv>["client"];
-  selected: SelectedInvalidation[];
-  maxUpdates: number;
-}): Promise<{
-  updated: number;
-  conflicts: Array<{ permitId: number; existing: string; tx: string }>;
-  missing: number[];
-}> {
-  const ids = selected.map((entry) => entry.permitId);
-  if (ids.length === 0) return { updated: 0, conflicts: [], missing: [] };
-
-  const { data: existingRows, error: selectError } = await supabase.from("permits").select("id, invalidation").in("id", ids);
-  if (selectError) throw new Error(selectError.message);
-
-  const existingById = new Map<number, { invalidation: string | null }>();
-  for (const row of existingRows ?? []) {
-    const id = Number((row as { id: number }).id);
-    const invalidationRaw = (row as { invalidation?: string | null }).invalidation ?? null;
-    existingById.set(id, { invalidation: invalidationRaw ? invalidationRaw : null });
-  }
-
-  const conflicts: Array<{ permitId: number; existing: string; tx: string }> = [];
-  const missing: number[] = [];
-  const updatesByTx = new Map<string, number[]>();
-
-  for (const entry of selected) {
-    const existing = existingById.get(entry.permitId);
-    if (!existing) {
-      missing.push(entry.permitId);
-      continue;
-    }
-
-    const existingTx = normalizeTxHash(existing.invalidation);
-    const desiredTx = normalizeTxHash(entry.txHash);
-    if (!desiredTx) continue;
-
-    if (existingTx) {
-      if (existingTx !== desiredTx) {
-        conflicts.push({ permitId: entry.permitId, existing: existingTx, tx: desiredTx });
-      }
-      continue;
-    }
-
-    const list = updatesByTx.get(desiredTx) ?? [];
-    list.push(entry.permitId);
-    updatesByTx.set(desiredTx, list);
-  }
-
-  let updated = 0;
-  for (const [tx, permitIds] of updatesByTx.entries()) {
-    if (updated >= maxUpdates) break;
-    const remaining = maxUpdates - updated;
-    const chunk = permitIds.slice(0, remaining);
-    if (chunk.length === 0) continue;
-    const { data: updatedRows, error: updateError } = await supabase
-      .from("permits")
-      .update({ invalidation: tx })
-      .in("id", chunk)
-      .is("invalidation", null)
-      .select("id");
-    if (updateError) throw new Error(updateError.message);
-    updated += updatedRows?.length ?? 0;
-  }
-
-  return { updated, conflicts, missing };
-}
-
 const loadReportPermits = (raw: string) => {
   const parsed = JSON.parse(raw) as {
     anomalies?: { onChainUsedButDbTransactionNull?: { permits?: unknown[] } };
@@ -772,9 +647,7 @@ const main = async () => {
   const reportRaw = await Deno.readTextFile(args.report);
   const reportPermits = loadReportPermits(reportRaw);
   log(`Report permits: ${reportPermits.length}`);
-  log(
-    `Config: chunkSize=${args.chunkSize} concurrency=${concurrency} timeoutMs=${args.timeoutMs} fromBlock=${fromBlockOverride?.toString() ?? "none"}`
-  );
+  log(`Config: chunkSize=${args.chunkSize} concurrency=${concurrency} timeoutMs=${args.timeoutMs} fromBlock=${fromBlockOverride?.toString() ?? "none"}`);
 
   const skipped: Array<{ id: number | null; reason: string }> = [];
   const permits: PermitTarget[] = [];
@@ -827,7 +700,7 @@ const main = async () => {
       githubUrl: typeof entry.githubUrl === "string" ? entry.githubUrl : null,
       beneficiary: typeof entry.beneficiary === "string" ? normalizeHexAddress(entry.beneficiary) : null,
       token: typeof entry.token === "string" ? normalizeHexAddress(entry.token) : null,
-      signature: typeof entry.signature === "string" ? entry.signature.toLowerCase() as `0x${string}` : null,
+      signature: typeof entry.signature === "string" ? (entry.signature.toLowerCase() as `0x${string}`) : null,
     });
   }
   log(`Permits scanned: ${permits.length}; skipped: ${skipped.length}`);
@@ -903,9 +776,7 @@ const main = async () => {
         useBlockscout: args.useBlockscout,
         errors,
       });
-      log(
-        `Chunk ${range.index.toString()}/${totalChunks.toString()} blocks ${range.start.toString()}..${range.end.toString()} logs=${logs.length}`
-      );
+      log(`Chunk ${range.index.toString()}/${totalChunks.toString()} blocks ${range.start.toString()}..${range.end.toString()} logs=${logs.length}`);
       for (const log of logs) {
         const parsed = parseInvalidationLog({ chainId: group.chainId, permit2Address: group.permit2Address, owner: group.owner, log });
         if (!parsed) continue;
@@ -929,7 +800,15 @@ const main = async () => {
     permit2Addresses: `0x${string}`[];
     invalidations: Array<{ txHash: `0x${string}`; blockNumber: string; permit2Address: `0x${string}`; wordPos: string; mask: string }>;
   }> = [];
-  const unmatched: Array<{ permitId: number; chainId: number; owner: `0x${string}`; nonce: string; wordPos: string; bitPos: string; permit2Addresses: `0x${string}`[] }> = [];
+  const unmatched: Array<{
+    permitId: number;
+    chainId: number;
+    owner: `0x${string}`;
+    nonce: string;
+    wordPos: string;
+    bitPos: string;
+    permit2Addresses: `0x${string}`[];
+  }> = [];
   const selectedInvalidations: SelectedInvalidation[] = [];
 
   for (const permit of permits) {
@@ -987,24 +866,6 @@ const main = async () => {
     }
   }
 
-  let updateResult: Awaited<ReturnType<typeof updateInvalidationsInDb>> | null = null;
-  let updateError: string | null = null;
-  if (args.execute) {
-    const { client: supabase, usesServiceRole } = createSupabaseClientFromEnv({ preferServiceRole: true });
-    if (!usesServiceRole) {
-      throw new Error("Refusing to --execute without SUPABASE_SERVICE_ROLE_KEY (service role required to bypass RLS for updates).");
-    }
-    console.error("Note: using SUPABASE_SERVICE_ROLE_KEY (bypasses RLS); results may differ from browser worker behavior.");
-    try {
-      updateResult = await updateInvalidationsInDb({ supabase, selected: selectedInvalidations, maxUpdates: args.maxUpdates });
-      log(`DB update: updated=${updateResult.updated} conflicts=${updateResult.conflicts.length} missing=${updateResult.missing.length}`);
-    } catch (error) {
-      updateError = error instanceof Error ? error.message : String(error);
-      updateResult = null;
-      log(`DB update error: ${updateError}`);
-    }
-  }
-
   const report = {
     generatedAt: new Date().toISOString(),
     reportSource: args.report,
@@ -1032,9 +893,6 @@ const main = async () => {
     unmatched,
     selectedInvalidations,
     errors,
-    ...(args.execute
-      ? { executed: true, updated: updateResult?.updated ?? 0, conflicts: updateResult?.conflicts ?? [], missing: updateResult?.missing ?? [], updateError }
-      : { executed: false }),
   };
 
   const output = stringifyJson(report, args.pretty);

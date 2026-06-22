@@ -166,7 +166,6 @@ type PermitAuditEntry = {
   wordPos: string | null;
   bitPos: string | null;
   dbTransaction: `0x${string}` | null;
-  dbInvalidation: `0x${string}` | null;
   expectedPermit2: Permit2Kind;
   expectedPermit2Address: `0x${string}` | null;
   nonceUsed: {
@@ -336,7 +335,6 @@ async function buildAuditEntries(
   return draft.map((d): PermitAuditEntry => {
     const formatted = formatAmount({ chainId: d.chainId, tokenAddress: d.token, rawAmount: d.row.amount });
     const dbTx = safe0xTxHash(d.row.transaction);
-    const dbInvalidation = safe0xTxHash(d.row.invalidation ?? null);
     const githubUrl = d.row.location?.node_url ? String(d.row.location.node_url) : null;
 
     const usedOld =
@@ -348,10 +346,8 @@ async function buildAuditEntries(
         ? getUsed({ chainId: d.chainId, permit2Address: NEW_PERMIT2_ADDRESS, owner: d.owner, wordPos: d.wordPos, bitPos: d.bitPos })
         : { used: null as boolean | null };
 
-    const adjustedExpected =
-      d.expected.kind === "old" && usedOld.used === false && usedNew.used === true
-        ? { kind: "new" as Permit2Kind, address: NEW_PERMIT2_ADDRESS }
-        : d.expected;
+    const adjustedExpected: { kind: Permit2Kind; address: `0x${string}` | null; error?: string } =
+      d.expected.kind === "old" && usedOld.used === false && usedNew.used === true ? { kind: "new" as Permit2Kind, address: NEW_PERMIT2_ADDRESS } : d.expected;
     const usedExpected = (() => {
       if (adjustedExpected.kind === "old") return usedOld.used;
       if (adjustedExpected.kind === "new") return usedNew.used;
@@ -374,7 +370,6 @@ async function buildAuditEntries(
       wordPos: d.wordPos !== null ? d.wordPos.toString() : null,
       bitPos: d.bitPos !== null ? d.bitPos.toString() : null,
       dbTransaction: dbTx,
-      dbInvalidation,
       expectedPermit2: adjustedExpected.kind,
       expectedPermit2Address: adjustedExpected.address,
       nonceUsed: { old: usedOld.used, new: usedNew.used, expected: usedExpected },
@@ -443,20 +438,14 @@ const main = async () => {
     expectedUnknown: permits.filter((p) => p.expectedPermit2 === "unknown").length,
     dbTransactionSet: permits.filter((p) => p.dbTransaction !== null).length,
     dbTransactionNull: permits.filter((p) => p.dbTransaction === null).length,
-    dbInvalidationSet: permits.filter((p) => p.dbInvalidation !== null).length,
-    dbInvalidationNull: permits.filter((p) => p.dbInvalidation === null).length,
     nonceUsedExpectedTrue: permits.filter((p) => p.nonceUsed.expected === true).length,
     nonceUsedExpectedFalse: permits.filter((p) => p.nonceUsed.expected === false).length,
     nonceUsedExpectedNull: permits.filter((p) => p.nonceUsed.expected === null).length,
   };
 
-  const hasDbUsage = (permit: PermitAuditEntry) => permit.dbTransaction !== null || permit.dbInvalidation !== null;
-
   const anomalies = {
-    onChainUsedButDbTransactionNull: permits.filter((p) => p.nonceUsed.expected === true && !hasDbUsage(p)),
-    dbTransactionSetButNonceUnused: permits.filter(
-      (p) => p.dbTransaction !== null && p.nonceUsed.old === false && p.nonceUsed.new === false
-    ),
+    onChainUsedButDbTransactionNull: permits.filter((p) => p.nonceUsed.expected === true && p.dbTransaction === null),
+    dbTransactionSetButNonceUnused: permits.filter((p) => p.dbTransaction !== null && p.nonceUsed.old === false && p.nonceUsed.new === false),
     expectedOldButUsedNew: permits.filter((p) => p.expectedPermit2 === "old" && p.nonceUsed.old === false && p.nonceUsed.new === true),
     expectedNewButUsedOld: permits.filter((p) => p.expectedPermit2 === "new" && p.nonceUsed.new === false && p.nonceUsed.old === true),
     nonceUsedOnBothContracts: permits.filter((p) => p.nonceUsed.old === true && p.nonceUsed.new === true),
