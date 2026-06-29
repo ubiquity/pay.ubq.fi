@@ -336,7 +336,8 @@ async function buildAuditEntries(
   return draft.map((d): PermitAuditEntry => {
     const formatted = formatAmount({ chainId: d.chainId, tokenAddress: d.token, rawAmount: d.row.amount });
     const dbTx = safe0xTxHash(d.row.transaction);
-    const dbInvalidation = safe0xTxHash(d.row.invalidation ?? null);
+    // The production schema no longer stores permit invalidation tx hashes.
+    const dbInvalidation: `0x${string}` | null = null;
     const githubUrl = d.row.location?.node_url ? String(d.row.location.node_url) : null;
 
     const usedOld =
@@ -348,10 +349,8 @@ async function buildAuditEntries(
         ? getUsed({ chainId: d.chainId, permit2Address: NEW_PERMIT2_ADDRESS, owner: d.owner, wordPos: d.wordPos, bitPos: d.bitPos })
         : { used: null as boolean | null };
 
-    const adjustedExpected =
-      d.expected.kind === "old" && usedOld.used === false && usedNew.used === true
-        ? { kind: "new" as Permit2Kind, address: NEW_PERMIT2_ADDRESS }
-        : d.expected;
+    const adjustedExpected: { kind: Permit2Kind; address: `0x${string}` | null; error?: string } =
+      d.expected.kind === "old" && usedOld.used === false && usedNew.used === true ? { kind: "new" as Permit2Kind, address: NEW_PERMIT2_ADDRESS } : d.expected;
     const usedExpected = (() => {
       if (adjustedExpected.kind === "old") return usedOld.used;
       if (adjustedExpected.kind === "new") return usedNew.used;
@@ -454,9 +453,7 @@ const main = async () => {
 
   const anomalies = {
     onChainUsedButDbTransactionNull: permits.filter((p) => p.nonceUsed.expected === true && !hasDbUsage(p)),
-    dbTransactionSetButNonceUnused: permits.filter(
-      (p) => p.dbTransaction !== null && p.nonceUsed.old === false && p.nonceUsed.new === false
-    ),
+    dbTransactionSetButNonceUnused: permits.filter((p) => p.dbTransaction !== null && p.nonceUsed.old === false && p.nonceUsed.new === false),
     expectedOldButUsedNew: permits.filter((p) => p.expectedPermit2 === "old" && p.nonceUsed.old === false && p.nonceUsed.new === true),
     expectedNewButUsedOld: permits.filter((p) => p.expectedPermit2 === "new" && p.nonceUsed.new === false && p.nonceUsed.old === true),
     nonceUsedOnBothContracts: permits.filter((p) => p.nonceUsed.old === true && p.nonceUsed.new === true),

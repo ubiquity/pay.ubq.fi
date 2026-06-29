@@ -1,36 +1,29 @@
 import { serveDir, serveFile } from "jsr:@std/http/file-server";
 import { createClient } from "npm:@supabase/supabase-js@2.56.0";
 import { decodeFunctionData } from "npm:viem@2.24.1";
-import type { Database } from "./src/database.types.ts";
+import type { Database, Tables, TablesUpdate } from "./src/database.types.ts";
+
+type PermitClaimLookupRow = Pick<Tables<"permits">, "id" | "signature" | "transaction">;
+type PermitClaimUpdatedRow = Pick<Tables<"permits">, "id" | "signature">;
+type PermitClaimUpdate = Pick<TablesUpdate<"permits">, "transaction">;
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
 const configuredStaticDir = Deno.env.get("STATIC_DIR") ?? "dist";
 const normalizeRoot = (value: string) => value.replace(/\/+$/, "");
-const joinRoot = (base: string, child: string) =>
-  `${base.replace(/\/+$/, "")}/${child.replace(/^\/+/, "")}`;
+const joinRoot = (base: string, child: string) => `${base.replace(/\/+$/, "")}/${child.replace(/^\/+/, "")}`;
 const moduleRelativeRoot = (() => {
   if (configuredStaticDir.startsWith("/")) {
     return null;
   }
   const moduleUrl = new URL(import.meta.url);
-  return moduleUrl.protocol === "file:"
-    ? normalizeRoot(
-      decodeURIComponent(
-        new URL(`${configuredStaticDir}/`, moduleUrl).pathname,
-      ),
-    )
-    : null;
+  return moduleUrl.protocol === "file:" ? normalizeRoot(decodeURIComponent(new URL(`${configuredStaticDir}/`, moduleUrl).pathname)) : null;
 })();
 const staticRoots = Array.from(
   new Set(
-    [
-      configuredStaticDir,
-      configuredStaticDir.startsWith("/")
-        ? null
-        : joinRoot(Deno.cwd(), configuredStaticDir),
-      moduleRelativeRoot,
-    ].filter((value): value is string => Boolean(value)).map(normalizeRoot),
-  ),
+    [configuredStaticDir, configuredStaticDir.startsWith("/") ? null : joinRoot(Deno.cwd(), configuredStaticDir), moduleRelativeRoot]
+      .filter((value): value is string => Boolean(value))
+      .map(normalizeRoot)
+  )
 );
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -41,16 +34,11 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn("[serve] Supabase env missing; permit claim API disabled.");
 }
 
-const supabase = supabaseUrl && supabaseKey
-  ? createClient<Database>(supabaseUrl, supabaseKey)
-  : null;
+const supabase = supabaseUrl && supabaseKey ? createClient<Database>(supabaseUrl, supabaseKey) : null;
 
 const OLD_PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 const NEW_PERMIT2_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
-const PERMIT2_ADDRESSES = new Set([
-  OLD_PERMIT2_ADDRESS.toLowerCase(),
-  NEW_PERMIT2_ADDRESS.toLowerCase(),
-]);
+const PERMIT2_ADDRESSES = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT2_ADDRESS.toLowerCase()]);
 
 const permit2DecodeAbi = [
   {
@@ -163,19 +151,15 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const normalizeHexLowerNo0x = (value: string) =>
-  value.trim().toLowerCase().replace(/^0x/, "");
+const normalizeHexLowerNo0x = (value: string) => value.trim().toLowerCase().replace(/^0x/, "");
 
-const isValidTxHash = (value: string) =>
-  /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
+const isValidTxHash = (value: string) => /^[0-9a-f]{64}$/.test(normalizeHexLowerNo0x(value));
 
-const isValidAddress = (value: string) =>
-  /^[0-9a-f]{40}$/.test(normalizeHexLowerNo0x(value));
+const isValidAddress = (value: string) => /^[0-9a-f]{40}$/.test(normalizeHexLowerNo0x(value));
 
 const isValidPermitSignatureHex = (value: string) => {
   const normalized = normalizeHexLowerNo0x(value);
-  return /^[0-9a-f]+$/.test(normalized) &&
-    (normalized.length === 128 || normalized.length === 130);
+  return /^[0-9a-f]+$/.test(normalized) && (normalized.length === 128 || normalized.length === 130);
 };
 
 const to0xLower = (value: string) => `0x${normalizeHexLowerNo0x(value)}`;
@@ -220,28 +204,19 @@ const handleRecordClaim = async (req: Request) => {
       signature?: string;
     };
 
-    const parsedChainId = typeof networkId === "string"
-      ? Number.parseInt(networkId, 10)
-      : networkId;
-    if (
-      typeof parsedChainId !== "number" ||
-      !Number.isSafeInteger(parsedChainId) || parsedChainId <= 0
-    ) {
+    const parsedChainId = typeof networkId === "string" ? Number.parseInt(networkId, 10) : networkId;
+    if (typeof parsedChainId !== "number" || !Number.isSafeInteger(parsedChainId) || parsedChainId <= 0) {
       return jsonResponse(400, { error: "Invalid networkId" });
     }
     const chainId = parsedChainId;
 
-    if (
-      typeof transactionHash !== "string" || !isValidTxHash(transactionHash)
-    ) {
+    if (typeof transactionHash !== "string" || !isValidTxHash(transactionHash)) {
       return jsonResponse(400, { error: "Invalid transactionHash" });
     }
 
     const txHashWithPrefix = to0xLower(transactionHash);
 
-    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [
-      txHashWithPrefix,
-    ])) as {
+    const tx = (await rpcCall(chainId, "eth_getTransactionByHash", [txHashWithPrefix])) as {
       input?: string;
       blockHash?: string | null;
       to?: string | null;
@@ -254,16 +229,11 @@ const handleRecordClaim = async (req: Request) => {
       return jsonResponse(400, { error: "Transaction not mined yet" });
     }
 
-    if (
-      typeof tx.to !== "string" || !isValidAddress(tx.to) ||
-      !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())
-    ) {
+    if (typeof tx.to !== "string" || !isValidAddress(tx.to) || !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())) {
       return jsonResponse(400, { error: "Transaction is not a Permit2 call" });
     }
 
-    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [
-      txHashWithPrefix,
-    ])) as { status?: string } | null;
+    const receipt = (await rpcCall(chainId, "eth_getTransactionReceipt", [txHashWithPrefix])) as { status?: string } | null;
     if (!receipt) {
       return jsonResponse(400, { error: "Transaction receipt unavailable" });
     }
@@ -293,10 +263,7 @@ const handleRecordClaim = async (req: Request) => {
         extractedSignatures = [signature];
       } else if (decoded.functionName === "batchPermitTransferFrom") {
         const signatures = args.at(-1);
-        if (
-          !Array.isArray(signatures) ||
-          !signatures.every((s) => typeof s === "string")
-        ) {
+        if (!Array.isArray(signatures) || !signatures.every((s) => typeof s === "string")) {
           return jsonResponse(400, {
             error: "Failed to extract Permit2 signatures",
           });
@@ -312,9 +279,7 @@ const handleRecordClaim = async (req: Request) => {
       return jsonResponse(400, { error: "Unable to decode Permit2 calldata" });
     }
 
-    const normalizedSignatures = Array.from(
-      new Set(extractedSignatures.map(to0xLower)),
-    );
+    const normalizedSignatures = Array.from(new Set(extractedSignatures.map(to0xLower)));
     if (!normalizedSignatures.length) {
       return jsonResponse(400, {
         error: "No signatures found in transaction input",
@@ -326,37 +291,34 @@ const handleRecordClaim = async (req: Request) => {
       });
     }
 
-    const { data: existing, error: selectError } = await supabase.from(
-      "permits",
-    ).select("id, signature, transaction").in(
-      "signature",
-      normalizedSignatures,
-    );
+    const { data: existing, error: selectError } = await supabase.from("permits").select("id, signature, transaction").in("signature", normalizedSignatures);
     if (selectError) throw selectError;
+    const existingRows: PermitClaimLookupRow[] = existing ?? [];
 
-    const conflicting = (existing ?? []).filter((row) =>
-      row.transaction &&
-      String(row.transaction).toLowerCase() !== txHashWithPrefix
-    );
+    const conflicting = existingRows.filter((row) => row.transaction && String(row.transaction).toLowerCase() !== txHashWithPrefix);
     if (conflicting.length > 0) {
       return jsonResponse(409, {
         success: false,
-        error:
-          "One or more permits already have a different recorded transaction",
+        error: "One or more permits already have a different recorded transaction",
         conflicts: conflicting.map((row) => row.signature),
       });
     }
 
+    const permitClaimUpdate: PermitClaimUpdate = {
+      transaction: txHashWithPrefix,
+    };
+
     const { data: updatedRows, error: updateError } = await supabase
       .from("permits")
-      .update({ transaction: txHashWithPrefix })
+      .update(permitClaimUpdate)
       .in("signature", normalizedSignatures)
       .is("transaction", null)
       .select("id, signature");
     if (updateError) throw updateError;
 
-    const updated = updatedRows?.length ?? 0;
-    const matched = new Set((existing ?? []).map((row) => row.signature));
+    const updatedPermitRows: PermitClaimUpdatedRow[] = updatedRows ?? [];
+    const updated = updatedPermitRows.length;
+    const matched = new Set(existingRows.map((row) => row.signature));
     const missing = normalizedSignatures.filter((sig) => !matched.has(sig));
 
     return jsonResponse(200, {
@@ -384,9 +346,7 @@ const handleRequest = async (req: Request) => {
   }
 
   const isHead = req.method === "HEAD";
-  const request = isHead
-    ? new Request(req.url, { method: "GET", headers: req.headers })
-    : req;
+  const request = isHead ? new Request(req.url, { method: "GET", headers: req.headers }) : req;
 
   // Try to serve the file directly (HEAD is coerced to GET to avoid 405s on probes)
   let response: Response | null = null;
