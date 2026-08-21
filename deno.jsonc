@@ -1,12 +1,12 @@
 {
-  "nodeModulesDir": "auto",
-  "tasks": {
-    "build": "deno eval \"\"",
-    "build:ci": "deno run -A scripts/build.ts",
-    "serve": "deno run --allow-all serve.ts"
-  },
-  "deploy": {
-    "org": "ubiquity-dao",
-    "app": "p-pay-ubq-fi"
-  }
+	"nodeModulesDir": "auto",
+	"tasks": {
+		"build": "deno eval \"\"",
+		"build:ci": "deno run -A scripts/build.ts",
+		"serve": "deno run --allow-all serve.ts"
+	},
+	"deploy": {
+		"org": "ubiquity-dao",
+		"app": "p-pay-ubq-fi"
+	}
 }
