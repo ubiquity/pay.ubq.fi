@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { encodeFunctionData, hashTypedData, parseAbiItem, recoverAddress } from "viem";
-import type { Database } from "../src/database.types.ts";
+import type { Database, Tables } from "../src/database.types.ts";
 
 export const OLD_PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 export const NEW_PERMIT2_ADDRESS = "0xd635918A75356D133d5840eE5c9ED070302C9C60";
@@ -19,7 +19,7 @@ export const PERMIT_TRANSFER_FROM_TYPES = {
   ],
 } as const;
 
-export type PermitDbRow = Database["public"]["Tables"]["permits"]["Row"];
+export type PermitDbRow = Tables<"permits">;
 
 export type PermitDbRowWithJoins = PermitDbRow & {
   token?: { address?: string | null; network?: number | string | null } | null;
@@ -141,7 +141,6 @@ export async function fetchPermitsFromDb({
     deadline,
     signature,
     transaction,
-    invalidation,
     created,
     beneficiary_id,
     location_id,
