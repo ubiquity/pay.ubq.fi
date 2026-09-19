@@ -1,5 +1,5 @@
 // src/constants/config.ts
-import { Address } from "viem";
+import type { Address } from "viem";
 
 // Address that receives CowSwap partner fees
 export const COWSWAP_PARTNER_FEE_RECIPIENT: Address = "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd";
@@ -7,6 +7,15 @@ export const COWSWAP_PARTNER_FEE_RECIPIENT: Address = "0xefC0e701A824943b469a694
 // Partner fee in basis points (0.1% = 10 bps)
 // Applied to all swaps where the output token is NOT UUSD.
 export const COWSWAP_PARTNER_FEE_BPS = 10;
+
+// CoW Protocol's Vault Relayer is deterministic across the supported networks.
+// It is the only spender approved for a user-initiated CoW order.
+export const COWSWAP_VAULT_RELAYER_ADDRESS: { [chainId: number]: Address } = {
+  1: "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110",
+  100: "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110",
+  8453: "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110",
+  42161: "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110",
+};
 
 /**
  * RPC endpoint for blockchain calls.

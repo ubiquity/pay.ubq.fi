@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import type { Address } from "viem";
 import { mainnet, gnosis, base, arbitrum } from "viem/chains"; // Import chain definitions
 
 // Removed manually defined Chain IDs

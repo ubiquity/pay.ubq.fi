@@ -197,6 +197,7 @@ export function DashboardPage() {
       walletClient: walletClient ?? null,
       address,
       chain: chain ?? null,
+      preferredRewardTokenAddress,
       setBalancesAndAllowances,
     });
 

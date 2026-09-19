@@ -1,10 +1,11 @@
 // use-permit-claiming.ts: Handles single and batch permit claiming
 
 import { Dispatch, SetStateAction, useState } from "react";
-import { Address, Chain, PublicClient, WalletClient } from "viem";
-import { NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
+import { erc20Abi, type Address, type Chain, type PublicClient, type WalletClient } from "viem";
+import { COWSWAP_VAULT_RELAYER_ADDRESS, NEW_PERMIT2_ADDRESS } from "../constants/config.ts";
 import permit2Abi from "../fixtures/permit2-abi.ts";
 import { AllowanceAndBalance, PermitData } from "../types.ts";
+import { getCowSwapQuote, isSupportedCowSettlementToken, signCowSwapOrder, submitCowSwapOrderForChain } from "../utils/cowswap-utils.ts";
 
 if (!permit2Abi) {
   throw new Error("Permit2 ABI could not be loaded");
@@ -19,6 +20,7 @@ interface UsePermitClaimingProps {
   walletClient: WalletClient | null;
   address: Address | undefined;
   chain: Chain | null;
+  preferredRewardTokenAddress: Address | null;
   setBalancesAndAllowances: Dispatch<SetStateAction<Map<string, AllowanceAndBalance>>>;
 }
 
@@ -166,11 +168,87 @@ export function usePermitClaiming({
   walletClient,
   address,
   chain,
+  preferredRewardTokenAddress,
   setBalancesAndAllowances,
 }: UsePermitClaimingProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [sequentialClaimError, setSequentialClaimError] = useState<string | null>(null);
-  const [swapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
+  const [swapSubmissionStatus, setSwapSubmissionStatus] = useState<Record<string, { status: string; message: string }>>({});
+
+  const submitSwapForPermit = async (permit: PermitData): Promise<string | null> => {
+    if (!preferredRewardTokenAddress || !permit.tokenAddress || permit.tokenAddress.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) {
+      return null;
+    }
+    if (!address || !chain || !walletClient || !publicClient) throw new Error("Wallet not connected or chain unavailable for CoW order");
+    if (permit.networkId !== chain.id) throw new Error("Switch to the permit network before submitting its CoW order");
+    if (!isSupportedCowSettlementToken(chain.id, permit.tokenAddress as Address)) {
+      throw new Error("Only UUSD permits on Gnosis can be settled through CoW Swap");
+    }
+
+    const key = permit.signature;
+    const relayer = COWSWAP_VAULT_RELAYER_ADDRESS[chain.id];
+    if (!relayer) throw new Error(`CoW orders are not supported on chain ${chain.id}`);
+    setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Preparing CoW Swap order..." } }));
+
+    try {
+      const quote = await getCowSwapQuote({
+        tokenIn: permit.tokenAddress as Address,
+        tokenOut: preferredRewardTokenAddress,
+        amountIn: permit.amount,
+        userAddress: address,
+        chainId: chain.id,
+      });
+      const requiredAllowance = BigInt(quote.order.sellAmount) + BigInt(quote.order.feeAmount);
+      const allowance = await publicClient.readContract({
+        address: permit.tokenAddress as Address,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [address, relayer],
+      });
+
+      if (allowance < requiredAllowance) {
+        setSwapSubmissionStatus((prev) => ({
+          ...prev,
+          [key]: { status: "submitting", message: "Approval required: confirm the token approval in your wallet." },
+        }));
+        const { request } = await publicClient.simulateContract({
+          address: permit.tokenAddress as Address,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [relayer, requiredAllowance],
+          account: address,
+        });
+        const approvalHash = await walletClient.writeContract(request);
+        const approvalReceipt = await publicClient.waitForTransactionReceipt({ hash: approvalHash });
+        if (approvalReceipt.status !== "success") throw new Error("CoW token approval reverted");
+      }
+
+      setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitting", message: "Confirm the CoW Swap order signature in your wallet." } }));
+      const signature = await signCowSwapOrder({ walletClient, account: address, chainId: chain.id, order: quote.order });
+      const orderUid = await submitCowSwapOrderForChain(chain.id, {
+        order: quote.order,
+        from: address,
+        signature,
+        quoteId: quote.quoteId,
+      });
+      setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "submitted", message: `CoW order submitted: ${orderUid.slice(0, 14)}…` } }));
+      return orderUid;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSwapSubmissionStatus((prev) => ({ ...prev, [key]: { status: "error", message: `CoW order not submitted: ${message}` } }));
+      throw error;
+    }
+  };
+
+  const maybeSubmitSwapForPermit = async (permit: PermitData) => {
+    if (!preferredRewardTokenAddress || !permit.tokenAddress || permit.tokenAddress.toLowerCase() === preferredRewardTokenAddress.toLowerCase()) return;
+    try {
+      await submitSwapForPermit(permit);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(`Permit claimed, but the CoW order was not submitted: ${message}`);
+    }
+  };
 
   const reduceAllowance = (permits: PermitData[]) => {
     setBalancesAndAllowances((prev) => {
@@ -257,6 +335,8 @@ export function usePermitClaiming({
       void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
         if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
       });
+
+      await maybeSubmitSwapForPermit(permit);
 
       return { success: true, txHash };
     } catch (error) {
@@ -382,6 +462,7 @@ export function usePermitClaiming({
           void recordClaimWithRetries({ txHash, networkId: permit.networkId }).then((result) => {
             if (!result.ok) console.warn("Failed to record claim after retries", { txHash, networkId: permit.networkId, ...result });
           });
+          await maybeSubmitSwapForPermit(permit);
         } catch (error) {
           if (isUserRejectedRequest(error) && !txHash) {
             setPermits((prev) => prev.map((p) => (p.signature === permit.signature ? { ...p, claimStatus: "Idle" } : p)));
@@ -512,6 +593,11 @@ export function usePermitClaiming({
         void recordClaimWithRetries({ txHash, networkId: batchNetworkId }).then((result) => {
           if (!result.ok) console.warn("Failed to record batch claim after retries", { txHash, networkId: batchNetworkId, ...result });
         });
+      }
+
+      // Submit swaps one at a time so allowance reads and wallet prompts cannot race each other.
+      for (const permit of permitsToClaim) {
+        await maybeSubmitSwapForPermit(permit);
       }
 
       console.log("Batch RPC completed");
