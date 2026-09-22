@@ -1,7 +1,14 @@
 import { serveDir, serveFile } from "jsr:@std/http/file-server";
 import { createClient } from "npm:@supabase/supabase-js@2.56.0";
 import { decodeFunctionData } from "npm:viem@2.24.1";
-import type { Database } from "./src/database.types.ts";
+import type { Database, Tables, TablesUpdate } from "./src/database.types.ts";
+
+type PermitClaimLookupRow = Pick<
+  Tables<"permits">,
+  "id" | "signature" | "transaction"
+>;
+type PermitClaimUpdatedRow = Pick<Tables<"permits">, "id" | "signature">;
+type PermitClaimUpdate = Pick<TablesUpdate<"permits">, "transaction">;
 
 // Default to the built frontend output so we don't 404 if STATIC_DIR is missing.
 const configuredStaticDir = Deno.env.get("STATIC_DIR") ?? "dist";
@@ -333,8 +340,9 @@ const handleRecordClaim = async (req: Request) => {
       normalizedSignatures,
     );
     if (selectError) throw selectError;
+    const existingRows: PermitClaimLookupRow[] = existing ?? [];
 
-    const conflicting = (existing ?? []).filter((row) =>
+    const conflicting = existingRows.filter((row) =>
       row.transaction &&
       String(row.transaction).toLowerCase() !== txHashWithPrefix
     );
@@ -347,16 +355,21 @@ const handleRecordClaim = async (req: Request) => {
       });
     }
 
+    const permitClaimUpdate: PermitClaimUpdate = {
+      transaction: txHashWithPrefix,
+    };
+
     const { data: updatedRows, error: updateError } = await supabase
       .from("permits")
-      .update({ transaction: txHashWithPrefix })
+      .update(permitClaimUpdate)
       .in("signature", normalizedSignatures)
       .is("transaction", null)
       .select("id, signature");
     if (updateError) throw updateError;
 
-    const updated = updatedRows?.length ?? 0;
-    const matched = new Set((existing ?? []).map((row) => row.signature));
+    const updatedPermitRows: PermitClaimUpdatedRow[] = updatedRows ?? [];
+    const updated = updatedPermitRows.length;
+    const matched = new Set(existingRows.map((row) => row.signature));
     const missing = normalizedSignatures.filter((sig) => !matched.has(sig));
 
     return jsonResponse(200, {

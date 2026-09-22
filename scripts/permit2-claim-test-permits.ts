@@ -443,7 +443,7 @@ async function loadPermits({
   beneficiary,
   since,
 }: {
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database>;
   beneficiary: string;
   since?: string;
 }): Promise<{ permits: MappedPermit[]; skipped: { id: number; reason: string }[] }> {
