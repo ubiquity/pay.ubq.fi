@@ -8,6 +8,7 @@ import { getTokenInfo } from "../constants/supported-reward-tokens.ts";
 import { config } from "../main.tsx";
 import type { PermitData } from "../types.ts";
 import { parseGitHubUrl, truncateAddress } from "../utils/format-utils.ts";
+import { getFundingWalletActionLabels } from "../utils/permit-invalidation-utils.ts";
 import { formatAmount, hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 
@@ -59,6 +60,7 @@ export function PermitRow({
 
   const isOwner = !!address && permit.owner.toLowerCase() === address.toLowerCase();
   const canInvalidate = isOwner && !isClaimed && !isInvalidating;
+  const fundingWalletActionLabels = getFundingWalletActionLabels(isInvalidating, 1);
 
   const rowClassName = (() => {
     if (!isReadyToClaim) return "row-invalid";
@@ -90,8 +92,8 @@ export function PermitRow({
   })();
 
   const buttonText = (() => {
-    if (isInvalidating) return "Invalidating...";
-    if (canInvalidate) return "Invalidate";
+    if (isInvalidating) return isFundingWallet ? fundingWalletActionLabels.pendingText : "Invalidating...";
+    if (canInvalidate) return isFundingWallet ? fundingWalletActionLabels.buttonText : "Invalidate";
     if ((isClaimed || claimFailed) && permit.transactionHash) return "View";
     if (isClaimingThis) return "Claiming...";
     if (claimFailed) return "Retry";
