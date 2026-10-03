@@ -67,6 +67,6 @@ export function getFundingWalletActionLabels(isPending: boolean, permitCount: nu
     countText,
     buttonText: isPending ? pendingText : "Delete",
     pendingText,
-    title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+    title: "Delete pending owned permits by invalidating their Permit2 nonces on-chain",
   };
 }

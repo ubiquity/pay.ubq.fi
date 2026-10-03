@@ -74,7 +74,7 @@ describe("getFundingWalletActionLabels", () => {
       countText: "(3 Permits)",
       buttonText: "Delete",
       pendingText: "Deleting...",
-      title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+      title: "Delete pending owned permits by invalidating their Permit2 nonces on-chain",
     });
   });
 
@@ -84,7 +84,7 @@ describe("getFundingWalletActionLabels", () => {
       countText: "(1 Permit)",
       buttonText: "Deleting...",
       pendingText: "Deleting...",
-      title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+      title: "Delete pending owned permits by invalidating their Permit2 nonces on-chain",
     });
   });
 
