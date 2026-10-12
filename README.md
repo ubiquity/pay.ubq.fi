@@ -102,8 +102,12 @@ route, and the claim endpoint's validation paths). The claim handler from
 Supabase REST read/update) and covered by `worker/entry_test.ts`
 (`bun test worker/entry_test.ts`).
 
-The production cutover of `pay.ubq.fi` is the only remaining step: set the
-Worker secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (the service-role
-key is not retrievable from Deno Deploy), then move the zone route
-`pay.ubq.fi/*` to `pay-ubq-fi`. Build with `VITE_SUPABASE_URL` and
+`pay.ubq.fi` is cut over to the worker (zone route `pay.ubq.fi/*`), so the UI,
+assets, and SPA routing are live. `SUPABASE_URL` is set as a Worker secret; the
+claim endpoint still answers `{"error":"Supabase not configured"}` until
+`SUPABASE_SERVICE_ROLE_KEY` is supplied.
+
+The anon key cannot substitute: a targeted no-op update against the unclaimed
+row proved RLS filters anonymous UPDATEs (0 rows touched), so recording claims
+genuinely requires the service-role key. Build with `VITE_SUPABASE_URL` and
 `VITE_SUPABASE_ANON_KEY` set (org-level Supabase values).
