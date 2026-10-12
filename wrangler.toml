@@ -1,0 +1,15 @@
+name = "pay-ubq-fi"
+main = "worker/entry.ts"
+compatibility_date = "2024-10-01"
+account_id = "5c0228bee348f4cf48829ffe21b61fe9"
+
+# Vite SPA (dist/) with single-page fallback handled in the worker, matching
+# the previous serve.ts routing. The zone route is intentionally NOT cut over
+# yet: POST /api/permits/record-claim needs SUPABASE_SERVICE_ROLE_KEY.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "none"
+
+[observability]
+enabled = true

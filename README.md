@@ -89,3 +89,16 @@ One-off tooling lives in `scripts/` (requires `.env` with Supabase + RPC vars).
 ## Contracts
 
 Permit2 and PermitAggregator addresses used by the UI are in `src/constants/config.ts`.
+
+## Cloudflare Workers deployment (2026-10-12)
+
+`worker/entry.ts` + `wrangler.toml` serve the Vite `dist/` bundle from
+Cloudflare Workers with the previous `serve.ts` routing (files, SPA fallback,
+`POST /api/permits/record-claim`).
+
+Deployed now: `https://pay-ubq-fi.ubq.workers.dev` (verified root, assets, SPA
+route). The production cutover of `pay.ubq.fi` is intentionally pending until
+the claim endpoint is functional: it needs the Supabase service-role key as a
+Worker secret (`SUPABASE_SERVICE_ROLE_KEY`) and the port of the claim handler
+(decode + record) from `serve.ts`. Build with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` set (org-level Supabase values).
