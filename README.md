@@ -97,8 +97,13 @@ Cloudflare Workers with the previous `serve.ts` routing (files, SPA fallback,
 `POST /api/permits/record-claim`).
 
 Deployed now: `https://pay-ubq-fi.ubq.workers.dev` (verified root, assets, SPA
-route). The production cutover of `pay.ubq.fi` is intentionally pending until
-the claim endpoint is functional: it needs the Supabase service-role key as a
-Worker secret (`SUPABASE_SERVICE_ROLE_KEY`) and the port of the claim handler
-(decode + record) from `serve.ts`. Build with `VITE_SUPABASE_URL` and
+route, and the claim endpoint's validation paths). The claim handler from
+`serve.ts` is ported into the worker (RPC checks, Permit2 decode via viem,
+Supabase REST read/update) and covered by `worker/entry_test.ts`
+(`bun test worker/entry_test.ts`).
+
+The production cutover of `pay.ubq.fi` is the only remaining step: set the
+Worker secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (the service-role
+key is not retrievable from Deno Deploy), then move the zone route
+`pay.ubq.fi/*` to `pay-ubq-fi`. Build with `VITE_SUPABASE_URL` and
 `VITE_SUPABASE_ANON_KEY` set (org-level Supabase values).
