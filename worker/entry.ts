@@ -12,6 +12,7 @@
  * answers the same "Supabase not configured" error the Deno server produced.
  */
 import { decodeFunctionData } from "viem";
+import type { Tables, TablesUpdate } from "../src/database.types.ts";
 
 export interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -27,8 +28,30 @@ const PERMIT2_ADDRESSES = new Set([OLD_PERMIT2_ADDRESS.toLowerCase(), NEW_PERMIT
 const permit2DecodeAbi = [
   {
     inputs: [
-      { components: [{ components: [{ name: "token", type: "address" }, { name: "amount", type: "uint256" }], name: "permitted", type: "tuple" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }], name: "permit", type: "tuple" },
-      { components: [{ name: "to", type: "address" }, { name: "requestedAmount", type: "uint256" }], name: "transferDetails", type: "tuple" },
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permit",
+        type: "tuple",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple",
+      },
       { name: "owner", type: "address" },
       { name: "signature", type: "bytes" },
     ],
@@ -39,8 +62,30 @@ const permit2DecodeAbi = [
   },
   {
     inputs: [
-      { components: [{ components: [{ name: "token", type: "address" }, { name: "amount", type: "uint256" }], name: "permitted", type: "tuple[]" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }], name: "permit", type: "tuple" },
-      { components: [{ name: "to", type: "address" }, { name: "requestedAmount", type: "uint256" }], name: "transferDetails", type: "tuple[]" },
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple[]",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permit",
+        type: "tuple",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple[]",
+      },
       { name: "owner", type: "address" },
       { name: "signature", type: "bytes" },
     ],
@@ -51,8 +96,30 @@ const permit2DecodeAbi = [
   },
   {
     inputs: [
-      { components: [{ components: [{ name: "token", type: "address" }, { name: "amount", type: "uint256" }], name: "permitted", type: "tuple" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }], name: "permits", type: "tuple[]" },
-      { components: [{ name: "to", type: "address" }, { name: "requestedAmount", type: "uint256" }], name: "transferDetails", type: "tuple[]" },
+      {
+        components: [
+          {
+            components: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "permitted",
+            type: "tuple",
+          },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+        name: "permits",
+        type: "tuple[]",
+      },
+      {
+        components: [
+          { name: "to", type: "address" },
+          { name: "requestedAmount", type: "uint256" },
+        ],
+        name: "transferDetails",
+        type: "tuple[]",
+      },
       { name: "owners", type: "address[]" },
       { name: "signatures", type: "bytes[]" },
     ],
@@ -76,7 +143,9 @@ const isValidPermitSignatureHex = (value: string) => {
 };
 const to0xLower = (value: string) => `0x${normalizeHexLowerNo0x(value)}`;
 
-type PermitClaimLookupRow = { id: number | string; signature: string; transaction: string | null };
+type PermitClaimLookupRow = Pick<Tables<"permits">, "id" | "signature" | "transaction">;
+type PermitClaimUpdatedRow = Pick<Tables<"permits">, "id" | "signature">;
+type PermitClaimUpdate = Pick<TablesUpdate<"permits">, "transaction">;
 
 async function supabaseRequest(env: Env, path: string, init: RequestInit = {}): Promise<Response> {
   const url = `${env.SUPABASE_URL!.replace(/\/$/, "")}/rest/v1/${path}`;
@@ -86,7 +155,7 @@ async function supabaseRequest(env: Env, path: string, init: RequestInit = {}): 
       "content-type": "application/json",
       apikey: env.SUPABASE_SERVICE_ROLE_KEY!,
       authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY!}`,
-      ...(init.headers as Record<string, string> | undefined ?? {}),
+      ...((init.headers as Record<string, string> | undefined) ?? {}),
     },
   });
 }
@@ -124,9 +193,7 @@ async function handleRecordClaim(request: Request, env: Env): Promise<Response> 
       return json.result;
     };
 
-    const tx = (await rpcCall("eth_getTransactionByHash", [txHashWithPrefix])) as
-      | { input?: string; blockHash?: string | null; to?: string | null }
-      | null;
+    const tx = (await rpcCall("eth_getTransactionByHash", [txHashWithPrefix])) as { input?: string; blockHash?: string | null; to?: string | null } | null;
     if (!tx) return jsonResponse(404, { error: "Transaction not found" });
     if (!tx.blockHash) return jsonResponse(400, { error: "Transaction not mined yet" });
     if (typeof tx.to !== "string" || !isValidAddress(tx.to) || !PERMIT2_ADDRESSES.has(tx.to.toLowerCase())) {
@@ -169,16 +236,11 @@ async function handleRecordClaim(request: Request, env: Env): Promise<Response> 
     }
 
     const inList = `(${normalizedSignatures.map((signature) => `"${signature}"`).join(",")})`;
-    const selectResponse = await supabaseRequest(
-      env,
-      `permits?select=id,signature,transaction&signature=in.${inList}`,
-    );
+    const selectResponse = await supabaseRequest(env, `permits?select=id,signature,transaction&signature=in.${inList}`);
     if (!selectResponse.ok) throw new Error(`Supabase select failed: HTTP ${selectResponse.status}`);
     const existingRows = (await selectResponse.json()) as PermitClaimLookupRow[];
 
-    const conflicting = existingRows.filter(
-      (row) => row.transaction && String(row.transaction).toLowerCase() !== txHashWithPrefix,
-    );
+    const conflicting = existingRows.filter((row) => row.transaction && String(row.transaction).toLowerCase() !== txHashWithPrefix);
     if (conflicting.length > 0) {
       return jsonResponse(409, {
         success: false,
@@ -187,17 +249,13 @@ async function handleRecordClaim(request: Request, env: Env): Promise<Response> 
       });
     }
 
-    const updateResponse = await supabaseRequest(
-      env,
-      `permits?signature=in.${inList}&transaction=is.null&select=id,signature`,
-      {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify({ transaction: txHashWithPrefix }),
-      },
-    );
+    const updateResponse = await supabaseRequest(env, `permits?signature=in.${inList}&transaction=is.null&select=id,signature`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ transaction: txHashWithPrefix } satisfies PermitClaimUpdate),
+    });
     if (!updateResponse.ok) throw new Error(`Supabase update failed: HTTP ${updateResponse.status}`);
-    const updatedRows = (await updateResponse.json()) as Array<{ id: number | string; signature: string }>;
+    const updatedRows = (await updateResponse.json()) as PermitClaimUpdatedRow[];
 
     const matched = new Set(existingRows.map((row) => row.signature));
     const missing = normalizedSignatures.filter((signature) => !matched.has(signature));
