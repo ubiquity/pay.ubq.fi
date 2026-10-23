@@ -55,8 +55,23 @@ export function groupPermitsForInvalidation(permits: readonly InvalidationPermit
   return Array.from(grouped.values());
 }
 
+type InvalidatablePermitCandidate = {
+  owner: string;
+  status?: string;
+  isNonceUsed?: boolean;
+};
+
 /**
- * Copy for the funding-wallet delete action, which invalidates Permit2 nonces on-chain.
+ * Selects every unclaimed, unused-nonce permit owned by the connected funding wallet.
+ */
+export function filterInvalidatablePermits<T extends InvalidatablePermitCandidate>(permits: readonly T[], ownerAddress: string | null | undefined): T[] {
+  const normalizedAddress = ownerAddress?.toLowerCase();
+  if (!normalizedAddress) return [];
+  return permits.filter((permit) => permit.owner.toLowerCase() === normalizedAddress && permit.status !== "Claimed" && permit.isNonceUsed !== true);
+}
+
+/**
+ * Copy for the funding-wallet delete action, which invalidates every pending owned Permit2 nonce on-chain.
  */
 export function getFundingWalletActionLabels(isPending: boolean, permitCount: number): FundingWalletActionLabels {
   const countText = `(${permitCount} Permit${permitCount === 1 ? "" : "s"})`;
@@ -67,6 +82,6 @@ export function getFundingWalletActionLabels(isPending: boolean, permitCount: nu
     countText,
     buttonText: isPending ? pendingText : "Delete",
     pendingText,
-    title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+    title: "Delete all pending owned permits by invalidating their Permit2 nonces on-chain",
   };
 }

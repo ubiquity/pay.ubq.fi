@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { deriveNonceBitmap, getFundingWalletActionLabels, groupPermitsForInvalidation } from "../src/utils/permit-invalidation-utils.ts";
+import {
+  deriveNonceBitmap,
+  filterInvalidatablePermits,
+  getFundingWalletActionLabels,
+  groupPermitsForInvalidation,
+} from "../src/utils/permit-invalidation-utils.ts";
 
 describe("deriveNonceBitmap", () => {
   test("derives Permit2 unordered nonce word positions and bit masks", () => {
@@ -74,7 +79,7 @@ describe("getFundingWalletActionLabels", () => {
       countText: "(3 Permits)",
       buttonText: "Delete",
       pendingText: "Deleting...",
-      title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+      title: "Delete all pending owned permits by invalidating their Permit2 nonces on-chain",
     });
   });
 
@@ -84,11 +89,27 @@ describe("getFundingWalletActionLabels", () => {
       countText: "(1 Permit)",
       buttonText: "Deleting...",
       pendingText: "Deleting...",
-      title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+      title: "Delete all pending owned permits by invalidating their Permit2 nonces on-chain",
     });
   });
 
   test("counts zero permits as plural", () => {
     expect(getFundingWalletActionLabels(false, 0).countText).toBe("(0 Permits)");
+  });
+});
+
+describe("filterInvalidatablePermits", () => {
+  test("selects all pending unclaimed permits owned by the funding wallet regardless of bogus status", () => {
+    const owner = "0x1111111111111111111111111111111111111111";
+    const permits = [
+      { id: "legit-pending", owner, status: "Valid", isNonceUsed: false },
+      { id: "bogus-pending", owner: owner.toUpperCase(), status: "TestError", isNonceUsed: undefined },
+      { id: "already-claimed", owner, status: "Claimed", isNonceUsed: false },
+      { id: "nonce-used", owner, status: "Valid", isNonceUsed: true },
+      { id: "other-owner", owner: "0x2222222222222222222222222222222222222222", status: "Valid", isNonceUsed: false },
+    ];
+
+    expect(filterInvalidatablePermits(permits, owner).map((p) => p.id)).toEqual(["legit-pending", "bogus-pending"]);
+    expect(filterInvalidatablePermits(permits, null)).toEqual([]);
   });
 });

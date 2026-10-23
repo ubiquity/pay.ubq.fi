@@ -8,7 +8,7 @@ import { usePermitClaiming } from "../hooks/use-permit-claiming.ts";
 import { usePermitData } from "../hooks/use-permit-data.ts";
 import { usePermitInvalidation } from "../hooks/use-permit-invalidation.ts";
 import { PermitData } from "../types.ts";
-import { getFundingWalletActionLabels } from "../utils/permit-invalidation-utils.ts";
+import { filterInvalidatablePermits, getFundingWalletActionLabels } from "../utils/permit-invalidation-utils.ts";
 import { hasRequiredFields } from "../utils/permit-utils.ts";
 import { ICONS } from "./iconography.tsx";
 import { LogoSpan } from "./login-page.tsx";
@@ -120,11 +120,7 @@ export function DashboardPage() {
 
   const claimablePermitCount = claimablePermits.length;
 
-  const invalidatablePermits = useMemo(() => {
-    const normalizedAddress = address?.toLowerCase();
-    if (!normalizedAddress) return [];
-    return permits.filter((p) => p.owner.toLowerCase() === normalizedAddress && p.status !== "Claimed" && p.isNonceUsed !== true);
-  }, [permits, address]);
+  const invalidatablePermits = useMemo(() => filterInvalidatablePermits(permits, address), [permits, address]);
 
   const invalidatablePermitCount = invalidatablePermits.length;
 
