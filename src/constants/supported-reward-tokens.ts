@@ -67,3 +67,10 @@ export function getTokenInfo(chainId: number | undefined, tokenAddress: Address 
   const tokens = getSupportedRewardTokensForChain(chainId);
   return tokens.find((token) => token.address.toLowerCase() === tokenAddress.toLowerCase());
 }
+
+export function getTokenBySymbol(chainId: number | undefined, symbol: string): RewardTokenInfo | undefined {
+  if (!chainId) return undefined;
+  const normalized = symbol.trim().toLowerCase();
+  const tokens = getSupportedRewardTokensForChain(chainId);
+  return tokens.find((token) => token.symbol.trim().toLowerCase() === normalized);
+}
