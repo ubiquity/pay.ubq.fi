@@ -57,16 +57,19 @@ export function groupPermitsForInvalidation(permits: readonly InvalidationPermit
 
 /**
  * Copy for the funding-wallet delete action, which invalidates Permit2 nonces on-chain.
+ * The action does not distinguish bogus permits from legitimate ones: it invalidates every
+ * unclaimed permit owned by the wallet, so the copy must say so.
  */
 export function getFundingWalletActionLabels(isPending: boolean, permitCount: number): FundingWalletActionLabels {
   const countText = `(${permitCount} Permit${permitCount === 1 ? "" : "s"})`;
   const pendingText = "Deleting...";
+  const scopeText = permitCount === 1 ? "1 unclaimed permit" : `all ${permitCount} unclaimed permits`;
 
   return {
     primaryText: isPending ? pendingText : "Delete all",
     countText,
     buttonText: isPending ? pendingText : "Delete",
     pendingText,
-    title: "Delete bogus permits by invalidating their Permit2 nonces on-chain",
+    title: `Invalidates ${scopeText} owned by this wallet by spending Permit2 nonces on-chain, including legitimate payouts. This cannot be undone.`,
   };
 }
